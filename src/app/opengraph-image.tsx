@@ -6,7 +6,7 @@ export const alt = 'Vocafy — ボカロ曲を、ボカロPごとに聴ける。
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-// アイコンは scripts/build-icons.py が書き出したもの（地は #0b0f12）。地色もアイコンに合わせる
+// アイコンは src/assets/icon-source.png（ChatGPT で生成したデフォルメの初音ミク）を縮めたもの。地色もアイコンの明るい灰色（#ecf0f2）に合わせる
 const icon = `data:image/png;base64,${await readFile(join(process.cwd(), 'src/app/icon.png'), 'base64')}`;
 // Noto Sans JP の太字から、この絵で使う文字だけを抜いたもの（Google Fonts の text= で取得）。
 // 題字を変えて文字が増えたら取り直す。無い文字は豆腐になる
@@ -25,8 +25,8 @@ export default function OpengraphImage() {
         alignItems: 'center',
         gap: 48,
         padding: '0 80px',
-        background: '#0b0f12',
-        color: '#eef6f6',
+        background: '#ecf0f2',
+        color: '#10181a',
         fontFamily: 'Noto Sans JP',
       }}
     >
@@ -40,9 +40,9 @@ export default function OpengraphImage() {
             fontSize: 120,
           }}
         >
-          Voca<span style={{ color: '#39c5bb' }}>fy</span>
+          Voca<span style={{ color: '#0b7770' }}>fy</span>
         </div>
-        <div style={{ fontSize: 34, color: '#9aabb0' }}>ボカロ曲を、ボカロPごとに聴ける。</div>
+        <div style={{ fontSize: 34, color: '#5d6f73' }}>ボカロ曲を、ボカロPごとに聴ける。</div>
       </div>
     </div>,
     {

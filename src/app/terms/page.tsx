@@ -42,6 +42,17 @@ export default function TermsPage() {
         </a>
         の公開情報をもとにしています。
       </p>
+      <p>
+        本サイトのアイコンは、
+        <a
+          href="https://piapro.jp/license/character_guideline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ピアプロ・キャラクター・ライセンス
+        </a>
+        に基づいてクリプトン・フューチャー・メディア株式会社のキャラクター「初音ミク」を描いたものです。
+      </p>
 
       <h2>掲載の取り下げ</h2>
       <p>

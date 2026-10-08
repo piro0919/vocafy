@@ -19,7 +19,7 @@ function useActive() {
 export function Logo({ compact }: { compact?: boolean }) {
   return (
     <Link href="/" aria-label="Vocafy ホーム" className="flex items-center gap-2">
-      {/* アプリのアイコン（scripts/build-icons.py が書き出したもの）を、角を丸めたタイルとして添える */}
+      {/* アプリのアイコン（src/app/icon.png と同じ絵）を、角を丸めたタイルとして添える */}
       <Image
         src="/icon-192x192.png"
         alt=""

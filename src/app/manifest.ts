@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 /**
  * ホーム画面に置いたときの姿。`display: standalone` でブラウザの URL 欄が消える。
  * `id` を固定しておく。`start_url` を後から変えると別のアプリとして扱われ、入れた人の手元に古い方が残る。
- * アイコンは右上のきらめきが端に寄っていて、丸く切り抜く端末で欠けるので maskable にはしない。
+ * アイコンはツインテールが端近くまで伸びていて、丸く切り抜く端末で欠けるので maskable にはしない。
  * 地の色は暗いテーマにそろえる（開いた直後の一瞬に出る色）
  */
 export default function manifest(): MetadataRoute.Manifest {
