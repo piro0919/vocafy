@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /*
  * 使うアイコンだけを手で持つ。どれも 24×24 で描く。
  * かわいく見えるよう、線の端と角はすべて丸める。塗りの三角も、同じ色の太い線で縁取って角を丸める（ROUND_FILL）。
- * ボカロらしさは、意味が読める範囲で足す（ボカロP はヘッドホン、ホームは屋根の下の音符、歌声はマイク）
+ * ボカロらしさは、意味が読める範囲で足す（ボカロP はヘッドホン、ホームは屋根の下の音符、歌声は歌うマイク、年代は暦。どれにも同じ八分音符を入れる）
  */
 const ROUND_FILL = {
   fill: 'currentColor',
@@ -53,17 +53,20 @@ const ICONS = {
   ),
   voice: (
     <>
-      {/* マイク */}
-      <rect x="9" y="3.5" width="6" height="10.5" rx="3" fill="currentColor" stroke="none" />
-      <path d="M6 11.5a6 6 0 0 0 12 0M12 17.5v3m-3 0h6" />
+      {/* 歌うマイク。音符はホームと同じ形 */}
+      <rect x="6.5" y="3.5" width="6" height="10.5" rx="3" fill="currentColor" stroke="none" />
+      <path d="M3.8 11.5a5.7 5.7 0 0 0 11.4 0M9.5 17.2v3.3m-3 0h6" />
+      <circle cx="17.6" cy="16.6" r="1.7" fill="currentColor" stroke="none" />
+      <path d="M19.2 16.4v-5l2.6 1" strokeWidth={1.7} />
     </>
   ),
   year: (
     <>
-      {/* 暦 */}
+      {/* 暦。日付のかわりに、ホームと同じ音符 */}
       <rect x="4" y="5.5" width="16" height="14.5" rx="3" />
       <path d="M8 3.5v4m8-4v4M4 10.5h16" />
-      <circle cx="9" cy="15" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="10.8" cy="16.4" r="1.7" fill="currentColor" stroke="none" />
+      <path d="M12.4 16.2v-3.6l2.6 1" strokeWidth={1.7} />
     </>
   ),
   search: (
