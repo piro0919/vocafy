@@ -21,13 +21,6 @@ const jsonLd: WithContext<WebSite> = {
 // きょうの日付の曲と日替わりの並びも、この作り直しに合わせて日付が変わってから1時間以内に替わる
 export const revalidate = 3600;
 
-/** 文字列から決まる 0 以上の整数。日付ごとに、大きく見せる1曲を決めるのに使う */
-function hash(text: string): number {
-  let h = 0;
-  for (const c of text) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h;
-}
-
 /**
  * トップ。人気で並べず、どの曲も同じ扱いで出会えるようにする（2026-10-08 に本人と決めた）。
  * 上から、きょうの日付の曲、日替わりの無作為の並び、歌声、年代、あいうえお順。毎日変わるものを上に、探しに行く入口を下に置く
@@ -41,11 +34,7 @@ export default async function Home() {
     years(),
     kanaRows(),
   ]);
-  // 大きく見せる1曲は、きょうと同じ月日の曲から、日ごとに決まった1曲を選ぶ
-  const exact = day.filter((s) => s.publishedOn.slice(5) === date.slice(5));
-  const hero = (exact.length > 0 ? exact : day)[
-    hash(date) % Math.max(1, exact.length || day.length)
-  ];
+  const { hero, rest } = day;
   const [month, dayOfMonth] = date.slice(5).split('-').map(Number);
 
   return (
@@ -59,11 +48,7 @@ export default async function Home() {
               {month}月{dayOfMonth}日に生まれた曲
             </Heading>
           </div>
-          <OnThisDay
-            hero={hero}
-            rest={day.filter((s) => s.songId !== hero.songId).slice(0, 11)}
-            today={date}
-          />
+          <OnThisDay hero={hero} rest={rest.slice(0, 11)} today={date} />
         </section>
       )}
 

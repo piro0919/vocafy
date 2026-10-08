@@ -171,6 +171,7 @@ type QueueRow = {
   niconico_id: string | null;
   niconico_thumb: string | null;
   published_on: string | null;
+  rating_score: number;
   producer_id: number;
   producer_name: string;
   vocalists: string;
@@ -183,7 +184,7 @@ type QueueRow = {
  */
 const QUEUE_SELECT = `
   select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb,
-    to_char(s.published_on, 'YYYY-MM-DD') as published_on,
+    to_char(s.published_on, 'YYYY-MM-DD') as published_on, s.rating_score,
     p.id as producer_id, p.name as producer_name,
     (select coalesce(string_agg(v.name, '・' order by sv.support, v.id), '')
        from song_vocalist sv join vocalist v on v.id = sv.vocalist_id where sv.song_id = s.id) as vocalists
@@ -210,13 +211,24 @@ export function today(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
 }
 
+/** 文字列から決まる 0 以上の整数。日ごとに決まった選び方をするのに使う */
+function hash(text: string): number {
+  let h = 0;
+  for (const c of text) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h;
+}
+
 /**
  * きょうと同じ月日に投稿された曲。曲の少ない日は、前後の日へ1日ずつ広げて min 曲に届くまで補う（3日まで）。
- * 月日の近さは、うるう年の 2000 年に置いて測る（2月29日の曲も拾える）。並びは近い日から、同じ日の中は新しい年から
+ * 月日の近さは、うるう年の 2000 年に置いて測る（2月29日の曲も拾える）。並びは近い日から、同じ日の中は新しい年から。
+ *
+ * 大きく見せる1曲（hero）は、きょうと同じ月日の曲のうち評価点の上位3曲から、日ごとに決まった1曲を選ぶ。
+ * 順位は画面に出さないが、初めて来た人が知っている曲に出会いやすいよう、選び方にだけ人気を混ぜる（2026-10-09 に決めた）
  */
-export const onThisDay = cache(async (date: string, min: number): Promise<DatedItem[]> => {
-  const { rows } = await db().query<QueueRow & { distance: number }>(
-    `select * from (
+export const onThisDay = cache(
+  async (date: string, min: number): Promise<{ hero?: DatedItem; rest: DatedItem[] }> => {
+    const { rows } = await db().query<QueueRow & { distance: number }>(
+      `select * from (
        select q.*, least(abs(d.doy - t.doy), 366 - abs(d.doy - t.doy)) as distance
        from (${QUEUE_SELECT} and s.published_on is not null) q
        cross join lateral (
@@ -228,19 +240,48 @@ export const onThisDay = cache(async (date: string, min: number): Promise<DatedI
      ) x
      where distance <= 3
      order by distance, published_on desc, id`,
-    [date],
-  );
-  const reach = [0, 1, 2, 3].find((d) => rows.filter((r) => r.distance <= d).length >= min) ?? 3;
-  return rows.filter((r) => r.distance <= reach).map(toItem);
-});
+      [date],
+    );
+    const reach = [0, 1, 2, 3].find((d) => rows.filter((r) => r.distance <= d).length >= min) ?? 3;
+    const within = rows.filter((r) => r.distance <= reach);
+    const exact = within.filter((r) => r.distance === 0);
+    const candidates = (exact.length > 0 ? exact : within)
+      .toSorted((a, b) => b.rating_score - a.rating_score || a.id - b.id)
+      .slice(0, 3);
+    const hero = candidates[hash(date) % Math.max(1, candidates.length)];
+    return {
+      hero: hero && toItem(hero),
+      rest: within.filter((r) => r !== hero).map(toItem),
+    };
+  },
+);
 
-/** 日替わりの無作為の並び。同じ日のうちは同じ並びになるよう、日付を混ぜた曲の id の要約で並べる */
+/** 日替わりの並びに混ぜる、評価点の上位の曲の数と、その上位の範囲 */
+const MIX_POPULAR = 6;
+const MIX_POPULAR_POOL = 500;
+
+/**
+ * 日替わりの無作為の並び。同じ日のうちは同じ並びになるよう、日付を混ぜた曲の id の要約で選んで並べる。
+ * limit 曲のうち MIX_POPULAR 曲は評価点の上位 MIX_POPULAR_POOL 曲から、残りは全曲から選び、混ぜて並べる。
+ * 順位は画面に出さず、選び方にだけ人気を混ぜる（2026-10-09 に決めた）。上位の範囲を広く取るので、同じ有名曲が毎日は出ない
+ */
 export const dailyMix = cache(async (date: string, limit: number): Promise<DatedItem[]> => {
-  const { rows } = await db().query<QueueRow>(
-    `${QUEUE_SELECT} order by md5(s.id::text || $1), s.id limit $2`,
-    [date, limit],
+  const popular = await db().query<QueueRow>(
+    `${QUEUE_SELECT} and s.id in (
+       select p.id from song p
+       where p.youtube_id is not null or p.niconico_thumb is not null
+       order by p.rating_score desc, p.id limit $2)
+     order by md5(s.id::text || $1), s.id limit $3`,
+    [date, MIX_POPULAR_POOL, MIX_POPULAR],
   );
-  return rows.map(toItem);
+  const picked = popular.rows.map((r) => r.id);
+  const rest = await db().query<QueueRow>(
+    `${QUEUE_SELECT} and not (s.id = any($2::int[])) order by md5(s.id::text || $1), s.id limit $3`,
+    [date, picked, limit - picked.length],
+  );
+  return [...popular.rows, ...rest.rows]
+    .toSorted((a, b) => hash(`${date}${a.id}`) - hash(`${date}${b.id}`))
+    .map(toItem);
 });
 
 /** 投稿された年と、その年の流せる曲の数。新しい年から */
