@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
-import { Orbitron, Shippori_Mincho_B1, Zen_Kaku_Gothic_New } from 'next/font/google';
+import { M_PLUS_Rounded_1c, Orbitron, Zen_Kaku_Gothic_New } from 'next/font/google';
 import Link from 'next/link';
 import { AmbientProvider } from '@/components/ambient';
 import { Header } from '@/components/header';
@@ -29,11 +29,12 @@ const zenKaku = Zen_Kaku_Gothic_New({
   weight: ['400', '700'],
 });
 
-// 見出し・アルバム名・アーティスト名の字。ロゴのセリフ体に合う、品のある明朝体。大きな字にだけ使う
-const shippori = Shippori_Mincho_B1({
-  variable: '--font-shippori',
-  subsets: ['latin'],
+// 見出し・ボカロP名の字。デフォルメのミクのアイコンに合う、丸みのある明るい字。大きな字にだけ使う。
+// 日本語の字は Google Fonts が使う字の分だけを分けて配るので、先読みはしない（subsets の指定が無い書体）
+const rounded = M_PLUS_Rounded_1c({
+  variable: '--font-rounded',
   weight: '800',
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -56,7 +57,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     // data-theme はページを描く前に themeScript が付けるので、サーバーの出力と食い違ってよい
     <html
       lang="ja"
-      className={`${zenKaku.variable} ${shippori.variable} ${orbitron.variable} h-full antialiased`}
+      className={`${zenKaku.variable} ${rounded.variable} ${orbitron.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

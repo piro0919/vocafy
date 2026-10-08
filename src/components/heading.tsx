@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
 /**
- * 見出し。上に字間を広げた小さな英字（eyebrow）を差し色で添え、本体は明朝体の太字にする。
- * コンサートのパンフレットのような華やかさを出すための飾りで、意味は日本語の側に持たせる（英字は読み上げない）
+ * 見出し。上に字間を広げた小さな英字（eyebrow）を、ロゴと同じ機械的な字（Orbitron）で差し色で添え、
+ * 本体は丸みのある太字にする。英字は飾りで、意味は日本語の側に持たせる（英字は読み上げない）
  */
 export function Heading({
   eyebrow,
@@ -21,7 +21,7 @@ export function Heading({
       {eyebrow && (
         <p
           aria-hidden
-          className="mb-1 text-[0.65rem] font-bold tracking-[0.3em] text-accent uppercase"
+          className="mb-1 font-tech text-[0.65rem] font-black tracking-[0.3em] text-accent uppercase"
         >
           {eyebrow}
         </p>

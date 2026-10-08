@@ -67,7 +67,9 @@
   /* お気に入りのハート。差し色の青緑とは別に、ハートらしい桃色にする */
   --color-heart: var(--heart);
   --font-sans: var(--font-body), system-ui, sans-serif;
-  --font-display: var(--font-shippori), 'Hiragino Mincho ProN', serif;
+  --font-display: var(--font-rounded), 'Hiragino Maru Gothic ProN', sans-serif;
+  /* 見出しの上の英字とロゴの字 */
+  --font-tech: var(--font-orbitron), system-ui, sans-serif;
 }
 
 body {
