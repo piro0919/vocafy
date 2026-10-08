@@ -1,23 +1,58 @@
 import Link from 'next/link';
+import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
+import { FadeImage } from './fade-image';
 
-/** 歌声の札。キャラの色の丸と、その色を薄く混ぜた地。トップと歌声の一覧で使う */
-export function VoiceCard({
-  id,
-  name,
-  songCount,
-}: {
-  id: number;
-  name: string;
-  songCount: number;
-}) {
+type VoiceProps = { id: number; name: string; songCount: number };
+
+/**
+ * キャラの絵の札。トップの歌声の区画で使う。キャラの色の丸の上に、絵を大きく載せる。
+ * 絵は元から 400px の webp なので、Vercel の画像変換は通さない
+ */
+export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: string }) {
+  return (
+    <Link
+      href={`/voices/${id}`}
+      style={{ '--c': voiceColor(name) } as React.CSSProperties}
+      className="group flex h-full flex-col rounded-2xl border border-line/60 bg-[color-mix(in_oklab,var(--c)_14%,var(--sidebar))] p-1.5 transition-[background-color,scale] duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--c)_24%,var(--sidebar))] active:scale-95"
+    >
+      <span className="relative block aspect-square overflow-hidden rounded-xl bg-[color-mix(in_oklab,var(--c)_22%,var(--sidebar))]">
+        <span
+          aria-hidden
+          className="absolute inset-x-[8%] top-[18%] aspect-square rounded-full bg-(--c) opacity-45"
+        />
+        <FadeImage
+          src={art}
+          alt=""
+          fill
+          unoptimized
+          className="object-contain p-1.5 transition-[opacity,scale,translate] duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105"
+        />
+      </span>
+      <span className="min-w-0 px-1.5 pt-2 pb-1">
+        <span className="block truncate text-sm font-bold">{name}</span>
+        <span className="block text-xs text-muted">{songCount} 曲</span>
+      </span>
+    </Link>
+  );
+}
+
+/** 歌声の札。キャラの色を薄く混ぜた地に、絵のある歌声は小さな絵、無い歌声は色の丸。歌声の一覧で使う */
+export function VoiceCard({ id, name, songCount }: VoiceProps) {
+  const art = voiceArt(id);
   return (
     <Link
       href={`/voices/${id}`}
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
       className="flex h-full items-center gap-3 rounded-2xl border border-line/60 bg-[color-mix(in_oklab,var(--c)_14%,var(--sidebar))] px-3 py-2.5 transition-[background-color,scale] duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--c)_24%,var(--sidebar))] active:scale-95"
     >
-      <span aria-hidden className="size-7 shrink-0 rounded-full bg-(--c) shadow-sm" />
+      {art ? (
+        <span className="relative -my-1 size-9 shrink-0 rounded-full bg-(--c)/45">
+          <FadeImage src={art} alt="" fill unoptimized className="object-contain" />
+        </span>
+      ) : (
+        <span aria-hidden className="size-7 shrink-0 rounded-full bg-(--c) shadow-sm" />
+      )}
       <span className="min-w-0">
         <span className="block truncate text-sm font-bold">{name}</span>
         <span className="block text-xs text-muted">{songCount} 曲</span>

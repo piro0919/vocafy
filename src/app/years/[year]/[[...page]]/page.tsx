@@ -5,9 +5,9 @@ import { Pager, pageOf } from '@/components/pager';
 import { SongList } from '@/components/song-list';
 import { songsOfYear } from '@/lib/catalog';
 
-// 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す。
+// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 年の画面はビルドのときには作らず、最初に開かれたときに作って残す
-export const revalidate = 3600;
+export const revalidate = false;
 
 export function generateStaticParams() {
   return [];

@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
 import { SongList } from '@/components/song-list';
 import { findVoice } from '@/lib/catalog';
+import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
 
-// 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す。
+// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 歌声の画面はビルドのときには作らず、最初に開かれたときに作って残す
-export const revalidate = 3600;
+export const revalidate = false;
 
 export function generateStaticParams() {
   return [];
@@ -31,14 +33,34 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]/[[..
   const found = await findVoice(Number(id), page);
   if (!found || found.songs.length === 0) notFound();
   const { voice, songs, total } = found;
+  const art = voiceArt(voice.id);
   return (
     <>
       <div className="flex items-end gap-4 pt-4 pb-4 sm:pb-6">
-        <span
-          aria-hidden
-          className="mb-1 size-10 shrink-0 rounded-full shadow-md sm:size-12"
-          style={{ background: voiceColor(voice.name) }}
-        />
+        {art ? (
+          // キャラの色の丸の上に絵を載せ、丸からはみ出させる
+          <span className="relative size-24 shrink-0 sm:size-32">
+            <span
+              aria-hidden
+              className="absolute inset-x-[6%] bottom-0 aspect-square rounded-full opacity-45"
+              style={{ background: voiceColor(voice.name) }}
+            />
+            <Image
+              src={art}
+              alt=""
+              fill
+              unoptimized
+              priority
+              className="object-contain object-bottom"
+            />
+          </span>
+        ) : (
+          <span
+            aria-hidden
+            className="mb-1 size-10 shrink-0 rounded-full shadow-md sm:size-12"
+            style={{ background: voiceColor(voice.name) }}
+          />
+        )}
         <div>
           <Heading as="h1" size="page" eyebrow="Voice">
             {voice.name}

@@ -9,9 +9,9 @@ import { findProducer, queueOf } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { Heading } from '@/components/heading';
 
-// 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す。
+// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // ボカロPの画面はビルドのときには作らず、最初に開かれたときに作って残す
-export const revalidate = 3600;
+export const revalidate = false;
 
 export function generateStaticParams() {
   return [];

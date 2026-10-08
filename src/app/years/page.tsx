@@ -5,8 +5,8 @@ import { years } from '@/lib/catalog';
 
 export const metadata: Metadata = { title: '年代' };
 
-// 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す
-export const revalidate = 3600;
+// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
+export const revalidate = false;
 
 /** 年の一覧。新しい年から */
 export default async function YearsPage() {

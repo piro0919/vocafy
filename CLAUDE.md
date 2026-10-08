@@ -38,6 +38,7 @@ pnpm dev
 - 取り込みは、YouTube の動画が流せるかを oEmbed で確かめる（`scripts/lib/youtube.ts`）。流せない動画の曲はニコニコに切り替え、ニコニコにも無ければ DB から消す。結果は `data/raw/youtube/oembed.json` に残し、30日たったものだけ確かめ直す。初回は 1万4千本で数分かかった。2026-10-09 の時点で流せないのは 25 本
   - 埋め込みを止めている動画（動画は生きているが、ほかのサイトでは流せない）にも oEmbed が 200 以外を返すかは未確認
 - **本番の DB への取り込み**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、書く時間は短い（200 曲の種で 6 秒ほど）。VocaDB の返事が手元に残っていれば、取りに行く時間もかからない
+  - **取り込んだら、本番を配備し直す**（`vercel redeploy vocafy.kkweb.io --target production --scope kkweb`）。トップ以外のページは時間では作り直さず、配備ごとに作り置くので、配備し直さないと新しい曲が出ない。Vercel は新しい配備で作り置きを捨てる（[ISR の資料](https://vercel.com/docs/incremental-static-regeneration)「each new deployment uses its own ISR cache」）
 - **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない
 - 検査は `pnpm typecheck` / `lint` / `format:check` / `knip` / `test` / `test:e2e`。E2E は本番のビルドを立ち上げ、手元の DB を読む。CI は Postgres を立てて `db/fixture.sql`（DECO＊27 の4曲）を入れる
 
@@ -84,7 +85,11 @@ pnpm dev
   - 歌声は、VocaDB の baseVoicebank を根までたどってキャラごとにまとめる（`vocalist.base_id`）。「重音テト (Unknown)」のような根は、エンジン違いの版をまとめるためのもので、画面では「 (Unknown)」を外す。キャラの色は `src/lib/voice-color.ts`
   - あいうえお順の行は `src/lib/kana.ts` で決めて取り込みのときに書く（`song.kana_row`）。漢字で始まる曲名は VocaDB のローマ字の曲名の頭の字で決める
 - データの正本は VocaDB。Notion は使わない。数万曲になりうる規模で、Notion の API では取り込みに時間がかかりすぎるため
-- DB は Postgres（本番は Neon、手元は `compose.yaml`）。サイトは実行時に DB を読み、ページは1時間キャッシュする（ISR）。ボカロPの画面はビルドのときには作らず、最初に開かれたときに作る
+- DB は Postgres（本番は Neon、手元は `compose.yaml`）。サイトは実行時に DB を読む。トップだけ1時間ごとに作り直し（日付で中身が変わるため）、ほかのページは配備まで作り置く（`revalidate = false`）。ボカロPの画面などはビルドのときには作らず、最初に開かれたときに作る
+  - 費用の理由（2026-10-09 に調べた）: Neon の無料プランは計算時間が月 100 CU 時間で、DB は最後に読まれてから5分動く。1000枚を超えるページを1時間ごとに作り直すと DB が休めず、0.25 CU で起きっぱなしだと月 約 186 CU 時間になって、月の途中で DB が止まる。使い切ると月が変わるまで止まる
+  - 本番の DB の容量の上限は、プランの表示（1GB）ではなく `neon.max_cluster_size` の 512MB。2026-10-09 で 20MB
+- 動画の表紙（YouTube・ニコニコ）は Vercel の画像変換を通さず直接出す（`fade-image.tsx`）。変換は1枚・作り置きの期限ごとに料金がかかり（[画像変換の料金](https://vercel.com/docs/image-optimization/limits-and-pricing)、1000回あたり $0.05〜）、曲数に比例して膨らむため。変換を続けるボカロPの画像などは、作り置きの期限を31日にしている（`next.config.ts`）
+- Vercel は kk-web チームの Pro。月 $20 の使用枠を、チームの全プロジェクトで共有する
   - トップとボカロPの一覧はビルドのときに作るので、ビルドに DATABASE_URL が要る。CI は Postgres を立てて `db/fixture.sql` を入れる
 - 左のメニューと下のタブは、ホーム・ボカロP・歌声・年代の4つ（2026-10-09）。5つ目はお気に入りを作ったときのために空けておく。あいうえお順はトップの札から行く
 - 最初の公開は最小（トップ・ボカロPの一覧と詳細・再生）から回す

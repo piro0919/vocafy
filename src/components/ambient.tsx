@@ -17,8 +17,8 @@ import { usePlayer } from './player/player-provider';
  *
  * サムネイルそのものをぼかして敷くのは改変にあたり、YouTube の規約で使えない。ここでは絵から
  * 主な色を2つ計算し、その色だけで背景を作る。絵はどこにも描かない。
- * 色を読むには同じドメインの画像が要るので、Next.js の画像変換（/_next/image）を通して小さく読む。
- * YouTube のサーバーへ取りに行くのは、表示しているサムネイルと同じく画像変換の側だけ
+ * 色を読むには、ほかのサイトから読むことを許した画像か、同じドメインの画像が要る。YouTube の表紙は許されているので
+ * 直接読み、ほかは Next.js の画像変換（/_next/image）を通して小さく読む
  */
 
 /** 色が決まらないとき（何も流していないときなど）に敷く、Vocafy の差し色のグラデーション */
@@ -69,8 +69,16 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
       if (cache.has(image) || loading.has(image)) continue;
       loading.add(image);
       const img = new Image();
-      // 画像変換が受け付ける幅（imageSizes）と画質（75）に合わせる
-      img.src = `/_next/image?url=${encodeURIComponent(image)}&w=64&q=75`;
+      if (image.startsWith('https://i.ytimg.com/')) {
+        // YouTube の表紙はほかのサイトからも読める（Access-Control-Allow-Origin: *）ので、変換を通さず直接読む。
+        // 画像変換は1枚ごとに料金がかかるので、1曲で4枚読むここでは使わない
+        img.crossOrigin = 'anonymous';
+        img.src = image;
+      } else {
+        // ニコニコの表紙やボカロPの画像は直接は色を読めないので、画像変換で同じドメインにして読む。
+        // 画像変換が受け付ける幅（imageSizes）と画質（75）に合わせる
+        img.src = `/_next/image?url=${encodeURIComponent(image)}&w=64&q=75`;
+      }
       const done = (found: Colors | null) => {
         loading.delete(image);
         cache.set(image, found);

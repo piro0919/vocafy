@@ -5,8 +5,8 @@ import { voices } from '@/lib/catalog';
 
 export const metadata: Metadata = { title: '歌声' };
 
-// 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す
-export const revalidate = 3600;
+// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
+export const revalidate = false;
 
 /** 歌声の一覧。曲の多い順に、すべての歌声を並べる（トップには 5 曲以上の上位だけを出している） */
 export default async function VoicesPage() {

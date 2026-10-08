@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { WebSite, WithContext } from 'schema-dts';
-import { MoreLink, VoiceCard, YearCard } from '@/components/browse-cards';
+import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
 import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
@@ -8,6 +8,7 @@ import { Shelf } from '@/components/shelf';
 import { dailyMix, kanaRows, onThisDay, today, voices, years } from '@/lib/catalog';
 import { ROW_LABEL, ROWS } from '@/lib/kana';
 import { SITE_URL } from '@/lib/site';
+import { voiceArt } from '@/lib/voice-art';
 
 /** サイトそのものの情報 */
 const jsonLd: WithContext<WebSite> = {
@@ -17,8 +18,8 @@ const jsonLd: WithContext<WebSite> = {
   url: SITE_URL,
 };
 
-// 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す。
-// きょうの日付の曲と日替わりの並びも、この作り直しに合わせて日付が変わってから1時間以内に替わる
+// きょうの日付の曲と日替わりの並びが毎日変わるので、トップだけは1時間ごとに作り直す（日付が変わってから1時間以内に替わる）。
+// DB を読むのは1日24回まで。ほかのページは時間では作り直さない
 export const revalidate = 3600;
 
 /**
@@ -59,7 +60,8 @@ export default async function Home() {
         <MixWall songs={mix} />
       </section>
 
-      {/* 歌声。曲の多い順に、キャラの色の札で並べる。歌っている曲が少ない歌声まで並べると長くなるので 5 曲以上 */}
+      {/* 歌声。絵のあるキャラを、曲の多い順に絵の札で並べる。ほかの歌声は「すべて表示」から。
+          スマホの幅では 3 列 × 3 段、4 列の幅では 4 段までにする（縦に長くなりすぎる） */}
       <section className="mt-10 sm:mt-14">
         <div className="mb-3 flex items-end gap-3">
           <Heading eyebrow="Voices">歌声</Heading>
@@ -67,13 +69,19 @@ export default async function Home() {
             <MoreLink href="/voices" />
           </div>
         </div>
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           {voiceList
-            .filter((v) => v.songCount >= 5)
+            .flatMap((v) => {
+              const art = voiceArt(v.id);
+              return art ? [{ ...v, art }] : [];
+            })
             .slice(0, 18)
-            .map((v) => (
-              <li key={v.id}>
-                <VoiceCard {...v} />
+            .map((v, i) => (
+              <li
+                key={v.id}
+                className={i >= 16 ? 'hidden lg:block' : i >= 9 ? 'max-sm:hidden' : undefined}
+              >
+                <CharacterCard {...v} />
               </li>
             ))}
         </ul>
