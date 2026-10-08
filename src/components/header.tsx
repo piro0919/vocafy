@@ -4,7 +4,8 @@ import { type ReactNode, useEffect, useState } from 'react';
 
 /**
  * 上の帯。ページの一番上では透明にして、画面の上部の色の背景（ambient.tsx）とつなげる。
- * 少しでもスクロールしたら、下を流れる中身が透けるすりガラスにする（YouTube Music と同じ）
+ * 少しでもスクロールしたら、下を流れる中身が透けるすりガラスにする（YouTube Music と同じ）。
+ * 彩度は上げない。背景の色は画面に固定してあり帯の後ろにも残るので、上げると帯だけが下より鮮やかに浮く
  */
 export function Header({ children }: { children: ReactNode }) {
   const [scrolled, setScrolled] = useState(false);
@@ -19,7 +20,7 @@ export function Header({ children }: { children: ReactNode }) {
   return (
     <header
       className={`chrome-header sticky top-0 z-20 flex items-center gap-4 px-4 py-3 transition-[background-color,backdrop-filter] duration-200 sm:px-8 ${
-        scrolled ? 'bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150' : 'bg-transparent'
+        scrolled ? 'bg-sidebar/60 backdrop-blur-lg' : 'bg-transparent'
       }`}
     >
       {children}
