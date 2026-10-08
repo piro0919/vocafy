@@ -115,7 +115,9 @@ export function OnThisDay({
 
 /**
  * 日替わりの無作為の並び。表紙をすき間なく敷き詰めた壁で、押すとその曲を流す。
- * 曲名は、マウスを載せたときと、流している曲にだけ重ねる。スマホの幅では半分だけ出す（縦に長くなりすぎる）
+ * 曲名は、マウスを載せたときと、流している曲にだけ重ねる。どの幅でも3〜4行に収める。
+ * 4行の壁は、絵ばかりが続いて見る気が薄れ、下の区画も押し下げた（2026-10-09）。
+ * パソコンは 6 列で 18 曲、それより狭い幅は 12 曲だけ出す
  */
 export function MixWall({ songs }: { songs: DatedItem[] }) {
   const { current, playing } = usePlayer();
@@ -131,7 +133,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             aria-label={`${song.title}（${song.producerName}）`}
             title={song.title}
             onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-out active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-sm:hidden' : ''}`}
+            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-out active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : ''}`}
           >
             <FadeImage
               src={song.thumb}

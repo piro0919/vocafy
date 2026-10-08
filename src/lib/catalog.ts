@@ -256,8 +256,11 @@ export const onThisDay = cache(
   },
 );
 
-/** 日替わりの並びに混ぜる、評価点の上位の曲の数と、その上位の範囲 */
-const MIX_POPULAR = 6;
+/**
+ * 日替わりの並びに混ぜる、評価点の上位の曲の数と、その上位の範囲。
+ * 18 曲のうち 5 曲（4分の1ほど）。混ぜすぎると、いつも同じ有名曲が出てフラットの建前が崩れる
+ */
+const MIX_POPULAR = 5;
 const MIX_POPULAR_POOL = 500;
 
 /**

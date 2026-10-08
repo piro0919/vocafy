@@ -29,7 +29,7 @@ export default async function Home() {
   const date = today();
   const [day, mix, voiceList, yearList, rowCounts] = await Promise.all([
     onThisDay(date, 8),
-    dailyMix(date, 24),
+    dailyMix(date, 18),
     voices(),
     years(),
     kanaRows(),
