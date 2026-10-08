@@ -12,8 +12,7 @@ const KEYS: [string, string][] = [
 export function KeyboardHelp() {
   return (
     <section className="mt-7 hidden sm:mt-10 md:block">
-      <h2 className="mb-1 font-bold">キーボード操作</h2>
-      <p className="mb-3 text-sm text-muted">曲を流しているときに使えます。</p>
+      <h2 className="mb-3 font-bold">キーボード操作</h2>
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 px-3 text-sm">
         {KEYS.map(([key, label]) => (
           <div key={key} className="contents">
