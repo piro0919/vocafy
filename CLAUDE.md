@@ -11,7 +11,7 @@
 - 本番と手元の DB は、0003 まで当てて取り直してある（2026-10-08）。表を変えたら、push より先に下の「本番の DB への取り込み」の手順で本番にも当てる。当てずに push すると、ビルドで表の列が無く配備が落ちる
 - 本番と手元の DB に、VocaDB の評価点の上位 800 曲を種にして取り込んだ（2026-10-09）。ボカロP 291 人・12954 曲（YouTube 9355・ニコニコだけ 3599）・歌声 768。DB は 16MB で、Neon の無料プランの上限（0.5GB）にはまだ遠い
   - 種と曲数: 200 → 5415 曲、400 → 8170 曲、800 → 12954 曲。種を2倍にしても曲は1.5倍ほど（新しく入る人ほど曲が少ない）
-  - 2万曲を超える前に、年・あいうえお順・ボカロPの一覧を、続きを読み込む形に変える（いまは全部を1枚に並べている）
+  - 年・歌声・あいうえお順の一覧は 300 曲ずつのページに分けた（`/kana/abc/2` の形）。ボカロPの一覧はまだ全員を1枚に並べている
 - 公開中。GitHub は piro0919/vocafy（公開）の main、Vercel は kk-web チームの vocafy。main に push すると本番に出る
 - 手元に push していないコミットがあるかは `git status` で確かめる。push は本人がする
 
@@ -35,6 +35,8 @@ pnpm dev
 
 - `.env.local` は `DATABASE_URL=postgres://vocafy:vocafy@localhost:5434/vocafy` の1行
 - VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。新しい曲を拾うときは消して取り直す
+- 取り込みは、YouTube の動画が流せるかを oEmbed で確かめる（`scripts/lib/youtube.ts`）。流せない動画の曲はニコニコに切り替え、ニコニコにも無ければ DB から消す。結果は `data/raw/youtube/oembed.json` に残し、30日たったものだけ確かめ直す。初回は 1万4千本で数分かかった。2026-10-09 の時点で流せないのは 25 本
+  - 埋め込みを止めている動画（動画は生きているが、ほかのサイトでは流せない）にも oEmbed が 200 以外を返すかは未確認
 - **本番の DB への取り込み**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、書く時間は短い（200 曲の種で 6 秒ほど）。VocaDB の返事が手元に残っていれば、取りに行く時間もかからない
 - **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない
 - 検査は `pnpm typecheck` / `lint` / `format:check` / `knip` / `test` / `test:e2e`。E2E は本番のビルドを立ち上げ、手元の DB を読む。CI は Postgres を立てて `db/fixture.sql`（DECO＊27 の4曲）を入れる

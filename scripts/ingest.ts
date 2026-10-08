@@ -3,6 +3,7 @@ import { scriptEnv } from './lib/env';
 import { isEligible, producersOf, sourcesOf, vocalistsOf } from './lib/pick';
 import { rowOf } from '../src/lib/kana';
 import { artist, rootVoicebank, songsByArtist, topRatedSongs, type VdbSong } from './lib/vocadb';
+import { deadYouTube } from './lib/youtube';
 
 /**
  * VocaDB から曲を取り込む。
@@ -50,6 +51,27 @@ async function main() {
     `曲 ${all.length}（YouTube ${youtube}・ニコニコだけ ${all.length - youtube}）、ボカロP ${producers.size} 人（全曲を取ったのは ${producerIds.size} 人）、歌声 ${vocalists.size}`,
   );
   if (dry) return;
+
+  // YouTube で消えた・埋め込めない動画は使わない。ニコニコに本家があればニコニコで流し、無ければその曲を外す。
+  // VocaDB の登録は、YouTube の側で動画が消えてもそのまま残っていることがある（--dry では確かめない）
+  const dead = await deadYouTube(all.flatMap((s) => sourcesOf(s)?.youtubeId ?? []));
+  const sources = new Map(
+    all.map((s) => {
+      const found = sourcesOf(s)!;
+      return [
+        s.id,
+        found.youtubeId && dead.has(found.youtubeId) ? { ...found, youtubeId: null } : found,
+      ];
+    }),
+  );
+  const dropped = all.filter((s) => {
+    const found = sources.get(s.id)!;
+    return !found.youtubeId && !found.niconicoId;
+  });
+  const kept = all.filter((s) => !dropped.includes(s));
+  console.log(
+    `YouTube で流せない動画 ${dead.size} 本（ニコニコに切り替え ${dead.size - dropped.length} 曲・外す ${dropped.length} 曲）`,
+  );
 
   // 画像は全曲を取ったボカロPの分だけ取りに行く。合作の相手は名前だけ
   const pictures = new Map<number, string | null>();
@@ -116,26 +138,28 @@ async function main() {
          seed = song.seed or excluded.seed, imported_at = now()`,
       [
         JSON.stringify(
-          all.map((s) => {
-            const sources = sourcesOf(s)!;
+          kept.map((s) => {
+            const source = sources.get(s.id)!;
             return {
               id: s.id,
               name: s.name,
               published_on: s.publishDate?.slice(0, 10) ?? null,
               rating_score: s.ratingScore,
               favorited_times: s.favoritedTimes,
-              youtube_id: sources.youtubeId,
-              niconico_id: sources.niconicoId,
+              youtube_id: source.youtubeId,
+              niconico_id: source.niconicoId,
               seed: seedIds.has(s.id),
               kana_row: rowOf(s.name, s.names?.find((n) => n.language === 'Romaji')?.value),
-              niconico_thumb: sources.niconicoThumb,
+              niconico_thumb: source.niconicoThumb,
             };
           }),
         ),
       ],
     );
     // 作者と歌声は、VocaDB の今の登録に合わせて入れ直す
-    const ids = all.map((s) => s.id);
+    const ids = kept.map((s) => s.id);
+    // 前の取り込みで入ったが、今回は流せないと分かった曲を消す（作者と歌声のつながりも一緒に消える）
+    await client.query('delete from song where id = any($1)', [dropped.map((s) => s.id)]);
     await client.query('delete from song_producer where song_id = any($1)', [ids]);
     await client.query('delete from song_vocalist where song_id = any($1)', [ids]);
     await client.query(
@@ -143,7 +167,7 @@ async function main() {
        select distinct * from jsonb_to_recordset($1) as x(song_id integer, producer_id integer)`,
       [
         JSON.stringify(
-          all.flatMap((s) => producersOf(s).map((p) => ({ song_id: s.id, producer_id: p.id }))),
+          kept.flatMap((s) => producersOf(s).map((p) => ({ song_id: s.id, producer_id: p.id }))),
         ),
       ],
     );
@@ -154,7 +178,7 @@ async function main() {
        order by song_id, vocalist_id, support`,
       [
         JSON.stringify(
-          all.flatMap((s) =>
+          kept.flatMap((s) =>
             vocalistsOf(s).map((v) => ({ song_id: s.id, vocalist_id: v.id, support: v.support })),
           ),
         ),
