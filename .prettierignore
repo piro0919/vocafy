@@ -1,0 +1,14 @@
+.next
+out
+node_modules
+pnpm-lock.yaml
+.lefthook
+.playwright-mcp
+public
+*.ico
+*.png
+# next dev が書き直す
+AGENTS.md
+# Notion から書き出したもの。手で直さない
+src/data/catalog.json
+data/raw

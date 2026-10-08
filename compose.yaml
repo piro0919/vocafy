@@ -1,0 +1,19 @@
+# 手元の DB。本番は Neon の Postgres で、ここは同じ版の素の Postgres を立てるだけ。
+# 接続先は .env.local の DATABASE_URL（postgres://vocafy:vocafy@localhost:5434/vocafy）
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: vocafy
+      POSTGRES_PASSWORD: vocafy
+      POSTGRES_DB: vocafy
+    ports:
+      - '5434:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'vocafy']
+      interval: 2s
+      retries: 30
+volumes:
+  db:

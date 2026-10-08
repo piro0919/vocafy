@@ -1,0 +1,112 @@
+# 手元のフック（lefthook）と同じ確かめと、E2E テストをかける。
+# main には直接 push しているので、push でも回す（プルリクエストだけだと一度も走らない）。
+# 依存の更新（Renovate）の PR は手元を通らないので、ここが唯一の確かめ
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: vocafy
+          POSTGRES_PASSWORD: vocafy
+          POSTGRES_DB: vocafy
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U vocafy" --health-interval 2s --health-retries 30
+    env:
+      # 小さな台帳（db/fixture.sql）を入れた CI 用の DB。ビルドがトップとボカロPの一覧を作るのに要る
+      DATABASE_URL: postgres://vocafy:vocafy@localhost:5434/vocafy
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      - run: pnpm format:check
+
+      - run: pnpm secretlint
+
+      - run: pnpm test
+
+      # 使われていないファイル・エクスポート・パッケージ
+      - run: pnpm knip
+
+      - run: pnpm migrate
+
+      - run: psql "$DATABASE_URL" -f db/fixture.sql
+
+      # トップとボカロPの一覧はビルドのときに DB から作る
+      - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: vocafy
+          POSTGRES_PASSWORD: vocafy
+          POSTGRES_DB: vocafy
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U vocafy" --health-interval 2s --health-retries 30
+    env:
+      # 小さな台帳（db/fixture.sql）を入れた CI 用の DB。ビルドがトップとボカロPの一覧を作るのに要る
+      DATABASE_URL: postgres://vocafy:vocafy@localhost:5434/vocafy
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm migrate
+
+      - run: psql "$DATABASE_URL" -f db/fixture.sql
+
+      # 本番のビルドを立ち上げて、パソコンとスマホの幅で確かめる（playwright.config.ts）
+      - run: pnpm test:e2e
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

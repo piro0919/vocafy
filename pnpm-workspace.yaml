@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+  lefthook: true
+  sharp: false
+  unrs-resolver: false
+
+# 出てから3日たっていない版は入れない（Renovate の共通設定と同じ待ち）。乗っ取られた版は
+# たいてい数時間から数日で取り下げられる。単位は分
+minimumReleaseAge: 4320
