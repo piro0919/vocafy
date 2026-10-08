@@ -2,21 +2,23 @@
 
 # Vocafy
 
-ボカロ曲（合成音声の曲）を、ボカロPごとに聴ける音楽プレイヤー風のサイト。Janify（`~/Repository/janify`）のボーカロイド版。公開先は <https://vocafy.kkweb.io/> の予定。
-2026-10-08 に壁打ちで合意し、同じセッションで手元で動くところまで作った。
+ボカロ曲（合成音声の曲）を、ボカロPごとに聴ける音楽プレイヤー風のサイト。Janify（`~/Repository/janify`）のボーカロイド版。公開先は <https://vocafy.kkweb.io/> 。
+2026-10-08 に壁打ちで合意し、同じセッションで公開まで進めた。
 
 ## 現在地（2026-10-08）
 
 - Janify を複製して始めた。画面の形は Janify に縛られない（アルバムの概念が無い）
 - 画面は、トップ（人気曲・ボカロP）・ボカロP（一覧と詳細）・設定・利用規約・プライバシーポリシー。プレイヤーは全ページ共通
-- 手元の DB に、評価点の上位 200 曲を種にして取り込んだ。ボカロP 110 人・5415 曲（YouTube で流せる 4292・ニコニコだけ 1123）・歌声 415
-- まだ公開していない。Neon のプロジェクトと Vercel のプロジェクトが無い
+- 本番と手元の DB に、評価点の上位 200 曲を種にして取り込んだ。ボカロP 110 人・5415 曲（YouTube で流せる 4292・ニコニコだけ 1123）・歌声 415
+- 2026-10-08 に公開した。GitHub は piro0919/vocafy（公開）の main、Vercel は kk-web チームの vocafy
+  - DB は Vercel の Neon 連携で作った vocafy-db（無料プラン・iad1）。DATABASE_URL などは連携が Vercel に入れている
+  - 本番の DB への取り込みは手元から流す。`vercel env pull <ファイル> --environment production` で接続先を取り、DATABASE_URL_UNPOOLED を DATABASE_URL として `pnpm migrate` と `pnpm ingest` を走らせる
+  - `vercel project add` で作ったプロジェクトは framework が空で、ビルドは通るのに全ページが 404 になった。API で framework を nextjs にして直した
+  - vocafy.kkweb.io の CNAME と `_vercel` の TXT は、Janify の `.env.local` の CLOUDFLARE_API_TOKEN で API から足した
 
 ## 残りの作業（上から順に）
 
-1. 公開する。Neon に Vocafy 用のプロジェクトを作り、Vercel につなぎ、vocafy.kkweb.io を割り当てる
-   - kkweb.io は Janify と同じく、サブドメインを足すたびに `_vercel` の TXT が要る
-   - 本番の DB に `pnpm migrate` と `pnpm ingest` を当てる（DATABASE_URL を本番に向けて手元から流す）
+1. 本人に画面を触ってもらい、直したい点を聞く
 2. アイコンと OG 画像を Vocafy 用に作り直す。いまは Janify のもの（`src/app/icon.png` など）が入っている。差し色も Janify の薄紫のまま
 3. ニコニコの補欠の再生。埋め込みプレイヤーは postMessage で操作できるが、公式の資料が無い（非公式の解説: <https://zenn.dev/xpadev/articles/8f742c8f8ce3d0> 、2022年時点）。曲の終わりを知らせる合図が記事に無く、再生状態の数値から読む必要がある。まず実物で終わりを検知できるか試す
 4. 種の線を足す。ニコニコの伝説入り（100万再生以上）と、YouTube の再生数。YouTube の再生数は VocaDB が持つ動画の ID から videos.list で引ける（50本で1単位）。ニコニコの再生数は公式の検索 API がいまも使えるか未確認
