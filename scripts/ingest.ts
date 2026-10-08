@@ -2,34 +2,61 @@ import pg from 'pg';
 import { scriptEnv } from './lib/env';
 import { isEligible, producersOf, sourcesOf, vocalistsOf } from './lib/pick';
 import { rowOf } from '../src/lib/kana';
-import { artist, rootVoicebank, songsByArtist, topRatedSongs, type VdbSong } from './lib/vocadb';
+import { legendVideos } from './lib/niconico';
+import {
+  artist,
+  rootVoicebank,
+  songByNiconico,
+  songsByArtist,
+  topRatedSongs,
+  type VdbSong,
+} from './lib/vocadb';
 import { deadYouTube } from './lib/youtube';
 
 /**
  * VocaDB から曲を取り込む。
  *
- *   pnpm ingest --seeds 200          評価点の上位 200 曲を種にして、DB に書く
+ *   pnpm ingest --seeds 200          評価点の上位 200 曲と、ニコニコの伝説入りを種にして、DB に書く
  *   pnpm ingest --seeds 400 --dry    書かずに、何曲・何人になるかだけ数える
+ *   pnpm ingest --no-legend          ニコニコの伝説入りを種に入れない
  *
  * 種の曲からボカロPを拾い、その人の曲をすべて入れる。線を下げる（--seeds を増やす）ときは、先に --dry で
  * 増え方を数える。ボカロPが1人増えると、その人の全曲がついてくるので、曲数は種の数に比例しない。
  *
- * いまの種は VocaDB の評価点だけ。ニコニコの伝説入りと YouTube の再生数の線は、次の周回で足す
+ * 種は VocaDB の評価点と、ニコニコの伝説入り（100万再生以上）。YouTube の再生数の線は、次の周回で足す
  */
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+/**
+ * ニコニコの伝説入り（100万再生以上）の動画を VocaDB の曲に引き当てる。VocaDB に無い動画や、
+ * 入れられない曲（カバー・作者や歌声の分からない曲など）は落とす
+ */
+async function legendSongs(): Promise<VdbSong[]> {
+  const videos = await legendVideos();
+  const songs: VdbSong[] = [];
+  let done = 0;
+  for (const id of videos) {
+    const song = await songByNiconico(id);
+    if (song && isEligible(song)) songs.push(song);
+    if (++done % 100 === 0) console.log(`  伝説入り ${done}/${videos.length}: ${songs.length} 曲`);
+  }
+  return songs;
+}
+
 async function main() {
   const seedCount = Number(arg('seeds') ?? 200);
   const dry = process.argv.includes('--dry');
 
-  const seeds = (await topRatedSongs(seedCount)).filter(isEligible);
+  const rated = (await topRatedSongs(seedCount)).filter(isEligible);
+  const legends = process.argv.includes('--no-legend') ? [] : await legendSongs();
+  const seeds = [...new Map([...rated, ...legends].map((s) => [s.id, s])).values()];
   const seedIds = new Set(seeds.map((s) => s.id));
   const producerIds = new Set(seeds.flatMap((s) => producersOf(s).map((p) => p.id)));
   console.log(
-    `種: ${seeds.length} 曲（上位 ${seedCount} 曲のうち入れられるもの）、ボカロP ${producerIds.size} 人`,
+    `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲）、ボカロP ${producerIds.size} 人`,
   );
 
   // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）

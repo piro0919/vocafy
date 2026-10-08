@@ -92,6 +92,16 @@ export async function topRatedSongs(limit: number): Promise<VdbSong[]> {
   return songs.slice(0, limit);
 }
 
+/** ニコニコの動画の ID から、その動画が登録された曲を引く。VocaDB に無ければ null */
+export async function songByNiconico(videoId: string): Promise<VdbSong | null> {
+  return get<VdbSong | null>('/songs/byPv', {
+    fields: SONG_FIELDS.fields,
+    lang: SONG_FIELDS.lang,
+    pvService: 'NicoNicoDouga',
+    pvId: videoId,
+  });
+}
+
 /** その人が関わったオリジナル曲をすべて。作者かどうかは呼ぶ側で確かめる */
 export async function songsByArtist(artistId: number): Promise<VdbSong[]> {
   const songs: VdbSong[] = [];
