@@ -38,13 +38,16 @@ export function CoverCard({
         {round ? (
           <div className="relative aspect-square overflow-hidden rounded-full bg-surface">
             {cover ? (
+              // 幅を決め打ちにして、画像の候補を普通の画面用と高精細の画面用の2通りだけにする。
+              // fill と sizes で書くと幅の候補が11通り並び、461 人の一覧では候補の住所だけで HTML が 0.5MB になった。
+              // 枠は最大 180px ほどなので、192 を基準にする
               <FadeImage
                 src={cover}
                 alt=""
-                fill
+                width={192}
+                height={192}
                 loading={eager ? 'eager' : 'lazy'}
-                sizes="(min-width: 640px) 180px, 40vw"
-                className="object-cover"
+                className="size-full object-cover"
               />
             ) : (
               <span
