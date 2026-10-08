@@ -44,10 +44,13 @@ export default async function Home() {
 
       {hero && (
         <section className="mt-2 sm:mt-4">
-          <div className="mb-3">
+          <div className="mb-3 flex items-end gap-3">
             <Heading eyebrow="On This Day">
               {month}月{dayOfMonth}日に生まれた曲
             </Heading>
+            <div className="ml-auto">
+              <MoreLink href={`/days/${date.slice(5)}`} />
+            </div>
           </div>
           <OnThisDay hero={hero} rest={rest.slice(0, 11)} today={date} />
         </section>

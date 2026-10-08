@@ -334,6 +334,20 @@ export const songsOfYear = cache(async (year: number, page: number): Promise<Pag
   );
 });
 
+/** 月日（MM-DD）。2月29日も含む。日付として無い月日（02-31 など）は通るが、曲が無いので空になる */
+const MONTH_DAY = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** その月日（MM-DD）に投稿された流せる曲。どの年の曲も含めて、新しい順 */
+export const songsOfDay = cache(async (monthDay: string, page: number): Promise<Paged> => {
+  if (!MONTH_DAY.test(monthDay)) return { songs: [], total: 0 };
+  return paged(
+    "and to_char(s.published_on, 'MM-DD') = $1",
+    'q.published_on desc, q.id',
+    [monthDay],
+    page,
+  );
+});
+
 export type Voice = { id: number; name: string; songCount: number };
 
 /** キャラごとにまとめた歌声の id（元の歌声の id）。取り込む前の行は base_id が null なので、自分を根として扱う */

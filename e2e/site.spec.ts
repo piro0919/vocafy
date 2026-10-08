@@ -48,6 +48,15 @@ test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => 
   await expect(page.locator('main button').first()).toBeVisible();
 });
 
+test('日付の画面に、その月日の曲が年ごとに並ぶ', async ({ page }) => {
+  // 手元の DB でも CI の台帳（DECO＊27 の「ゴーストルール」が 2016-01-08）でも、1月8日の曲はある
+  await page.goto('/days/01-08');
+  await expect(page.getByRole('heading', { level: 1, name: '1月8日に生まれた曲' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: '2016' })).toBeVisible();
+  const res = await page.goto('/days/13-01');
+  expect(res?.status()).toBe(404);
+});
+
 test('歌声の画面と、あいうえお順の行の画面が開く', async ({ page }) => {
   // 初音ミク（VocaDB の id は 1）。版の違いは、この画面にまとめて並ぶ
   await page.goto('/voices/1');
