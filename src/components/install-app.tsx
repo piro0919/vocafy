@@ -86,12 +86,27 @@ export function InstallApp() {
 }
 
 /**
- * 上の帯の「アプリ」のボタン。設定の画面だけでは気づかれにくいので、上の帯にも置く。
- * 追加できる端末で、まだ入れていないときだけ出す。スマホはアイコンだけ、パソコンは字も添える
+ * 「アプリ」のボタン。設定の画面だけでは気づかれにくいので、スマホは上の帯に、パソコンは左のメニューにも置く。
+ * 追加できる端末で、まだ入れていないときだけ出す。menu は左のメニューの1行（ほかの項目と同じ形）
  */
-export function InstallButton({ className = '' }: { className?: string }) {
+export function InstallButton({ className = '', menu }: { className?: string; menu?: boolean }) {
   const { available, start, guide } = useInstall();
   if (!available) return null;
+  if (menu) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={start}
+          className={`flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold text-muted transition-colors duration-150 hover:text-foreground ${className}`}
+        >
+          <Icon name="install" />
+          アプリを入れる
+        </button>
+        {guide}
+      </>
+    );
+  }
   return (
     <>
       <button

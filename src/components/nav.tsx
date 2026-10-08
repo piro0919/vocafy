@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
+import { InstallButton } from './install-app';
 
 const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'ホーム', icon: 'home' },
@@ -68,6 +69,8 @@ export function Sidebar() {
         ))}
         {/* YouTube と同じく、設定は左のメニューの下の方に置く */}
         <div className="mt-auto py-3">
+          {/* パソコンは上の帯を出さないので、アプリの案内はここに置く（出せるときだけ出る） */}
+          <InstallButton menu />
           <Link
             href="/settings"
             className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-150 ${

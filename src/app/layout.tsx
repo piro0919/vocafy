@@ -82,7 +82,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                   <Header>
                     <HeaderBar />
                   </Header>
-                  <main className="flex-1 px-4 pb-12 sm:px-8">{children}</main>
+                  <main className="flex-1 px-4 pb-12 sm:px-8 md:pt-6">{children}</main>
                   {/* 375px の幅でも、リンク3つと © が1行に収まるよう、スマホでは字を小さく、間を詰める */}
                   <footer className="page-bottom flex items-center gap-x-3 px-4 pt-6 text-[11px] whitespace-nowrap text-muted sm:gap-x-6 sm:px-8 sm:text-sm">
                     <Link href="/terms" className="hover:text-foreground">

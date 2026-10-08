@@ -3,7 +3,8 @@
 import { type ReactNode, useEffect, useState } from 'react';
 
 /**
- * 上の帯。ページの一番上では透明にして、画面の上部の色の背景（ambient.tsx）とつなげる。
+ * 上の帯。スマホだけで出す（パソコンは左のメニューに全部あるので出さない。上の余白は main の md:pt-6 が持つ）。
+ * ページの一番上では透明にして、画面の上部の色の背景（ambient.tsx）とつなげる。
  * 少しでもスクロールしたら、下を流れる中身が透けるすりガラスにする（YouTube Music と同じ）。
  * 彩度は上げない。背景の色は画面に固定してあり帯の後ろにも残るので、上げると帯だけが下より鮮やかに浮く
  */
@@ -19,7 +20,7 @@ export function Header({ children }: { children: ReactNode }) {
 
   return (
     <header
-      className={`chrome-header sticky top-0 z-20 flex items-center gap-4 px-4 py-3 transition-[background-color,backdrop-filter] duration-200 sm:px-8 ${
+      className={`chrome-header sticky top-0 z-20 flex items-center gap-4 px-4 py-3 md:hidden transition-[background-color,backdrop-filter] duration-200 sm:px-8 ${
         scrolled ? 'bg-sidebar/60 backdrop-blur-lg' : 'bg-transparent'
       }`}
     >
