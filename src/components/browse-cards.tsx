@@ -16,18 +16,20 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
       className="group flex h-full flex-col rounded-2xl border border-line/60 bg-[color-mix(in_oklab,var(--c)_14%,var(--sidebar))] p-1.5 transition-[background-color,scale] duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--c)_24%,var(--sidebar))] active:scale-95"
     >
-      <span className="relative block aspect-square overflow-hidden rounded-xl bg-[color-mix(in_oklab,var(--c)_22%,var(--sidebar))]">
+      {/* キャラが枠から飛び出して見えるように、絵は板と円より上へはみ出させる（札の上の縁も越える）。
+          並べる側で、段と段の間をはみ出す分だけ空ける */}
+      <span className="relative block aspect-square">
         <span
           aria-hidden
-          className="absolute inset-x-[8%] top-[18%] aspect-square rounded-full bg-(--c) opacity-45"
+          className="absolute inset-x-0 top-[24%] bottom-0 rounded-xl bg-[color-mix(in_oklab,var(--c)_22%,var(--sidebar))]"
         />
-        <FadeImage
-          src={art}
-          alt=""
-          fill
-          unoptimized
-          className="object-contain p-1.5 transition-[opacity,scale,translate] duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105"
+        <span
+          aria-hidden
+          className="absolute bottom-[5%] left-1/2 aspect-square w-[76%] -translate-x-1/2 rounded-full bg-(--c) opacity-45"
         />
+        <span className="absolute inset-x-0 top-[-16%] bottom-0 origin-bottom transition-[scale,translate] duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105">
+          <FadeImage src={art} alt="" fill unoptimized className="object-contain object-bottom" />
+        </span>
       </span>
       <span className="min-w-0 px-1.5 pt-2 pb-1">
         <span className="block truncate text-sm font-bold">{name}</span>
