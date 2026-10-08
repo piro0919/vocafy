@@ -61,58 +61,86 @@ async function main() {
   const client = await pool.connect();
   try {
     await client.query('begin');
-    for (const p of producers.values()) {
-      await client.query(
-        `insert into producer (id, name, picture, complete) values ($1, $2, $3, $4)
-         on conflict (id) do update set name = excluded.name,
-           picture = coalesce(excluded.picture, producer.picture),
-           complete = producer.complete or excluded.complete`,
-        [p.id, p.name, pictures.get(p.id) ?? null, producerIds.has(p.id)],
-      );
-    }
-    for (const v of vocalists.values()) {
-      await client.query(
-        `insert into vocalist (id, name, kind) values ($1, $2, $3)
-         on conflict (id) do update set name = excluded.name, kind = excluded.kind`,
-        [v.id, v.name, v.artistType],
-      );
-    }
-    for (const s of all) {
-      const sources = sourcesOf(s)!;
-      await client.query(
-        `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)
-         on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
-           rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
-           youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
-           seed = song.seed or excluded.seed, imported_at = now()`,
-        [
-          s.id,
-          s.name,
-          s.publishDate?.slice(0, 10) ?? null,
-          s.ratingScore,
-          s.favoritedTimes,
-          sources.youtubeId,
-          sources.niconicoId,
-          seedIds.has(s.id),
-        ],
-      );
-      // 作者と歌声は、VocaDB の今の登録に合わせて入れ直す
-      await client.query('delete from song_producer where song_id = $1', [s.id]);
-      await client.query('delete from song_vocalist where song_id = $1', [s.id]);
-      for (const p of new Map(producersOf(s).map((p) => [p.id, p])).values()) {
-        await client.query('insert into song_producer (song_id, producer_id) values ($1, $2)', [
-          s.id,
-          p.id,
-        ]);
-      }
-      for (const v of new Map(vocalistsOf(s).map((v) => [v.id, v])).values()) {
-        await client.query(
-          'insert into song_vocalist (song_id, vocalist_id, support) values ($1, $2, $3)',
-          [s.id, v.id, v.support],
-        );
-      }
-    }
+    // 1行ずつ書くと、海の向こうの DB（Neon）では往復が数万回になって1時間を超える。表ごとに JSON にまとめて1回で書く
+    await client.query(
+      `insert into producer (id, name, picture, complete)
+       select * from jsonb_to_recordset($1) as x(id integer, name text, picture text, complete boolean)
+       on conflict (id) do update set name = excluded.name,
+         picture = coalesce(excluded.picture, producer.picture),
+         complete = producer.complete or excluded.complete`,
+      [
+        JSON.stringify(
+          [...producers.values()].map((p) => ({
+            id: p.id,
+            name: p.name,
+            picture: pictures.get(p.id) ?? null,
+            complete: producerIds.has(p.id),
+          })),
+        ),
+      ],
+    );
+    await client.query(
+      `insert into vocalist (id, name, kind)
+       select * from jsonb_to_recordset($1) as x(id integer, name text, kind text)
+       on conflict (id) do update set name = excluded.name, kind = excluded.kind`,
+      [
+        JSON.stringify(
+          [...vocalists.values()].map((v) => ({ id: v.id, name: v.name, kind: v.artistType })),
+        ),
+      ],
+    );
+    await client.query(
+      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed)
+       select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
+         rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean)
+       on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
+         rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
+         youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
+         seed = song.seed or excluded.seed, imported_at = now()`,
+      [
+        JSON.stringify(
+          all.map((s) => {
+            const sources = sourcesOf(s)!;
+            return {
+              id: s.id,
+              name: s.name,
+              published_on: s.publishDate?.slice(0, 10) ?? null,
+              rating_score: s.ratingScore,
+              favorited_times: s.favoritedTimes,
+              youtube_id: sources.youtubeId,
+              niconico_id: sources.niconicoId,
+              seed: seedIds.has(s.id),
+            };
+          }),
+        ),
+      ],
+    );
+    // 作者と歌声は、VocaDB の今の登録に合わせて入れ直す
+    const ids = all.map((s) => s.id);
+    await client.query('delete from song_producer where song_id = any($1)', [ids]);
+    await client.query('delete from song_vocalist where song_id = any($1)', [ids]);
+    await client.query(
+      `insert into song_producer (song_id, producer_id)
+       select distinct * from jsonb_to_recordset($1) as x(song_id integer, producer_id integer)`,
+      [
+        JSON.stringify(
+          all.flatMap((s) => producersOf(s).map((p) => ({ song_id: s.id, producer_id: p.id }))),
+        ),
+      ],
+    );
+    await client.query(
+      `insert into song_vocalist (song_id, vocalist_id, support)
+       select distinct on (song_id, vocalist_id) *
+       from jsonb_to_recordset($1) as x(song_id integer, vocalist_id integer, support boolean)
+       order by song_id, vocalist_id, support`,
+      [
+        JSON.stringify(
+          all.flatMap((s) =>
+            vocalistsOf(s).map((v) => ({ song_id: s.id, vocalist_id: v.id, support: v.support })),
+          ),
+        ),
+      ],
+    );
     await client.query('commit');
     console.log('DB に書きました');
   } catch (error) {
