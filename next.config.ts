@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'i.ytimg.com', pathname: '/vi/**' },
+      // ニコニコの表紙。YouTube に本家が無い曲だけ使う
+      { protocol: 'https', hostname: 'nicovideo.cdn.nimg.jp', pathname: '/thumbnails/**' },
       // ボカロPの画像（VocaDB）
       { protocol: 'https', hostname: 'static.vocadb.net', pathname: '/img/**' },
     ],

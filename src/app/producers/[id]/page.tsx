@@ -7,7 +7,6 @@ import { JsonLd } from '@/components/json-ld';
 import { ProducerPlayer } from '@/components/producer-player';
 import { findProducer, queueOf } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
-import { thumbOf } from '@/lib/thumb';
 import { Heading } from '@/components/heading';
 
 // 台帳は取り込みのときにしか変わらないので、1時間は作ったページを使い回す。
@@ -30,7 +29,7 @@ export default async function ProducerPage({ params }: PageProps<'/producers/[id
   if (!found) notFound();
   const { producer, songs } = found;
   const queue = queueOf(songs, producer);
-  const cover = queue[0] ? thumbOf(queue[0].videoId) : null;
+  const cover = queue[0]?.thumb ?? null;
 
   const jsonLd: WithContext<MusicGroup> = {
     '@context': 'https://schema.org',

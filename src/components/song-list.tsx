@@ -2,7 +2,6 @@
 
 import type { QueueItem } from '@/lib/catalog';
 import { useRouter } from 'next/navigation';
-import { thumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
@@ -50,13 +49,13 @@ export function SongList({
               className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
             >
               <FadeImage
-                src={thumbOf(song.videoId)}
+                src={song.thumb}
                 alt=""
                 // 最初の列は画面に入った時点で見えるので、遅延読み込みにしない
                 loading={i < 8 ? 'eager' : 'lazy'}
                 width={85}
                 height={48}
-                className="aspect-video shrink-0 rounded"
+                className="aspect-video shrink-0 rounded object-cover"
               />
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5 text-sm font-bold">

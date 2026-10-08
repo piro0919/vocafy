@@ -20,9 +20,13 @@ test('トップからボカロPの画面へ移り、その人の曲が並ぶ', a
   await expect(page.getByRole('heading', { level: 1, name: 'DECO＊27' })).toBeVisible();
 });
 
-test('ニコニコにしか本家が無い曲は、押せない', async ({ page }) => {
+test('ニコニコにしか本家が無い曲は、ニコニコのプレイヤーで流す', async ({ page }) => {
   await page.goto('/producers/45');
-  await expect(page.getByRole('button', { name: /罪と罰/ })).toBeDisabled();
+  await page.getByRole('button', { name: /罪と罰/ }).click();
+  await expect(page.locator('[data-player-frame] iframe')).toHaveAttribute(
+    'src',
+    /embed\.nicovideo\.jp\/watch\/sm8166339/,
+  );
 });
 
 test('再生を押すと、プレイヤーが画面の置き場所に出る', async ({ page }) => {

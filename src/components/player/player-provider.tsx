@@ -16,7 +16,9 @@ import type { QueueItem } from '@/lib/catalog';
 import { EASE_OUT, prefersReducedMotion } from '@/lib/motion';
 import { Icon } from '../icon';
 import { PlayerBar } from './player-bar';
-import { loadYouTubeApi, type YTPlayer } from './youtube';
+import type { Engine, EngineEvents } from './engine';
+import { createNiconicoEngine } from './niconico';
+import { createYouTubeEngine } from './youtube';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
 
@@ -27,7 +29,7 @@ import { useWakeLock } from './use-wake-lock';
  */
 export type PlayContext = 'list' | 'pending';
 
-/** 時刻は YouTube から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
+/** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
 
 type PlayerContext = {
@@ -35,7 +37,7 @@ type PlayerContext = {
   index: number;
   current: QueueItem | null;
   playing: boolean;
-  /** 曲を選んでから音が出るまで。最初の1曲は YouTube の仕組みの読み込みも待つ */
+  /** 曲を選んでから音が出るまで。最初の1曲は YouTube の仕組みやニコニコのプレイヤーの読み込みも待つ */
   loading: boolean;
   context: PlayContext;
   /** 前の曲・次の曲へ進めるか。ループ（全体）なら最後の曲からも次へ進める */
@@ -158,6 +160,8 @@ const HIDDEN = 'pointer-events-none invisible translate-y-4 opacity-0';
 /**
  * ページを移っても再生が続く、全ページ共通のプレイヤー。ルートのレイアウトに1つだけ置く。
  *
+ * 流す仕組みは曲ごとに YouTube かニコニコ（YouTube に本家が無い曲だけ）で、engine.ts の形で同じように動かす。
+ *
  * YouTube の規約で、プレイヤーは 200×200 以上で常に見えていなければならず、上に何も重ねられない。
  * そのため小さく畳まず、右下に 200 の高さで出したままにする（dock）。ボカロPの画面では、
  * その人の曲を流している間だけ、画面内の置き場所（slot）に重ねて大きく出す。
@@ -169,7 +173,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [context, setContext] = useState<PlayContext>('list');
-  // 曲送り（YouTube の onStateChange から呼ばれる）でも、いまの並びの種類を引き継ぐ
+  // 曲送り（プレイヤーの知らせから呼ばれる）でも、いまの並びの種類を引き継ぐ
   const contextRef = useRef<PlayContext>('list');
   useEffect(() => {
     contextRef.current = context;
@@ -191,8 +195,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const positionRef = useRef(0);
 
   const frame = useRef<HTMLDivElement>(null);
-  const player = useRef<YTPlayer | null>(null);
-  // YouTube の onStateChange は作ったときの関数を持ち続けるので、今の順番待ちは ref にも持つ
+  const player = useRef<Engine | null>(null);
+  // プレイヤーの知らせは作ったときの関数を持ち続けるので、今の順番待ちは ref にも持つ
   const state = useRef({ queue, index });
   // 曲が終わったときの処理。load から自分自身を呼ぶことになるので、ref を通して呼ぶ
   const onEnded = useRef(() => {});
@@ -218,51 +222,35 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIndex(at);
     setLoading(true);
     setTime({ current: 0, duration: 0, at: performance.now() });
-    const videoId = items[at].videoId;
-    if (player.current) {
-      player.current.loadVideoById(videoId);
+    const { service, videoId } = items[at];
+    // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える
+    if (player.current?.service === service) {
+      player.current.load(videoId);
       return;
     }
-    void loadYouTubeApi().then((YT) => {
-      if (!frame.current || player.current) return;
-      const el = document.createElement('div');
-      frame.current.replaceChildren(el);
-      player.current = new YT.Player(el, {
-        videoId,
-        // 表示はなるべく減らす。操作は Vocafy の帯でするので、YouTube の操作バーは出さない。
-        // 上部の題名と「YouTube で見る」のロゴは、パラメータでは消せない（消そうとして上に重ねるのは規約違反）
-        playerVars: {
-          autoplay: 1,
-          playsinline: 1,
-          rel: 0, // 一時停止中の関連動画を、同じチャンネルのものに絞る
-          controls: 0,
-          iv_load_policy: 3, // 動画の注釈を出さない
-          disablekb: 1, // プレイヤー内のキー操作で帯の表示とずれないようにする
-        },
-        events: {
-          onReady: (e) => {
-            // 残しておいた音量で始める
-            const { volume, muted } = soundRef.current ?? { volume: 100, muted: false };
-            e.target.setVolume(volume);
-            if (muted) e.target.mute();
-            e.target.playVideo();
-          },
-          onStateChange: ({ data }) => {
-            if (data === YT.PlayerState.PLAYING) {
-              setPlaying(true);
-              setLoading(false);
-            }
-            if (data === YT.PlayerState.PAUSED) setPlaying(false);
-            if (data === YT.PlayerState.ENDED) onEnded.current();
-          },
-          // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
-          onError: () => {
-            setLoading(false);
-            onEnded.current();
-          },
-        },
-      });
-    });
+    player.current?.destroy();
+    player.current = null;
+    if (!frame.current) return;
+    const events: EngineEvents = {
+      onPlaying: () => {
+        setPlaying(true);
+        setLoading(false);
+      },
+      onPaused: () => setPlaying(false),
+      onEnded: () => onEnded.current(),
+      // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
+      onError: () => {
+        setLoading(false);
+        onEnded.current();
+      },
+    };
+    const sound = soundRef.current ?? { volume: 100, muted: false };
+    player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
+      frame.current,
+      videoId,
+      sound,
+      events,
+    );
   }, []);
 
   /**
@@ -294,8 +282,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // 曲が終わったら、ループが1曲なら頭から、そうでなければ流す順の次の曲へ（最後なら先頭に戻る）
     onEnded.current = () => {
       if (playbackRef.current?.repeat === 'one' && player.current) {
-        player.current.seekTo(0, true);
-        player.current.playVideo();
+        player.current.seek(0);
+        player.current.play();
         return;
       }
       next(1);
@@ -336,7 +324,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => {
     player.current?.destroy();
     player.current = null;
-    frame.current?.replaceChildren();
     state.current = { queue: [], index: 0 };
     setQueue([]);
     setIndex(0);
@@ -349,8 +336,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!playing) return;
     const id = setInterval(() => {
       const p = player.current;
-      if (p)
-        setTime({ current: p.getCurrentTime(), duration: p.getDuration(), at: performance.now() });
+      if (p) setTime({ ...p.time(), at: performance.now() });
     }, 500);
     return () => clearInterval(id);
   }, [playing]);
@@ -485,11 +471,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleShuffle,
       playQueue: load,
       adoptQueue: adopt,
-      toggle: () => (playing ? player.current?.pauseVideo() : player.current?.playVideo()),
+      toggle: () => (playing ? player.current?.pause() : player.current?.play()),
       step,
       close,
       seek: (seconds) => {
-        player.current?.seekTo(seconds, true);
+        player.current?.seek(seconds);
         setTime((t) => ({ ...t, current: seconds, at: performance.now() }));
       },
       time,
@@ -502,7 +488,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setSound(next);
         saveVolume(volume, false);
         player.current?.setVolume(volume);
-        player.current?.unMute();
+        player.current?.setMuted(false);
       },
       toggleMute: () => {
         const now = soundRef.current ?? sound;
@@ -510,8 +496,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         soundRef.current = next;
         setSound(next);
         saveVolume(next.volume, next.muted);
-        if (next.muted) player.current?.mute();
-        else player.current?.unMute();
+        player.current?.setMuted(next.muted);
       },
       setSlot,
     }),
@@ -540,7 +525,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       {children}
       {/*
         右下の窓の上に付ける帯。押すと流しているボカロPの画面に移り、そこで大きく出る。
-        窓の中は YouTube のプレイヤーで、押すと YouTube 側の操作になるので、入口は窓の外に置く
+        窓の中は YouTube かニコニコのプレイヤーで、押すとそちらの操作になるので、入口は窓の外に置く
       */}
       <div
         aria-hidden={mode !== 'dock'}

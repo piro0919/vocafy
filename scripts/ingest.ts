@@ -105,12 +105,12 @@ async function main() {
       ],
     );
     await client.query(
-      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, kana_row)
+      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, kana_row, niconico_thumb)
        select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
          rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean,
-         kana_row text)
+         kana_row text, niconico_thumb text)
        on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
-         kana_row = excluded.kana_row,
+         kana_row = excluded.kana_row, niconico_thumb = excluded.niconico_thumb,
          rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
          youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
          seed = song.seed or excluded.seed, imported_at = now()`,
@@ -128,6 +128,7 @@ async function main() {
               niconico_id: sources.niconicoId,
               seed: seedIds.has(s.id),
               kana_row: rowOf(s.name, s.names?.find((n) => n.language === 'Romaji')?.value),
+              niconico_thumb: sources.niconicoThumb,
             };
           }),
         ),

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { thumbOf } from '@/lib/thumb';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { FadeImage } from '../fade-image';
 import { Icon } from '../icon';
@@ -71,11 +70,11 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <FadeImage
               key={item.videoId}
-              src={thumbOf(item.videoId)}
+              src={item.thumb}
               alt=""
               width={71}
               height={40}
-              className="hidden aspect-video rounded sm:block"
+              className="hidden aspect-video rounded object-cover sm:block"
             />
             <div className="min-w-0">
               <Marquee className="text-sm font-bold">{item.title}</Marquee>

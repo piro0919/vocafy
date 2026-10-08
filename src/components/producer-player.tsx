@@ -31,6 +31,8 @@ export function ProducerPlayer({
 }) {
   const { current, playing, context, playQueue, adoptQueue, toggle } = usePlayer();
   const here = current?.producerId === producerId;
+  // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
+  const playableIds = new Set(queue.map((q) => q.songId));
 
   // 曲の一覧から押して来たときは、その1曲だけを流している。曲は止めずに、順番待ちをこの人の曲にする
   useEffect(() => {
@@ -88,7 +90,7 @@ export function ProducerPlayer({
       <ol className="-mx-3">
         {songs.map((song, i) => {
           const active = here && current?.songId === song.id;
-          const playable = song.youtubeId !== null;
+          const playable = playableIds.has(song.id);
           return (
             <li
               key={song.id}
@@ -100,11 +102,7 @@ export function ProducerPlayer({
                 type="button"
                 disabled={!playable}
                 {...NO_RESTORE}
-                title={
-                  playable
-                    ? undefined
-                    : 'この曲は本家の動画がニコニコにしか無く、まだ再生できません'
-                }
+                title={playable ? undefined : 'この曲は本家の動画の情報が足りず、再生できません'}
                 onClick={() => playable && start(song.id)}
                 className="flex w-full min-w-0 items-center gap-4 px-3 py-2 text-left disabled:cursor-default disabled:text-muted/50"
               >

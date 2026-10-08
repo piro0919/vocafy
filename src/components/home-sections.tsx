@@ -1,7 +1,6 @@
 'use client';
 
 import type { DatedItem } from '@/lib/catalog';
-import { thumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
@@ -43,7 +42,7 @@ export function OnThisDay({
       >
         <span className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-surface shadow-lg shadow-black/10 sm:w-1/2 lg:w-full">
           <FadeImage
-            src={thumbOf(hero.videoId)}
+            src={hero.thumb}
             alt=""
             fill
             sizes="(min-width: 64rem) 40vw, (min-width: 40rem) 50vw, 100vw"
@@ -85,11 +84,11 @@ export function OnThisDay({
                   className={`flex w-full min-w-0 items-center gap-3 rounded-xl p-1.5 text-left transition-[background-color,scale] duration-150 ease-out active:scale-[0.98] ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'}`}
                 >
                   <FadeImage
-                    src={thumbOf(song.videoId)}
+                    src={song.thumb}
                     alt=""
                     width={85}
                     height={48}
-                    className="aspect-video shrink-0 rounded-lg"
+                    className="aspect-video shrink-0 rounded-lg object-cover"
                   />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5 text-sm font-bold">
@@ -135,7 +134,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-out active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-sm:hidden' : ''}`}
           >
             <FadeImage
-              src={thumbOf(song.videoId)}
+              src={song.thumb}
               alt=""
               fill
               sizes="(min-width: 64rem) 16vw, (min-width: 40rem) 25vw, 33vw"

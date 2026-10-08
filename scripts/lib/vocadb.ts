@@ -30,6 +30,8 @@ type VdbPv = {
   service: string;
   pvType: string;
   pvId: string;
+  /** 表紙の画像。ニコニコは動画の ID から組み立てられないので、これを使う */
+  thumbUrl?: string;
   disabled?: boolean;
 };
 

@@ -45,17 +45,22 @@ export function vocalistsOf(song: VdbSong) {
 
 /**
  * 流せる本家の動画。YouTube を先に、無ければニコニコ。転載（Reprint）は使わない。
+ * ニコニコの表紙は動画の ID から組み立てられないので、VocaDB の持つ住所も拾う。
  * 本家の動画が1本も無い曲は null
  */
-export function sourcesOf(
-  song: VdbSong,
-): { youtubeId: string | null; niconicoId: string | null } | null {
+export function sourcesOf(song: VdbSong): {
+  youtubeId: string | null;
+  niconicoId: string | null;
+  niconicoThumb: string | null;
+} | null {
   const original = (service: string) =>
-    song.pvs?.find((pv) => pv.service === service && pv.pvType === 'Original' && !pv.disabled)
-      ?.pvId ?? null;
-  const youtubeId = original('Youtube');
-  const niconicoId = original('NicoNicoDouga');
-  return youtubeId || niconicoId ? { youtubeId, niconicoId } : null;
+    song.pvs?.find((pv) => pv.service === service && pv.pvType === 'Original' && !pv.disabled);
+  const youtubeId = original('Youtube')?.pvId ?? null;
+  const niconico = original('NicoNicoDouga');
+  const niconicoId = niconico?.pvId ?? null;
+  return youtubeId || niconicoId
+    ? { youtubeId, niconicoId, niconicoThumb: niconico?.thumbUrl ?? null }
+    : null;
 }
 
 /** Vocafy に入れられる曲か。オリジナル曲で、作者と合成音声の歌声があり、本家の動画がある */

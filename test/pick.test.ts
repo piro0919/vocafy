@@ -26,7 +26,11 @@ function song(over: Partial<VdbSong> = {}): VdbSong {
 
 describe('sourcesOf', () => {
   it('YouTube とニコニコの本家を両方拾う', () => {
-    expect(sourcesOf(song())).toEqual({ youtubeId: 'vnw8zURAxkU', niconicoId: 'sm9714351' });
+    expect(sourcesOf(song())).toEqual({
+      youtubeId: 'vnw8zURAxkU',
+      niconicoId: 'sm9714351',
+      niconicoThumb: null,
+    });
   });
 
   it('転載は本家として使わない', () => {
@@ -43,8 +47,14 @@ describe('sourcesOf', () => {
   });
 
   it('ニコニコにしか本家が無い曲も入れる', () => {
-    const s = song({ pvs: [{ service: 'NicoNicoDouga', pvType: 'Original', pvId: 'sm1' }] });
-    expect(sourcesOf(s)).toEqual({ youtubeId: null, niconicoId: 'sm1' });
+    const s = song({
+      pvs: [{ service: 'NicoNicoDouga', pvType: 'Original', pvId: 'sm1', thumbUrl: 'https://t/1' }],
+    });
+    expect(sourcesOf(s)).toEqual({
+      youtubeId: null,
+      niconicoId: 'sm1',
+      niconicoThumb: 'https://t/1',
+    });
     expect(isEligible(s)).toBe(true);
   });
 });
