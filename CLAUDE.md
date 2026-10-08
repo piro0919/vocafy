@@ -9,7 +9,8 @@
 
 - 画面は、トップ・ボカロP（一覧と詳細）・年・歌声・あいうえお順の行・設定・利用規約・プライバシーポリシー。プレイヤーは全ページ共通
 - 本番と手元の DB は、0003 まで当てて取り直してある（2026-10-08）。表を変えたら、push より先に下の「本番の DB への取り込み」の手順で本番にも当てる。当てずに push すると、ビルドで表の列が無く配備が落ちる
-- 本番と手元の DB に、VocaDB の評価点の上位 200 曲を種にして取り込んだ。ボカロP 110 人・5415 曲（YouTube で流せる 4292・ニコニコだけ 1123）・歌声 415
+- 本番と手元の DB に、VocaDB の評価点の上位 400 曲を種にして取り込んだ（2026-10-09）。ボカロP 182 人・8170 曲（YouTube 6583・ニコニコだけ 1587）・歌声 511。DB は 13MB で、Neon の無料プランの上限（0.5GB）にはまだ遠い
+  - 種 200 のときは 110 人・5415 曲。種を2倍にして曲は1.5倍だった（新しく入る人ほど曲が少ない）
 - 公開中。GitHub は piro0919/vocafy（公開）の main、Vercel は kk-web チームの vocafy。main に push すると本番に出る
 - 手元に push していないコミットがあるかは `git status` で確かめる。push は本人がする
 
@@ -27,13 +28,13 @@
 pnpm install
 pnpm db:up               # 手元の Postgres（compose.yaml、ポート 5434）
 pnpm migrate             # db/migrations/ を当てる
-pnpm ingest --seeds 200  # VocaDB から取り込む。--dry で数えるだけ
+pnpm ingest --seeds 400  # VocaDB から取り込む。--dry で数えるだけ。いまの線は 400
 pnpm dev
 ```
 
 - `.env.local` は `DATABASE_URL=postgres://vocafy:vocafy@localhost:5434/vocafy` の1行
 - VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。新しい曲を拾うときは消して取り直す
-- **本番の DB への取り込み**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、200 曲の種で 6 秒ほど
+- **本番の DB への取り込み**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、書く時間は短い（200 曲の種で 6 秒ほど）。VocaDB の返事が手元に残っていれば、取りに行く時間もかからない
 - **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない
 - 検査は `pnpm typecheck` / `lint` / `format:check` / `knip` / `test` / `test:e2e`。E2E は本番のビルドを立ち上げ、手元の DB を読む。CI は Postgres を立てて `db/fixture.sql`（DECO＊27 の4曲）を入れる
 
