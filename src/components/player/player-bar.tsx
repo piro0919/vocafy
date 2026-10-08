@@ -13,6 +13,7 @@ import { Marquee } from '../marquee';
 
 /**
  * 画面の下に出したままにする操作の帯。曲を選ぶと下からせり上がり、閉じると下へ消える。
+ * スマホでは下のタブの上に載せ、タブと合わせて一枚の浮いた板に見せる。タブが隠れたときは、帯だけで角の丸い板になる（globals.css）。
  * 消えきるまでは最後の曲を出しておくので、item は今の曲ではなく「最後に出した曲」。
  * 最初の1曲でもせり上がって見えるよう、曲を選ぶ前から閉じた状態で置いておく
  */
@@ -37,7 +38,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     <div
       aria-hidden={!open}
       inert={!open}
-      className={`chrome-bottom fixed inset-x-0 bottom-14 z-30 h-16 border-t border-line/60 bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity] duration-300 ease-(--ease-out) md:bottom-0 ${
+      className={`chrome-bottom chrome-bar fixed inset-x-3 bottom-[4.25rem] z-30 h-16 rounded-t-2xl border border-b-0 border-line/60 bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity] duration-300 ease-(--ease-out) md:inset-x-0 md:bottom-0 md:rounded-none md:border-x-0 ${
         open ? '' : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >
@@ -230,8 +231,9 @@ function Progress({
         if (e.key === 'ArrowLeft') onSeek(Math.max(0, current - 5));
       }}
       // 当たり判定は見た目の線より広くとる。線は帯の上の縁に重ねる。
-      // スマホは指で狙うので、上へ広げる（下へ広げると曲名や再生ボタンに重なる）
-      className="group absolute inset-x-0 -top-2 h-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
+      // スマホは指で狙うので、上へ広げる（下へ広げると曲名や再生ボタンに重なる）。
+      // スマホでは帯の上の角が丸いので、線が角からはみ出さないよう左右を内に寄せる
+      className="group absolute inset-x-0 -top-2 h-4 max-md:inset-x-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
     >
       <span
         ref={bubble}

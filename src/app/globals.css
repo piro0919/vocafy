@@ -90,7 +90,9 @@ body {
       backdrop-filter 200ms;
   }
   .chrome-tabs {
-    transition: translate 250ms var(--ease-out);
+    transition:
+      translate 250ms var(--ease-out),
+      border-radius 250ms var(--ease-out);
   }
   .chrome-bottom {
     transition:
@@ -102,8 +104,9 @@ body {
   html[data-chrome='hidden'] .chrome-header {
     translate: 0 -100%;
   }
+  /* タブは画面の下から 0.75rem 浮いているので、その分も足して下へ出しきる */
   html[data-chrome='hidden'] .chrome-tabs {
-    translate: 0 100%;
+    translate: 0 calc(100% + 0.75rem);
   }
   html[data-chrome='hidden'] .chrome-bottom {
     margin-bottom: -3.5rem;
@@ -119,6 +122,22 @@ body {
   }
   html[data-watch] .chrome-bottom {
     margin-bottom: -3.5rem;
+  }
+
+  /*
+   * 再生の帯が出ているあいだは、帯とタブを一枚の板に見せる。タブの上の角と上の線を消し、帯の下の端に付ける。
+   * タブが隠れているあいだは、帯だけで角の丸い板にする
+   */
+  html:is([data-player='slot'], [data-player='dock']):not([data-chrome='hidden'], [data-watch])
+    .chrome-tabs {
+    border-top-color: transparent;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  html:is([data-chrome='hidden'], [data-watch]) .chrome-bar {
+    border-bottom-width: 1px;
+    border-bottom-left-radius: 1rem;
+    border-bottom-right-radius: 1rem;
   }
 }
 
@@ -240,13 +259,13 @@ body {
  * 本文の下に同じだけ余白を足す（右下の窓は、高さ 200 の動画と上の帯 2.25rem）。印は PlayerProvider が付ける
  */
 .page-bottom {
-  padding-bottom: calc(3.5rem + 2rem);
+  padding-bottom: calc(0.75rem + 3.5rem + 2rem);
 }
 html[data-player='slot'] .page-bottom {
-  padding-bottom: calc(3.5rem + 4rem + 2rem);
+  padding-bottom: calc(0.75rem + 3.5rem + 4rem + 2rem);
 }
 html[data-player='dock'] .page-bottom {
-  padding-bottom: calc(3.5rem + 4rem + 200px + 2.25rem + 2rem);
+  padding-bottom: calc(0.75rem + 3.5rem + 4rem + 200px + 2.25rem + 2rem);
 }
 @media (min-width: 48rem) {
   .page-bottom {
