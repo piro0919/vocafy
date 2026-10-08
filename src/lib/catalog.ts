@@ -88,7 +88,7 @@ export function queueOf(songs: Song[], producer?: { id: number; name: string }):
   });
 }
 
-/** 一覧に出すボカロP（全曲を取り込んだ人）。曲の評価点の合計が高い順 */
+/** 一覧に出すボカロP（全曲を取り込んだ人）。最近曲を出した人から（人気の順にはしない） */
 export const producers = cache(async (): Promise<Producer[]> => {
   const { rows } = await db().query<{
     id: number;
@@ -102,11 +102,11 @@ export const producers = cache(async (): Promise<Producer[]> => {
     join song s on s.id = sp.song_id
     where p.complete
     group by p.id
-    order by sum(s.rating_score) desc`);
+    order by max(s.published_on) desc nulls last, p.id`);
   return rows.map((r) => ({ id: r.id, name: r.name, picture: r.picture, songCount: r.song_count }));
 });
 
-/** ボカロPと、その人の曲（評価点の高い順）。合作の相手として名前だけ入った人は出さない */
+/** ボカロPと、その人の曲（新しい順）。合作の相手として名前だけ入った人は出さない */
 export const findProducer = cache(
   async (id: number): Promise<{ producer: Producer; songs: Song[] } | undefined> => {
     if (!Number.isSafeInteger(id)) return;
@@ -119,7 +119,7 @@ export const findProducer = cache(
     const songs = await db().query<SongRow>(
       `${SONG_SELECT}
        where exists (select 1 from song_producer sp where sp.song_id = s.id and sp.producer_id = $1)
-       order by s.rating_score desc, s.id`,
+       order by s.published_on desc nulls last, s.id`,
       [id],
     );
     return {
@@ -175,7 +175,7 @@ export function today(): string {
 
 /**
  * きょうと同じ月日に投稿された曲。曲の少ない日は、前後の日へ1日ずつ広げて min 曲に届くまで補う（3日まで）。
- * 月日の近さは、うるう年の 2000 年に置いて測る（2月29日の曲も拾える）。並びは近い日から、同じ日の中は古い年から
+ * 月日の近さは、うるう年の 2000 年に置いて測る（2月29日の曲も拾える）。並びは近い日から、同じ日の中は新しい年から
  */
 export const onThisDay = cache(async (date: string, min: number): Promise<DatedItem[]> => {
   const { rows } = await db().query<QueueRow & { distance: number }>(
@@ -190,7 +190,7 @@ export const onThisDay = cache(async (date: string, min: number): Promise<DatedI
        ) t
      ) x
      where distance <= 3
-     order by distance, published_on, id`,
+     order by distance, published_on desc, id`,
     [date],
   );
   const reach = [0, 1, 2, 3].find((d) => rows.filter((r) => r.distance <= d).length >= min) ?? 3;
@@ -206,21 +206,21 @@ export const dailyMix = cache(async (date: string, limit: number): Promise<Dated
   return rows.map(toItem);
 });
 
-/** 投稿された年と、その年の流せる曲の数。古い年から */
+/** 投稿された年と、その年の流せる曲の数。新しい年から */
 export const years = cache(async (): Promise<{ year: number; count: number }[]> => {
   const { rows } = await db().query<{ year: number; count: number }>(
     `select extract(year from published_on)::int as year, count(*)::int as count
      from song where youtube_id is not null and published_on is not null
-     group by 1 order by 1`,
+     group by 1 order by 1 desc`,
   );
   return rows;
 });
 
-/** その年に投稿された流せる曲。投稿の早い順 */
+/** その年に投稿された流せる曲。新しい順 */
 export const songsOfYear = cache(async (year: number): Promise<DatedItem[]> => {
   if (!Number.isSafeInteger(year)) return [];
   const { rows } = await db().query<QueueRow>(
-    `${QUEUE_SELECT} and extract(year from s.published_on) = $1 order by s.published_on, s.id`,
+    `${QUEUE_SELECT} and extract(year from s.published_on) = $1 order by s.published_on desc, s.id`,
     [year],
   );
   return rows.map(toItem);
@@ -250,7 +250,7 @@ export const voices = cache(async (): Promise<Voice[]> => {
   return rows;
 });
 
-/** その歌声（キャラ）が主に歌っている流せる曲。投稿の早い順 */
+/** その歌声（キャラ）が主に歌っている流せる曲。新しい順 */
 export const findVoice = cache(
   async (id: number): Promise<{ voice: Voice; songs: DatedItem[] } | undefined> => {
     if (!Number.isSafeInteger(id)) return;
@@ -260,7 +260,7 @@ export const findVoice = cache(
       `${QUEUE_SELECT} and exists (
          select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
          where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)
-       order by s.published_on nulls last, s.id`,
+       order by s.published_on desc nulls last, s.id`,
       [id],
     );
     return { voice, songs: rows.map(toItem) };

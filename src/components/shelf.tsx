@@ -124,7 +124,7 @@ export function Shelf({
       <div
         ref={track}
         onScroll={update}
-        className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8 md:-ml-[calc(2rem+--spacing(63))] md:scroll-pl-[calc(2rem+--spacing(63))] md:pl-[calc(2rem+--spacing(63))] [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8 md:-ml-[calc(2rem+--spacing(63))] md:scroll-pl-[calc(2rem+--spacing(63))] md:pl-[calc(2rem+--spacing(63))] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>

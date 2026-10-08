@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps<'/years/[year]'>): 
   return { title: `${(await params).year}年の曲` };
 }
 
-/** その年に投稿された曲。投稿の早い順 */
+/** その年に投稿された曲。新しい順 */
 export default async function YearPage({ params }: PageProps<'/years/[year]'>) {
   const year = Number((await params).year);
   const songs = await songsOfYear(year);
