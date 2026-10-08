@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
+import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from '../fade-image';
 import { Icon } from '../icon';
 import { PlaybackMode } from './playback-mode';
@@ -70,7 +71,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <FadeImage
               key={item.videoId}
-              src={item.thumb}
+              src={smallThumbOf(item)}
               alt=""
               width={71}
               height={40}

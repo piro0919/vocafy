@@ -1,6 +1,7 @@
 'use client';
 
 import type { DatedItem } from '@/lib/catalog';
+import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
@@ -84,7 +85,7 @@ export function OnThisDay({
                   className={`flex w-full min-w-0 items-center gap-3 rounded-xl p-1.5 text-left transition-[background-color,scale] duration-150 ease-out active:scale-[0.98] ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'}`}
                 >
                   <FadeImage
-                    src={song.thumb}
+                    src={smallThumbOf(song)}
                     alt=""
                     width={85}
                     height={48}
