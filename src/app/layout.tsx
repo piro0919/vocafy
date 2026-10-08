@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Shippori_Mincho_B1, Zen_Kaku_Gothic_New } from 'next/font/google';
+import { Orbitron, Shippori_Mincho_B1, Zen_Kaku_Gothic_New } from 'next/font/google';
 import Link from 'next/link';
 import { AmbientProvider } from '@/components/ambient';
 import { Header } from '@/components/header';
@@ -15,12 +15,11 @@ import { ThemeWatcher } from '@/components/theme/theme-watcher';
 import { CONTACT_FORM_URL, OPERATOR, SITE_URL } from '@/lib/site';
 import './globals.css';
 
-// ロゴの字。華やかな斜体のセリフ体。使うのは「Vocafy」の6文字だけ
-const playfair = Playfair_Display({
-  variable: '--font-playfair',
+// ロゴの字。合成音声の機械らしさを出す、角ばった字。使うのは「Vocafy」の6文字だけ
+const orbitron = Orbitron({
+  variable: '--font-orbitron',
   subsets: ['latin'],
   weight: '900',
-  style: 'italic',
 });
 
 // 本文・ボタン・説明の字。読みやすさを優先したゴシック体
@@ -47,8 +46,8 @@ export const metadata: Metadata = {
 // スマホのブラウザの枠の色。端末の設定に合わせて、地の色とそろえる
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#0e0d12' },
-    { media: '(prefers-color-scheme: light)', color: '#f8f7fb' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b0f12' },
+    { media: '(prefers-color-scheme: light)', color: '#f5f9f9' },
   ],
 };
 
@@ -57,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     // data-theme はページを描く前に themeScript が付けるので、サーバーの出力と食い違ってよい
     <html
       lang="ja"
-      className={`${zenKaku.variable} ${shippori.variable} ${playfair.variable} h-full antialiased`}
+      className={`${zenKaku.variable} ${shippori.variable} ${orbitron.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

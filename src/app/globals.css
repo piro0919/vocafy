@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 /*
- * 色。特定のサービスに寄せすぎないよう、暗い地はわずかに紫を帯びた黒、差し色は YouTube の赤とも
- * Amazon Music の水色とも違う薄紫にする（YouTube の規約: YouTube が作ったアプリと見分けがつきにくい見た目にしない）。
+ * 色。差し色は初音ミクの髪の青緑（#39c5bb）、暗い地はそれに合わせて青緑を帯びた黒にする。
+ * YouTube の赤とは離れている（YouTube の規約: YouTube が作ったアプリと見分けがつきにくい見た目にしない）。
  *
  * 明るい画面と暗い画面がある。どちらにするかは <html data-theme> で決まり、ページを描く前に
  * src/components/theme/theme-script.ts が付ける（端末の設定か、本人が選んだもの）。
@@ -10,39 +10,39 @@
  */
 :root,
 :root[data-theme='dark'] {
-  --background: #0e0d12;
-  --sidebar: #09080c;
-  --surface: #1f1d27;
-  --line: #2c2a36;
-  --foreground: #f3f2f7;
-  --muted: #a3a0b0;
-  --accent: #b69bff;
+  --background: #0b0f12;
+  --sidebar: #070a0c;
+  --surface: #182024;
+  --line: #24303a;
+  --foreground: #eef6f6;
+  --muted: #9aabb0;
+  --accent: #39c5bb;
   --heart: #ff6b9a;
   color-scheme: dark;
 }
 
-/* 明るい画面の差し色は、白い地でも文字が読める濃さまで落とす */
+/* 明るい画面の差し色は、白い地でも文字が読める濃さまで落とす（#0b7770 は地に対して 5.09 : 1） */
 :root[data-theme='light'] {
-  --background: #f8f7fb;
-  --sidebar: #efedf5;
-  --surface: #e9e6f1;
-  --line: #dad6e4;
-  --foreground: #18161f;
-  --muted: #66627a;
-  --accent: #6a47e6;
+  --background: #f5f9f9;
+  --sidebar: #e9f1f1;
+  --surface: #e1ecec;
+  --line: #cfdede;
+  --foreground: #10181a;
+  --muted: #5d6f73;
+  --accent: #0b7770;
   --heart: #e2336f;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    --background: #f8f7fb;
-    --sidebar: #efedf5;
-    --surface: #e9e6f1;
-    --line: #dad6e4;
-    --foreground: #18161f;
-    --muted: #66627a;
-    --accent: #6a47e6;
+    --background: #f5f9f9;
+    --sidebar: #e9f1f1;
+    --surface: #e1ecec;
+    --line: #cfdede;
+    --foreground: #10181a;
+    --muted: #5d6f73;
+    --accent: #0b7770;
     --heart: #e2336f;
     color-scheme: light;
   }
@@ -64,7 +64,7 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
-  /* お気に入りのハート。差し色の薄紫とは別に、ハートらしい桃色にする */
+  /* お気に入りのハート。差し色の青緑とは別に、ハートらしい桃色にする */
   --color-heart: var(--heart);
   --font-sans: var(--font-body), system-ui, sans-serif;
   --font-display: var(--font-shippori), 'Hiragino Mincho ProN', serif;
@@ -136,10 +136,9 @@ body {
  * マウスを載せると、別の名前の動きに切り替えて、もう一度走らせる（同じ名前のままでは走り直さない）
  */
 .logo {
-  font-family: var(--font-playfair), Georgia, serif;
-  font-style: italic;
+  font-family: var(--font-orbitron), system-ui, sans-serif;
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
   line-height: 1;
 }
 .logo > span {
@@ -152,9 +151,8 @@ body {
   );
   background-size: 250% 100%;
   background-position: -60% 0;
-  /* 色は字の箱の中にしか塗られないので、斜体で右下にはみ出す分（f や y の尾）まで箱を広げる。並びは崩さない */
-  padding: 0.05em 0.15em 0.2em 0;
-  margin-right: -0.15em;
+  /* 色は字の箱の中にしか塗られないので、y の尾まで箱を下へ広げる。並びは崩さない */
+  padding: 0.05em 0 0.2em;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
