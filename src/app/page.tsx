@@ -103,11 +103,12 @@ export default async function Home() {
 
       <div className="mt-6 sm:mt-10">
         <Shelf title="年代" eyebrow="Years">
+          {/* Orbitron は数字ごとに幅が違い、札の幅がそろわないので、幅を決め打ちにする（一番広い年でも収まる幅） */}
           {yearList.map((y) => (
             <Link
               key={y.year}
               href={`/years/${y.year}`}
-              className="flex shrink-0 snap-start flex-col items-start rounded-2xl border border-line/60 bg-sidebar/60 px-4 py-3 transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95"
+              className="flex w-28 shrink-0 snap-start flex-col items-start rounded-2xl sm:w-36 border border-line/60 bg-sidebar/60 px-4 py-3 transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95"
             >
               <span className="font-tech text-2xl font-black text-accent sm:text-3xl">
                 {y.year}
