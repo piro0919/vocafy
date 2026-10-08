@@ -1,30 +1,17 @@
-'use client';
-
-import { type ReactNode, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * 上の帯。スマホだけで出す（パソコンは左のメニューに全部あるので出さない。上の余白は main の md:pt-6 が持つ）。
- * ページの一番上では透明にして、画面の上部の色の背景（ambient.tsx）とつなげる。
- * 少しでもスクロールしたら、下を流れる中身が透けるすりガラスにする（YouTube Music と同じ）。
- * 彩度は上げない。背景の色は画面に固定してあり帯の後ろにも残るので、上げると帯だけが下より鮮やかに浮く
+ * 下のタブ（nav.tsx の MobileTabs）とそろえて、画面の端から左右と上を離した角丸の板として浮かせる。
+ * 下へスクロールすると隠れ、上へ戻すと出る（scroll-chrome.tsx と globals.css の .chrome-header）。
+ * 彩度は上げない。背景の色は画面に固定してあり板の後ろにも残るので、上げると板だけが下より鮮やかに浮く
  */
 export function Header({ children }: { children: ReactNode }) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 0);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   return (
-    <header
-      className={`chrome-header sticky top-0 z-20 flex items-center gap-4 px-4 py-3 md:hidden transition-[background-color,backdrop-filter] duration-200 sm:px-8 ${
-        scrolled ? 'bg-sidebar/60 backdrop-blur-lg' : 'bg-transparent'
-      }`}
-    >
-      {children}
+    <header className="chrome-header sticky top-0 z-20 px-3 pt-3 md:hidden">
+      <div className="flex h-14 items-center rounded-2xl border border-line/60 bg-sidebar/60 px-2 shadow-lg shadow-black/5 backdrop-blur-lg">
+        {children}
+      </div>
     </header>
   );
 }

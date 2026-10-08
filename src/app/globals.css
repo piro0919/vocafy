@@ -88,12 +88,9 @@ body {
  * 下の帯と右下の窓をタブの分（3.5rem）だけ下へずらす
  */
 @media (max-width: 47.99rem) {
-  /* もともとの出入りや地の色の動きも、ここでまとめて指定する（クラスの指定より、こちらが勝つため） */
+  /* 出入りの動きは、ここでまとめて指定する（クラスの指定より、こちらが勝つため） */
   .chrome-header {
-    transition:
-      translate 250ms var(--ease-out),
-      background-color 200ms,
-      backdrop-filter 200ms;
+    transition: translate 250ms var(--ease-out);
   }
   .chrome-tabs {
     transition:
