@@ -44,7 +44,8 @@ test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => 
   await page.getByRole('link', { name: /^2016/ }).click();
   await expect(page).toHaveURL(/\/years\/2016$/);
   await expect(page.getByRole('heading', { level: 1, name: '2016年の曲' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /ゴーストルール/ })).toBeVisible();
+  // 曲が多い年はページに分かれ、どの曲が1ページ目に入るかは台帳による。曲名ではなく、曲が並んでいるかを見る
+  await expect(page.locator('main button').first()).toBeVisible();
 });
 
 test('歌声の画面と、あいうえお順の行の画面が開く', async ({ page }) => {

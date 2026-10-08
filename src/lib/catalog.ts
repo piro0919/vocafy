@@ -294,14 +294,41 @@ export const years = cache(async (): Promise<{ year: number; count: number }[]> 
   return rows;
 });
 
-/** その年に投稿された流せる曲。新しい順 */
-export const songsOfYear = cache(async (year: number): Promise<DatedItem[]> => {
-  if (!Number.isSafeInteger(year)) return [];
-  const { rows } = await db().query<QueueRow>(
-    `${QUEUE_SELECT} and extract(year from s.published_on) = $1 order by s.published_on desc, s.id`,
-    [year],
+/** 一覧の1ページの曲数。数千曲を1枚に並べると、ページが数 MB になって重い */
+export const PAGE_SIZE = 300;
+
+/** 一覧の1ページと、全体の曲数。ページが範囲の外なら songs は空で total は 0 */
+export type Paged = { songs: DatedItem[]; total: number };
+
+/**
+ * 流せる曲の一覧を、page ページ目（1 から）だけ読む。where は QUEUE_SELECT に続ける条件、
+ * order は q（QUEUE_SELECT の結果）の列で書く。params の後ろに、件数と読み飛ばす数を足して渡す
+ */
+async function paged(
+  where: string,
+  order: string,
+  params: unknown[],
+  page: number,
+): Promise<Paged> {
+  if (!Number.isSafeInteger(page) || page < 1) return { songs: [], total: 0 };
+  const n = params.length;
+  const { rows } = await db().query<QueueRow & { total: number }>(
+    `select q.*, count(*) over ()::int as total from (${QUEUE_SELECT} ${where}) q
+     order by ${order} limit $${n + 1} offset $${n + 2}`,
+    [...params, PAGE_SIZE, (page - 1) * PAGE_SIZE],
   );
-  return rows.map(toItem);
+  return { songs: rows.map(toItem), total: rows[0]?.total ?? 0 };
+}
+
+/** その年に投稿された流せる曲。新しい順 */
+export const songsOfYear = cache(async (year: number, page: number): Promise<Paged> => {
+  if (!Number.isSafeInteger(year)) return { songs: [], total: 0 };
+  return paged(
+    'and extract(year from s.published_on) = $1',
+    'q.published_on desc, q.id',
+    [year],
+    page,
+  );
 });
 
 export type Voice = { id: number; name: string; songCount: number };
@@ -330,18 +357,19 @@ export const voices = cache(async (): Promise<Voice[]> => {
 
 /** その歌声（キャラ）が主に歌っている流せる曲。新しい順 */
 export const findVoice = cache(
-  async (id: number): Promise<{ voice: Voice; songs: DatedItem[] } | undefined> => {
+  async (id: number, page: number): Promise<({ voice: Voice } & Paged) | undefined> => {
     if (!Number.isSafeInteger(id)) return;
     const voice = (await voices()).find((v) => v.id === id);
     if (!voice) return;
-    const { rows } = await db().query<QueueRow>(
-      `${QUEUE_SELECT} and exists (
+    const found = await paged(
+      `and exists (
          select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
-         where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)
-       order by s.published_on desc nulls last, s.id`,
+         where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)`,
+      'q.published_on desc nulls last, q.id',
       [id],
+      page,
     );
-    return { voice, songs: rows.map(toItem) };
+    return { voice, ...found };
   },
 );
 
@@ -355,10 +383,6 @@ export const kanaRows = cache(async (): Promise<Map<string, number>> => {
 });
 
 /** その行で始まる流せる曲。曲名の順 */
-export const songsOfRow = cache(async (row: string): Promise<DatedItem[]> => {
-  const { rows } = await db().query<QueueRow>(
-    `${QUEUE_SELECT} and s.kana_row = $1 order by s.name, s.id`,
-    [row],
-  );
-  return rows.map(toItem);
-});
+export const songsOfRow = cache(async (row: string, page: number): Promise<Paged> =>
+  paged('and s.kana_row = $1', 'q.name, q.id', [row], page),
+);

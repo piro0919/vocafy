@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
+import { Pager, pageOf } from '@/components/pager';
 import { SongList } from '@/components/song-list';
 import { songsOfYear } from '@/lib/catalog';
 
@@ -12,14 +13,21 @@ export function generateStaticParams() {
   return [];
 }
 
-export async function generateMetadata({ params }: PageProps<'/years/[year]'>): Promise<Metadata> {
-  return { title: `${(await params).year}年の曲` };
+export async function generateMetadata({
+  params,
+}: PageProps<'/years/[year]/[[...page]]'>): Promise<Metadata> {
+  const { year, page } = await params;
+  const n = pageOf(page);
+  return { title: `${year}年の曲${n && n > 1 ? `（${n}ページ目）` : ''}` };
 }
 
-/** その年に投稿された曲。新しい順 */
-export default async function YearPage({ params }: PageProps<'/years/[year]'>) {
-  const year = Number((await params).year);
-  const songs = await songsOfYear(year);
+/** その年に投稿された曲。新しい順。多い年は PAGE_SIZE 曲ずつのページに分ける */
+export default async function YearPage({ params }: PageProps<'/years/[year]/[[...page]]'>) {
+  const { year: raw, page: segments } = await params;
+  const year = Number(raw);
+  const page = pageOf(segments);
+  if (!page) notFound();
+  const { songs, total } = await songsOfYear(year, page);
   if (songs.length === 0) notFound();
   return (
     <>
@@ -27,9 +35,10 @@ export default async function YearPage({ params }: PageProps<'/years/[year]'>) {
         <Heading as="h1" size="page" eyebrow={String(year)}>
           {year}年の曲
         </Heading>
-        <p className="mt-2 text-sm text-muted">{songs.length} 曲</p>
+        <p className="mt-2 text-sm text-muted">{total} 曲</p>
       </div>
       <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
+      <Pager base={`/years/${year}`} page={page} total={total} />
     </>
   );
 }
