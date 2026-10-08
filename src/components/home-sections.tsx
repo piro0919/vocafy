@@ -73,12 +73,17 @@ export function OnThisDay({
       </button>
 
       {rest.length > 0 && (
-        <ul className="grid content-start gap-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <ul className="grid content-start gap-1 sm:grid-cols-2 lg:grid-cols-1">
           {rest.map((song, i) => {
             const active = current?.songId === song.songId;
             return (
-              // スマホの幅では縦に長くなりすぎるので、6曲までにする
-              <li key={song.songId} className={i >= 6 ? 'max-sm:hidden' : undefined}>
+              // 縦に長くなりすぎるので、スマホの幅では6曲、1列になるパソコンの幅では7曲までにする
+              <li
+                key={song.songId}
+                className={
+                  i >= 7 ? 'max-sm:hidden lg:hidden' : i >= 6 ? 'max-sm:hidden' : undefined
+                }
+              >
                 <button
                   type="button"
                   onClick={() => open(song)}
