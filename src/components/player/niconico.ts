@@ -6,9 +6,12 @@ import type { Engine, EngineEvents, Sound } from './engine';
  * 2026-10-08 に実物で確かめた動きに合わせている。
  *
  * - 送る: { eventName, data, sourceConnectorType: 1, playerId }。play・pause・seek（data.time はミリ秒）・
- *   volumeChange（data.volume は 0〜1）・mute（data.mute）
+ *   volumeChange（data.volume は 0〜1）・mute（data.mute）・commentVisibilityChange（data.commentVisibility）
  * - 届く: loadComplete（読み込めた）、statusChange（data.playerStatus が 1 読み込み中・2 再生中・3 一時停止・
  *   4 終わり）、playerMetadataChange（data.currentTime と data.duration はミリ秒。1秒に4回ほど）、error
+ *
+ * コメントは隠す。見た目を YouTube の曲とそろえるため（2026-10-08 に本人が決めた）。
+ * URL の設定（noController・noHeader・defaultNoComment など）は、2026-10-08 に試した範囲では効かなかった。効いたのは開始位置の from だけ
  *
  * 動画を替えるときは iframe を読み込み直す。前の動画の知らせを拾わないよう、そのたびに playerId を変える
  */
@@ -53,7 +56,8 @@ export function createNiconicoEngine(
     if (e.origin !== ORIGIN || e.data?.playerId !== playerId) return;
     const { eventName, data } = e.data;
     if (eventName === 'loadComplete') {
-      // 残しておいた音量にしてから流し始める
+      // コメントを隠し、残しておいた音量にしてから流し始める
+      send('commentVisibilityChange', { commentVisibility: false });
       send('volumeChange', { volume: volume / 100 });
       send('mute', { mute: muted });
       send('play');
