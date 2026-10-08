@@ -67,6 +67,12 @@ test('歌声の画面と、あいうえお順の行の画面が開く', async ({
   expect(res?.status()).toBe(404);
 });
 
+test('検索で、曲名をひらがなで打ってもカタカナの曲が見つかる', async ({ page }) => {
+  await page.goto('/search');
+  await page.getByRole('searchbox', { name: '曲名かボカロPの名前で探す' }).fill('ごーすと');
+  await expect(page.getByRole('button', { name: /ゴーストルール/ })).toBeVisible();
+});
+
 test('無いボカロPは 404', async ({ page }) => {
   const res = await page.goto('/producers/123456789');
   expect(res?.status()).toBe(404);

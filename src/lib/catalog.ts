@@ -403,3 +403,49 @@ export const kanaRows = cache(async (): Promise<Map<string, number>> => {
 export const songsOfRow = cache(async (row: string, page: number): Promise<Paged> =>
   paged('and s.kana_row = $1', 'q.name, q.id', [row], page),
 );
+
+/**
+ * 検索の索引。全曲の曲名とボカロP名を、配備のときに1つにまとめて配る（src/app/search-index/route.ts）。
+ * 検索のたびに DB を読むと、無料プランの計算時間を食う（DB は最後に読まれてから5分動き続ける）ので、
+ * 探すのはブラウザの中でする。大きさを抑えるため、値は配列に詰め、ボカロPは番号で引く。
+ * 曲は新しい順。曲の作者は、全曲を取り込んだ人を先にして1人だけ（QUEUE_SELECT と同じ）
+ */
+export type SearchIndex = {
+  /** [id, 名前, 画像, 曲数] */
+  producers: [number, string, string | null, number][];
+  /** [id, 曲名, producers の何番目か, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）] */
+  songs: [number, string, number, string, string | null][];
+};
+
+export const searchIndex = cache(async (): Promise<SearchIndex> => {
+  const list = await producers();
+  const at = new Map(list.map((p, i) => [p.id, i]));
+  const { rows } = await db().query<{
+    id: number;
+    name: string;
+    youtube_id: string | null;
+    niconico_id: string | null;
+    niconico_thumb: string | null;
+    producer_id: number;
+  }>(
+    `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, p.id as producer_id
+     from song s
+     join lateral (
+       select p.id from song_producer sp join producer p on p.id = sp.producer_id
+       where sp.song_id = s.id order by p.complete desc, p.id limit 1
+     ) p on true
+     where ${PLAYABLE}
+     order by s.published_on desc nulls last, s.id`,
+  );
+  return {
+    producers: list.map((p) => [p.id, p.name, p.picture, p.songCount]),
+    songs: rows.flatMap((r) => {
+      const i = at.get(r.producer_id);
+      const source = sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb);
+      if (i === undefined || !source) return [];
+      return [
+        [r.id, r.name, i, source.videoId, source.service === 'niconico' ? source.thumb : null],
+      ];
+    }),
+  };
+});
