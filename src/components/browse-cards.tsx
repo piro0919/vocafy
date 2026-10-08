@@ -6,7 +6,7 @@ import { FadeImage } from './fade-image';
 type VoiceProps = { id: number; name: string; songCount: number };
 
 /**
- * キャラの絵の札。トップの歌声の区画で使う。キャラの色の丸の上に、絵を大きく載せる。
+ * キャラの絵の札。トップの歌声の区画で使う。札をキャラの色で塗り（下ほど濃い）、絵を大きく載せる。
  * 絵は元から 400px の webp なので、Vercel の画像変換は通さない
  */
 export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: string }) {
@@ -14,26 +14,23 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
     <Link
       href={`/voices/${id}`}
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
-      className="group flex h-full flex-col rounded-2xl border border-line/60 bg-[color-mix(in_oklab,var(--c)_14%,var(--sidebar))] p-1.5 transition-[background-color,scale] duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--c)_24%,var(--sidebar))] active:scale-95"
+      className="group relative flex h-full flex-col rounded-2xl border border-line/60 bg-linear-to-t from-[color-mix(in_oklab,var(--c)_40%,var(--sidebar))] to-[color-mix(in_oklab,var(--c)_8%,var(--sidebar))] p-1.5 transition-[scale] duration-150 ease-out active:scale-95"
     >
-      {/* キャラが枠から飛び出して見えるように、絵は板と円より上へはみ出させる（札の上の縁も越える）。
+      {/* 色の地は段階的に変えられないので、マウスを載せたときはキャラの色を薄く重ねて濃くする */}
+      <span
+        aria-hidden
+        className="absolute inset-0 rounded-2xl bg-(--c) opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-10"
+      />
+      {/* キャラが枠から飛び出して見えるように、絵は札の上の縁を越えてはみ出させる。
           並べる側で、段と段・列と列の間をはみ出す分だけ空ける */}
       <span className="relative block aspect-square">
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-[24%] bottom-0 rounded-xl bg-[color-mix(in_oklab,var(--c)_22%,var(--sidebar))]"
-        />
-        <span
-          aria-hidden
-          className="absolute bottom-[5%] left-1/2 aspect-square w-[76%] -translate-x-1/2 rounded-full bg-(--c) opacity-45"
-        />
         {/* 背丈をそろえるため、絵の枠を左右にも広げる。横に広いキャラ（ミクのツインテールなど）が札の幅で縮まないように、
             髪は隣との間へはみ出してよい。z-10 で隣の札より手前に出す */}
         <span className="absolute inset-x-[-12%] top-[-16%] bottom-0 z-10 origin-bottom transition-[scale,translate] duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105">
           <FadeImage src={art} alt="" fill unoptimized className="object-contain object-bottom" />
         </span>
       </span>
-      <span className="min-w-0 px-1.5 pt-2 pb-1">
+      <span className="relative min-w-0 px-1.5 pt-2 pb-1">
         <span className="block truncate text-sm font-bold">{name}</span>
         <span className="block text-xs text-muted">{songCount} 曲</span>
       </span>
