@@ -22,11 +22,7 @@ module.exports = {
     collect: {
       numberOfRuns: 3,
       startServerCommand: `pnpm exec next start -p ${port}`,
-      url: [
-        `${base}/`,
-        `${base}/producers`,
-        `${base}/producers/45`,
-      ],
+      url: [`${base}/`, `${base}/producers`, `${base}/producers/45`],
     },
     upload: {
       outputDir: './.lighthouseci',
