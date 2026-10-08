@@ -69,7 +69,7 @@ export default async function Home() {
             <MoreLink href="/voices" />
           </div>
         </div>
-        <ul className="grid grid-cols-3 gap-x-2 gap-y-6 pt-5 sm:grid-cols-4 sm:gap-y-7 lg:grid-cols-6">
+        <ul className="grid grid-cols-3 gap-x-3 gap-y-6 pt-5 sm:grid-cols-4 sm:gap-y-7 lg:grid-cols-6">
           {voiceList
             .flatMap((v) => {
               const art = voiceArt(v.id);
