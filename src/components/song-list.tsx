@@ -13,15 +13,24 @@ import { Marquee } from './marquee';
  * （YouTube Music・Amazon Music でアルバムに移るのと同じ）。iPhone は押した瞬間の操作の中で再生を始めないと
  * 音が出ないので、ここでその1曲を流し始め、順番待ちはボカロPの画面に着いてからその人の曲に差し替える
  */
-export function SongList({ songs, columns }: { songs: QueueItem[]; columns?: boolean }) {
-  const { current, playing, playQueue } = usePlayer();
-  const router = useRouter();
+export function SongList({
+  songs,
+  columns,
+  className = 'grid gap-1',
+}: {
+  songs: QueueItem[];
+  columns?: boolean;
+  /** 棚に入れないときの並べ方 */
+  className?: string;
+}) {
+  const { current, playing } = usePlayer();
+  const open = useOpenSong();
   return (
     <div
       className={
         columns
           ? 'grid snap-start auto-cols-[minmax(17rem,22rem)] grid-flow-col gap-x-6 gap-y-1'
-          : 'grid gap-1'
+          : className
       }
       // 棚では4行ずつ縦に詰めて横へ流す。曲が少ないときは、その数だけの行にして隙間を作らない
       style={
@@ -37,10 +46,7 @@ export function SongList({ songs, columns }: { songs: QueueItem[]; columns?: boo
           >
             <button
               type="button"
-              onClick={() => {
-                playQueue([song], 0, 'pending');
-                router.push(`/producers/${song.producerId}`);
-              }}
+              onClick={() => open(song)}
               className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
             >
               <FadeImage
@@ -68,4 +74,14 @@ export function SongList({ songs, columns }: { songs: QueueItem[]; columns?: boo
       })}
     </div>
   );
+}
+
+/** 曲を押したときの動き。その1曲を流し始めてから、その曲のボカロPの画面へ移る（SongList の説明のとおり） */
+export function useOpenSong() {
+  const { playQueue } = usePlayer();
+  const router = useRouter();
+  return (song: QueueItem) => {
+    playQueue([song], 0, 'pending');
+    router.push(`/producers/${song.producerId}`);
+  };
 }

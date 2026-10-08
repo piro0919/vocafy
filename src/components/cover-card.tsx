@@ -83,9 +83,6 @@ export function CoverCard({
   );
 }
 
-/** 棚の中のアーティストの1枚。丸いアイコンは 16:9 より背が高いので、幅を詰める */
-export const ARTIST_SHELF_ITEM = 'w-36 shrink-0 snap-start sm:w-44';
-
 /** アーティストの格子。丸いアイコンは背が高いので、カードの格子より列を増やす */
 export const ARTIST_GRID =
   'grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';

@@ -129,43 +129,99 @@ export const findProducer = cache(
   },
 );
 
+/** 投稿日の付いた、流せる1曲 */
+export type DatedItem = QueueItem & { publishedOn: string };
+
+type QueueRow = {
+  id: number;
+  name: string;
+  youtube_id: string;
+  published_on: string | null;
+  producer_id: number;
+  producer_name: string;
+  vocalists: string;
+};
+
 /**
- * 人気曲。評価点でそのまま並べると一部のボカロPだけで埋まるので、ボカロPごとの1曲目を評価点の高い順に並べ、
- * 足りなければ2曲目、3曲目と順に足す。流せる曲だけ
+ * 流せる曲を、順番待ちの形で読む。作者は全曲を取り込んだ人を先にして1人だけ付ける（押すとその人の画面へ移るので、
+ * 名前だけ入った合作の相手にすると行き先が無い）。where と order は呼ぶ側が書き、s.youtube_id の条件は付け済み
  */
-export const popularSongs = cache(async (limit: number): Promise<QueueItem[]> => {
-  const { rows } = await db().query<{
-    id: number;
-    name: string;
-    youtube_id: string;
-    producer_id: number;
-    producer_name: string;
-    vocalists: string;
-  }>(
+const QUEUE_SELECT = `
+  select s.id, s.name, s.youtube_id, to_char(s.published_on, 'YYYY-MM-DD') as published_on,
+    p.id as producer_id, p.name as producer_name,
+    (select coalesce(string_agg(v.name, '・' order by sv.support, v.id), '')
+       from song_vocalist sv join vocalist v on v.id = sv.vocalist_id where sv.song_id = s.id) as vocalists
+  from song s
+  join lateral (
+    select p.id, p.name from song_producer sp join producer p on p.id = sp.producer_id
+    where sp.song_id = s.id order by p.complete desc, p.id limit 1
+  ) p on true
+  where s.youtube_id is not null`;
+
+const toItem = (r: QueueRow): DatedItem => ({
+  songId: r.id,
+  title: r.name,
+  videoId: r.youtube_id,
+  producerId: r.producer_id,
+  producerName: r.producer_name,
+  vocalists: r.vocalists,
+  publishedOn: r.published_on ?? '',
+});
+
+/** 日本の暦できょうの日付（YYYY-MM-DD）。ページは1時間ごとに作り直すので、日付の変わり目から1時間までずれうる */
+export function today(): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+}
+
+/**
+ * きょうと同じ月日に投稿された曲。曲の少ない日は、前後の日へ1日ずつ広げて min 曲に届くまで補う（3日まで）。
+ * 月日の近さは、うるう年の 2000 年に置いて測る（2月29日の曲も拾える）。並びは近い日から、同じ日の中は古い年から
+ */
+export const onThisDay = cache(async (date: string, min: number): Promise<DatedItem[]> => {
+  const { rows } = await db().query<QueueRow & { distance: number }>(
     `select * from (
-       select s.id, s.name, s.youtube_id, s.rating_score, p.id as producer_id, p.name as producer_name,
-         (select coalesce(string_agg(v.name, '・' order by sv.support, v.id), '')
-            from song_vocalist sv join vocalist v on v.id = sv.vocalist_id where sv.song_id = s.id) as vocalists,
-         row_number() over (partition by p.id order by s.rating_score desc, s.id) as rank
-       from song s
-       join song_producer sp on sp.song_id = s.id
-       join producer p on p.id = sp.producer_id and p.complete
-       where s.youtube_id is not null
-     ) ranked
-     where rank <= 3
-     order by rank, rating_score desc`,
+       select q.*, least(abs(d.doy - t.doy), 366 - abs(d.doy - t.doy)) as distance
+       from (${QUEUE_SELECT} and s.published_on is not null) q
+       cross join lateral (
+         select extract(doy from make_date(2000, substr(q.published_on, 6, 2)::int, substr(q.published_on, 9, 2)::int))::int as doy
+       ) d
+       cross join (
+         select extract(doy from make_date(2000, extract(month from $1::date)::int, extract(day from $1::date)::int))::int as doy
+       ) t
+     ) x
+     where distance <= 3
+     order by distance, published_on, id`,
+    [date],
   );
-  // 合作の曲は作者の数だけ出てくるので、最初に出た1つだけを使う
-  const seen = new Set<number>();
-  return rows
-    .filter((r) => !seen.has(r.id) && seen.add(r.id))
-    .slice(0, limit)
-    .map((r) => ({
-      songId: r.id,
-      title: r.name,
-      videoId: r.youtube_id,
-      producerId: r.producer_id,
-      producerName: r.producer_name,
-      vocalists: r.vocalists,
-    }));
+  const reach = [0, 1, 2, 3].find((d) => rows.filter((r) => r.distance <= d).length >= min) ?? 3;
+  return rows.filter((r) => r.distance <= reach).map(toItem);
+});
+
+/** 日替わりの無作為の並び。同じ日のうちは同じ並びになるよう、日付を混ぜた曲の id の要約で並べる */
+export const dailyMix = cache(async (date: string, limit: number): Promise<DatedItem[]> => {
+  const { rows } = await db().query<QueueRow>(
+    `${QUEUE_SELECT} order by md5(s.id::text || $1), s.id limit $2`,
+    [date, limit],
+  );
+  return rows.map(toItem);
+});
+
+/** 投稿された年と、その年の流せる曲の数。古い年から */
+export const years = cache(async (): Promise<{ year: number; count: number }[]> => {
+  const { rows } = await db().query<{ year: number; count: number }>(
+    `select extract(year from published_on)::int as year, count(*)::int as count
+     from song where youtube_id is not null and published_on is not null
+     group by 1 order by 1`,
+  );
+  return rows;
+});
+
+/** その年に投稿された流せる曲。投稿の早い順 */
+export const songsOfYear = cache(async (year: number): Promise<DatedItem[]> => {
+  if (!Number.isSafeInteger(year)) return [];
+  const { rows } = await db().query<QueueRow>(
+    `${QUEUE_SELECT} and extract(year from s.published_on) = $1 order by s.published_on, s.id`,
+    [year],
+  );
+  return rows.map(toItem);
 });

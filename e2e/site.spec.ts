@@ -7,7 +7,8 @@ import { expect, test } from '@playwright/test';
 
 test('トップからボカロPの画面へ移り、その人の曲が並ぶ', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '人気曲' })).toBeVisible();
+  // きょうの日付の曲は、台帳によっては無い日がある。日替わりの並びは毎日出る
+  await expect(page.getByRole('heading', { name: 'きょうの出会い' })).toBeVisible();
   await page.goto('/producers');
   // 合作の相手として名前だけ入った人は、一覧に出さない
   await expect(page.getByText('合作の相手')).toHaveCount(0);
@@ -32,6 +33,14 @@ test('再生を押すと、プレイヤーが画面の置き場所に出る', as
     /youtube\.com\/embed\//,
   );
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+});
+
+test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: /^2016/ }).click();
+  await expect(page).toHaveURL(/\/years\/2016$/);
+  await expect(page.getByRole('heading', { level: 1, name: '2016年の曲' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /ゴーストルール/ })).toBeVisible();
 });
 
 test('無いボカロPは 404', async ({ page }) => {
