@@ -19,15 +19,11 @@ function useActive() {
 export function Logo({ compact }: { compact?: boolean }) {
   return (
     <Link href="/" aria-label="Vocafy ホーム" className="flex items-center gap-2">
-      {/* アプリのアイコン（src/app/icon.png と同じ絵）を、角を丸めたタイルとして添える */}
-      <Image
-        src="/icon-192x192.png"
-        alt=""
-        width={28}
-        height={28}
-        className="rounded-md"
-        priority
-      />
+      {/*
+        アプリのアイコンと同じ影絵を、地のタイル無しで添える。タイルに入れたままだと 28px では人物が潰れるので、
+        人物だけを切り出した絵（src/assets/icon-source.png から切り出した public/logo-mark.png）を大きめに置く
+      */}
+      <Image src="/logo-mark.png" alt="" width={43} height={36} priority />
       {/* スマホの上の帯では、検索の虫めがねと歯車を並べるので、アイコンだけにする */}
       {!compact && (
         <span className="logo text-2xl">
@@ -41,14 +37,15 @@ export function Logo({ compact }: { compact?: boolean }) {
 
 /**
  * パソコンの幅で左に置くメニュー。画面の端から上・左・下を離し、角を丸めた板として浮かせる。
- * 半透明にして、ボカロPの画面の色の背景を透かし、画面全体を一つの色合いにする。
+ * 本文の上に重ねて置き、横に流す棚の画像が後ろを通るとき、すりガラス越しに透けて見えるようにする。
+ * 本文は板の幅（w-63）だけ右から始める（layout.tsx）。棚だけは画面の左端まで伸ばす（shelf.tsx）。
  * 下の帯が出ているあいだは、板の下端が帯に隠れないよう、帯の高さ（4rem）の分だけ下を空ける
  */
 export function Sidebar() {
   const active = useActive();
   return (
-    <nav className="sticky top-0 hidden h-dvh w-63 shrink-0 py-3 pl-3 transition-[padding] duration-300 md:flex [html[data-player=dock]_&]:pb-19 [html[data-player=slot]_&]:pb-19">
-      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-sidebar/60 px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+    <nav className="fixed inset-y-0 left-0 z-30 hidden w-63 py-3 pl-3 transition-[padding] duration-300 md:flex [html[data-player=dock]_&]:pb-19 [html[data-player=slot]_&]:pb-19">
+      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-sidebar/80 px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
         <div className="mb-5 px-3">
           <Logo />
         </div>

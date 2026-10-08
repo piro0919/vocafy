@@ -11,7 +11,7 @@ export default function NotFound() {
       <p className="text-muted">お探しのページは存在しないか、掲載をやめた可能性があります。</p>
       <Link
         href="/"
-        className="rounded-full bg-foreground px-5 py-2 text-sm font-bold text-background hover:bg-muted"
+        className="rounded-full px-5 py-2 text-sm font-bold bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
       >
         ホームへ
       </Link>

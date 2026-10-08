@@ -71,7 +71,7 @@ export function ProducerPlayer({
           <button
             type="button"
             onClick={() => (here ? toggle() : start())}
-            className="flex shrink-0 items-center gap-2 rounded-full bg-foreground py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-background transition-[opacity,scale] duration-150 ease-out hover:opacity-90 active:scale-95"
+            className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
           >
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}

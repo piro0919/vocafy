@@ -64,6 +64,12 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  /*
+   * 押すボタンの地。明るい画面でも暗い画面でも、ロゴの影絵と同じ明るい青緑にして、字を黒に近い色で載せる
+   * （#0b0f12 は #39c5bb に対して 9 : 1 ほど）。差し色（accent）は明るい画面では濃いので、ボタンには使わない
+   */
+  --color-miku: #39c5bb;
+  --color-on-miku: #0b0f12;
   /* お気に入りのハート。差し色の青緑とは別に、ハートらしい桃色にする */
   --color-heart: var(--heart);
   --font-sans: var(--font-body), system-ui, sans-serif;

@@ -15,7 +15,9 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 
 
 /**
  * 見出しの付いた、横に流せる棚。左右の矢印で1画面ぶん送る。
- * 棚と棚の間は、スマホでは詰める（縦に長い画面で棚を次々に流して見ると、空きが積み重なって間延びする）
+ * 棚と棚の間は、スマホでは詰める（縦に長い画面で棚を次々に流して見ると、空きが積み重なって間延びする）。
+ * パソコンでは、流す帯だけを画面の左端まで伸ばし、送った画像が左の板の後ろへ流れ込むようにする。
+ * 止まる位置は板の右（本文の左端）のまま
  */
 export function Shelf({
   title,
@@ -106,7 +108,7 @@ export function Shelf({
           {href && (
             <Link
               href={href}
-              className="rounded-full border border-line/60 bg-sidebar/60 px-3 py-1 text-xs font-bold text-foreground transition-colors hover:bg-sidebar/90"
+              className="rounded-full border border-accent/40 bg-sidebar/60 px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
             >
               すべて表示
             </Link>
@@ -122,7 +124,7 @@ export function Shelf({
       <div
         ref={track}
         onScroll={update}
-        className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8 md:-ml-[calc(2rem+--spacing(63))] md:scroll-pl-[calc(2rem+--spacing(63))] md:pl-[calc(2rem+--spacing(63))] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
@@ -148,7 +150,7 @@ function ArrowButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className="hidden size-8 place-items-center rounded-full border border-line/60 bg-sidebar/60 text-foreground transition-[background-color,scale,opacity] duration-150 ease-out hover:bg-sidebar/90 active:scale-95 disabled:opacity-40 disabled:hover:bg-sidebar/60 sm:grid"
+      className="hidden size-8 place-items-center rounded-full border border-accent/40 bg-sidebar/60 text-accent transition-[background-color,scale,opacity] duration-150 ease-out hover:bg-accent/10 active:scale-95 disabled:opacity-40 disabled:hover:bg-sidebar/60 sm:grid"
     >
       {children}
     </button>

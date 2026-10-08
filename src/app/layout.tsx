@@ -78,7 +78,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             <div className="relative isolate flex min-h-dvh">
               <AmbientProvider>
                 <Sidebar />
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col md:pl-63">
                   <Header>
                     <HeaderBar />
                   </Header>

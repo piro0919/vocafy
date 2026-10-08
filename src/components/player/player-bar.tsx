@@ -56,7 +56,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
             disabled={loading}
           >
             {loading ? (
-              <span className="size-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+              <span className="size-5 animate-spin rounded-full border-2 border-on-miku/30 border-t-on-miku" />
             ) : (
               <Icon name={playing ? 'pause' : 'play'} />
             )}
@@ -291,9 +291,9 @@ function BarButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className={`grid shrink-0 place-items-center rounded-full transition-[scale,color] duration-150 ease-out active:scale-90 disabled:opacity-30 ${
+      className={`grid shrink-0 place-items-center rounded-full transition-[scale,color,filter] duration-150 ease-out active:scale-90 disabled:opacity-30 ${
         large
-          ? 'size-11 text-foreground disabled:opacity-100 [&_svg]:size-8'
+          ? 'size-11 bg-miku text-on-miku shadow-md shadow-miku/30 hover:brightness-110 disabled:opacity-100 [&_svg]:size-6'
           : 'size-10 text-muted hover:text-foreground'
       }`}
     >
