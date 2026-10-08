@@ -8,6 +8,8 @@ import { Icon, type IconName } from './icon';
 const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'ホーム', icon: 'home' },
   { href: '/producers', label: 'ボカロP', icon: 'artist' },
+  { href: '/voices', label: '歌声', icon: 'voice' },
+  { href: '/years', label: '年代', icon: 'year' },
 ];
 
 function useActive() {
@@ -89,7 +91,7 @@ export function Sidebar() {
 export function MobileTabs() {
   const active = useActive();
   return (
-    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-2 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
+    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-4 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}

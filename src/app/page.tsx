@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import type { WebSite, WithContext } from 'schema-dts';
+import { MoreLink, VoiceCard, YearCard } from '@/components/browse-cards';
 import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
 import { dailyMix, kanaRows, onThisDay, today, voices, years } from '@/lib/catalog';
 import { ROW_LABEL, ROWS } from '@/lib/kana';
-import { voiceColor } from '@/lib/voice-color';
 import { SITE_URL } from '@/lib/site';
 
 /** サイトそのものの情報 */
@@ -61,8 +61,11 @@ export default async function Home() {
 
       {/* 歌声。曲の多い順に、キャラの色の札で並べる。歌っている曲が少ない歌声まで並べると長くなるので 5 曲以上 */}
       <section className="mt-10 sm:mt-14">
-        <div className="mb-3">
+        <div className="mb-3 flex items-end gap-3">
           <Heading eyebrow="Voices">歌声</Heading>
+          <div className="ml-auto">
+            <MoreLink href="/voices" />
+          </div>
         </div>
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {voiceList
@@ -70,36 +73,22 @@ export default async function Home() {
             .slice(0, 18)
             .map((v) => (
               <li key={v.id}>
-                <Link
-                  href={`/voices/${v.id}`}
-                  style={{ '--c': voiceColor(v.name) } as React.CSSProperties}
-                  className="flex h-full items-center gap-3 rounded-2xl border border-line/60 bg-[color-mix(in_oklab,var(--c)_14%,var(--sidebar))] px-3 py-2.5 transition-[background-color,scale] duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--c)_24%,var(--sidebar))] active:scale-95"
-                >
-                  <span aria-hidden className="size-7 shrink-0 rounded-full bg-(--c) shadow-sm" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold">{v.name}</span>
-                    <span className="block text-xs text-muted">{v.songCount} 曲</span>
-                  </span>
-                </Link>
+                <VoiceCard {...v} />
               </li>
             ))}
         </ul>
       </section>
 
       <div className="mt-6 sm:mt-10">
-        <Shelf title="年代" eyebrow="Years">
+        <Shelf title="年代" eyebrow="Years" href="/years">
           {/* Orbitron は数字ごとに幅が違い、札の幅がそろわないので、幅を決め打ちにする（一番広い年でも収まる幅） */}
           {yearList.map((y) => (
-            <Link
+            <YearCard
               key={y.year}
-              href={`/years/${y.year}`}
-              className="flex w-28 shrink-0 snap-start flex-col items-start rounded-2xl sm:w-36 border border-line/60 bg-sidebar/60 px-4 py-3 transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95"
-            >
-              <span className="font-tech text-2xl font-black text-accent sm:text-3xl">
-                {y.year}
-              </span>
-              <span className="mt-1 text-xs text-muted">{y.count} 曲</span>
-            </Link>
+              year={y.year}
+              count={y.count}
+              className="w-28 shrink-0 snap-start sm:w-36"
+            />
           ))}
         </Shelf>
       </div>

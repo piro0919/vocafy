@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
+import { MoreLink } from './browse-cards';
 import { Icon } from './icon';
 import { Heading } from './heading';
 
@@ -105,14 +105,7 @@ export function Shelf({
       <div className="mb-2 flex items-end gap-3">
         <Heading eyebrow={eyebrow}>{title}</Heading>
         <div className="ml-auto flex items-center gap-2">
-          {href && (
-            <Link
-              href={href}
-              className="rounded-full border border-accent/40 bg-sidebar/60 px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
-            >
-              すべて表示
-            </Link>
-          )}
+          {href && <MoreLink href={href} />}
           <ArrowButton label="前へ" disabled={edge.start} onClick={() => page(-1)}>
             <Icon name="left" className="size-5" />
           </ArrowButton>

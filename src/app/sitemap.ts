@@ -11,6 +11,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: SITE_URL },
     { url: `${SITE_URL}/producers` },
+    { url: `${SITE_URL}/voices` },
+    { url: `${SITE_URL}/years` },
     ...list.map((p) => ({ url: `${SITE_URL}/producers/${p.id}` })),
     ...yearList.map((y) => ({ url: `${SITE_URL}/years/${y.year}` })),
   ];
