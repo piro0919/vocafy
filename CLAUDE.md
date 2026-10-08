@@ -3,24 +3,58 @@
 # Vocafy
 
 ボカロ曲（合成音声の曲）を、ボカロPごとに聴ける音楽プレイヤー風のサイト。Janify（`~/Repository/janify`）のボーカロイド版。公開先は <https://vocafy.kkweb.io/> 。
-2026-10-08 に壁打ちで合意し、同じセッションで公開まで進めた。
+2026-10-08 に壁打ちで合意し、同じセッションで公開まで進めた。その会話は nagara-kaigo のリポジトリで始めたもので、このリポジトリのメモリには何も残っていない。経緯はこのファイルがすべて。
 
 ## 現在地（2026-10-08）
 
-- Janify を複製して始めた。画面の形は Janify に縛られない（アルバムの概念が無い）
 - 画面は、トップ（人気曲・ボカロP）・ボカロP（一覧と詳細）・設定・利用規約・プライバシーポリシー。プレイヤーは全ページ共通
-- 本番と手元の DB に、評価点の上位 200 曲を種にして取り込んだ。ボカロP 110 人・5415 曲（YouTube で流せる 4292・ニコニコだけ 1123）・歌声 415
-- 2026-10-08 に公開した。GitHub は piro0919/vocafy（公開）の main、Vercel は kk-web チームの vocafy
-  - DB は Vercel の Neon 連携で作った vocafy-db（無料プラン・iad1）。DATABASE_URL などは連携が Vercel に入れている
-  - 本番の DB への取り込みは手元から流す。`vercel env pull <ファイル> --environment production` で接続先を取り、DATABASE_URL_UNPOOLED を DATABASE_URL として `pnpm migrate` と `pnpm ingest` を走らせる
-  - `vercel project add` で作ったプロジェクトは framework が空で、ビルドは通るのに全ページが 404 になった。API で framework を nextjs にして直した
-  - vocafy.kkweb.io の CNAME と `_vercel` の TXT は、Janify の `.env.local` の CLOUDFLARE_API_TOKEN で API から足した
+- 本番と手元の DB に、VocaDB の評価点の上位 200 曲を種にして取り込んだ。ボカロP 110 人・5415 曲（YouTube で流せる 4292・ニコニコだけ 1123）・歌声 415
+- 公開中。GitHub は piro0919/vocafy（公開）の main、Vercel は kk-web チームの vocafy。main に push すると本番に出る
+- 2026-10-08 の終わりに、見出しの字の変更とこのファイルの書き直しが手元にコミットしてあり、まだ push していない。`git status` で確かめる。push は本人がする
+
+## 作業の進め方
+
+- **push は本人がする。** コミットまでで止め、push の確認も取らない（2026-10-08 に本人が決めた）
+- コミットは英語の Conventional Commits。**件名は小文字で始める**（commitlint の subject-case。`Orbitron` のような固有名詞も小文字にしないと落ちる）。本文の末尾に `🤖 Generated with Claude Code`
+- lefthook が pre-commit で整形・lint・型・秘密情報、pre-push でテストをかける。**フックを迂回しない。** 2026-10-08 に迂回したコミットで整形漏れが CI まで漏れた
+- 画像（アイコンなど）を ChatGPT で作るときは、プロンプトを本人に渡さず、Claude が Playwright（`mcp__playwright-login__*`。Google のログインで ChatGPT に入れる）で生成させて取り出す。生成された画像は `blob:` の URL なので、ページの中で canvas に描いて PNG にして取り出す
+- 見た目を変えたら、手元でビルドして Playwright で明るい画面と暗い画面を撮って確かめる
+
+## 手順
+
+```bash
+pnpm install
+pnpm db:up               # 手元の Postgres（compose.yaml、ポート 5434）
+pnpm migrate             # db/migrations/ を当てる
+pnpm ingest --seeds 200  # VocaDB から取り込む。--dry で数えるだけ
+pnpm dev
+```
+
+- `.env.local` は `DATABASE_URL=postgres://vocafy:vocafy@localhost:5434/vocafy` の1行
+- VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。新しい曲を拾うときは消して取り直す
+- **本番の DB への取り込み**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、200 曲の種で 6 秒ほど
+- **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない
+- 検査は `pnpm typecheck` / `lint` / `format:check` / `knip` / `test` / `test:e2e`。E2E は本番のビルドを立ち上げ、手元の DB を読む。CI は Postgres を立てて `db/fixture.sql`（DECO＊27 の4曲）を入れる
+
+## 公開の構成
+
+- DB は Vercel の Neon 連携で作った vocafy-db（無料プラン・iad1）。DATABASE_URL などは連携が Vercel に入れている
+- `vercel project add` で作ったプロジェクトは framework が空で、ビルドは通るのに全ページが 404 になった。API で framework を nextjs にして直した
+- vocafy.kkweb.io の CNAME と `_vercel` の TXT は、Janify の `.env.local` の CLOUDFLARE_API_TOKEN（kkweb.io の DNS 編集のみ）で API から足した
+
+## 分かっている問題
+
+- ニコニコにしか本家が無い曲（1123 曲）は一覧に薄く出て、押せない（残りの作業の3）
+- E2E の「トップからボカロPの画面へ」が手元で1回だけ落ち、続く2回は通った。原因は分かっていない
+- 本番のコンソールに出る CORS のエラーは、YouTube の埋め込みの中の広告計測が弾かれているもので、こちらのコードではない
+- 右下の窓を閉じたとき、`aria-hidden` の中にフォーカスが残るという警告が出る。Janify から引き継いだもの
+- アイコンを差し替える前に開いたことのあるブラウザでは、しばらく古いアイコン（Janify の J）が見える
 
 ## 残りの作業（上から順に）
 
 1. 本人に画面を触ってもらい、直したい点を聞く
-2. Janify から残っている見た目を、ボカロらしく直す。見出しの明朝体（Shippori Mincho）、暗い画面が既定の配色、画面の組み立て（本人から「Janify に影響されすぎ」と言われた）
-3. ニコニコの補欠の再生。埋め込みプレイヤーは postMessage で操作できるが、公式の資料が無い（非公式の解説: <https://zenn.dev/xpadev/articles/8f742c8f8ce3d0> 、2022年時点）。曲の終わりを知らせる合図が記事に無く、再生状態の数値から読む必要がある。まず実物で終わりを検知できるか試す
+2. 画面の組み立てをボカロらしく直す。左のメニュー・横に流す棚・詳細画面の動画の置き方が Janify のまま。本人から「Janify に影響されすぎ」と言われた。どう変えるかの方向はまだ決まっていないので、本人に聞いてから
+3. ニコニコの補欠の再生。埋め込みプレイヤーは postMessage で操作できるが、公式の資料が無い（非公式の解説: <https://zenn.dev/xpadev/articles/8f742c8f8ce3d0> 、2022年時点）。play・pause・seek・音量・再生位置は記事にある。曲の終わりを知らせる合図が記事に無く、再生状態の数値から読む必要がある。まず実物で終わりを検知できるか試す
 4. 種の線を足す。ニコニコの伝説入り（100万再生以上）と、YouTube の再生数。YouTube の再生数は VocaDB が持つ動画の ID から videos.list で引ける（50本で1単位）。ニコニコの再生数は公式の検索 API がいまも使えるか未確認
 5. 歌声ライブラリの画面、年代、検索、お気に入り
 6. 押した曲から関連曲を流し続ける再生。VocaDB の `/api/songs/{id}/related` が「同じ作者」「好きな人が好きな曲」「タグが近い曲」を12曲ずつ返す
@@ -46,7 +80,9 @@
 ## 見た目（2026-10-08）
 
 - 差し色は初音ミクの髪の青緑 #39c5bb。明るい画面では #0b7770（地に対して 5.09 : 1）
-- ロゴは Orbitron 900。合成音声の機械らしさを出すため
+- ロゴは Orbitron 900。合成音声の機械らしさを出すため。見出しの上の小さな英字も同じ字（`font-tech`）
+- 見出しは M PLUS Rounded 1c の 800。デフォルメのミクのアイコンに合う丸い字。Janify の明朝体と「コンサートのパンフレット」風の扱いはやめた。本文は Zen Kaku Gothic New のまま
+- 明るい画面と暗い画面は端末の設定に合わせる。ホーム画面から開いた直後の色（manifest）はアイコンの明るい灰色
 - アイコンはデフォルメした初音ミクの顔。ChatGPT で生成し、`src/assets/icon-source.png` に原画を置いた。地は明るい灰色（#ecf0f2）に青緑の波形。OG 画像の地もこれに合わせる
   - ピアプロ・キャラクター・ライセンスで非営利・無償の二次創作は認められている。利用規約にクレジットを書いた。サービスのアイコンとして使うことについての記述はガイドラインに見当たらなかった
   - 最初はミク本人を描かずツインテールの形だけで作ったが、本人が「不気味」「顔のデフォルメで十分」と言い、今の形にした
