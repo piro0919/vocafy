@@ -43,6 +43,16 @@ test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => 
   await expect(page.getByRole('button', { name: /ゴーストルール/ })).toBeVisible();
 });
 
+test('歌声の画面と、あいうえお順の行の画面が開く', async ({ page }) => {
+  // 初音ミク（VocaDB の id は 1）。版の違いは、この画面にまとめて並ぶ
+  await page.goto('/voices/1');
+  await expect(page.getByRole('heading', { level: 1, name: '初音ミク' })).toBeVisible();
+  await page.goto('/kana/か');
+  await expect(page.getByRole('heading', { level: 1, name: 'か行の曲' })).toBeVisible();
+  const res = await page.goto('/kana/xyz');
+  expect(res?.status()).toBe(404);
+});
+
 test('無いボカロPは 404', async ({ page }) => {
   const res = await page.goto('/producers/123456789');
   expect(res?.status()).toBe(404);

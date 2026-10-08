@@ -1,7 +1,8 @@
 import pg from 'pg';
 import { scriptEnv } from './lib/env';
 import { isEligible, producersOf, sourcesOf, vocalistsOf } from './lib/pick';
-import { artist, songsByArtist, topRatedSongs, type VdbSong } from './lib/vocadb';
+import { rowOf } from '../src/lib/kana';
+import { artist, rootVoicebank, songsByArtist, topRatedSongs, type VdbSong } from './lib/vocadb';
 
 /**
  * VocaDB から曲を取り込む。
@@ -57,6 +58,15 @@ async function main() {
     pictures.set(id, a.mainPicture?.urlOriginal ?? a.mainPicture?.urlThumb ?? null);
   }
 
+  // 歌声をキャラごとにまとめるため、元の歌声を根までたどる。根の歌声が曲に出てこなくても、表には入れる
+  const roots = new Map<number, number>();
+  for (const v of vocalists.values()) {
+    const root = await rootVoicebank(v.id);
+    roots.set(v.id, root.id);
+    if (!vocalists.has(root.id)) vocalists.set(root.id, { ...root, support: false });
+    roots.set(root.id, root.id);
+  }
+
   const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
   const client = await pool.connect();
   try {
@@ -80,20 +90,27 @@ async function main() {
       ],
     );
     await client.query(
-      `insert into vocalist (id, name, kind)
-       select * from jsonb_to_recordset($1) as x(id integer, name text, kind text)
-       on conflict (id) do update set name = excluded.name, kind = excluded.kind`,
+      `insert into vocalist (id, name, kind, base_id)
+       select * from jsonb_to_recordset($1) as x(id integer, name text, kind text, base_id integer)
+       on conflict (id) do update set name = excluded.name, kind = excluded.kind, base_id = excluded.base_id`,
       [
         JSON.stringify(
-          [...vocalists.values()].map((v) => ({ id: v.id, name: v.name, kind: v.artistType })),
+          [...vocalists.values()].map((v) => ({
+            id: v.id,
+            name: v.name,
+            kind: v.artistType,
+            base_id: roots.get(v.id) ?? v.id,
+          })),
         ),
       ],
     );
     await client.query(
-      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed)
+      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, kana_row)
        select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
-         rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean)
+         rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean,
+         kana_row text)
        on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
+         kana_row = excluded.kana_row,
          rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
          youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
          seed = song.seed or excluded.seed, imported_at = now()`,
@@ -110,6 +127,7 @@ async function main() {
               youtube_id: sources.youtubeId,
               niconico_id: sources.niconicoId,
               seed: seedIds.has(s.id),
+              kana_row: rowOf(s.name, s.names?.find((n) => n.language === 'Romaji')?.value),
             };
           }),
         ),

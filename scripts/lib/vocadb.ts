@@ -36,6 +36,8 @@ type VdbPv = {
 export type VdbSong = {
   id: number;
   name: string;
+  /** ほかの言語の曲名。漢字の曲名の読みを、ローマ字（Romaji）の名前から取る */
+  names?: { language: string; value: string }[];
   songType: string;
   publishDate?: string;
   ratingScore: number;
@@ -69,7 +71,7 @@ async function get<T>(path: string, params: Record<string, string | number | str
   return body;
 }
 
-const SONG_FIELDS = { fields: 'Artists,PVs', lang: 'Japanese', songTypes: 'Original' };
+const SONG_FIELDS = { fields: 'Artists,Names,PVs', lang: 'Japanese', songTypes: 'Original' };
 const PAGE = 50;
 
 /** 評価点の高い順に、オリジナル曲を limit 曲 */
@@ -106,4 +108,30 @@ export async function songsByArtist(artistId: number): Promise<VdbSong[]> {
 
 export async function artist(id: number): Promise<VdbArtist> {
   return get<VdbArtist>(`/artists/${id}`, { fields: 'MainPicture', lang: 'Japanese' });
+}
+
+type VdbVoicebank = Pick<VdbArtist, 'id' | 'name' | 'artistType'> & {
+  baseVoicebank?: Pick<VdbArtist, 'id' | 'name' | 'artistType'>;
+};
+
+/**
+ * 歌声の元の歌声を、根までたどる。「初音ミク V4X (Dark)」→「初音ミク V4X (Unknown)」→ … →「初音ミク」。
+ * 根の歌声そのものを返す（自分が根なら自分）
+ */
+export async function rootVoicebank(
+  id: number,
+): Promise<Pick<VdbArtist, 'id' | 'name' | 'artistType'>> {
+  const seen = new Set<number>();
+  let current = await get<VdbVoicebank>(`/artists/${id}`, {
+    fields: 'BaseVoicebank',
+    lang: 'Japanese',
+  });
+  while (current.baseVoicebank && !seen.has(current.id)) {
+    seen.add(current.id);
+    current = await get<VdbVoicebank>(`/artists/${current.baseVoicebank.id}`, {
+      fields: 'BaseVoicebank',
+      lang: 'Japanese',
+    });
+  }
+  return { id: current.id, name: current.name, artistType: current.artistType };
 }

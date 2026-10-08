@@ -225,3 +225,62 @@ export const songsOfYear = cache(async (year: number): Promise<DatedItem[]> => {
   );
   return rows.map(toItem);
 });
+
+export type Voice = { id: number; name: string; songCount: number };
+
+/** キャラごとにまとめた歌声の id（元の歌声の id）。取り込む前の行は base_id が null なので、自分を根として扱う */
+const VOICE_OF = 'coalesce(v.base_id, v.id)';
+
+/**
+ * 歌声をキャラごとにまとめ、主に歌っている（補助ではない）流せる曲の多い順に。
+ * VocaDB は、エンジンの違う版（重音テトの UTAU 版と Synthesizer V 版など）を「重音テト (Unknown)」という根でまとめる。
+ * 名前の「 (Unknown)」は画面に出さない
+ */
+export const voices = cache(async (): Promise<Voice[]> => {
+  const { rows } = await db().query<Voice>(
+    `select b.id, regexp_replace(b.name, ' \\(Unknown\\)$', '') as name,
+       count(distinct s.id)::int as "songCount"
+     from vocalist v
+     join vocalist b on b.id = ${VOICE_OF}
+     join song_vocalist sv on sv.vocalist_id = v.id and not sv.support
+     join song s on s.id = sv.song_id and s.youtube_id is not null
+     group by b.id
+     order by 3 desc, b.id`,
+  );
+  return rows;
+});
+
+/** その歌声（キャラ）が主に歌っている流せる曲。投稿の早い順 */
+export const findVoice = cache(
+  async (id: number): Promise<{ voice: Voice; songs: DatedItem[] } | undefined> => {
+    if (!Number.isSafeInteger(id)) return;
+    const voice = (await voices()).find((v) => v.id === id);
+    if (!voice) return;
+    const { rows } = await db().query<QueueRow>(
+      `${QUEUE_SELECT} and exists (
+         select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
+         where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)
+       order by s.published_on nulls last, s.id`,
+      [id],
+    );
+    return { voice, songs: rows.map(toItem) };
+  },
+);
+
+/** 索引の行ごとの、流せる曲の数 */
+export const kanaRows = cache(async (): Promise<Map<string, number>> => {
+  const { rows } = await db().query<{ row: string; count: number }>(
+    `select kana_row as row, count(*)::int as count
+     from song where youtube_id is not null and kana_row is not null group by 1`,
+  );
+  return new Map(rows.map((r) => [r.row, r.count]));
+});
+
+/** その行で始まる流せる曲。曲名の順 */
+export const songsOfRow = cache(async (row: string): Promise<DatedItem[]> => {
+  const { rows } = await db().query<QueueRow>(
+    `${QUEUE_SELECT} and s.kana_row = $1 order by s.name, s.id`,
+    [row],
+  );
+  return rows.map(toItem);
+});
