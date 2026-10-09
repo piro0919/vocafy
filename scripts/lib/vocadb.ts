@@ -92,6 +92,28 @@ export async function topRatedSongs(limit: number): Promise<VdbSong[]> {
   return songs.slice(0, limit);
 }
 
+/**
+ * YouTube の再生数の線の候補。after より後に出た、YouTube に動画のあるオリジナル曲のうち、評価点が minScore 以上のもの。
+ * 評価点の上位だけでは、YouTube で聴かれていても VocaDB で票の少ない最近の曲を拾えないので、広めに取って再生数で選ぶ
+ */
+export async function youtubeCandidates(after: string, minScore: number): Promise<VdbSong[]> {
+  const songs: VdbSong[] = [];
+  for (let start = 0; ; start += PAGE) {
+    const { items } = await get<{ items: VdbSong[] }>('/songs', {
+      ...SONG_FIELDS,
+      pvServices: 'Youtube',
+      afterDate: after,
+      minScore,
+      sort: 'PublishDate',
+      maxResults: PAGE,
+      start,
+    });
+    songs.push(...items);
+    if (songs.length % 2000 < PAGE) console.log(`  候補 ${songs.length} 曲`);
+    if (items.length < PAGE) return songs;
+  }
+}
+
 /** ニコニコの動画の ID から、その動画が登録された曲を引く。VocaDB に無ければ null */
 export async function songByNiconico(videoId: string): Promise<VdbSong | null> {
   return get<VdbSong | null>('/songs/byPv', {

@@ -9,9 +9,10 @@ import {
   songByNiconico,
   songsByArtist,
   topRatedSongs,
+  youtubeCandidates,
   type VdbSong,
 } from './lib/vocadb';
-import { deadYouTube } from './lib/youtube';
+import { deadYouTube, viewCounts } from './lib/youtube';
 
 /**
  * VocaDB から曲を取り込む。
@@ -19,11 +20,12 @@ import { deadYouTube } from './lib/youtube';
  *   pnpm ingest --seeds 200          評価点の上位 200 曲と、ニコニコの伝説入りを種にして、DB に書く
  *   pnpm ingest --seeds 400 --dry    書かずに、何曲・何人になるかだけ数える
  *   pnpm ingest --no-legend          ニコニコの伝説入りを種に入れない
+ *   pnpm ingest --no-youtube         YouTube の再生数の線を種に入れない（YOUTUBE_API_KEY が要らなくなる）
  *
  * 種の曲からボカロPを拾い、その人の曲をすべて入れる。線を下げる（--seeds を増やす）ときは、先に --dry で
  * 増え方を数える。ボカロPが1人増えると、その人の全曲がついてくるので、曲数は種の数に比例しない。
  *
- * 種は VocaDB の評価点と、ニコニコの伝説入り（100万再生以上）。YouTube の再生数の線は、次の周回で足す
+ * 種は VocaDB の評価点、ニコニコの伝説入り（100万再生以上）、YouTube の再生数（100万回以上。2018年以降の曲から選ぶ）
  */
 /** 再生中に流せないと分かった動画。表がまだ無い DB（0004 を当てる前）では空 */
 async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<string> }> {
@@ -63,17 +65,32 @@ async function legendSongs(): Promise<VdbSong[]> {
   return songs;
 }
 
+/** YouTube の再生数の線。2018年以降で評価点が 10 以上の曲を候補にし、本家の動画の再生数が YOUTUBE_LINE 以上のものを選ぶ */
+const YOUTUBE_LINE = 1_000_000;
+
+async function youtubeSongs(): Promise<VdbSong[]> {
+  const candidates = (await youtubeCandidates('2018-01-01', 10)).filter(
+    (s) => isEligible(s) && sourcesOf(s)?.youtubeId,
+  );
+  const views = await viewCounts(
+    candidates.map((s) => sourcesOf(s)!.youtubeId!),
+    scriptEnv('YOUTUBE_API_KEY'),
+  );
+  return candidates.filter((s) => (views.get(sourcesOf(s)!.youtubeId!) ?? 0) >= YOUTUBE_LINE);
+}
+
 async function main() {
   const seedCount = Number(arg('seeds') ?? 200);
   const dry = process.argv.includes('--dry');
 
   const rated = (await topRatedSongs(seedCount)).filter(isEligible);
   const legends = process.argv.includes('--no-legend') ? [] : await legendSongs();
-  const seeds = [...new Map([...rated, ...legends].map((s) => [s.id, s])).values()];
+  const watched = process.argv.includes('--no-youtube') ? [] : await youtubeSongs();
+  const seeds = [...new Map([...rated, ...legends, ...watched].map((s) => [s.id, s])).values()];
   const seedIds = new Set(seeds.map((s) => s.id));
   const producerIds = new Set(seeds.flatMap((s) => producersOf(s).map((p) => p.id)));
   console.log(
-    `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲）、ボカロP ${producerIds.size} 人`,
+    `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲）、ボカロP ${producerIds.size} 人`,
   );
 
   // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）

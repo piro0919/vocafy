@@ -7,6 +7,8 @@ import { z } from 'zod';
 const SCHEMA = {
   // 取り込み先の DB。手元は compose.yaml の Postgres、本番は Neon
   DATABASE_URL: z.string().min(1),
+  // YouTube Data API の鍵。再生数の線の種を選ぶのに使う（Google Cloud の vocafy プロジェクト。使える API は YouTube Data API v3 だけ）
+  YOUTUBE_API_KEY: z.string().min(1),
 } as const;
 
 export function scriptEnv(name: keyof typeof SCHEMA): string {

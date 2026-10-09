@@ -62,3 +62,43 @@ export async function deadYouTube(ids: string[]): Promise<Set<string>> {
 
   return new Set(ids.filter((id) => cache[id]?.ok === false));
 }
+
+/**
+ * YouTube の再生数。YouTube Data API の videos.list で、50 本ずつ聞く（1回 1 単位。無料枠は1日 10,000 単位）。
+ * 結果は data/raw/youtube/views.json に残し、VIEWS_AGAIN_DAYS 日たったものだけ聞き直す。消えた動画は返ってこないので 0 にする
+ */
+const VIEWS = new URL('../../data/raw/youtube/views.json', import.meta.url);
+const VIEWS_AGAIN_DAYS = 30;
+
+type Views = { views: number; at: string };
+
+export async function viewCounts(ids: string[], key: string): Promise<Map<string, number>> {
+  let cache: Record<string, Views> = {};
+  try {
+    cache = JSON.parse(await readFile(VIEWS, 'utf8')) as Record<string, Views>;
+  } catch {
+    // まだ聞いていない
+  }
+  const fresh = Date.now() - VIEWS_AGAIN_DAYS * 24 * 60 * 60 * 1000;
+  const todo = [...new Set(ids)].filter((id) => {
+    const hit = cache[id];
+    return !hit || Date.parse(hit.at) < fresh;
+  });
+  if (todo.length > 0) console.log(`YouTube の再生数を聞きます: ${todo.length} 本`);
+  for (let i = 0; i < todo.length; i += 50) {
+    const batch = todo.slice(i, i + 50);
+    const params = new URLSearchParams({ part: 'statistics', id: batch.join(','), key });
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
+    if (!res.ok) throw new Error(`YouTube Data API ${res.status}: ${await res.text()}`);
+    const { items } = (await res.json()) as {
+      items: { id: string; statistics: { viewCount?: string } }[];
+    };
+    const at = new Date().toISOString();
+    for (const id of batch) cache[id] = { views: 0, at };
+    for (const item of items)
+      cache[item.id] = { views: Number(item.statistics.viewCount ?? 0), at };
+  }
+  await mkdir(new URL('.', VIEWS), { recursive: true });
+  await writeFile(VIEWS, JSON.stringify(cache));
+  return new Map(ids.map((id) => [id, cache[id]?.views ?? 0]));
+}
