@@ -15,7 +15,9 @@ const isVideoThumb = (src: ImageProps['src']) =>
 
 /**
  * 読み込めたらふわっと出す画像。読み込んだ順にいきなり現れるのを避ける。
- * 先に読み込み終わっていて onLoad が来ないこともあるので、出したときにも確かめる
+ * 先に読み込み終わっていて onLoad が来ないこともあるので、出したときにも確かめる。
+ * 指を乗せたときの拡大（group-hover:scale）も同じ指定で動かす。使う側で transition-[opacity,scale] を足しても、
+ * Tailwind の並びで transition-opacity が後に来て勝ち、拡大が一瞬で切り替わっていた
  */
 export function FadeImage({ className = '', alt, unoptimized, ...props }: ImageProps) {
   const ref = useRef<HTMLImageElement>(null);
@@ -30,7 +32,7 @@ export function FadeImage({ className = '', alt, unoptimized, ...props }: ImageP
       ref={ref}
       alt={alt}
       onLoad={() => setLoaded(true)}
-      className={`transition-opacity duration-300 ease-(--ease-out) ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+      className={`transition-[opacity,scale] duration-300 ease-(--ease-out) ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
       unoptimized={unoptimized ?? isVideoThumb(props.src)}
       {...props}
     />

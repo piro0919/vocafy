@@ -1,16 +1,14 @@
 'use client';
 
 import type { DatedItem } from '@/lib/catalog';
-import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
-import { FavoriteButton } from './favorite-button';
 import { Heading } from './heading';
 import { PlayAllPill } from './play-all';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
-import { useOpenSong } from './song-list';
+import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
 
 /** 「2012年10月8日」 */
@@ -75,7 +73,7 @@ export function OnThisDay({
               fill
               sizes="(min-width: 64rem) 40vw, (min-width: 40rem) 50vw, 100vw"
               loading="eager"
-              className="object-cover transition-[opacity,scale] duration-300 ease-(--ease-out) group-hover:scale-[1.03]"
+              className="object-cover group-hover:scale-[1.03]"
             />
             <span className={`absolute right-3 bottom-3 size-12 ${COVER_PLAY}`}>
               <Icon name={heroActive && playing ? 'pause' : 'play'} />
@@ -108,46 +106,22 @@ export function OnThisDay({
             style={{ maskImage: edgeMask(edge) }}
             className="-mx-4 grid auto-cols-[88%] grid-flow-col grid-rows-6 content-start gap-x-3 gap-y-1 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-6 sm:-mx-8 sm:auto-cols-[min(22rem,80%)] sm:scroll-pl-8 sm:px-8 lg:mx-0 lg:auto-cols-[90%] lg:grid-rows-7 lg:scroll-pl-6 lg:px-0 [&::-webkit-scrollbar]:hidden"
           >
-            {rest.map((song) => {
-              const active = current?.songId === song.songId;
-              return (
-                <li
-                  key={song.songId}
-                  className={`group flex min-w-0 snap-start items-center rounded-md transition-colors duration-150 ${active ? 'bg-glass' : 'hover:bg-foreground/8'}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => open(song)}
-                    className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.98]"
-                  >
-                    <FadeImage
-                      src={smallThumbOf(song)}
-                      alt=""
-                      width={85}
-                      height={48}
-                      className="aspect-video shrink-0 rounded-lg object-cover"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-1.5 text-sm font-bold">
-                        <span className="truncate">{song.title}</span>
-                        {active && <Bars playing={playing} />}
-                      </span>
-                      <span className="block truncate text-xs text-muted">
-                        {song.producerName}
-                        {song.vocalists && ` ・ ${song.vocalists}`}
-                      </span>
-                    </span>
-                    {/* 同じ日の曲は年だけ、前後の日から補った曲は月日も添える */}
+            {rest.map((song) => (
+              // 行は曲の一覧と同じ部品。同じ日の曲は年だけ、前後の日から補った曲は月日も添える
+              <li key={song.songId} className="min-w-0">
+                <SongItem
+                  song={song}
+                  onOpen={() => open(song)}
+                  meta={
                     <span className="shrink-0 font-tech text-xs font-black text-accent">
                       {sameDay(song.publishedOn)
                         ? song.publishedOn.slice(0, 4)
                         : song.publishedOn.slice(0, 10).replaceAll('-', '.')}
                     </span>
-                  </button>
-                  <FavoriteButton song={song} quiet />
-                </li>
-              );
-            })}
+                  }
+                />
+              </li>
+            ))}
           </ul>
         )}
       </div>
@@ -182,7 +156,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
               alt=""
               fill
               sizes="(min-width: 64rem) 16vw, (min-width: 40rem) 25vw, 33vw"
-              className="object-cover transition-[opacity,scale] duration-300 ease-(--ease-out) group-hover:scale-105"
+              className="object-cover group-hover:scale-105"
             />
             <span
               className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
