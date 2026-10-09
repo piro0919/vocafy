@@ -714,7 +714,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         data-player-frame
         className={
           mode === 'slot'
-            ? 'fixed z-10 overflow-hidden rounded-lg bg-black [&>iframe]:size-full'
+            ? 'fixed z-10 overflow-hidden bg-black md:rounded-lg [&>iframe]:size-full'
             : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-lg bg-black shadow-2xl shadow-black/20 dark:shadow-black/60 [&>iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
         }
       />
