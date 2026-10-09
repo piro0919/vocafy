@@ -55,7 +55,12 @@ export function FavoriteSongs() {
       </div>
 
       {songs.length === 0 ? (
-        <p className="text-sm text-muted">お気に入りの曲はまだありません。</p>
+        // お気に入りの画面（favorites-view.tsx）と同じく、入れ方を添える
+        <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
+          お気に入りの曲はまだありません。曲の
+          <Icon name="heart" className="size-4" />
+          で追加できます。
+        </p>
       ) : (
         <SortableSongList songs={songs} onOpen={(i) => play(i)} />
       )}

@@ -43,8 +43,8 @@ export function PlaybackMode({
       </button>
       <button
         type="button"
-        aria-label={repeat === 'one' ? 'ループ: 1曲（押すと全体）' : 'ループ: 全体（押すと1曲）'}
-        title={repeat === 'one' ? 'ループ: 1曲' : 'ループ: 全体'}
+        aria-label={repeat === 'one' ? 'ループを全体にする' : 'ループを1曲にする'}
+        title={repeat === 'one' ? 'ループを全体にする' : 'ループを1曲にする'}
         onClick={toggleRepeat}
         className={`${button} text-accent`}
       >
@@ -100,7 +100,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       type="button"
       aria-label={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       aria-pressed={on}
-      title={on ? 'ラジオをやめる' : 'この曲からラジオを流す（関連曲を流し続ける）'}
+      title={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       onClick={toggle}
       className={`${className} relative size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >

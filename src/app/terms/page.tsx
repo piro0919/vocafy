@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: '利用規約' };
 
 export default function TermsPage() {
   return (
-    <Legal title="利用規約" updated="2026年10月8日">
+    <Legal title="利用規約" eyebrow="Terms" updated="2026年10月8日">
       <p>
         この規約は、{OPERATOR} が運営する
         Vocafy（以下「本サイト」）の利用について定めます。本サイトを利用した時点で、この規約に同意したものとみなします。

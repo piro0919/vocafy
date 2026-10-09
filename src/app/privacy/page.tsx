@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'プライバシーポリシー' };
 
 export default function PrivacyPage() {
   return (
-    <Legal title="プライバシーポリシー" updated="2026年10月9日">
+    <Legal title="プライバシーポリシー" eyebrow="Privacy" updated="2026年10月9日">
       <p>
         Vocafy（以下「本サイト」）は、{OPERATOR}
         が運営しています。本サイトでの利用者の情報の扱いを、次のとおり定めます。
