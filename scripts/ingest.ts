@@ -120,7 +120,7 @@ const MAX_NEW_PRODUCERS = 20;
 /**
  * 種の曲。評価点の上位 seedCount 曲・ニコニコの伝説入り・YouTube の再生数のどれかを満たすもの。
  * since を渡すと、伝説入りと YouTube の再生数はその日より後に出た曲だけを見て、評価点の上位は見ない。
- * 1年以内の曲が歴代の上位に入ることはまれで、入る曲はたいてい再生数の線にも掛かるので、毎週 32 回聞くのを省く
+ * 1年以内の曲が歴代の上位に入ることはまれで、入る曲はたいてい再生数の線にも掛かるので、毎週聞く十数回を省く
  */
 async function seedSongs(seedCount: number, since?: string): Promise<VdbSong[]> {
   const rated = since ? [] : (await topRatedSongs(seedCount)).filter(isEligible);

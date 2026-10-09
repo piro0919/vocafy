@@ -113,7 +113,8 @@ async function get<T>(path: string, params: Record<string, string | number | str
 }
 
 const SONG_FIELDS = { fields: 'Artists,Names,PVs', lang: 'Japanese', songTypes: 'Original' };
-const PAGE = 50;
+/** 1回で返る曲の数。VocaDB の上限が 100（2026-10-09 に 200 を頼んで 100 が返るのを確かめた）。前は 50 で、聞く回数が倍だった */
+const PAGE = 100;
 
 /** 評価点の高い順に、オリジナル曲を limit 曲 */
 export async function topRatedSongs(limit: number): Promise<VdbSong[]> {
