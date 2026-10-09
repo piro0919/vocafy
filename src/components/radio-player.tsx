@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from './icon';
 import { PlayerStage, SwipeToLeave } from './player-stage';
@@ -11,17 +11,35 @@ import { SongItem } from './song-list';
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
  * 一覧は、先頭が元の曲、続いてその関連曲。このラジオを流しているあいだは、流している並びをそのまま出す。
- * 並びは最後の曲に入ると後ろに伸びる（player-provider.tsx）ので、一覧も下に伸びていく
+ * 並びは最後の曲に入ると後ろに伸びる（player-provider.tsx）ので、一覧も下に伸びていく。
+ * 関連曲はこの画面を開いてから /api/related で取り、届くまでは元の曲の下に仮の行を出す（page.tsx の説明）
  */
-export function RadioPlayer({ songs, heading }: { songs: QueueItem[]; heading: ReactNode }) {
+export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: ReactNode }) {
   const { current, playing, queue, radioHome, playRadio, fillRadio, jumpTo, toggle } = usePlayer();
-  const here = current !== null && radioHome === `/radio/${songs[0].songId}`;
-  const list = here ? queue : songs;
-
-  // 再生の帯のボタンからラジオを始めて移ってきたときは、並びがまだ元の曲だけなので、この画面の関連曲で埋める
+  const here = current !== null && radioHome === `/radio/${seed.songId}`;
+  // 届くまでは null。取れなかったときは空にして、元の曲だけのラジオにする
+  const [related, setRelated] = useState<QueueItem[] | null>(null);
   useEffect(() => {
-    if (here && queue.length === 1) fillRadio(songs);
-  }, [here, queue.length, fillRadio, songs]);
+    let alive = true;
+    fetch(`/api/related/${seed.songId}`)
+      .then((res) => (res.ok ? (res.json() as Promise<QueueItem[]>) : []))
+      .catch(() => [])
+      .then((items) => {
+        if (alive) setRelated(items.filter((s) => s.songId !== seed.songId));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [seed.songId]);
+  const songs = related ? [seed, ...related] : [seed];
+  const list = here ? queue : songs;
+  // 流している並びがまだ元の曲だけで、関連曲も届いていないあいだ
+  const waiting = related === null && list.length === 1;
+
+  // 再生の帯のボタンからラジオを始めて移ってきたときは、並びがまだ元の曲だけなので、届いた関連曲で埋める
+  useEffect(() => {
+    if (here && queue.length === 1 && related) fillRadio([seed, ...related]);
+  }, [here, queue.length, fillRadio, seed, related]);
 
   return (
     // 一覧の再生用の画面（list-player.tsx）と同じ組み立て
@@ -29,7 +47,7 @@ export function RadioPlayer({ songs, heading }: { songs: QueueItem[]; heading: R
       <div className="contents lg:sticky lg:top-25 lg:block">
         <PlayerStage
           active={here}
-          cover={songs[0].thumb}
+          cover={seed.thumb}
           label="このラジオを再生"
           onPlay={() => playRadio(songs, 0)}
         />
@@ -57,6 +75,7 @@ export function RadioPlayer({ songs, heading }: { songs: QueueItem[]; heading: R
             onOpen={() => (here ? jumpTo(i) : playRadio(songs, i))}
           />
         ))}
+        {waiting && <SkeletonRows count={11} />}
       </div>
     </div>
   );
@@ -84,18 +103,23 @@ export function RadioLoading() {
             <span className="h-9 w-2/3 animate-pulse rounded bg-surface" />
           </div>
         </div>
-        <div aria-hidden className="-mx-1.5 flex flex-col gap-1">
-          {Array.from({ length: 12 }, (_, i) => (
-            <div key={i} className="flex items-center gap-3 p-1.5">
-              <span className="aspect-video w-[85px] shrink-0 animate-pulse rounded bg-surface" />
-              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
-                <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
-              </span>
-            </div>
-          ))}
+        <div className="-mx-1.5 flex flex-col gap-1">
+          <SkeletonRows count={12} />
         </div>
       </div>
     </div>
   );
+}
+
+/** 曲の一覧の仮の行。画面を作っているあいだと、関連曲が届くまでのあいだに出す */
+function SkeletonRows({ count }: { count: number }) {
+  return Array.from({ length: count }, (_, i) => (
+    <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">
+      <span className="aspect-video w-[85px] shrink-0 animate-pulse rounded bg-surface" />
+      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
+        <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
+      </span>
+    </div>
+  ));
 }
