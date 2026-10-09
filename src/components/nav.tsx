@@ -12,7 +12,6 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/voices', label: '歌声', icon: 'voice' },
   { href: '/years', label: '年代', icon: 'year' },
   { href: '/favorites', label: 'お気に入り', icon: 'heart' },
-  { href: '/search', label: '検索', icon: 'search' },
 ];
 
 function useActive() {
@@ -93,14 +92,11 @@ export function Sidebar() {
  * スマホの幅で下に置くタブ。画面の端から左右と下を離し、角を丸めた板として浮かせる。
  * 再生の帯が出ているあいだは、帯がこの上に載って一枚の板に見えるよう、上の角と上の線を消す（globals.css）
  */
-/** スマホの下のタブに並べる項目。検索は上の帯の虫めがねにあるので外し、5つに収める */
-const TAB_ITEMS = ITEMS.filter((item) => item.href !== '/search');
-
 export function MobileTabs() {
   const active = useActive();
   return (
     <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-5 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
-      {TAB_ITEMS.map((item) => (
+      {ITEMS.map((item) => (
         <Link
           key={item.href}
           href={item.href}

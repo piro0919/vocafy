@@ -2,9 +2,11 @@ import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { M_PLUS_Rounded_1c, Orbitron, Zen_Kaku_Gothic_New } from 'next/font/google';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { AmbientProvider } from '@/components/ambient';
 import { Header } from '@/components/header';
 import { HeaderBar } from '@/components/header-bar';
+import { HeaderSearch, HeaderSearchFallback } from '@/components/header-search';
 import { MobileTabs, Sidebar } from '@/components/nav';
 import { AccountButton } from '@/components/account/account-button';
 import { AccountSync } from '@/components/account/account-sync';
@@ -85,10 +87,13 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     <HeaderBar />
                   </Header>
                   {/*
-                    パソコンは上の帯が無いので、ログインだけを本文の上の右端に置く（Spotify・YouTube と同じ置き場所）。
+                    パソコンは上の帯が無いので、検索欄とログインだけの段を本文の上に置く（Spotify・YouTube と同じ置き場所）。
                     本文に重ねると、見出しの横の「すべて表示」とぶつかる
                   */}
-                  <div className="hidden h-16 items-center justify-end px-8 md:flex">
+                  <div className="hidden h-16 items-center justify-between gap-4 px-8 md:flex">
+                    <Suspense fallback={<HeaderSearchFallback />}>
+                      <HeaderSearch />
+                    </Suspense>
                     <AccountButton />
                   </div>
                   <main className="flex-1 px-4 pb-12 sm:px-8">{children}</main>

@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { useId, useSyncExternalStore } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
-
-const PILL =
-  'shrink-0 rounded-full border border-line px-3.5 py-1.5 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-95';
+import { PILL } from '@/components/browse-cards';
 
 function LoginButton() {
   return (
@@ -50,7 +48,7 @@ function SessionAccount() {
       <div
         id={id}
         popover="auto"
-        className="fixed inset-auto top-18 right-3 m-0 w-64 rounded-2xl border border-line/60 bg-sidebar p-2 text-foreground shadow-lg shadow-black/10 md:top-16 md:right-8"
+        className="fixed inset-auto top-18 right-3 m-0 w-64 rounded-2xl border border-line/60 bg-sidebar p-2 text-foreground shadow-lg shadow-black/10 md:top-14 md:right-8"
       >
         <div className="px-3 py-2">
           <p className="truncate text-sm font-bold">{user.name}</p>

@@ -92,7 +92,14 @@ export function SearchView() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [text, setText] = useState(params.get('q') ?? '');
+  const fromUrl = params.get('q') ?? '';
+  const [text, setText] = useState(fromUrl);
+  // パソコンでは上の段の欄（header-search.tsx）が住所を書き換えるので、住所が外から変わったら合わせる
+  const [seen, setSeen] = useState(fromUrl);
+  if (seen !== fromUrl) {
+    setSeen(fromUrl);
+    if (fromUrl !== text.trim()) setText(fromUrl);
+  }
   const [index, setIndex] = useState<Prepared | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -174,7 +181,8 @@ export function SearchView() {
 
   return (
     <div className="mt-4">
-      <label className="flex items-center gap-2 rounded-2xl border border-line/60 bg-sidebar/60 px-4 focus-within:border-accent/60">
+      {/* パソコンは上の段に検索欄があるので、スマホだけで出す */}
+      <label className="flex items-center gap-2 rounded-2xl border border-line/60 bg-sidebar/60 px-4 focus-within:border-accent/60 md:hidden">
         <Icon name="search" className="size-5 shrink-0 text-muted" />
         <input
           type="search"

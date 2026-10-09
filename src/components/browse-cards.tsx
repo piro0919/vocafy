@@ -89,13 +89,14 @@ export function YearCard({
   );
 }
 
+/** 小さな丸いボタンの形。「すべて表示」と右上のログインで同じ形を使う */
+export const PILL =
+  'shrink-0 rounded-full border border-accent/40 bg-sidebar/60 px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95';
+
 /** 見出しの右に置く「すべて表示」 */
 export function MoreLink({ href }: { href: string }) {
   return (
-    <Link
-      href={href}
-      className="rounded-full border border-accent/40 bg-sidebar/60 px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
-    >
+    <Link href={href} className={PILL}>
       すべて表示
     </Link>
   );
