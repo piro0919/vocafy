@@ -308,10 +308,11 @@ function YearJump({ songs }: { songs: Song[] }) {
   if (!show) return null;
   return (
     // 一覧をスクロールしても、一覧の上に貼り付ける（パソコンは左の列と同じ高さ、スマホは固定した動画の下）。
+    // スマホは、スクロールすると動画の下に操作の帯（player-stage.tsx の StageControls。動画の下 12px・高さ 40px）が出るので、その下 8px に貼る
     // 地は、ほかの浮いた板（左のメニュー・再生の帯）と同じすりガラス。単色で塗ると上部の表紙の色の背景と合わなかった
     <div
       ref={bar}
-      className="sticky top-[calc(56.25vw+8px)] z-10 mb-3 rounded-full border border-line/60 bg-sidebar/80 p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
+      className="sticky top-[calc(56.25vw+60px)] z-10 mb-3 rounded-full border border-line/60 bg-sidebar/80 p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
       <ScrollRow label="年で飛ぶ" className="gap-1">
