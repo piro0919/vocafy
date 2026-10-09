@@ -56,7 +56,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           </span>
         )}
         <div>
-          <Heading as="h1" size="page" eyebrow="Voice">
+          <Heading as="h1" size="page">
             {voice.name}
           </Heading>
           <p className="mt-2 text-sm text-muted">{voice.songCount} 曲</p>

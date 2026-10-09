@@ -1,4 +1,5 @@
-import type { VdbSong } from './vocadb';
+import type { ProducerLinks } from '../../src/lib/catalog';
+import type { VdbSong, VdbWebLink } from './vocadb';
 
 /**
  * VocaDB の曲から、Vocafy に入れる部分を選び出す。DB にも VocaDB にも触らないので、テストから確かめられる
@@ -75,4 +76,67 @@ export function isEligible(song: VdbSong): boolean {
     vocalistsOf(song).length > 0 &&
     sourcesOf(song) !== null
   );
+}
+
+/** 公式サイトとして拾わない場所。SNS や投稿サイトのページが Website の名前で入っていることがある */
+const NOT_WEBSITE =
+  /(^|\.)(twitter\.com|x\.com|youtube\.com|youtu\.be|nicovideo\.jp|instagram\.com|tiktok\.com|facebook\.com|piapro\.jp|pixiv\.net|soundcloud\.com)$/;
+
+/**
+ * ボカロPの本人の場所を、VocaDB の Official のリンクからサービスごとに1本だけ選ぶ。閉じたリンクは使わない。
+ * 同じサービスに何本もあるとき（YouTube が自動で作ったチャンネル、サブのアカウント、昔のマイリストなど）は、
+ * 説明が素のもの（「YouTube Channel」「NND Account」）を先に使う
+ */
+export function linksOf(links: VdbWebLink[]): ProducerLinks {
+  const official = links.flatMap((l) => {
+    if (l.category !== 'Official' || l.disabled) return [];
+    try {
+      const url = new URL(/^https?:\/\//.test(l.url) ? l.url : `https://${l.url}`);
+      return [{ url, description: l.description.trim() }];
+    } catch {
+      return [];
+    }
+  });
+  const host = (u: URL) => u.hostname.replace(/^www\./, '');
+  const side = (d: string) => /auto-generated|youtube music|topic|sub|2nd|alt|old|game|旧/i.test(d);
+  const first = (
+    match: (u: URL, d: string) => boolean,
+    rank: (u: URL, d: string) => number = () => 0,
+  ) =>
+    official
+      .filter(({ url, description }) => match(url, description) && !side(description))
+      .sort((a, b) => rank(a.url, a.description) - rank(b.url, b.description))[0]?.url;
+
+  const x = first(
+    (u) => /^(twitter|x)\.com$/.test(host(u)) && /^\/\w+\/?$/.test(u.pathname),
+    (_, d) => (/^(twitter|x)$/i.test(d) ? 0 : 1),
+  );
+  const youtube = first(
+    (u) => host(u) === 'youtube.com' && /^\/(@|channel\/|user\/|c\/)/.test(u.pathname),
+    (_, d) => (d === 'YouTube Channel' ? 0 : 1),
+  );
+  const niconico = first(
+    (u) =>
+      (host(u) === 'nicovideo.jp' && /^\/(user|mylist)\//.test(u.pathname)) ||
+      host(u) === 'ch.nicovideo.jp',
+    (u) => (u.pathname.startsWith('/mylist/') ? 1 : 0),
+  );
+  const website = first(
+    (u, d) =>
+      /^(official )?(web ?site|homepage|home page|official site)\b/i.test(d) &&
+      !NOT_WEBSITE.test(host(u)),
+  );
+
+  const result: ProducerLinks = {};
+  if (x) result.x = `https://x.com${x.pathname.replace(/\/$/, '')}`;
+  // YouTube は ?si= などの追跡の印を落とす。/videos のような後ろの区切りも落としてチャンネルの頭にする
+  if (youtube)
+    result.youtube = `https://www.youtube.com${youtube.pathname.match(/^\/(@[^/]+|channel\/[^/]+|user\/[^/]+|c\/[^/]+)/)![0]}`;
+  if (niconico)
+    result.niconico = `https://${niconico.hostname}${niconico.pathname}`.replace(
+      /^http:/,
+      'https:',
+    );
+  if (website) result.website = website.href;
+  return result;
 }

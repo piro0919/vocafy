@@ -15,6 +15,16 @@ export type VdbArtist = {
   name: string;
   artistType: string;
   mainPicture?: { urlOriginal?: string; urlThumb?: string };
+  webLinks?: VdbWebLink[];
+};
+
+export type VdbWebLink = {
+  /** Official（本人の場所）・Commercial（買える・聴ける場所）・Reference（第三者の解説）など */
+  category: string;
+  description: string;
+  url: string;
+  /** 閉じたなどで使えなくなったリンク */
+  disabled: boolean;
 };
 
 type VdbSongArtist = {
@@ -141,7 +151,7 @@ export async function songsByArtist(artistId: number): Promise<VdbSong[]> {
 }
 
 export async function artist(id: number): Promise<VdbArtist> {
-  return get<VdbArtist>(`/artists/${id}`, { fields: 'MainPicture', lang: 'Japanese' });
+  return get<VdbArtist>(`/artists/${id}`, { fields: 'MainPicture,WebLinks', lang: 'Japanese' });
 }
 
 type VdbVoicebank = Pick<VdbArtist, 'id' | 'name' | 'artistType'> & {

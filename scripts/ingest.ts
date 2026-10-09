@@ -1,6 +1,7 @@
 import pg from 'pg';
 import { scriptEnv } from './lib/env';
-import { isEligible, producersOf, sourcesOf, vocalistsOf } from './lib/pick';
+import type { ProducerLinks } from '../src/lib/catalog';
+import { isEligible, linksOf, producersOf, sourcesOf, vocalistsOf } from './lib/pick';
 import { rowOf } from '../src/lib/kana';
 import { legendVideos } from './lib/niconico';
 import {
@@ -148,11 +149,13 @@ async function main() {
     `YouTube で流せない動画 ${dead.size} 本（ニコニコに切り替え ${dead.size - dropped.length} 曲・外す ${dropped.length} 曲）`,
   );
 
-  // 画像は全曲を取ったボカロPの分だけ取りに行く。合作の相手は名前だけ
+  // 画像とリンクは全曲を取ったボカロPの分だけ取りに行く。合作の相手は名前だけ
   const pictures = new Map<number, string | null>();
+  const links = new Map<number, ProducerLinks>();
   for (const id of producerIds) {
     const a = await artist(id);
     pictures.set(id, a.mainPicture?.urlOriginal ?? a.mainPicture?.urlThumb ?? null);
+    links.set(id, linksOf(a.webLinks ?? []));
   }
 
   // 歌声をキャラごとにまとめるため、元の歌声を根までたどる。根の歌声が曲に出てこなくても、表には入れる
@@ -171,10 +174,12 @@ async function main() {
     await client.query('begin');
     // 1行ずつ書くと、海の向こうの DB（Neon）では往復が数万回になって1時間を超える。表ごとに JSON にまとめて1回で書く
     await client.query(
-      `insert into producer (id, name, picture, complete)
-       select * from jsonb_to_recordset($1) as x(id integer, name text, picture text, complete boolean)
+      `insert into producer (id, name, picture, links, complete)
+       select id, name, picture, coalesce(links, '{}'), complete
+       from jsonb_to_recordset($1) as x(id integer, name text, picture text, links jsonb, complete boolean)
        on conflict (id) do update set name = excluded.name,
          picture = coalesce(excluded.picture, producer.picture),
+         links = case when excluded.complete then excluded.links else producer.links end,
          complete = producer.complete or excluded.complete`,
       [
         JSON.stringify(
@@ -182,6 +187,7 @@ async function main() {
             id: p.id,
             name: PRODUCER_NAMES.get(p.id) ?? p.name,
             picture: pictures.get(p.id) ?? null,
+            links: links.get(p.id) ?? null,
             complete: producerIds.has(p.id),
           })),
         ),

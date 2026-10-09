@@ -5,6 +5,7 @@ import type { MusicGroup, WithContext } from 'schema-dts';
 import { AmbientSource } from '@/components/ambient';
 import { FavoriteProducerButton } from '@/components/favorite-button';
 import { JsonLd } from '@/components/json-ld';
+import { ProducerLinks } from '@/components/producer-links';
 import { ProducerPlayer } from '@/components/producer-player';
 import { findProducer, queueOf } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
@@ -28,7 +29,7 @@ export async function generateMetadata({
 export default async function ProducerPage({ params }: PageProps<'/producers/[id]'>) {
   const found = await findProducer(Number((await params).id));
   if (!found) notFound();
-  const { producer, songs } = found;
+  const { producer, links, songs } = found;
   const queue = queueOf(songs, producer);
   const cover = queue[0]?.thumb ?? null;
 
@@ -58,12 +59,18 @@ export default async function ProducerPage({ params }: PageProps<'/producers/[id
                 className="size-12 shrink-0 rounded-full bg-surface object-cover sm:size-14"
               />
             )}
-            <Heading as="h1" size="page" eyebrow="Producer">
-              {producer.name}
-            </Heading>
-            <FavoriteProducerButton
-              producer={{ id: producer.id, name: producer.name, picture: producer.picture }}
-            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <Heading as="h1" size="page">
+                  {producer.name}
+                </Heading>
+                <FavoriteProducerButton
+                  producer={{ id: producer.id, name: producer.name, picture: producer.picture }}
+                />
+              </div>
+              {/* 本人の場所は名前の下に1行で（YouTube のチャンネルの画面と同じ置き場所） */}
+              <ProducerLinks name={producer.name} links={links} />
+            </div>
           </div>
         }
         producerId={producer.id}

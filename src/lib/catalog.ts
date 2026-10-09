@@ -38,6 +38,9 @@ export type Song = {
 
 export type Producer = { id: number; name: string; picture: string | null; songCount: number };
 
+/** ボカロPの本人の場所。無いサービスの鍵は無い（scripts/lib/pick.ts の linksOf） */
+export type ProducerLinks = Partial<Record<'x' | 'youtube' | 'niconico' | 'website', string>>;
+
 let pool: pg.Pool | undefined;
 
 /** 初めて使うときに作る。読み込みの時点で作ると、DATABASE_URL の無い型の確かめなどが落ちる */
@@ -137,12 +140,16 @@ export const producers = cache(async (): Promise<Producer[]> => {
 
 /** ボカロPと、その人の曲（新しい順）。合作の相手として名前だけ入った人は出さない */
 export const findProducer = cache(
-  async (id: number): Promise<{ producer: Producer; songs: Song[] } | undefined> => {
+  async (
+    id: number,
+  ): Promise<{ producer: Producer; links: ProducerLinks; songs: Song[] } | undefined> => {
     if (!Number.isSafeInteger(id)) return;
-    const { rows } = await db().query<{ id: number; name: string; picture: string | null }>(
-      'select id, name, picture from producer where id = $1 and complete',
-      [id],
-    );
+    const { rows } = await db().query<{
+      id: number;
+      name: string;
+      picture: string | null;
+      links: ProducerLinks;
+    }>('select id, name, picture, links from producer where id = $1 and complete', [id]);
     const found = rows[0];
     if (!found) return;
     const songs = await db().query<SongRow>(
@@ -151,8 +158,10 @@ export const findProducer = cache(
        order by s.published_on desc nulls last, s.id`,
       [id],
     );
+    const { links, ...producer } = found;
     return {
-      producer: { ...found, songCount: songs.rows.length },
+      producer: { ...producer, songCount: songs.rows.length },
+      links,
       songs: songs.rows.map(toSong),
     };
   },
