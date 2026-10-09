@@ -49,9 +49,8 @@ export function PlayerStage({
 
   return (
     <>
-      {/* スマホで固定したぶん、本文が動画の下に潜らないよう、同じ高さの空きを置く。高さを動画とそろえるため、
-          本文の左右の余白の外まで広げて、画面いっぱいの幅で測る */}
-      <div aria-hidden className="-mx-4 sm:-mx-8 md:hidden">
+      {/* スマホで固定したぶん、本文が動画の下に潜らないよう、同じ高さの空きを置く */}
+      <div aria-hidden className="md:hidden">
         <div className="aspect-video" />
       </div>
       <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-40 max-md:bg-background">

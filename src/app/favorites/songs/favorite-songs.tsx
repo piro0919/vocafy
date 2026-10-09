@@ -29,10 +29,8 @@ export function FavoriteSongs() {
           onPlay={() => play()}
         />
         {/* スマホでは、名前と再生のボタンも動画のすぐ下に貼り付ける。名前の部分を下へ引くと右下の窓に縮むので（SwipeToLeave）、
-            一覧をスクロールしたあとでも上まで戻らずに縮められるように。ランダムとループもいつでも押せる。
-            最初から貼り付いた位置（動画のすぐ下）に置くため、ページの上の余白と要素のあいだ（16＋24px）だけ引き上げる。
-            ずれていると、スクロールの最初の分だけ動いてから止まり、地に描いた上部の色もずれた */}
-        <div className="flex flex-col gap-4 max-md:sticky max-md:top-[56.25vw] max-md:z-30 max-md:-mx-4 max-md:-mt-10 max-md:ambient-backdrop max-md:[--backdrop-top:56.25vw] max-md:px-4 max-md:pt-4 max-md:pb-3 sm:max-md:-mx-8 sm:max-md:px-8 lg:block">
+            一覧をスクロールしたあとでも上まで戻らずに縮められるように。ランダムとループもいつでも押せる */}
+        <div className="flex flex-col gap-4 max-md:sticky max-md:top-[56.25vw] max-md:z-30 max-md:-mx-4 max-md:bg-background max-md:px-4 max-md:pb-3 sm:max-md:-mx-8 sm:max-md:px-8 lg:block">
           <SwipeToLeave className="lg:mt-4">
             <Heading as="h1" size="page" eyebrow="Favorites">
               お気に入りの曲

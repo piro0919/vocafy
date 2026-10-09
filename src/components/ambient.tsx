@@ -108,13 +108,6 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     progress: 0,
   });
   const [from, to] = colors ?? [];
-  // ほかの要素の地にも同じ色を描けるよう、いまの色を CSS の変数に出す（globals.css の ambient-backdrop）
-  useEffect(() => {
-    if (!from || !to) return;
-    const style = document.documentElement.style;
-    style.setProperty('--ambient-from', from);
-    style.setProperty('--ambient-to', to);
-  }, [from, to]);
   useEffect(() => {
     if (!from || !to) return;
     const fresh =
