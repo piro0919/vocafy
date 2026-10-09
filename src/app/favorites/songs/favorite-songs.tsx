@@ -21,7 +21,7 @@ export function FavoriteSongs() {
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
-      <div className="contents lg:sticky lg:top-21 lg:block">
+      <div className="contents lg:sticky lg:top-25 lg:block">
         <PlayerStage
           active={here}
           cover={songs[0]?.thumb ?? null}
