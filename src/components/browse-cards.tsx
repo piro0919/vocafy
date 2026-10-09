@@ -44,30 +44,6 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
   );
 }
 
-/** 歌声の札。キャラの色を薄く混ぜた地に、絵のある歌声は小さな絵、無い歌声は色の丸。歌声の一覧で使う */
-export function VoiceCard({ id, name, songCount }: VoiceProps) {
-  const art = voiceArt(id);
-  return (
-    <Link
-      href={`/voices/${id}`}
-      style={{ '--c': voiceColor(name) } as React.CSSProperties}
-      className="flex h-full items-center gap-3 rounded-2xl border border-line/60 bg-[color-mix(in_oklab,var(--c)_14%,var(--sidebar))] px-3 py-2.5 transition-[background-color,scale] duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--c)_24%,var(--sidebar))] active:scale-95"
-    >
-      {art ? (
-        <span className="relative -my-1 size-9 shrink-0 rounded-full bg-(--c)/45">
-          <FadeImage src={art} alt="" fill unoptimized className="object-contain" />
-        </span>
-      ) : (
-        <span aria-hidden className="size-7 shrink-0 rounded-full bg-(--c) shadow-sm" />
-      )}
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-bold">{name}</span>
-        <span className="block text-xs text-muted">{songCount} 曲</span>
-      </span>
-    </Link>
-  );
-}
-
 /** 年の札。トップの棚と年代の一覧で使う。幅は置く側で決める */
 export function YearCard({
   year,

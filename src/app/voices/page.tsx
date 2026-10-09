@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CharacterCard, VoiceCard } from '@/components/browse-cards';
+import { CharacterCard } from '@/components/browse-cards';
 import { Heading } from '@/components/heading';
 import { voices } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
@@ -10,14 +10,15 @@ export const metadata: Metadata = { title: '歌声' };
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 export const revalidate = false;
 
-/** これより曲の少ない歌声は、名前だけの小さな札にまとめる。1〜2曲の UTAU の音源などが数百あり、同じ札で並べると埋もれるため */
+/** 歌声ライブラリのうち、これ以上の曲がある歌声は札を少し大きくする。1〜2曲の UTAU の音源などが数百あり、同じ大きさだと埋もれるため */
 const MINOR = 20;
 
 /**
- * 歌声の一覧。曲の多い順のまま、絵のあるキャラと絵の無い歌声で上下に分ける。
- * 上の段は絵のあるキャラ全員（トップと同じ絵の札）。絵の無い歌声は、MINOR 曲以上をいつもの札、残りを名前だけで詰める。
+ * 歌声の一覧。曲の多い順のまま、キャラクター（絵のある歌声）と歌声ライブラリ（絵の無い歌声）の2つに分ける。
+ * 絵の無い歌声の多くは、VY1・女声1・Mai のようにキャラの絵を持たない声なので、「ライブラリ」と呼ぶ。
  * 曲の多い順に人数で切っていた（36 人、のちに 48 人）が、人数は列の数から逆算した数で、なぜその段にいるかが画面から読めなかった。
- * 絵があるかで分ければ見た目どおりに分かれる。そのかわり、絵の無い Fukase（100 曲超）が 40 曲台の絵のあるキャラより下に来る
+ * 絵のある全員を出すと 79 人で長い壁になったので、キャラクターの札は小さくして列を増やした。
+ * 歌声ライブラリは、20 曲以上とそれ未満で段を分けると 11 件だけの段ができて半端だったので、1つの並びにして札の大きさだけ変える
  */
 export default async function VoicesPage() {
   const list = await voices();
@@ -25,9 +26,7 @@ export default async function VoicesPage() {
     const art = voiceArt(v.id);
     return art ? [{ ...v, art }] : [];
   });
-  const others = list.filter((v) => !voiceArt(v.id));
-  const major = others.filter((v) => v.songCount >= MINOR);
-  const minor = others.filter((v) => v.songCount < MINOR);
+  const libraries = list.filter((v) => !voiceArt(v.id));
   return (
     <>
       <div className="pt-4 pb-4 sm:pb-6">
@@ -35,22 +34,15 @@ export default async function VoicesPage() {
           歌声
         </Heading>
       </div>
-      <ul className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-y-5 lg:grid-cols-6">
-        {characters.map((v) => (
-          <li key={v.id}>
-            <CharacterCard {...v} />
-          </li>
-        ))}
-      </ul>
 
-      <section className="mt-10 sm:mt-14">
+      <section>
         <div className="mb-3 sm:mb-4">
-          <Heading eyebrow="Voices">{MINOR} 曲以上の歌声</Heading>
+          <Heading eyebrow="Characters">キャラクター</Heading>
         </div>
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {major.map((v) => (
+        <ul className="grid grid-cols-4 gap-x-2.5 gap-y-3 sm:grid-cols-6 sm:gap-y-4 lg:grid-cols-8">
+          {characters.map((v) => (
             <li key={v.id}>
-              <VoiceCard {...v} />
+              <CharacterCard {...v} />
             </li>
           ))}
         </ul>
@@ -58,17 +50,19 @@ export default async function VoicesPage() {
 
       <section className="mt-10 sm:mt-14">
         <div className="mb-3 sm:mb-4">
-          <Heading eyebrow="Index">{MINOR} 曲未満の歌声</Heading>
+          <Heading eyebrow="Libraries">歌声ライブラリ</Heading>
         </div>
         <ul className="flex flex-wrap gap-1.5">
-          {minor.map((v) => (
+          {libraries.map((v) => (
             <li key={v.id} className="min-w-0">
               <Link
                 href={`/voices/${v.id}`}
-                className="flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs transition-[background-color] duration-150 ease-out hover:bg-sidebar"
+                className={`flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 transition-[background-color] duration-150 ease-out hover:bg-sidebar ${
+                  v.songCount >= MINOR ? 'bg-sidebar/60 px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'
+                }`}
               >
                 <span className="truncate font-bold">{v.name}</span>
-                <span className="shrink-0 text-muted">{v.songCount}</span>
+                <span className="shrink-0 text-xs text-muted">{v.songCount}</span>
               </Link>
             </li>
           ))}
