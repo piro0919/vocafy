@@ -31,7 +31,8 @@ export function ProducerPlayer({
   cover: string | null;
 }) {
   const { current, playing, context, playQueue, adoptQueue, toggle } = usePlayer();
-  const here = current?.producerId === producerId;
+  // お気に入りの並びで流している曲は、お気に入りの曲の画面で大きく出す。この人の曲でもここには出さない
+  const here = context !== 'favorites' && current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
 
@@ -54,10 +55,10 @@ export function ProducerPlayer({
     );
 
   return (
-    // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky）。
+    // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky。上の段の下に来る高さ）。
     // スマホは画面が狭く、貼り付けると一覧が見づらくなるので、貼り付けずに縦に並べる
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
-      <div className="contents lg:sticky lg:top-6 lg:block">
+      <div className="contents lg:sticky lg:top-21 lg:block">
         <PlayerStage
           active={here}
           cover={cover}

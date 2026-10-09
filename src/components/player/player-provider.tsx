@@ -29,9 +29,10 @@ import { useWakeLock } from './use-wake-lock';
  */
 /**
  * 並びの出どころ。list はふつうの一覧、pending は曲の一覧から押して1曲だけ流している途中（ボカロPの画面で差し替える）、
- * radio はラジオ（押した曲から関連曲を足し続ける。並びの終わりが近づくと、いまの曲の関連曲を後ろに足す）
+ * radio はラジオ（押した曲から関連曲を足し続ける。並びの終わりが近づくと、いまの曲の関連曲を後ろに足す）、
+ * favorites はお気に入りの曲の並び（お気に入りの曲の画面で大きく出す。Janify と同じ）
  */
-export type PlayContext = 'list' | 'pending' | 'radio';
+export type PlayContext = 'list' | 'pending' | 'radio' | 'favorites';
 
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
@@ -585,7 +586,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     <Context value={value}>
       {children}
       {/*
-        右下の窓の上に付ける帯。押すと流しているボカロPの画面に移り、そこで大きく出る。
+        右下の窓の上に付ける帯。押すと流しているボカロPの画面（お気に入りの並びならお気に入りの曲の画面）に移り、そこで大きく出る。
         窓の中は YouTube かニコニコのプレイヤーで、押すとそちらの操作になるので、入口は窓の外に置く
       */}
       <div
@@ -595,7 +596,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       >
         {shown && (
           <Link
-            href={`/producers/${shown.producerId}`}
+            href={context === 'favorites' ? '/favorites/songs' : `/producers/${shown.producerId}`}
             className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
           >
             <span className="min-w-0 flex-1 truncate">
