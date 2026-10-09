@@ -102,6 +102,18 @@ describe('vocalistsOf', () => {
 });
 
 describe('producersOf', () => {
+  it('作者に誤って入っている人は拾わない', () => {
+    const narita = { id: 926, name: '成田旬', artistType: 'Producer' };
+    const s = song({
+      id: 949313,
+      artists: [
+        ...song().artists!,
+        { categories: 'Producer', isSupport: false, artist: narita, name: '成田旬' },
+      ],
+    });
+    expect(producersOf(s).map((p) => p.id)).toEqual([53]);
+  });
+
   it('Producer の役割が付いた人だけを作者にする', () => {
     const s = song({
       artists: [
