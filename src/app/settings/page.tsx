@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { AccountSetting } from '@/components/account/account-setting';
 import { InstallApp } from '@/components/install-app';
 import { KeyboardHelp } from '@/components/player/keyboard-help';
 import { SwipeBackSetting } from '@/components/swipe-back/swipe-back-setting';
@@ -19,7 +18,6 @@ export default function SettingsPage() {
       </div>
       <ThemeSetting />
       <VoiceSetting />
-      <AccountSetting />
       <InstallApp />
       <SwipeBackSetting />
       <KeyboardHelp />

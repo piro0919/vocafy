@@ -27,7 +27,7 @@ export function setSignInHint(on: boolean) {
     if (on) localStorage.setItem(HINT, '1');
     else localStorage.removeItem(HINT);
   } catch {
-    // 残せなければ、次に開いたときにログインに気づかないだけ（設定の画面では気づく）
+    // 残せなければ、ログインしていても右上はログインのボタンのまま（保存を止めたブラウザだけで起きる）
   }
 }
 
