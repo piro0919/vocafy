@@ -163,7 +163,8 @@ export function ProducerPlayer({
                     {active ? <Bars playing={playing} /> : i + 1}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <Marquee active={active} className={active ? 'font-bold' : ''}>
+                    {/* 曲名と補足の字は、ほかの曲の行（SongItem）と同じ 14px の太字と 12px の灰色 */}
+                    <Marquee active={active} className="text-sm font-bold">
                       {song.title}
                     </Marquee>
                     <span className="block truncate text-xs text-muted">
