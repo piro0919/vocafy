@@ -6,6 +6,7 @@ import { PlayerStage, SwipeToLeave } from '@/components/player-stage';
 import { PlaybackMode } from '@/components/player/playback-mode';
 import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
+import { NO_RESTORE } from '@/lib/no-restore';
 import { SortableSongList } from './sortable-song-list';
 
 /**
@@ -18,9 +19,7 @@ export function FavoriteSongs() {
   useRefreshFavorites();
   const { current, playing, context, radioHome, playQueue, toggle } = usePlayer();
   // お気に入りの並びのときと、この画面で始めたラジオのとき（ラジオには自分の画面が無い）に、動画をここに大きく出す
-  const here =
-    !!current &&
-    (context === 'favorites' || (context === 'radio' && radioHome === '/favorites/songs'));
+  const here = !!current && (context === 'favorites' || radioHome === '/favorites/songs');
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
   return (
@@ -36,13 +35,14 @@ export function FavoriteSongs() {
           <Heading as="h1" size="page" eyebrow="Favorites">
             お気に入りの曲
           </Heading>
-          <p className="mt-0.5 text-sm text-muted">{songs.length} 曲</p>
         </SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
         <div className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
           <button
             type="button"
             disabled={songs.length === 0}
+            // 読み込み直しや戻るで、ブラウザが押せる・押せないを前の状態に戻すと、サーバーの HTML と食い違う
+            {...NO_RESTORE}
             onClick={() => (here ? toggle() : play())}
             className="flex shrink-0 items-center gap-2 rounded-full bg-miku py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95 disabled:opacity-40"
           >

@@ -66,15 +66,16 @@ export function PlaybackMode({
 
 /** ラジオ。押すと、いまの曲から関連曲を流し続ける。ラジオで流しているあいだは差し色にする */
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
-  const { context, startRadio } = usePlayer();
+  const { context, startRadio, stopRadio } = usePlayer();
   const on = context === 'radio';
   return (
+    // 押すたびに入・切。切ると、ラジオを始める前の並びに戻る（stopRadio）
     <button
       type="button"
-      aria-label={on ? 'ラジオで流しています' : `${song.title}からラジオを流す`}
+      aria-label={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       aria-pressed={on}
-      title={on ? 'ラジオで流しています' : 'この曲からラジオを流す（関連曲を流し続ける）'}
-      onClick={() => startRadio(song)}
+      title={on ? 'ラジオ: 入（押すとやめる）' : 'この曲からラジオを流す（関連曲を流し続ける）'}
+      onClick={() => (on ? stopRadio() : startRadio(song))}
       className={`${className} size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Icon name="radio" className="size-5" />

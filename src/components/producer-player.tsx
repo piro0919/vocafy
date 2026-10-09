@@ -39,7 +39,7 @@ export function ProducerPlayer({
   // この画面にいるまま動画が右下の窓へ飛んだ
   const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
   // ラジオは、この画面で始めたものなら、別の人の曲に進んでもここで大きく出し続ける（ラジオには自分の画面が無い）
-  const radioHere = context === 'radio' && radioHome === `/producers/${producerId}`;
+  const radioHere = radioHome === `/producers/${producerId}`;
   const ownHere = ownQueue && current?.producerId === producerId;
   const here = radioHere || ownHere;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない

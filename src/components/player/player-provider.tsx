@@ -91,7 +91,13 @@ type PlayerContext = {
   /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
   startRadio: (seed: QueueItem) => void;
   /**
+   * ラジオをやめる。いまの曲は止めずに、ラジオを始める前に流していた並びに戻す。いまの曲が終わったら、
+   * ラジオを始めた曲の次から続く（ラジオの曲を流しているなら、その曲を始めた曲のすぐ後ろに挟む）
+   */
+  stopRadio: () => void;
+  /**
    * 次に流れる曲を読む。流す順（ランダムなら混ぜたあとの順）で、いまの曲の次から UPCOMING_LIMIT 曲まで。
+   * ループ（全体）なら、並びの最後のあとに先頭からの曲も続ける（ラジオは足していくので続けない）。
    * index は並び（queue）の何番目か。jumpTo に渡す。流す順は描くたびに変わらない入れ物（ref）に持っているので、
    * 値ではなく、開いた画面が読む関数として渡す（曲や並びが変わると、この値の持ち主ごと描き直される）
    */
@@ -486,8 +492,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [load],
   );
 
+  // ラジオを始める前に流していた並び。ラジオをやめたら、ここへ戻す
+  const beforeRadio = useRef<{
+    queue: QueueItem[];
+    index: number;
+    context: PlayContext;
+    listSource: string | null;
+    more: ListSource | null;
+  } | null>(null);
+
   const startRadio = useCallback(
     (seed: QueueItem) => {
+      // ラジオの中で押し直したとき（いまの曲から始め直す）は、ラジオの前の並びを上書きしない
+      if (contextRef.current !== 'radio') {
+        beforeRadio.current = {
+          ...state.current,
+          context: contextRef.current,
+          listSource,
+          more: more.current,
+        };
+      }
       clearMore();
       // かなの行（/kana/あ/play）は住所の中で %E3%81%82 の形になるので、戻した形で覚える（一覧の住所と比べるため）
       const home = decodeURIComponent(window.location.pathname);
@@ -508,8 +532,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setContext('radio');
       setRadioHome(home);
     },
-    [load, clearMore],
+    [load, clearMore, listSource],
   );
+
+  const stopRadio = useCallback(() => {
+    const { queue: q, index: i } = state.current;
+    const now = q[i];
+    const before = beforeRadio.current;
+    const home = radioHome;
+    beforeRadio.current = null;
+    setRadioHome(null);
+    if (!before || !now) {
+      // 戻す並びが無ければ、いまの曲だけのふつうの並びにする
+      adopt(now ? [now] : [], 0);
+      return;
+    }
+    // 始めた曲のまま（ラジオでまだ次へ進んでいない）なら、元の並びのその位置に戻す。ラジオの曲を流しているなら、
+    // 始めた曲のすぐ後ろに挟み、いまの曲が終わったら元の並びの続きへ進む
+    const same = before.queue[before.index]?.songId === now.songId;
+    const items = same
+      ? before.queue
+      : [...before.queue.slice(0, before.index + 1), now, ...before.queue.slice(before.index + 1)];
+    adopt(items, same ? before.index : before.index + 1);
+    setContext(
+      before.context === 'pending' || before.context === 'radio' ? 'list' : before.context,
+    );
+    more.current = before.more;
+    setListSource(before.listSource);
+    // いま流しているラジオの曲が終わるまでは、ラジオを始めた画面で大きく出したままにする。次の曲を読み込むと忘れる（load）
+    if (!same) setRadioHome(home);
+  }, [adopt, radioHome]);
 
   // ラジオで並びの終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
   // 足せる曲が無ければ、次の曲に移ったときにその曲の関連曲でもう一度試す
@@ -696,9 +748,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       listSource,
       radioHome,
       startRadio,
+      stopRadio,
+      // ループ（全体）なら、並びの最後のあとは先頭に戻って続くので、先頭からいまの曲の手前までも続けて並べる
       upcoming: () =>
-        order.current
-          .slice(position + 1, position + 1 + UPCOMING_LIMIT)
+        [
+          ...order.current.slice(position + 1),
+          ...(playback.repeat === 'all' && context !== 'radio'
+            ? order.current.slice(0, position)
+            : []),
+        ]
+          .slice(0, UPCOMING_LIMIT)
           .flatMap((i) => (queue[i] ? [{ item: queue[i], index: i }] : [])),
       jumpTo: (i) => {
         const { queue: q } = state.current;
@@ -751,6 +810,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       radioHome,
       clearMore,
       startRadio,
+      stopRadio,
       step,
       close,
       time,

@@ -41,11 +41,9 @@ export function ListPlayer({
   songs: QueueItem[];
   total: number;
 }) {
-  const { current, playing, context, listSource, radioHome, playAll, toggle } = usePlayer();
+  const { current, playing, listSource, radioHome, playAll, toggle } = usePlayer();
   // この一覧を流しているときと、この画面で始めたラジオのとき（ラジオには自分の画面が無い）に、動画をここに大きく出す
-  const here =
-    current !== null &&
-    (listSource === source || (context === 'radio' && radioHome === `/${source}/play`));
+  const here = current !== null && (listSource === source || radioHome === `/${source}/play`);
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
