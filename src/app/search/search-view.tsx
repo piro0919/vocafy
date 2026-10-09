@@ -271,9 +271,9 @@ export function SearchView() {
             <Heading eyebrow="Songs">曲</Heading>
           </div>
           <p className="-mt-1 mb-3 text-sm text-muted">
-            {formatCount(found.songs.length)}曲
-            {found.songs.length > SONG_LIMIT &&
-              `（多いので先頭の${SONG_LIMIT}曲。言葉を足すと絞れます）`}
+            {found.songs.length > SONG_LIMIT
+              ? `${SONG_LIMIT}曲（全${formatCount(found.songs.length)}曲）`
+              : `${formatCount(found.songs.length)}曲`}
           </p>
           {items ? (
             <SongList songs={items} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
