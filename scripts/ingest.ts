@@ -79,6 +79,12 @@ async function youtubeSongs(): Promise<VdbSong[]> {
   return candidates.filter((s) => (views.get(sourcesOf(s)!.youtubeId!) ?? 0) >= YOUTUBE_LINE);
 }
 
+/**
+ * VocaDB の名前を置き換えるボカロP。作者の分からない曲をまとめる VocaDB の入れ物（23966）は、どの言語で聞いても
+ * 「Unknown producer(s)」で返る。別名にある「作者不明」を使う
+ */
+const PRODUCER_NAMES = new Map([[23966, '作者不明']]);
+
 async function main() {
   const seedCount = Number(arg('seeds') ?? 200);
   const dry = process.argv.includes('--dry');
@@ -174,7 +180,7 @@ async function main() {
         JSON.stringify(
           [...producers.values()].map((p) => ({
             id: p.id,
-            name: p.name,
+            name: PRODUCER_NAMES.get(p.id) ?? p.name,
             picture: pictures.get(p.id) ?? null,
             complete: producerIds.has(p.id),
           })),
