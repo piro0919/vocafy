@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { prefersReducedMotion } from '@/lib/motion';
+import { easeInOut, prefersReducedMotion } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { Icon } from './icon';
 import { Heading } from './heading';
@@ -9,9 +9,6 @@ import { FADE } from './scroll-row';
 
 /** 矢印で送るときの時間（ミリ秒） */
 const GLIDE_MS = 500;
-
-/** ゆっくり動き出して、ゆっくり止まる */
-const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 /**
  * 見出しの付いた、横に流せる棚。左右の矢印で1画面ぶん送る。

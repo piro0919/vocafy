@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
+import { glideWindowTo } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
 import { Icon } from './icon';
@@ -331,11 +332,8 @@ function YearJump({ songs }: { songs: Song[] }) {
               // 札の行は、送ったあとには貼り付いている。押した時点の位置ではなく、貼り付く位置（CSS の top）で計る
               const el = bar.current;
               const below = el ? parseFloat(getComputedStyle(el).top) + el.offsetHeight + 4 : 0;
-              if (row)
-                window.scrollTo({
-                  top: window.scrollY + row.getBoundingClientRect().top - below,
-                  behavior: 'smooth',
-                });
+              // ブラウザの smooth は Firefox で一気に飛んだので、自前で送る（motion.ts）
+              if (row) glideWindowTo(window.scrollY + row.getBoundingClientRect().top - below);
             }}
             className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-150 ease-(--ease-out) active:scale-95 ${
               active === year
