@@ -24,7 +24,6 @@ function isAppleDevice(): boolean {
  * 裏に回すと再生が止まるのは、ホーム画面から開いても変わらない（YouTube の埋め込みの決まり）
  */
 function useInstall(): {
-  isInstalled: boolean;
   available: boolean;
   start: () => void;
   guide: ReactNode;
@@ -39,7 +38,6 @@ function useInstall(): {
   );
 
   return {
-    isInstalled,
     available: !isInstalled && (canInstall || isApple),
     start: () => (canInstall ? void install() : setOpen(true)),
     guide:
@@ -61,25 +59,20 @@ function useInstall(): {
   };
 }
 
-/** 設定の画面の「アプリ」の欄。入れたあとと、追加できない端末では、その旨だけを出す */
+/** 設定の画面の「アプリ」の欄。追加できる端末で、まだ入れていないときだけ出す */
 export function InstallApp() {
-  const { isInstalled, available, start, guide } = useInstall();
+  const { available, start, guide } = useInstall();
+  if (!available) return null;
   return (
     <section className="mt-7 sm:mt-10">
       <h2 className="mb-3 font-bold">アプリ</h2>
-      {isInstalled ? (
-        <p className="px-3 text-sm text-muted">ホーム画面に追加済みです。</p>
-      ) : available ? (
-        <button
-          type="button"
-          onClick={start}
-          className="rounded-full border border-line px-4 py-2 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-95"
-        >
-          ホーム画面に追加
-        </button>
-      ) : (
-        <p className="px-3 text-sm text-muted">このブラウザでは、ホーム画面に追加できません。</p>
-      )}
+      <button
+        type="button"
+        onClick={start}
+        className="rounded-full border border-line px-4 py-2 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-95"
+      >
+        ホーム画面に追加
+      </button>
       {guide}
     </section>
   );
