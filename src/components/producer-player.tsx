@@ -31,9 +31,12 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, context, playQueue, adoptQueue, toggle } = usePlayer();
-  // お気に入りの並びで流している曲は、お気に入りの曲の画面で大きく出す。この人の曲でもここには出さない
-  const here = context !== 'favorites' && current?.producerId === producerId;
+  const { current, playing, context, listSource, playQueue, adoptQueue, toggle } = usePlayer();
+  // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並び・ラジオで
+  // 流している曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
+  // この画面にいるまま動画が右下の窓へ飛んだ
+  const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
+  const here = ownQueue && current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
 
