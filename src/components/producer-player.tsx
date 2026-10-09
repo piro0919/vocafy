@@ -46,11 +46,14 @@ export function ProducerPlayer({
   }, [linked]);
   const linkedItem = !here && linked ? playable.get(linked) : undefined;
 
-  // 曲の一覧から押して来たときは、その1曲だけを流している。曲は止めずに、順番待ちをこの人の曲にする
+  // 曲の一覧から押して来たときは、その1曲だけを流している。曲は止めずに、順番待ちをこの人の曲にする。
+  // 一覧は新しい順なので、古い曲だと流している行がずっと下にある。その行が見えるところまでスクロールする
   useEffect(() => {
     if (!here || !current || context !== 'pending') return;
     const at = queue.findIndex((q) => q.songId === current.songId);
-    if (at >= 0) adoptQueue(queue, at);
+    if (at < 0) return;
+    adoptQueue(queue, at);
+    document.getElementById(`song-${current.songId}`)?.scrollIntoView({ block: 'center' });
   }, [here, current, context, queue, adoptQueue]);
 
   const start = (songId?: number) =>
