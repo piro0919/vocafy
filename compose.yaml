@@ -2,7 +2,7 @@
 # 接続先は .env.local の DATABASE_URL（postgres://vocafy:vocafy@localhost:5434/vocafy）
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: vocafy
       POSTGRES_PASSWORD: vocafy
