@@ -125,52 +125,55 @@ export function ProducerPlayer({
         </div>
       </div>
 
-      {/*
-        行の地の色は字の手前まで広げたいので、行の内側に余白（px-3）を取る。そのぶん並び全体を外へ出し（-mx-3）、
-        番号の頭が題名の頭とそろうようにする
-      */}
-      <ol className="-mx-3">
-        {songs.map((song, i) => {
-          const active = here && current?.songId === song.id;
-          const item = playable.get(song.id);
-          return (
-            <li
-              key={song.id}
-              id={`song-${song.id}`}
-              className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
-                active || linkedItem?.songId === song.id
-                  ? 'bg-sidebar/60'
-                  : item
-                    ? 'hover:bg-foreground/8'
-                    : ''
-              }`}
-            >
-              <button
-                type="button"
-                disabled={!item}
-                {...NO_RESTORE}
-                title={item ? undefined : 'この曲は本家の動画の情報が足りず、再生できません'}
-                onClick={() => item && start(song.id)}
-                className="flex min-w-0 flex-1 items-center gap-4 px-3 py-2 text-left disabled:cursor-default disabled:text-muted/50"
+      <div className="min-w-0">
+        <YearJump songs={songs} />
+        {/*
+          行の地の色は字の手前まで広げたいので、行の内側に余白（px-3）を取る。そのぶん並び全体を外へ出し（-mx-3）、
+          番号の頭が題名の頭とそろうようにする
+        */}
+        <ol className="-mx-3">
+          {songs.map((song, i) => {
+            const active = here && current?.songId === song.id;
+            const item = playable.get(song.id);
+            return (
+              <li
+                key={song.id}
+                id={`song-${song.id}`}
+                className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
+                  active || linkedItem?.songId === song.id
+                    ? 'bg-sidebar/60'
+                    : item
+                      ? 'hover:bg-foreground/8'
+                      : ''
+                }`}
               >
-                <span className="flex w-6 shrink-0 justify-end text-sm tabular-nums text-muted">
-                  {active ? <Bars playing={playing} /> : i + 1}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <Marquee active={active} className={active ? 'font-bold' : ''}>
-                    {song.title}
-                  </Marquee>
-                  <span className="block truncate text-xs text-muted">
-                    {song.vocalists.join('・')}
-                    {song.year && ` ・ ${song.year}年`}
+                <button
+                  type="button"
+                  disabled={!item}
+                  {...NO_RESTORE}
+                  title={item ? undefined : 'この曲は本家の動画の情報が足りず、再生できません'}
+                  onClick={() => item && start(song.id)}
+                  className="flex min-w-0 flex-1 items-center gap-4 px-3 py-2 text-left disabled:cursor-default disabled:text-muted/50"
+                >
+                  <span className="flex w-6 shrink-0 justify-end text-sm tabular-nums text-muted">
+                    {active ? <Bars playing={playing} /> : i + 1}
                   </span>
-                </span>
-              </button>
-              {item && <FavoriteButton song={item} />}
-            </li>
-          );
-        })}
-      </ol>
+                  <span className="min-w-0 flex-1">
+                    <Marquee active={active} className={active ? 'font-bold' : ''}>
+                      {song.title}
+                    </Marquee>
+                    <span className="block truncate text-xs text-muted">
+                      {song.vocalists.join('・')}
+                      {song.year && ` ・ ${song.year}年`}
+                    </span>
+                  </span>
+                </button>
+                {item && <FavoriteButton song={item} />}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </div>
   );
 }
@@ -219,5 +222,36 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
     >
       <Icon name="share" className="size-5" />
     </button>
+  );
+}
+
+/** これより曲の多い人だけ、一覧の上に年の札を出す */
+const YEAR_JUMP_MIN = 30;
+
+/**
+ * 一覧の上に並べる年の札。押すと、その年の最初の曲の行までスクロールする。曲の多い人（ピノキオピーは 166 曲）で、
+ * 古い曲まで長くスクロールしなくて済むように。曲が少ない人や、1年に収まる人には出さない
+ */
+function YearJump({ songs }: { songs: Song[] }) {
+  const firsts = new Map<number, number>();
+  for (const s of songs) if (s.year && !firsts.has(s.year)) firsts.set(s.year, s.id);
+  if (songs.length <= YEAR_JUMP_MIN || firsts.size < 2) return null;
+  return (
+    <nav aria-label="年で飛ぶ" className="-mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+      {[...firsts].map(([year, id]) => (
+        <button
+          key={year}
+          type="button"
+          onClick={() =>
+            document
+              .getElementById(`song-${id}`)
+              ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          }
+          className="shrink-0 rounded-full border border-line/60 px-3 py-1 font-tech text-xs font-black tracking-wider text-muted transition-[color,background-color,scale] duration-150 ease-out hover:bg-foreground/8 hover:text-foreground active:scale-95"
+        >
+          {year}
+        </button>
+      ))}
+    </nav>
   );
 }
