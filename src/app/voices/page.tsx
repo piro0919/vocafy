@@ -39,7 +39,7 @@ export default async function VoicesPage() {
         <div className="mb-3 sm:mb-4">
           <Heading eyebrow="Characters">キャラクター</Heading>
         </div>
-        <ul className="grid grid-cols-4 gap-x-2.5 gap-y-3 sm:grid-cols-6 sm:gap-y-4 lg:grid-cols-8">
+        <ul className="grid grid-cols-3 gap-x-2.5 gap-y-3 sm:grid-cols-6 sm:gap-y-4 lg:grid-cols-8">
           {characters.map((v) => (
             <li key={v.id}>
               <CharacterCard {...v} />
