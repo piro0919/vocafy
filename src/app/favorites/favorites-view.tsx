@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreLink, PILL } from '@/components/browse-cards';
+import { PILL } from '@/components/browse-cards';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
 import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';
@@ -11,7 +11,7 @@ import { SongList } from '@/components/song-list';
 import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { clearHistory, useHistory } from '@/lib/history';
 
-/** お気に入りの画面に出す曲の数。全部はお気に入りの曲の画面（/favorites/songs）で見る */
+/** お気に入りの画面に出す曲の数。全部はお気に入りの曲の画面（/favorites/songs）で見る（「再生」か曲を押して移る） */
 const SONG_PREVIEW = 12;
 /** 最近聴いた曲を出す数 */
 const HISTORY_PREVIEW = 12;
@@ -26,7 +26,7 @@ export function FavoritesView() {
   const { items: songs } = useFavorites();
   const { items: producers } = useFavoriteProducers();
   const history = useHistory();
-  const { playQueue } = usePlayer();
+  const { context, current, playQueue } = usePlayer();
   const router = useRouter();
   useRefreshFavorites();
 
@@ -67,7 +67,25 @@ export function FavoritesView() {
         </Section>
       )}
       {songs.length > 0 && (
-        <Section title="曲" eyebrow="Songs" count={`${songs.length} 曲`} more="/favorites/songs">
+        <Section
+          title="曲"
+          eyebrow="Songs"
+          count={`${songs.length} 曲`}
+          action={
+            // 頭から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
+            <button
+              type="button"
+              onClick={() => {
+                if (!(context === 'favorites' && current)) playQueue(songs, 0, 'favorites');
+                router.push('/favorites/songs');
+              }}
+              className={`${PILL} flex items-center gap-1`}
+            >
+              <Icon name="play" className="size-3.5" />
+              再生
+            </button>
+          }
+        >
           <SongList
             songs={songs.slice(0, SONG_PREVIEW)}
             onOpen={(i) => {
@@ -103,15 +121,12 @@ function Section({
   title,
   eyebrow,
   count,
-  more,
   action,
   children,
 }: {
   title: string;
   eyebrow: string;
   count: string;
-  /** 全部を出していないときの「すべて表示」の行き先 */
-  more?: string;
   /** 見出しの右端に置くボタン */
   action?: ReactNode;
   children: ReactNode;
@@ -121,12 +136,7 @@ function Section({
       <div className="mb-3 flex items-end gap-3">
         <Heading eyebrow={eyebrow}>{title}</Heading>
         <span className="pb-1 text-sm text-muted">{count}</span>
-        {(more || action) && (
-          <span className="ml-auto pb-0.5">
-            {more && <MoreLink href={more} />}
-            {action}
-          </span>
-        )}
+        {action && <span className="ml-auto pb-0.5">{action}</span>}
       </div>
       {children}
     </section>
