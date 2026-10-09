@@ -228,6 +228,10 @@ const RADIO_TRIES = 6;
 /** holdSlot で前の画面に動画を出し続けさせる長さの上限（ミリ秒）。初めて開くラジオの画面も読み込み中の形はすぐ出る */
 const HOLD_SLOT = 3000;
 
+/** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
+const FADE_OUT_MS = 150;
+const FADE_STEPS = 10;
+
 /**
  * 窓のすぐ上に付ける帯。窓と帯で一枚の板に見せ、角の丸みと縁の線をほかの浮いた板（左のメニュー・下の再生の帯）にそろえる。
  * 動画の側の線は外へ描く（ring）。枠の内側に線（border）を引くと、動画が 200×200（YouTube の規約の下限）を割る
@@ -313,6 +317,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const state = useRef({ queue, index });
   // 曲が終わったときの処理。load から自分自身を呼ぶことになるので、ref を通して呼ぶ
   const onEnded = useRef(() => {});
+  // いま音が出ているか。曲を替えるときに、絞ってから切るかを決める
+  const sounding = useRef(false);
+  // 音量を絞っている途中か、絞り終わったら替える曲、絞る時計
+  const fading = useRef(false);
+  const pendingSwap = useRef<(() => void) | null>(null);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const load = useCallback((items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
     setContext(ctx);
@@ -343,38 +353,74 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setTime({ current: 0, duration: 0, at: performance.now() });
     const { service, videoId } = items[at];
-    // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える
-    if (player.current?.service === service) {
-      player.current.load(videoId);
+    const sound = soundRef.current ?? { volume: 100, muted: false };
+    const swap = () => {
+      // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える。絞った音量は、止めてから戻す
+      if (player.current?.service === service) {
+        player.current.load(videoId);
+        player.current.setVolume(sound.volume);
+        return;
+      }
+      player.current?.destroy();
+      player.current = null;
+      if (!frame.current) return;
+      const events: EngineEvents = {
+        onPlaying: () => {
+          sounding.current = true;
+          setPlaying(true);
+          setLoading(false);
+        },
+        // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
+        onPaused: () => {
+          sounding.current = false;
+          setPlaying(false);
+          setLoading(false);
+        },
+        onEnded: () => {
+          sounding.current = false;
+          onEnded.current();
+        },
+        // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
+        onError: () => {
+          sounding.current = false;
+          setLoading(false);
+          onEnded.current();
+        },
+      };
+      player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
+        frame.current,
+        videoId,
+        sound,
+        events,
+      );
+    };
+    // 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。音量を絞りきってから切り替える。
+    // 絞っているあいだに別の曲が選ばれたら、絞り終わったときに最後の曲へ替える
+    pendingSwap.current = swap;
+    if (fading.current) return;
+    const current = player.current;
+    if (!current || !sounding.current || sound.muted || sound.volume === 0) {
+      pendingSwap.current = null;
+      swap();
       return;
     }
-    player.current?.destroy();
-    player.current = null;
-    if (!frame.current) return;
-    const events: EngineEvents = {
-      onPlaying: () => {
-        setPlaying(true);
-        setLoading(false);
-      },
-      // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
-      onPaused: () => {
-        setPlaying(false);
-        setLoading(false);
-      },
-      onEnded: () => onEnded.current(),
-      // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
-      onError: () => {
-        setLoading(false);
-        onEnded.current();
-      },
+    sounding.current = false;
+    fading.current = true;
+    let step = 0;
+    const tick = () => {
+      // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから一刻み待つ
+      if (step === FADE_STEPS) {
+        fading.current = false;
+        const next = pendingSwap.current;
+        pendingSwap.current = null;
+        next?.();
+        return;
+      }
+      step += 1;
+      current.setVolume(Math.round(sound.volume * (1 - step / FADE_STEPS)));
+      fadeTimer.current = setTimeout(tick, FADE_OUT_MS / FADE_STEPS);
     };
-    const sound = soundRef.current ?? { volume: 100, muted: false };
-    player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
-      frame.current,
-      videoId,
-      sound,
-      events,
-    );
+    tick();
   }, []);
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
@@ -689,6 +735,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => {
     setRadioHome(null);
     clearMore();
+    clearTimeout(fadeTimer.current);
+    fading.current = false;
+    pendingSwap.current = null;
+    sounding.current = false;
     player.current?.destroy();
     player.current = null;
     state.current = { queue: [], index: 0 };
