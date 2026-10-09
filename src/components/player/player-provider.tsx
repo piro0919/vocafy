@@ -489,7 +489,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const startRadio = useCallback(
     (seed: QueueItem) => {
       clearMore();
-      const home = window.location.pathname;
+      // かなの行（/kana/あ/play）は住所の中で %E3%81%82 の形になるので、戻した形で覚える（一覧の住所と比べるため）
+      const home = decodeURIComponent(window.location.pathname);
       const { queue: q, index: i } = state.current;
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');

@@ -15,8 +15,11 @@ import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
   useRefreshFavorites();
-  const { current, playing, context, playQueue, toggle } = usePlayer();
-  const here = context === 'favorites' && !!current;
+  const { current, playing, context, radioHome, playQueue, toggle } = usePlayer();
+  // お気に入りの並びのときと、この画面で始めたラジオのとき（ラジオには自分の画面が無い）に、動画をここに大きく出す
+  const here =
+    !!current &&
+    (context === 'favorites' || (context === 'radio' && radioHome === '/favorites/songs'));
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
   return (
