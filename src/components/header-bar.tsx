@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { AccountButton } from './account/account-button';
 import { Icon } from './icon';
 import { InstallButton } from './install-app';
 import { Logo } from './nav';
@@ -10,7 +11,7 @@ const ICON_BUTTON =
 
 /**
  * 上の帯の中身。スマホだけで出す（パソコンはロゴ・検索・アプリの案内が左のメニューにあり、上の帯は出さない）。
- * 左のメニューが出ないので、アイコンと虫めがねと歯車を並べる（検索は下のタブに入りきらないのでここに置く）
+ * 左のメニューが出ないので、アイコンと虫めがねと歯車とログインを並べる（検索は下のタブに入りきらないのでここに置く）
  */
 export function HeaderBar() {
   return (
@@ -27,6 +28,8 @@ export function HeaderBar() {
         <Link href="/settings" aria-label="設定" className={ICON_BUTTON}>
           <Icon name="settings" className="size-5" />
         </Link>
+        {/* ログインは右端に置く（YouTube と同じ） */}
+        <AccountButton />
       </div>
     </>
   );

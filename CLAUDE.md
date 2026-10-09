@@ -74,7 +74,7 @@ pnpm dev
    - お気に入りはアカウントを作らず、ブラウザの localStorage に曲の情報（QueueItem）ごと残す（`src/lib/favorites.ts`）。ほかの端末とは分け合わない。ハートは再生の帯・曲の一覧・ボカロPの画面の曲に置き、`/favorites` で押した曲からお気に入りの並びを流す（ボカロPの画面へは移らない）
    - ボカロPもお気に入りに入れられる（2026-10-09。Janify のライブラリに合わせた）。ハートはボカロPの画面の名前の横。名前とアイコンを曲とは別の鍵（`vocafy-favorite-producers`）に残す。`/favorites` は「曲」と「ボカロP」の2区画で、トップの一番上にもお気に入りの曲とボカロPの棚を出す（無ければ出さない）。棚の曲もお気に入りの並びで流す
    - 残した曲の情報は古くなりうる（動画が消える・表紙が変わる）。直すなら、お気に入りの画面で id から今の情報を引き直す
-   - アカウントは 2026-10-09 に入れた。Better Auth を自前で持ち、手段は Google だけ（comic-time と同じ作り。受け口をこのサイトに置くので、Google の同意画面にこのサイトの名前が出る）。ユーザーとセッションとお気に入り（favorite_song・favorite_producer）は台帳と同じ Postgres（0006）。ログインは任意で、入り口は設定の画面
+   - アカウントは 2026-10-09 に入れた。Better Auth を自前で持ち、手段は Google だけ（comic-time と同じ作り。受け口をこのサイトに置くので、Google の同意画面にこのサイトの名前が出る）。ユーザーとセッションとお気に入り（favorite_song・favorite_producer）は台帳と同じ Postgres（0006）。ログインは任意で、入り口は右上（スマホは上の帯の右端、パソコンは本文の上の段の右端。Spotify・YouTube と同じ置き場所を 2026-10-09 に実物で確かめた）。ログイン中は顔写真を出し、押すと名前・設定・ログアウトのメニューが開く（`account-button.tsx`）。設定の画面のアカウントの欄も残す
      - ログインしているあいだはアカウントのお気に入りが元で、localStorage はその写し。端末で初めてログインしたときに手元のお気に入りをアカウントに足し（`account-sync.tsx`）、以降は押すたびに手元とアカウントの両方に書く。開くたびにアカウントの中身で写しを置き換える
      - **ログインしたことのある端末だけがセッションを聞きに行く**（localStorage の `vocafy-signed-in`）。全員が聞きに行くと、ログインしていない人でも画面を開くたびに関数が1回動く
      - 鍵は Vercel の production に BETTER_AUTH_SECRET・BETTER_AUTH_URL・GOOGLE_CLIENT_ID・GOOGLE_CLIENT_SECRET。手元は `.env.local`（BETTER_AUTH_URL は http://localhost:3100）。Google の OAuth クライアントは Google Cloud の vocafy プロジェクトの vocafy-web。リダイレクト先は本番と localhost:3100 の `/api/auth/callback/google`
