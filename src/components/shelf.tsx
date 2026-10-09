@@ -3,7 +3,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
-import { MoreLink } from './browse-cards';
 import { Icon } from './icon';
 import { Heading } from './heading';
 
@@ -22,14 +21,11 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 
 export function Shelf({
   title,
   eyebrow,
-  href,
   children,
 }: {
   title: string;
   /** 見出しの上に添える小さな英字 */
   eyebrow?: string;
-  /** 「すべて表示」の行き先 */
-  href?: string;
   children: ReactNode;
 }) {
   const track = useRef<HTMLDivElement>(null);
@@ -105,7 +101,6 @@ export function Shelf({
       <div className="mb-2 flex items-end gap-3">
         <Heading eyebrow={eyebrow}>{title}</Heading>
         <div className="ml-auto flex items-center gap-2">
-          {href && <MoreLink href={href} />}
           <ArrowButton label="前へ" disabled={edge.start} onClick={() => page(-1)}>
             <Icon name="left" className="size-5" />
           </ArrowButton>
