@@ -1,3 +1,5 @@
+import { Heading, SECTION } from '../heading';
+
 /** 設定の画面に載せる、プレイヤーのキー操作の一覧（player-keys.tsx と同じ割り当て）。キーボードのないスマホでは出さない */
 const KEYS: [string, string][] = [
   ['Space', '再生・一時停止'],
@@ -11,8 +13,10 @@ const KEYS: [string, string][] = [
 
 export function KeyboardHelp() {
   return (
-    <section className="mt-7 hidden sm:mt-10 md:block">
-      <h2 className="mb-3 font-bold">キーボード操作</h2>
+    <section className={`hidden md:block ${SECTION}`}>
+      <div className="mb-3">
+        <Heading eyebrow="Keyboard">キーボード操作</Heading>
+      </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 px-3 text-sm">
         {KEYS.map(([key, label]) => (
           <div key={key} className="contents">

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PILL } from '@/components/button-styles';
+import { Heading, SECTION } from '@/components/heading';
 import { FadeImage } from '@/components/fade-image';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails } from '@/lib/catalog';
@@ -152,8 +153,8 @@ export function SearchView() {
       {/* 何も打っていないときは、最近の検索の言葉を出す。押すとその言葉で探す */}
       {!query && recent.length > 0 && (
         <section data-recent className="mt-6">
-          <div className="mb-2 flex items-center gap-3">
-            <h2 className="text-sm font-bold text-muted">最近の検索</h2>
+          <div className="mb-3 flex items-end gap-3">
+            <Heading eyebrow="Recent">最近の検索</Heading>
             {/* 履歴の画面の「履歴を削除」と同じく、確かめずにすぐ消し、知らせの「元に戻す」で戻せるようにする */}
             <button
               type="button"
@@ -200,8 +201,10 @@ export function SearchView() {
       )}
 
       {found && found.producers.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 font-display text-xl">ボカロP</h2>
+        <section className="mt-6">
+          <div className="mb-3">
+            <Heading eyebrow="Producers">ボカロP</Heading>
+          </div>
           <ul className="flex flex-wrap gap-2">
             {found.producers.slice(0, PRODUCER_LIMIT).map((p) => (
               <li key={p.id}>
@@ -232,8 +235,10 @@ export function SearchView() {
       )}
 
       {found && found.voices.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 font-display text-xl">歌声</h2>
+        <section className={SECTION}>
+          <div className="mb-3">
+            <Heading eyebrow="Voices">歌声</Heading>
+          </div>
           <ul className="flex flex-wrap gap-2">
             {found.voices.slice(0, VOICE_LIMIT).map((v) => {
               const art = voiceArt(v.id);
@@ -261,9 +266,11 @@ export function SearchView() {
       )}
 
       {found && found.songs.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-1 font-display text-xl">曲</h2>
-          <p className="mb-3 text-sm text-muted">
+        <section className={SECTION}>
+          <div className="mb-3">
+            <Heading eyebrow="Songs">曲</Heading>
+          </div>
+          <p className="-mt-1 mb-3 text-sm text-muted">
             {formatCount(found.songs.length)}曲
             {found.songs.length > SONG_LIMIT &&
               `（多いので先頭の${SONG_LIMIT}曲。言葉を足すと絞れます）`}

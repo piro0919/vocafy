@@ -11,6 +11,7 @@ export function Heading({
   as: Tag = 'h2',
   size = 'section',
   className = '',
+  id,
   children,
 }: {
   eyebrow?: string;
@@ -19,6 +20,8 @@ export function Heading({
   size?: 'page' | 'section';
   /** 大きさを画面ごとに変えるときに足す指定 */
   className?: string;
+  /** aria-labelledby で区画やラジオの組の名前にするときの id */
+  id?: string;
   children: ReactNode;
 }) {
   return (
@@ -32,6 +35,7 @@ export function Heading({
         </p>
       )}
       <Tag
+        id={id}
         className={`font-display leading-tight ${
           size === 'page' ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'
         } ${className}`}
@@ -41,3 +45,9 @@ export function Heading({
     </div>
   );
 }
+
+/**
+ * 区画どうしの間隔（上の余白）。どの画面の区画もこれを使う。見出しから中身までは mb-3（12px）
+ * （2026-10-09 にそろえた。前はトップの中でも 40px と 56px、検索は 32px、設定は 40px だった）
+ */
+export const SECTION = 'mt-10 sm:mt-14';

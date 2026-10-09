@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CharacterCard } from '@/components/browse-cards';
-import { Heading } from '@/components/heading';
+import { Heading, SECTION } from '@/components/heading';
 import { voices } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
@@ -37,7 +37,7 @@ export default async function VoicesPage() {
       </div>
 
       <section>
-        <div className="mb-3 sm:mb-4">
+        <div className="mb-3">
           <Heading eyebrow="Characters">キャラクター</Heading>
         </div>
         <ul className="grid grid-cols-3 gap-x-2.5 gap-y-3 sm:grid-cols-6 sm:gap-y-4 lg:grid-cols-8">
@@ -49,8 +49,8 @@ export default async function VoicesPage() {
         </ul>
       </section>
 
-      <section className="mt-10 sm:mt-14">
-        <div className="mb-3 sm:mb-4">
+      <section className={SECTION}>
+        <div className="mb-3">
           <Heading eyebrow="Libraries">歌声ライブラリ</Heading>
         </div>
         <ul className="flex flex-wrap gap-1.5">

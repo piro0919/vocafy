@@ -5,7 +5,8 @@ import { type ReactNode, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { usePwa } from 'use-pwa';
 import { Icon } from './icon';
-import { ICON } from './button-styles';
+import { ICON, PILL } from './button-styles';
+import { Heading, SECTION } from './heading';
 
 const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false });
 
@@ -65,13 +66,11 @@ export function InstallApp() {
   const { available, start, guide } = useInstall();
   if (!available) return null;
   return (
-    <section className="mt-7 sm:mt-10">
-      <h2 className="mb-3 font-bold">アプリ</h2>
-      <button
-        type="button"
-        onClick={start}
-        className="rounded-full border border-line/60 px-4 py-2 text-sm font-bold transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95"
-      >
+    <section className={SECTION}>
+      <div className="mb-3">
+        <Heading eyebrow="App">アプリ</Heading>
+      </div>
+      <button type="button" onClick={start} className={PILL}>
         ホーム画面に追加
       </button>
       {guide}

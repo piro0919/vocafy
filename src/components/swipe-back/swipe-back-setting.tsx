@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { Heading, SECTION } from '../heading';
 import {
   isIosStandalone,
   type RightEdge,
@@ -28,9 +29,11 @@ export function SwipeBackSetting() {
   const right = useSyncExternalStore(subscribeSwipeBack, rightEdge, (): RightEdge => 'back');
   if (!shown) return null;
   return (
-    <section className="mt-7 sm:mt-10">
-      <h2 className="mb-1 font-bold">スワイプで戻る</h2>
-      <p className="mb-3 text-sm text-muted">
+    <section className={SECTION}>
+      <div className="mb-3">
+        <Heading eyebrow="Swipe">スワイプで戻る</Heading>
+      </div>
+      <p className="-mt-1 mb-3 text-sm text-muted">
         画面の左端から右へなぞると、前の画面に戻ります。横に流れる棚の上では働きません。
       </p>
       <label className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-foreground/8">

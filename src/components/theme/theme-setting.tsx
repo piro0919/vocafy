@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { Heading } from '../heading';
 import { readThemePref, setThemePref, subscribeThemePref, type ThemePref } from './theme';
 
 const OPTIONS: { value: ThemePref; label: string }[] = [
@@ -13,9 +14,14 @@ const OPTIONS: { value: ThemePref; label: string }[] = [
 export function ThemeSetting() {
   const pref = useSyncExternalStore(subscribeThemePref, readThemePref, () => 'system' as const);
   return (
-    <fieldset>
-      <legend className="mb-3 font-bold">テーマ</legend>
-      <div className="grid gap-1">
+    // 見出しはほかの画面の区画と同じ部品。ラジオの組の名前は、見出しを aria-labelledby で指す
+    <section>
+      <div className="mb-3">
+        <Heading id="theme-setting" eyebrow="Theme">
+          テーマ
+        </Heading>
+      </div>
+      <div role="radiogroup" aria-labelledby="theme-setting" className="grid gap-1">
         {OPTIONS.map((o) => (
           <label
             key={o.value}
@@ -33,6 +39,6 @@ export function ThemeSetting() {
           </label>
         ))}
       </div>
-    </fieldset>
+    </section>
   );
 }

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { PILL } from '@/components/button-styles';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
-import { Heading } from '@/components/heading';
+import { Heading, SECTION } from '@/components/heading';
 import { Icon } from '@/components/icon';
 import { usePlayer } from '@/components/player/player-provider';
 import { SongList } from '@/components/song-list';
@@ -106,7 +106,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="mt-7 first:mt-0 sm:mt-10 sm:first:mt-0">
+    <section className={`${SECTION} first:mt-0 sm:first:mt-0`}>
       <div className="mb-3 flex items-end gap-3">
         <Heading eyebrow={eyebrow}>{title}</Heading>
         <span className="pb-1 text-sm text-muted">{count}</span>

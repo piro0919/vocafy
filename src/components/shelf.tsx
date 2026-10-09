@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { easeInOut, prefersReducedMotion } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { Icon } from './icon';
-import { Heading } from './heading';
+import { Heading, SECTION } from './heading';
 import { FADE } from './scroll-row';
 import { ARROW } from './button-styles';
 
@@ -114,7 +114,6 @@ export function edgeMask(edge: { start: boolean; end: boolean }) {
 
 /**
  * 見出しの付いた、横に流せる棚。左右の矢印で1画面ぶん送る。
- * 棚と棚の間は、スマホでは詰める（縦に長い画面で棚を次々に流して見ると、空きが積み重なって間延びする）。
  * 年の札の帯（ScrollRow）と同じく、続きがある側の端だけをぼかす。パソコンでは本文の幅の中で流す。
  * 前は流す帯を画面の左端まで伸ばし、左の板の後ろへ流れ込ませていたが、板の字の後ろを札がにじんで通るのを本人が嫌った（2026-10-09）
  */
@@ -131,8 +130,8 @@ export function Shelf({
   const { track, edge, update, page } = useShelfScroll();
 
   return (
-    <section className="mt-7 first:mt-2 sm:mt-10 sm:first:mt-4">
-      <div className="mb-2 flex items-end gap-3">
+    <section className={SECTION}>
+      <div className="mb-3 flex items-end gap-3">
         <Heading eyebrow={eyebrow}>{title}</Heading>
         <div className="ml-auto flex items-center gap-2">
           <ShelfArrows edge={edge} page={page} />

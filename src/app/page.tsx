@@ -3,7 +3,7 @@ import type { WebSite, WithContext } from 'schema-dts';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
 import { FavoriteNewSongs } from '@/components/favorite-new-songs';
 import { MixWall, OnThisDay } from '@/components/home-sections';
-import { Heading } from '@/components/heading';
+import { Heading, SECTION } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
 import {
@@ -71,7 +71,7 @@ export default async function Home() {
       {/* お気に入りのボカロPがいる人にだけ出す、その人の棚。ブラウザで組み立てる */}
       <FavoriteNewSongs />
 
-      <section className="mt-10 sm:mt-14">
+      <section className={SECTION}>
         <div className="mb-3">
           <Heading eyebrow="Daily Mix">きょうの出会い</Heading>
         </div>
@@ -80,7 +80,7 @@ export default async function Home() {
 
       {/* 歌声。絵のあるキャラを、曲の多い順に絵の札で並べる。ほかの歌声は「すべて表示」から。
           スマホの幅では 3 列 × 3 段、4 列の幅では 4 段までにする（縦に長くなりすぎる） */}
-      <section className="mt-10 sm:mt-14">
+      <section className={SECTION}>
         <div className="mb-3 flex items-end gap-3">
           <Heading eyebrow="Voices">歌声</Heading>
           <div className="ml-auto">
@@ -120,7 +120,7 @@ export default async function Home() {
       </div>
 
       {/* あいうえお順。行の札だけを置き、曲の一覧は行ごとの画面にする */}
-      <section className="mt-6 sm:mt-10">
+      <section className={SECTION}>
         <div className="mb-3">
           <Heading eyebrow="Index">あいうえお順</Heading>
         </div>
