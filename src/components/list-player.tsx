@@ -107,7 +107,7 @@ export function ListPlayer({
             {here && playing ? '一時停止' : '再生'}
           </button>
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
-          <PlaybackMode className="md:hidden" radio />
+          <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
       </div>
 

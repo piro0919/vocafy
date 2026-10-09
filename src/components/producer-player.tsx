@@ -125,7 +125,7 @@ export function ProducerPlayer({
           </button>
           {share}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
-          <PlaybackMode className="md:hidden" radio />
+          <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
       </div>
 

@@ -20,11 +20,18 @@ import { useWakeLock } from './use-wake-lock';
 import { DOCK, DockStrip, FADE, HIDDEN } from './dock-strip';
 import { buildOrder } from './play-order';
 import { savedPlayback, savedVolume, savePlayback, saveVolume } from './player-storage';
-import type { ListSource, PlaybackTime, PlayContext, PlayerContext, Repeat } from './player-types';
+import type {
+  ListSource,
+  PlaybackTime,
+  PlayContext,
+  PlayerContext,
+  Repeat,
+  Sleep,
+} from './player-types';
 import { useFrameLayout } from './use-frame-layout';
 import { useSlot } from './use-slot';
 
-export type { ListSource, PlaybackTime, PlayContext, Repeat } from './player-types';
+export type { ListSource, PlaybackTime, PlayContext, Repeat, Sleep } from './player-types';
 
 const Context = createContext<PlayerContext | null>(null);
 
@@ -46,6 +53,9 @@ const RADIO_TRIES = 6;
 /** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
 const FADE_OUT_MS = 150;
 const FADE_STEPS = 10;
+
+/** スリープタイマーで止めるときに、音を絞りきるまでの長さ（ミリ秒）。眠りかけの耳に急に切れないよう、曲を替えるときより長く */
+const SLEEP_FADE_MS = 3000;
 
 /**
  * ページを移っても再生が続く、全ページ共通のプレイヤー。ルートのレイアウトに1つだけ置く。
@@ -297,9 +307,76 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (position >= order.current.length - 2) fetchMore();
   }, [listSource, queue, position, fetchMore]);
 
+  // スリープタイマー。onEnded（作ったときの関数を持ち続ける）から読むので、ref にも持つ
+  const [sleep, setSleepState] = useState<Sleep | null>(null);
+  const sleepRef = useRef<Sleep | null>(null);
+  const setSleep = useCallback((value: number | 'end' | null) => {
+    const next: Sleep | null =
+      value === null
+        ? null
+        : value === 'end'
+          ? { kind: 'end' }
+          : { kind: 'at', at: Date.now() + value * 60_000 };
+    sleepRef.current = next;
+    setSleepState(next);
+  }, []);
+  // 時刻で止めるタイマー。時間が来たら SLEEP_FADE_MS かけて音を絞ってから一時停止し、音量を元に戻しておく
+  // （次に再生を押したときは、いつもの音量で鳴る）
+  useEffect(() => {
+    if (sleep?.kind !== 'at') return;
+    let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+    // 絞っている途中で切られたとき（タイマーを切る・入れ直す）に、音量を戻すための控え
+    let restore: (() => void) | null = null;
+    const timer = setTimeout(
+      () => {
+        // 状態（sleep）を消すのは止め終えてから。先に消すと、このエフェクトの後片付けが走って、絞っている途中の時計まで止まった
+        const done = () => {
+          sleepRef.current = null;
+          setSleepState(null);
+        };
+        const p = player.current;
+        const { volume, muted } = soundRef.current ?? { volume: 100, muted: false };
+        if (!p || muted || volume === 0) {
+          p?.pause();
+          done();
+          return;
+        }
+        let step = 0;
+        restore = () => p.setVolume(volume);
+        const tick = () => {
+          step += 1;
+          if (step > FADE_STEPS) {
+            restore = null;
+            p.pause();
+            p.setVolume(volume);
+            done();
+            return;
+          }
+          p.setVolume(Math.round(volume * (1 - step / FADE_STEPS)));
+          fadeTimer = setTimeout(tick, SLEEP_FADE_MS / FADE_STEPS);
+        };
+        tick();
+      },
+      Math.max(0, sleep.at - Date.now()),
+    );
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fadeTimer);
+      restore?.();
+    };
+  }, [sleep]);
+
   useEffect(() => {
     // 曲が終わったら、ループが1曲なら頭から、そうでなければ流す順の次の曲へ（最後なら先頭に戻る）
     onEnded.current = () => {
+      // スリープタイマーが「この曲が終わったら」なら、次へ進まずに止める（曲は終わったところで止まっている）
+      if (sleepRef.current?.kind === 'end') {
+        sleepRef.current = null;
+        setSleepState(null);
+        // 曲が終わったときは「止まった」の知らせが来ないので、流していない表示にここで切り替える
+        setPlaying(false);
+        return;
+      }
       if (playbackRef.current?.repeat === 'one' && player.current) {
         player.current.seek(0);
         player.current.play();
@@ -513,6 +590,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [context, index, queue, extend]);
 
   const close = useCallback(() => {
+    sleepRef.current = null;
+    setSleepState(null);
     setRadioHome(null);
     clearMore();
     clearTimeout(fadeTimer.current);
@@ -618,6 +697,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setSlot,
       holdSlot,
       holdingSlot,
+      sleep,
+      setSleep,
     }),
     [
       queue,
@@ -647,6 +728,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setSlot,
       holdSlot,
       holdingSlot,
+      sleep,
+      setSleep,
     ],
   );
 

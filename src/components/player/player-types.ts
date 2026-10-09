@@ -19,6 +19,9 @@ export type ListSource = { source: string; start: number; next: number; last: nu
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
 
+/** スリープタイマー。at はその時刻（Date.now() の値）に止める、end はいまの曲が終わったら止める */
+export type Sleep = { kind: 'at'; at: number } | { kind: 'end' };
+
 export type PlayerContext = {
   queue: QueueItem[];
   index: number;
@@ -108,4 +111,8 @@ export type PlayerContext = {
   holdSlot: () => void;
   /** holdSlot の途中か（player-stage.tsx が読む） */
   holdingSlot: boolean;
+  /** スリープタイマー。入っていなければ null */
+  sleep: Sleep | null;
+  /** スリープタイマーを入れる（分か、いまの曲の終わり）。null で切る。このタブの中だけで持ち、保存しない */
+  setSleep: (value: number | 'end' | null) => void;
 };

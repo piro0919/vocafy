@@ -216,6 +216,17 @@ const ICONS = {
     </g>
   ),
   right: <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.5} />,
+  // スリープタイマー。三日月に、小さな星を添える
+  moon: (
+    <>
+      <path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10Z" />
+      <path
+        {...ROUND_FILL}
+        strokeWidth={1}
+        d="m17 3.5.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"
+      />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof ICONS;
