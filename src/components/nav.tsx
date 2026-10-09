@@ -11,7 +11,7 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/producers', label: 'ボカロP', icon: 'artist' },
   { href: '/voices', label: '歌声', icon: 'voice' },
   { href: '/years', label: '年代', icon: 'year' },
-  { href: '/favorites', label: 'お気に入り', icon: 'heart' },
+  { href: '/favorites', label: 'お気に入り', icon: 'favorites' },
 ];
 
 function useActive() {
