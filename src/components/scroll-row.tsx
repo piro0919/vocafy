@@ -2,8 +2,8 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-/** 端のぼかしの幅（px） */
-const FADE = 24;
+/** 端のぼかしの幅（px）。棚（shelf.tsx）も同じ幅でぼかす */
+export const FADE = 24;
 
 /**
  * 1行で横にスクロールする並び。スクロールバーは見せず、続きがある側の端だけをぼかす
