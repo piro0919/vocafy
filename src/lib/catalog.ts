@@ -449,3 +449,43 @@ export const searchIndex = cache(async (): Promise<SearchIndex> => {
     }),
   };
 });
+
+/** VocaDB の関連曲の返事。3種類とも12曲ずつ */
+type VdbRelated = Record<'artistMatches' | 'likeMatches' | 'tagMatches', { id: number }[]>;
+
+/** VocaDB に聞いた関連曲を作り置きする長さ（秒）。関連曲は投票やタグで少しずつしか変わらない */
+const RELATED_TTL = 60 * 60 * 24 * 7;
+
+/**
+ * その曲の関連曲のうち、このサイトで流せるもの。ラジオ（押した曲から関連曲を流し続ける再生）に使う。
+ * VocaDB の「好きな人が好きな曲」「タグが近い曲」「同じ作者」を1曲ずつ順に混ぜる（同じ作者ばかり続かないように）。
+ * VocaDB に聞けなかったときは空にする（ラジオはそこで足すのをやめるだけ）
+ */
+export async function relatedSongs(songId: number): Promise<QueueItem[]> {
+  if (!Number.isSafeInteger(songId)) return [];
+  let related: VdbRelated;
+  try {
+    const res = await fetch(`https://vocadb.net/api/songs/${songId}/related`, {
+      headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' },
+      next: { revalidate: RELATED_TTL },
+    });
+    if (!res.ok) return [];
+    related = (await res.json()) as VdbRelated;
+  } catch {
+    return [];
+  }
+  const lists = [related.likeMatches, related.tagMatches, related.artistMatches].map(
+    (l) => l ?? [],
+  );
+  const ids: number[] = [];
+  for (let i = 0; i < Math.max(...lists.map((l) => l.length)); i++) {
+    for (const l of lists) if (l[i] && !ids.includes(l[i].id)) ids.push(l[i].id);
+  }
+  if (ids.length === 0) return [];
+  const { rows } = await db().query<QueueRow>(`${QUEUE_SELECT} and s.id = any($1)`, [ids]);
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.flatMap((id) => {
+    const r = byId.get(id);
+    return r ? [toItem(r)] : [];
+  });
+}

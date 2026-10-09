@@ -27,7 +27,11 @@ import { useWakeLock } from './use-wake-lock';
  * - list: ボカロPの画面の曲の並び（その画面から流したとき）
  * - pending: 曲の一覧から1曲だけ流し始め、ボカロPの画面に着いたらその人の曲に差し替える途中
  */
-export type PlayContext = 'list' | 'pending';
+/**
+ * 並びの出どころ。list はふつうの一覧、pending は曲の一覧から押して1曲だけ流している途中（ボカロPの画面で差し替える）、
+ * radio はラジオ（押した曲から関連曲を足し続ける。並びの終わりが近づくと、いまの曲の関連曲を後ろに足す）
+ */
+export type PlayContext = 'list' | 'pending' | 'radio';
 
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
@@ -56,6 +60,8 @@ type PlayerContext = {
    * 流し始め、ボカロPの画面に着いたところでその人の曲に差し替える（producer-player.tsx）
    */
   adoptQueue: (items: QueueItem[], index: number) => void;
+  /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
+  startRadio: (seed: QueueItem) => void;
   toggle: () => void;
   step: (dir: 1 | -1) => void;
   /** 再生をやめ、プレイヤーを消す */
@@ -321,6 +327,59 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIndex(at);
   }, []);
 
+  /** ラジオの並びを後ろに伸ばす。いまの曲は止めず、流す順は並びのとおり（ラジオでは混ぜない） */
+  const extend = useCallback((items: QueueItem[]) => {
+    const { index: at } = state.current;
+    order.current = buildOrder(items.length, 0, false);
+    positionRef.current = at;
+    setPosition(at);
+    state.current = { queue: items, index: at };
+    setQueue(items);
+  }, []);
+
+  const startRadio = useCallback(
+    (seed: QueueItem) => {
+      const { queue: q, index: i } = state.current;
+      if (q[i]?.songId !== seed.songId) {
+        load([seed], 0, 'radio');
+        return;
+      }
+      // 関連曲を足すときに、待っているあいだに並びが替わっていないかを同じ配列かどうかで見るので、1つの配列を使い回す
+      const items = [seed];
+      order.current = [0];
+      positionRef.current = 0;
+      setPosition(0);
+      state.current = { queue: items, index: 0 };
+      setQueue(items);
+      setIndex(0);
+      setContext('radio');
+    },
+    [load],
+  );
+
+  // ラジオで並びの終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
+  // 足せる曲が無ければ、次の曲に移ったときにその曲の関連曲でもう一度試す
+  const extending = useRef(false);
+  useEffect(() => {
+    if (context !== 'radio' || queue.length === 0 || index < queue.length - 2) return;
+    if (extending.current) return;
+    extending.current = true;
+    fetch(`/api/related/${queue[index].songId}`)
+      .then((res) => (res.ok ? (res.json() as Promise<QueueItem[]>) : []))
+      .then((items) => {
+        const { queue: q } = state.current;
+        // 待っているあいだに別の並びに替わっていたら、足さない
+        if (q !== queue) return;
+        const have = new Set(q.map((s) => s.songId));
+        const fresh = items.filter((s) => !have.has(s.songId));
+        if (fresh.length > 0) extend([...q, ...fresh]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        extending.current = false;
+      });
+  }, [context, index, queue, extend]);
+
   const close = useCallback(() => {
     player.current?.destroy();
     player.current = null;
@@ -471,6 +530,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleShuffle,
       playQueue: load,
       adoptQueue: adopt,
+      startRadio,
       toggle: () => (playing ? player.current?.pause() : player.current?.play()),
       step,
       close,
@@ -513,6 +573,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleShuffle,
       load,
       adopt,
+      startRadio,
       step,
       close,
       time,
