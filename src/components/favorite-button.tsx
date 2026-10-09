@@ -6,13 +6,16 @@ import { type CSSProperties, useState } from 'react';
 import { Icon } from './icon';
 
 /**
- * 舞い散る音符。向き（度。0 が真上）と傾きと形。上に3つ散らし、真ん中だけ連桁の音符にする。6つでは派手すぎた。
+ * 舞い散る音符。向き（度。0 が真上）と傾きと形。ハートの周りに6つ、一周に等しく散らし、八分音符と連桁の音符を交互に置く。輪を重ねていたころは6つでは派手すぎて3つに減らしたが、輪を外したので一周に戻した。
  * 点を散らすだけだと、どのサイトにもある「いいね」の動きでボカロらしさが無かった（2026-10-09）
  */
 const NOTES = [
-  { angle: -55, tilt: -12, beamed: false },
   { angle: 0, tilt: 8, beamed: true },
-  { angle: 55, tilt: 12, beamed: false },
+  { angle: 60, tilt: 12, beamed: false },
+  { angle: 120, tilt: -8, beamed: true },
+  { angle: 180, tilt: 10, beamed: false },
+  { angle: 240, tilt: -10, beamed: true },
+  { angle: 300, tilt: -12, beamed: false },
 ];
 
 /** 12px の音符。beamed なら連桁の2つ（♫）、でなければ八分音符（♪） */
