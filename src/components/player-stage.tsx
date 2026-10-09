@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FadeImage } from './fade-image';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
@@ -31,16 +31,20 @@ export function PlayerStage({
   label: string;
   onPlay: () => void;
 }) {
-  const { setSlot } = usePlayer();
+  const { setSlot, holdingSlot } = usePlayer();
   const slot = useRef<HTMLDivElement>(null);
+  // 画面を移るあいだ（holdSlot）は、動画を出していた置き場所は、この画面の持ち主でなくなっても出し続ける
+  const [wasOn, setWasOn] = useState(active);
+  const on = active || (holdingSlot && wasOn);
+  if (on !== wasOn) setWasOn(on);
 
   // 画面を描く前に置き場所を知らせる。描いたあとだと、最初の1曲を流し始めた瞬間に、
   // プレイヤーが一度だけ右下の窓として描かれてしまう
   useLayoutEffect(() => {
-    if (!active) return;
+    if (!on) return;
     setSlot(slot.current);
     return () => setSlot(null);
-  }, [active, setSlot]);
+  }, [on, setSlot]);
 
   // スマホでヘッダーと下のタブを隠す印（globals.css）。流しているかどうかに関わらず、この画面にいる間ずっと付ける
   useLayoutEffect(() => {
@@ -57,7 +61,7 @@ export function PlayerStage({
         <div className="aspect-video" />
       </div>
       <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-40 max-md:bg-background">
-        {active ? (
+        {on ? (
           <div ref={slot} className="aspect-video w-full bg-black md:rounded-lg" />
         ) : (
           <button

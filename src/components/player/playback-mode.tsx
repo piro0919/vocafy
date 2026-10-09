@@ -70,17 +70,20 @@ export function PlaybackMode({
  * もう一度押すとやめて、ラジオを始める前の並びに戻す。ラジオの画面にいたら、戻した並びの持ち主の画面へ移る
  */
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
-  const { context, radioHome, startRadio, stopRadio } = usePlayer();
+  const { context, radioHome, startRadio, stopRadio, holdSlot } = usePlayer();
   const router = useRouter();
   const pathname = usePathname();
   const on = context === 'radio';
   const toggle = () => {
+    // 並びの持ち主が先に替わるので、ラジオの画面（切るときは戻る画面）に着くまで、いまの置き場所に動画を出し続ける
     if (!on) {
+      holdSlot();
       startRadio(song);
       router.push(`/radio/${song.songId}`);
       return;
     }
     const onRadioPage = decodeURIComponent(pathname) === radioHome;
+    if (onRadioPage) holdSlot();
     const home = stopRadio();
     if (onRadioPage) router.push(home);
   };
