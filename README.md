@@ -1,6 +1,6 @@
 # Vocafy
 
-> Listen to Vocaloid and other synthesized-voice songs, producer by producer.
+> A music player for Vocaloid and other synthesized-voice songs — keep listening, from producers, voices or years.
 
 ## ✨ Features
 

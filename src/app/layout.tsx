@@ -46,7 +46,8 @@ const rounded = M_PLUS_Rounded_1c({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'Vocafy', template: '%s | Vocafy' },
-  description: 'ボカロ曲を、ボカロPごとに聴ける。合成音声の曲を、YouTube の本家の動画で流す。',
+  description:
+    'ボカロ曲を、ずっと聴ける音楽プレイヤー。ボカロP・歌声・年代から選んで、本家の動画で流す。',
   twitter: { card: 'summary_large_image' },
 };
 

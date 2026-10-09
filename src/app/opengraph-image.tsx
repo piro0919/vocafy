@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Vocafy — ボカロ曲を、ボカロPごとに聴ける。';
+export const alt = 'Vocafy — ボカロ曲を、ずっと聴ける。';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -42,7 +42,7 @@ export default function OpengraphImage() {
         >
           Voca<span style={{ color: '#0b7770' }}>fy</span>
         </div>
-        <div style={{ fontSize: 34, color: '#5d6f73' }}>ボカロ曲を、ボカロPごとに聴ける。</div>
+        <div style={{ fontSize: 34, color: '#5d6f73' }}>ボカロ曲を、ずっと聴ける。</div>
       </div>
     </div>,
     {

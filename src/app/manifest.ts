@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'Vocafy',
     short_name: 'Vocafy',
-    description: 'ボカロ曲を、ボカロPごとに聴ける。',
+    description: 'ボカロ曲を、ずっと聴ける。',
     lang: 'ja',
     scope: '/',
     start_url: '/',
