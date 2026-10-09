@@ -46,8 +46,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     >
       <Progress time={time} playing={playing} onSeek={seek} />
 
-      {/* パソコンは線が帯の中の上の端に入るので、操作をその分だけ下げる */}
-      <div className="flex h-full items-center gap-3 px-3 sm:gap-4 sm:px-4 md:pt-2.5">
+      <div className="flex h-full items-center gap-3 px-3 sm:gap-4 sm:px-4">
         <div className="flex items-center sm:gap-1">
           <BarButton label="前の曲" disabled={!hasPrev} onClick={() => step(-1)}>
             <Icon name="prev" />
@@ -241,9 +240,8 @@ function Progress({
       }}
       // 当たり判定は見た目の線より広くとる。線は帯の上の縁に重ねる。
       // スマホは指で狙うので、上へ広げる（下へ広げると曲名や再生ボタンに重なる）。
-      // 帯の角が丸いので、線が角からはみ出さないよう左右を内に寄せる。
-      // パソコンは帯が四隅の丸い浮いた板なので、線を縁に載せず、帯の中の上の端に置く（縁に載せると角とぶつかって見えた）
-      className="group absolute inset-x-4 -top-2 h-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8 md:top-0.5"
+      // 帯の角が丸いので、線が角からはみ出さないよう左右を内に寄せる
+      className="group absolute inset-x-4 -top-2 h-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
     >
       <span
         ref={bubble}
