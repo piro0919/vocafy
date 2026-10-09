@@ -9,10 +9,13 @@ import { reportUnplayable } from './report';
  * - 送る: { eventName, data, sourceConnectorType: 1, playerId }。play・pause・seek（data.time はミリ秒）・
  *   volumeChange（data.volume は 0〜1）・mute（data.mute）・commentVisibilityChange（data.commentVisibility）
  * - 届く: loadComplete（読み込めた）、statusChange（data.playerStatus が 1 読み込み中・2 再生中・3 一時停止・
- *   4 終わり）、playerMetadataChange（data.currentTime と data.duration はミリ秒。1秒に4回ほど）、error
+ *   4 終わり）、playerMetadataChange（data.currentTime と data.duration はミリ秒。1秒に4回ほど）、error、
+ *   player-error:video:play（再生の開始を止められた）
  *
  * コメントは隠す。見た目を YouTube の曲とそろえるため（2026-10-08 に本人が決めた）。
- * URL の設定（noController・noHeader・defaultNoComment など）は、2026-10-08 に試した範囲では効かなかった。効いたのは開始位置の from だけ
+ * URL の設定（noController・noHeader・defaultNoComment など）は効かない。効くのは jsapi・playerId・開始位置の from（秒）だけ。
+ * 2026-10-09 に埋め込みのページと本体の JavaScript を読んで確かめた。noController などの値はニコニコのサーバーがページに
+ * 書き込んでいて、URL に付けても変わらない（提携先にだけ開いているとみられる）
  *
  * 動画を替えるときは iframe を作り直す（load の説明）。前の動画の知らせを拾わないよう、そのたびに playerId を変える
  */
@@ -71,6 +74,9 @@ export function createNiconicoEngine(
       current = (data?.currentTime ?? 0) / 1000;
       duration = (data?.duration ?? 0) / 1000;
     }
+    // 押す操作の無い再生をブラウザに止められた。状態は読み込み中のまま何も届かないので、一時停止として扱い、
+    // 再生ボタンを出す。ボタンから play を送り直せば流れる（2026-10-09 に Chromium の設定で止めて確かめた）
+    if (eventName === 'player-error:video:play') events.onPaused();
     // 消えた・ほかのサイトでは流せない動画。台帳から外せるよう Vocafy に知らせる（確かめ直すのは API の側）
     if (eventName === 'error') {
       reportUnplayable('niconico', videoId);

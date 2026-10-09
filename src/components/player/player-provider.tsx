@@ -356,7 +356,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPlaying(true);
         setLoading(false);
       },
-      onPaused: () => setPlaying(false),
+      // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
+      onPaused: () => {
+        setPlaying(false);
+        setLoading(false);
+      },
       onEnded: () => onEnded.current(),
       // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
       onError: () => {
