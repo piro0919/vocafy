@@ -57,6 +57,19 @@ describe('sourcesOf', () => {
     });
     expect(isEligible(s)).toBe(true);
   });
+
+  it('本家が消えた曲は、手で当てた動画を使う', () => {
+    const s = song({
+      id: 100515,
+      pvs: [{ service: 'NicoNicoDouga', pvType: 'Original', pvId: 'sm1', disabled: true }],
+    });
+    expect(sourcesOf(s)).toEqual({
+      youtubeId: 'IwvJUQzBjwE',
+      niconicoId: null,
+      niconicoThumb: null,
+    });
+    expect(isEligible(s)).toBe(true);
+  });
 });
 
 describe('vocalistsOf', () => {

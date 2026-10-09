@@ -34,7 +34,23 @@ export const EXTRA_PRODUCERS = [
   886, // kk2
   578, // AIR田F（VocaDB では AIR田）
   1049, // 磯P
+  926, // 夏空P（VocaDB では成田旬）。本人が動画をすべて消しているので、下の YOUTUBE_STANDINS で補う
 ];
+
+/**
+ * 本家の動画が消えた曲に、手で当てる YouTube の動画。VocaDB の曲の番号 → 動画の ID。
+ * 夏空Pの曲の動画を担当した piro（@piro0919）が上げ直したもの。VocaDB に本家の動画が残っている曲には当てない。
+ * 転載を使わない決まりの例外なので、作り手の側が上げた動画に限る
+ */
+const YOUTUBE_STANDINS = new Map([
+  [100515, 'IwvJUQzBjwE'], // 胡蝶のミメシス
+  [9756, 'WAHyA3aDvAQ'], // ONE NIGHT PIECE
+  [108999, 'DSJEITsGv4Q'], // オオカミ少女
+  [35076, 'cs9eHyhmHks'], // ショットガン・ペインティング
+  [7326, 'jH5XCof23sI'], // ローレライの衣
+  [154680, 'EqAXhEwMNuY'], // Marriage Fraud
+  [103770, 'CpwGKX2gNQo'], // 虹色スペクトル
+]);
 
 const has = (categories: string, name: string) =>
   categories.split(',').some((c) => c.trim() === name);
@@ -61,6 +77,7 @@ export function vocalistsOf(song: VdbSong) {
 
 /**
  * 流せる本家の動画。YouTube を先に、無ければニコニコ。転載（Reprint）は使わない。
+ * YouTube に本家が無い曲は、手で当てた動画（YOUTUBE_STANDINS）があればそれを使う。
  * ニコニコの表紙は動画の ID から組み立てられないので、VocaDB の持つ住所も拾う。
  * 本家の動画が1本も無い曲は null
  */
@@ -71,7 +88,7 @@ export function sourcesOf(song: VdbSong): {
 } | null {
   const original = (service: string) =>
     song.pvs?.find((pv) => pv.service === service && pv.pvType === 'Original' && !pv.disabled);
-  const youtubeId = original('Youtube')?.pvId ?? null;
+  const youtubeId = original('Youtube')?.pvId ?? YOUTUBE_STANDINS.get(song.id) ?? null;
   const niconico = original('NicoNicoDouga');
   const niconicoId = niconico?.pvId ?? null;
   return youtubeId || niconicoId
