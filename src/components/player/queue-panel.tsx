@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 import { SongItem } from '../song-list';
 import { OriginalLink } from './original-link';
 import { usePlayer } from './player-provider';
@@ -8,30 +8,67 @@ import { usePlayer } from './player-provider';
 /**
  * 次に流れる曲（順番待ち）。流す順（ランダムなら混ぜたあとの順）で並べ、押すとその曲へ飛ぶ。
  * パソコンは下の帯の右上、スマホは帯の上に、画面の幅いっぱいの板で出す（高さはトーストと同じ --toast-bottom の上）。
- * 板の外を押すか Esc で閉じる
+ *
+ * 置いたままにして、open で出し入れする（閉じるときも下へ少しずらしながら消す）。開いたら板にフォーカスを移し、
+ * 閉じたら開いたボタンに戻す。板の外を押すか Esc で閉じる。板の中のスクロールは後ろのページに伝えない
  */
-export function QueuePanel({ onClose }: { onClose: () => void }) {
+export function QueuePanel({
+  open,
+  onClose,
+  trigger,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** 開いたボタン。閉じたらここにフォーカスを戻す */
+  trigger: RefObject<HTMLButtonElement | null>;
+}) {
   const { current, upcoming, jumpTo, context } = usePlayer();
-  const items = upcoming();
+  // 閉じているあいだは並びを作らない（曲が変わるたびに 100 曲ぶん組み直さない）
+  const items = open ? upcoming() : [];
+  const panel = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    // 開いたら、並びの先頭から見せて、板にフォーカスを移す（描き終えてから）
+    list.current?.scrollTo({ top: 0 });
+    const frame = requestAnimationFrame(() => panel.current?.focus({ preventScroll: true }));
+    const button = trigger.current;
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      cancelAnimationFrame(frame);
+      button?.focus({ preventScroll: true });
+    };
+  }, [open, onClose, trigger]);
 
   return (
     <>
-      {/* 板の外を押したら閉じる */}
-      <div aria-hidden className="fixed inset-0 z-40" onClick={onClose} />
+      {/* 板の外を押したら閉じる。スマホでここから指を動かしても、後ろのページはスクロールさせない */}
       <div
+        aria-hidden
+        className={`fixed inset-0 z-40 touch-none ${open ? '' : 'pointer-events-none'}`}
+        onClick={onClose}
+      />
+      <div
+        ref={panel}
         role="dialog"
         aria-label="次に流れる曲"
+        aria-hidden={!open}
+        inert={!open}
+        tabIndex={-1}
         // パソコンで右下の窓で流しているとき（html の data-player が dock）は、動画の上に重ねない（YouTube の規約）よう、
         // 窓（幅 356px）の左に出す。スマホは開くボタンが動画の画面にしか無く、右下の窓のときには開けない
-        className="fixed inset-x-3 bottom-(--toast-bottom) z-50 flex max-h-[60dvh] flex-col overflow-hidden rounded-2xl border border-line/60 bg-sidebar/95 shadow-2xl shadow-black/20 backdrop-blur-lg backdrop-saturate-150 md:right-3 md:left-auto md:w-96 md:[html[data-player=dock]_&]:right-[380px]"
+        className={`fixed inset-x-3 bottom-(--toast-bottom) z-50 flex max-h-[60dvh] origin-bottom flex-col overflow-hidden rounded-2xl border border-line/60 bg-sidebar/95 shadow-2xl shadow-black/20 outline-none backdrop-blur-lg backdrop-saturate-150 duration-200 ease-(--ease-out) md:right-3 md:left-auto md:w-96 md:[html[data-player=dock]_&]:right-[380px] motion-reduce:transition-none ${
+          // 見える・見えないの切り替え（visibility）は閉じるときだけ動きに乗せ、消えきってから見えなくする。
+          // 開くときにも乗せると、出し始めはまだ見えない扱いで、フォーカスを受け付けなかった
+          open
+            ? 'transition-[opacity,translate,scale]'
+            : 'invisible translate-y-2 scale-[0.98] opacity-0 transition-[opacity,translate,scale,visibility]'
+        }`}
       >
         <div className="flex items-baseline gap-2 px-4 pt-3 pb-2">
           <h2 className="font-display text-base">次に流れる曲</h2>
@@ -50,16 +87,19 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         )}
-        <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+        <div
+          ref={list}
+          className="mt-2 min-h-0 flex-1 overscroll-contain overflow-y-auto px-2 pb-2"
+        >
           {items.length > 0 ? (
             items.map(({ item, index }) => (
               <SongItem key={`${index}-${item.songId}`} song={item} onOpen={() => jumpTo(index)} />
             ))
-          ) : (
+          ) : open ? (
             <p className="px-2 py-3 text-sm text-muted">
               {context === 'radio' ? '関連曲を探しています…' : 'この曲で並びの最後です。'}
             </p>
-          )}
+          ) : null}
         </div>
       </div>
     </>

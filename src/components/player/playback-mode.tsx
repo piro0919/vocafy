@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from '../icon';
 import { usePlayer } from './player-provider';
@@ -20,6 +20,8 @@ export function PlaybackMode({
 }) {
   const { current, shuffle, repeat, toggleShuffle, toggleRepeat } = usePlayer();
   const [queueOpen, setQueueOpen] = useState(false);
+  const queueButton = useRef<HTMLButtonElement>(null);
+  const closeQueue = useCallback(() => setQueueOpen(false), []);
   const button =
     'grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out active:scale-90';
   return (
@@ -46,6 +48,7 @@ export function PlaybackMode({
       {radio && current && <RadioButton song={current} />}
       {current && (
         <button
+          ref={queueButton}
           type="button"
           aria-label="次に流れる曲"
           aria-expanded={queueOpen}
@@ -56,7 +59,7 @@ export function PlaybackMode({
           <Icon name="queue" className="size-5" />
         </button>
       )}
-      {queueOpen && <QueuePanel onClose={() => setQueueOpen(false)} />}
+      {current && <QueuePanel open={queueOpen} onClose={closeQueue} trigger={queueButton} />}
     </div>
   );
 }
