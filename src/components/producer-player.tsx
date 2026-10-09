@@ -123,13 +123,11 @@ export function ProducerPlayer({
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio />
         </div>
-        {/* パソコンでは年の札を左の列に折り返して並べる。動画とボタンの下が空いていたのを埋め、右端で切れないように */}
-        <YearJump songs={songs} wrap className="mt-6 hidden lg:flex" />
       </div>
 
       <div className="min-w-0">
-        {/* スマホと狭いパソコンでは一覧の上に横に並べ、右端をぼかして続きがあることを見せる */}
-        <YearJump songs={songs} className="mb-3 lg:hidden" />
+        {/* 一覧の上に1行で横に並べ、右端をぼかして続きがあることを見せる */}
+        <YearJump songs={songs} className="mb-3" />
         {/*
           行の地の色は字の手前まで広げたいので、行の内側に余白（px-3）を取る。そのぶん並び全体を外へ出し（-mx-3）、
           番号の頭が題名の頭とそろうようにする
@@ -235,28 +233,15 @@ const YEAR_JUMP_MIN = 100;
  * 一覧の上に並べる年の札。押すと、その年の最初の曲の行までスクロールする。曲の多い人（ピノキオピーは 166 曲）で、
  * 古い曲まで長くスクロールしなくて済むように。曲が少ない人や、1年に収まる人には出さない
  */
-function YearJump({
-  songs,
-  wrap = false,
-  className = '',
-}: {
-  songs: Song[];
-  /** 折り返して並べる（パソコンの左の列）。false なら1行で横にスクロールする */
-  wrap?: boolean;
-  className?: string;
-}) {
+function YearJump({ songs, className = '' }: { songs: Song[]; className?: string }) {
   const firsts = new Map<number, number>();
   for (const s of songs) if (s.year && !firsts.has(s.year)) firsts.set(s.year, s.id);
   if (songs.length <= YEAR_JUMP_MIN || firsts.size < 2) return null;
   return (
     <nav
       aria-label="年で飛ぶ"
-      className={`gap-1.5 ${
-        wrap
-          ? 'flex-wrap'
-          : // 1行で横にスクロールする。右端をぼかして、続きがあることを見せる
-            '-mx-1 flex overflow-x-auto px-1 pb-1 [mask-image:linear-gradient(to_right,black_85%,transparent)]'
-      } ${className}`}
+      // 1行で横にスクロールする。右端をぼかして、続きがあることを見せる
+      className={`-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [mask-image:linear-gradient(to_right,black_85%,transparent)] ${className}`}
     >
       {[...firsts].map(([year, id]) => (
         <button
