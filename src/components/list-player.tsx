@@ -52,7 +52,27 @@ export function ListPlayer({
 
   const play = (page: { number: number; songs: QueueItem[] }, at: number) =>
     page.songs.length > 0 && playAll(page.songs, { source, start: page.number, last }, { at });
-  const start = () => play({ number: 1, songs }, Math.max(0, linkedAt));
+  const start = () => {
+    if (!linked || linkedAt >= 0) {
+      play({ number: 1, songs }, Math.max(0, linkedAt));
+      return;
+    }
+    // 住所の曲が1ページ目に無い（301曲目より後の曲を流していて読み込み直した）。2ページ目から順に探し、見つかったページの
+    // その曲から流す。ページは CDN に作り置かれている（/api/list）ので、DB はほぼ起きない。見つからなければ先頭から
+    void (async () => {
+      for (let number = 2; number <= last; number++) {
+        const res = await fetch(`/api/list/${source}/${number}`).catch(() => null);
+        if (!res?.ok) break;
+        const page = (await res.json()) as QueueItem[];
+        const at = page.findIndex((s) => s.songId === linked);
+        if (at >= 0) {
+          play({ number, songs: page }, at);
+          return;
+        }
+      }
+      play({ number: 1, songs }, 0);
+    })();
+  };
 
   // この一覧を流しているあいだは、住所に流している曲を入れる。曲が変わるたびに履歴を増やさずに書き換える
   useEffect(() => {
