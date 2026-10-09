@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { loadIndex } from '@/lib/search-index';
 import { AccountButton } from './account/account-button';
 import { Icon } from './icon';
 import { InstallButton } from './install-app';
@@ -21,7 +22,13 @@ export function HeaderBar() {
         <span className="flex-1" />
         <InstallButton className="md:hidden" />
         {/* 検索は下のタブに入りきらないので、上の帯に置く（YouTube のアプリと同じ） */}
-        <Link href="/search" aria-label="検索" className={ICON_BUTTON}>
+        {/* 触れた時点で検索の索引を読み始める（src/lib/search-index.ts） */}
+        <Link
+          href="/search"
+          aria-label="検索"
+          className={ICON_BUTTON}
+          onPointerDown={() => void loadIndex().catch(() => {})}
+        >
           <Icon name="search" className="size-5" />
         </Link>
         {/* スマホは左のメニューが出ないので、設定への入口を上の帯の右端に置く（YouTube Music のアプリと同じ） */}

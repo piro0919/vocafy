@@ -6,8 +6,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { FadeImage } from '@/components/fade-image';
 import { Icon } from '@/components/icon';
 import { SongList } from '@/components/song-list';
-import type { QueueItem, SearchDetails, SearchIndex } from '@/lib/catalog';
-import { normalize, normalizeRomaji, score } from '@/lib/search';
+import type { QueueItem, SearchDetails } from '@/lib/catalog';
+import { normalize, score } from '@/lib/search';
+import { loadIndex, type Prepared } from '@/lib/search-index';
 import { thumbOf } from '@/lib/thumb';
 import { voiceArt } from '@/lib/voice-art';
 
@@ -15,72 +16,6 @@ import { voiceArt } from '@/lib/voice-art';
 const SONG_LIMIT = 100;
 const PRODUCER_LIMIT = 12;
 const VOICE_LIMIT = 12;
-
-type Voice = { id: number; name: string; songCount: number; key: string };
-
-type Producer = {
-  id: number;
-  name: string;
-  picture: string | null;
-  songCount: number;
-  key: string;
-};
-
-/** 1段目の索引に、探すための正規化した文字を足したもの */
-type Prepared = {
-  producers: Producer[];
-  /**
-   * title と romaji は探すための形（romaji はローマ字の曲名が無ければ空）。nth は、そのボカロPの曲の中で何番目か。
-   * 2段目（ボカロPごとのファイル）の何番目を見ればよいかに使う
-   */
-  songs: { name: string; producer: Producer; nth: number; title: string; romaji: string }[];
-  voices: Voice[];
-};
-
-/** 1段目は画面を移っても一度だけ読む */
-let loading: Promise<Prepared> | undefined;
-
-function loadIndex(): Promise<Prepared> {
-  const pending = (loading ??= fetch('/search-index')
-    .then((res) => res.json() as Promise<SearchIndex>)
-    .then(({ producers, songs, voices }): Prepared => {
-      const list = producers.map(([id, name, picture, songCount]) => ({
-        id,
-        name,
-        picture,
-        songCount,
-        key: normalize(name),
-      }));
-      const counts = new Map<number, number>();
-      return {
-        voices: voices.map(([id, name, songCount]) => ({
-          id,
-          name,
-          songCount,
-          key: normalize(name),
-        })),
-        producers: list,
-        songs: songs.map(([name, at, romaji]) => {
-          const producer = list[at];
-          const nth = counts.get(at) ?? 0;
-          counts.set(at, nth + 1);
-          return {
-            name,
-            producer,
-            nth,
-            title: normalize(name),
-            romaji: romaji ? normalizeRomaji(romaji) : '',
-          };
-        }),
-      };
-    })
-    .catch((error: unknown) => {
-      // 読めなかったときは、次に開いたときに読み直す
-      loading = undefined;
-      throw error;
-    }));
-  return pending;
-}
 
 /** 2段目（そのボカロPの曲の id・動画の ID・表紙）。読んだものは覚えておく */
 const details = new Map<number, Promise<SearchDetails>>();

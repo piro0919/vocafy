@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';
 
 const BOX =
@@ -16,6 +17,8 @@ function Field({ value, onChange }: { value: string; onChange?: (value: string) 
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         readOnly={!onChange}
+        // 押した時点で検索の索引を読み始める。打ち終わって検索の画面へ移るころには読み終わっている
+        onFocus={() => void loadIndex().catch(() => {})}
         placeholder="曲名・ボカロP・歌声"
         aria-label="曲名・ボカロP・歌声の名前で探す"
         className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
