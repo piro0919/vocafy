@@ -151,8 +151,9 @@ async function main() {
 
   // 歌声をキャラごとにまとめるため、元の歌声を根までたどる。根の歌声が曲に出てこなくても、表には入れる
   const roots = new Map<number, number>();
-  for (const v of vocalists.values()) {
-    const root = await rootVoicebank(v.id);
+  for (const v of [...vocalists.values()]) {
+    const { self, root } = await rootVoicebank(v.id);
+    vocalists.set(v.id, { ...v, name: self.name });
     roots.set(v.id, root.id);
     if (!vocalists.has(root.id)) vocalists.set(root.id, { ...root, support: false });
     roots.set(root.id, root.id);

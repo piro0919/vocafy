@@ -149,23 +149,34 @@ type VdbVoicebank = Pick<VdbArtist, 'id' | 'name' | 'artistType'> & {
 };
 
 /**
- * 歌声の元の歌声を、根までたどる。「初音ミク V4X (Dark)」→「初音ミク V4X (Unknown)」→ … →「初音ミク」。
- * 根の歌声そのものを返す（自分が根なら自分）
+ * 歌声の名前。VocaDB は日本語の欄に読みのカタカナを入れている歌声があり、日本語で聞くと「グミ」「カイト」「イア」のように
+ * 公式（GUMI・KAITO・IA）と違う表記で返る。そこで既定の名前（lang=Default）も聞き、日本語の名前に漢字が無い
+ * （カタカナやハングルの読みだけの）ときは既定の名前を使う。漢字のある名前（初音ミク・歌手不明・星尘Minus）は日本語のまま。
+ * 既定の名前だけにすると、歌手不明が「Unknown vocalist(s)」、星尘Minus が「Minus」になった
  */
-export async function rootVoicebank(
-  id: number,
-): Promise<Pick<VdbArtist, 'id' | 'name' | 'artistType'>> {
+async function voicebank(id: number): Promise<VdbVoicebank> {
+  const params = { fields: 'BaseVoicebank' };
+  const ja = await get<VdbVoicebank>(`/artists/${id}`, { ...params, lang: 'Japanese' });
+  if (/\p{Script=Han}/u.test(ja.name)) return ja;
+  const def = await get<VdbVoicebank>(`/artists/${id}`, { ...params, lang: 'Default' });
+  return { ...ja, name: def.name };
+}
+
+/**
+ * 歌声の元の歌声を、根までたどる。「初音ミク V4X (Dark)」→「初音ミク V4X (Unknown)」→ … →「初音ミク」。
+ * 自分と根の歌声を返す（自分が根なら同じもの）。名前は voicebank の決め方による
+ */
+export async function rootVoicebank(id: number): Promise<{
+  self: Pick<VdbArtist, 'id' | 'name' | 'artistType'>;
+  root: Pick<VdbArtist, 'id' | 'name' | 'artistType'>;
+}> {
+  const pick = ({ id, name, artistType }: VdbVoicebank) => ({ id, name, artistType });
   const seen = new Set<number>();
-  let current = await get<VdbVoicebank>(`/artists/${id}`, {
-    fields: 'BaseVoicebank',
-    lang: 'Japanese',
-  });
+  const self = await voicebank(id);
+  let current = self;
   while (current.baseVoicebank && !seen.has(current.id)) {
     seen.add(current.id);
-    current = await get<VdbVoicebank>(`/artists/${current.baseVoicebank.id}`, {
-      fields: 'BaseVoicebank',
-      lang: 'Japanese',
-    });
+    current = await voicebank(current.baseVoicebank.id);
   }
-  return { id: current.id, name: current.name, artistType: current.artistType };
+  return { self: pick(self), root: pick(current) };
 }
