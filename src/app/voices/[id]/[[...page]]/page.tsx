@@ -37,7 +37,8 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]/[[..
   return (
     <>
       <div className="flex items-end gap-4 pt-4 pb-4 sm:pb-6">
-        {art ? (
+        {/* 絵の無い歌声には印を置かない。色の丸を置いていたが、ほとんどが色の表に無く、どれも同じ青緑で何も伝えなかった */}
+        {art && (
           // キャラの色の丸の上に絵を載せ、丸からはみ出させる
           <span className="relative size-24 shrink-0 sm:size-32">
             <span
@@ -54,12 +55,6 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]/[[..
               className="object-contain object-bottom"
             />
           </span>
-        ) : (
-          <span
-            aria-hidden
-            className="mb-1 size-10 shrink-0 rounded-full shadow-md sm:size-12"
-            style={{ background: voiceColor(voice.name) }}
-          />
         )}
         <div>
           <Heading as="h1" size="page" eyebrow="Voice">
