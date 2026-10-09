@@ -114,7 +114,8 @@ async function legendSongs(since?: string): Promise<VdbSong[]> {
   let done = 0;
   for (const id of videos) {
     const song = await songByNiconico(id);
-    if (song && isEligible(song)) songs.push(song);
+    // 種はオリジナル曲だけ。出し直しの版まで種にすると、作者不明の入れ物の版から 1300 曲が戻った（2026-10-10）
+    if (song && song.songType === 'Original' && isEligible(song)) songs.push(song);
     if (++done % 100 === 0) console.log(`  伝説入り ${done}/${videos.length}: ${songs.length} 曲`);
   }
   return songs;
@@ -232,7 +233,9 @@ async function main() {
     // 新しいボカロP。伝説入りと YouTube の線は全体の取り込みと同じで、見る曲の範囲だけを狭める。取り込み済みの人の種の曲は足さない
     // （その人の曲はもう全部入っている）
     for (const s of await seedSongs(seedCount, daysAgo(NEW_PRODUCER_DAYS))) {
-      const fresh = producersOf(s).filter((p) => !recent.complete.has(p.id));
+      const fresh = producersOf(s).filter(
+        (p) => !recent.complete.has(p.id) && p.id !== UNKNOWN_PRODUCER,
+      );
       if (fresh.length === 0) continue;
       songs.set(s.id, s);
       seedIds.add(s.id);
@@ -250,7 +253,7 @@ async function main() {
     for (const s of seeds) {
       songs.set(s.id, s);
       seedIds.add(s.id);
-      for (const p of producersOf(s)) producerIds.add(p.id);
+      for (const p of producersOf(s)) if (p.id !== UNKNOWN_PRODUCER) producerIds.add(p.id);
     }
     for (const id of EXTRA_PRODUCERS) producerIds.add(id);
     console.log(
