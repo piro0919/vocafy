@@ -227,19 +227,19 @@ body {
 @media (max-width: 47.99rem) {
   /* 出入りの動きは、ここでまとめて指定する（クラスの指定より、こちらが勝つため） */
   .chrome-header {
-    transition: translate 250ms var(--ease-out);
+    transition: translate 300ms var(--ease-out);
   }
   .chrome-tabs {
     transition:
-      translate 250ms var(--ease-out),
-      border-radius 250ms var(--ease-out);
+      translate 300ms var(--ease-out),
+      border-radius 300ms var(--ease-out);
   }
   .chrome-bottom {
     transition:
       translate 300ms var(--ease-out),
       opacity 300ms var(--ease-out),
       visibility 300ms,
-      margin-bottom 250ms var(--ease-out);
+      margin-bottom 300ms var(--ease-out);
   }
   html[data-chrome='hidden'] .chrome-header {
     translate: 0 -100%;

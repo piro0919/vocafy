@@ -49,9 +49,9 @@ export function PlayAll({
       <button
         type="button"
         onClick={() => (here ? toggle() : start())}
-        className="flex shrink-0 items-center gap-1.5 rounded-full bg-miku py-1.5 pr-4 pl-3 text-sm font-bold whitespace-nowrap text-on-miku shadow-md shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
+        className="flex shrink-0 items-center gap-2 rounded-full bg-miku py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
       >
-        <Icon name={here && playing ? 'pause' : 'play'} className="size-4" />
+        <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
         {here && playing ? '一時停止' : '再生'}
       </button>
       {/* 折り返すのは空きの位置だけ。字の間で折ると「（全11,002曲）」の「曲）」だけが次の行に落ちた */}

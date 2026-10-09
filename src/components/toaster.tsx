@@ -17,7 +17,7 @@ export function Toaster() {
         unstyled: true,
         classNames: {
           toast:
-            'flex items-center justify-center gap-2 rounded-full border border-line/60 bg-glass px-4 py-2.5 text-sm font-bold text-foreground shadow-lg shadow-black/10 backdrop-blur-lg backdrop-saturate-150',
+            'flex items-center justify-center gap-2 rounded-full border border-line/60 bg-glass px-4 py-2.5 text-sm font-bold text-foreground shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150',
           // 「元に戻す」のような押せる知らせのボタン。字は差し色にし、知らせの文と分ける
           actionButton:
             '-my-1 -mr-2 ml-1 shrink-0 rounded-full px-2 py-1 text-accent transition-[scale] duration-150 ease-out hover:bg-foreground/8 active:scale-95',

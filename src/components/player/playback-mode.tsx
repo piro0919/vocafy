@@ -102,7 +102,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       aria-pressed={on}
       title={on ? 'ラジオをやめる' : 'この曲からラジオを流す（関連曲を流し続ける）'}
       onClick={toggle}
-      className={`${className} relative size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+      className={`${className} relative size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Icon name="radio" className="size-5" />
       {on && <OnDot />}
@@ -113,7 +113,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
 /**
  * 入っているボタン（ランダム・ラジオ）のアイコンの下の点。差し色と灰色だけでは小さなアイコンの入・切が見分けにくいので、
  * 形でも分かるようにする（Spotify と同じ見せ方）。ループは切が無いので付けない。
- * ボタンの大きさがランダム（40px）とラジオ（36px）で違うので、下の端からではなく真ん中から測って高さをそろえる
+ * アイコンの真ん中から測って置く（ボタンの大きさが変わっても、アイコンとの間が変わらない）
  */
 function OnDot() {
   return (

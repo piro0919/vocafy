@@ -48,7 +48,7 @@ function SessionAccount() {
       <div
         id={id}
         popover="auto"
-        className="fixed inset-auto top-18 right-3 m-0 w-64 rounded-2xl border border-line/60 bg-sidebar p-2 text-foreground shadow-lg shadow-black/10 md:right-3"
+        className="fixed inset-auto top-18 right-3 m-0 w-64 rounded-2xl border border-line/60 bg-glass p-2 text-foreground shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:right-3"
       >
         <div className="px-3 py-2">
           <p className="truncate text-sm font-bold">{user.name}</p>
@@ -57,7 +57,7 @@ function SessionAccount() {
         <Link
           href="/settings"
           onClick={() => document.getElementById(id)?.hidePopover()}
-          className="block rounded-lg px-3 py-2 text-sm font-bold text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
+          className="block rounded-md px-3 py-2 text-sm font-bold text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
         >
           設定
         </Link>
@@ -67,7 +67,7 @@ function SessionAccount() {
             document.getElementById(id)?.hidePopover();
             void signOut().then(() => setSignedIn(false));
           }}
-          className="block w-full rounded-lg px-3 py-2 text-left text-sm font-bold text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
+          className="block w-full rounded-md px-3 py-2 text-left text-sm font-bold text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
         >
           ログアウト
         </button>

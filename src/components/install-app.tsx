@@ -69,7 +69,7 @@ export function InstallApp() {
       <button
         type="button"
         onClick={start}
-        className="rounded-full border border-line px-4 py-2 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-95"
+        className="rounded-full border border-line/60 px-4 py-2 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-95"
       >
         ホーム画面に追加
       </button>

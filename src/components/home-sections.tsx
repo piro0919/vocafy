@@ -81,7 +81,7 @@ export function OnThisDay({
               // 縦に長くなりすぎるので、スマホの幅では6曲、1列になるパソコンの幅では7曲までにする
               <li
                 key={song.songId}
-                className={`group flex min-w-0 items-center rounded-xl transition-colors duration-150 ${active ? 'bg-glass' : 'hover:bg-foreground/8'} ${
+                className={`group flex min-w-0 items-center rounded-md transition-colors duration-150 ${active ? 'bg-glass' : 'hover:bg-foreground/8'} ${
                   i >= 7 ? 'max-sm:hidden lg:hidden' : i >= 6 ? 'max-sm:hidden' : ''
                 }`}
               >

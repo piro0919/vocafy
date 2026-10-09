@@ -17,7 +17,7 @@ export function VoiceSetting() {
             <label
               key={o.value}
               style={{ borderColor: selected ? o.color : undefined }}
-              className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-transparent px-1 pt-2 pb-2.5 transition-colors duration-150 hover:bg-foreground/8 has-focus-visible:outline-2 has-focus-visible:outline-accent"
+              className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-transparent px-1 pt-2 pb-2.5 transition-colors duration-150 hover:bg-foreground/8 has-focus-visible:outline-2 has-focus-visible:outline-accent"
             >
               <input
                 type="radio"
