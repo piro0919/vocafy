@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreLink } from '@/components/browse-cards';
+import { MoreLink, PILL } from '@/components/browse-cards';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
 import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';
@@ -52,11 +52,11 @@ export function FavoritesView() {
             <button
               type="button"
               onClick={() => {
-                if (window.confirm('最近聴いた曲の記録を消しますか？')) clearHistory();
+                if (window.confirm('最近聴いた曲の履歴を削除しますか？')) clearHistory();
               }}
-              className="rounded-full px-3 py-1 text-xs font-bold text-muted transition-colors hover:text-foreground"
+              className={PILL}
             >
-              記録を消す
+              履歴を削除
             </button>
           }
         >
