@@ -23,6 +23,8 @@ export default function OpengraphImage() {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
+        // アイコンと文字のまとまりを、絵の真ん中に置く（左から 80px に置いていたら、左に寄って見えた）
+        justifyContent: 'center',
         gap: 48,
         padding: '0 80px',
         background: '#ecf0f2',
