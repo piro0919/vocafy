@@ -11,6 +11,7 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/producers', label: 'ボカロP', icon: 'artist' },
   { href: '/voices', label: '歌声', icon: 'voice' },
   { href: '/years', label: '年代', icon: 'year' },
+  { href: '/favorites', label: 'お気に入り', icon: 'heart' },
   { href: '/search', label: '検索', icon: 'search' },
 ];
 
@@ -95,7 +96,7 @@ export function Sidebar() {
 export function MobileTabs() {
   const active = useActive();
   return (
-    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-5 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
+    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-6 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}

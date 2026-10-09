@@ -4,6 +4,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { useRouter } from 'next/navigation';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
+import { FavoriteButton } from './favorite-button';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
 import { Marquee } from './marquee';
@@ -69,6 +70,7 @@ export function SongList({
                 </span>
               </span>
             </button>
+            <FavoriteButton song={song} />
           </div>
         );
       })}

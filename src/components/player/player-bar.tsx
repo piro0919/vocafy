@@ -6,6 +6,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from '../fade-image';
+import { FavoriteButton } from '../favorite-button';
 import { Icon } from '../icon';
 import { PlaybackMode } from './playback-mode';
 import { type PlaybackTime, usePlayer } from './player-provider';
@@ -95,6 +96,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                 )}
               </Marquee>
             </div>
+            {!loading && <FavoriteButton song={item} />}
           </div>
         ) : (
           <div className="flex-1" />

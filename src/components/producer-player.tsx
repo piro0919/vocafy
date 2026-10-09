@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
+import { FavoriteButton } from './favorite-button';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
 import { PlayerStage, SwipeToLeave } from './player-stage';
@@ -32,7 +33,7 @@ export function ProducerPlayer({
   const { current, playing, context, playQueue, adoptQueue, toggle } = usePlayer();
   const here = current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
-  const playableIds = new Set(queue.map((q) => q.songId));
+  const playable = new Map(queue.map((q) => [q.songId, q]));
 
   // 曲の一覧から押して来たときは、その1曲だけを流している。曲は止めずに、順番待ちをこの人の曲にする
   useEffect(() => {
@@ -90,21 +91,21 @@ export function ProducerPlayer({
       <ol className="-mx-3">
         {songs.map((song, i) => {
           const active = here && current?.songId === song.id;
-          const playable = playableIds.has(song.id);
+          const item = playable.get(song.id);
           return (
             <li
               key={song.id}
-              className={`group rounded-md transition-colors duration-150 ${
-                active ? 'bg-sidebar/60' : playable ? 'hover:bg-foreground/8' : ''
+              className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
+                active ? 'bg-sidebar/60' : item ? 'hover:bg-foreground/8' : ''
               }`}
             >
               <button
                 type="button"
-                disabled={!playable}
+                disabled={!item}
                 {...NO_RESTORE}
-                title={playable ? undefined : 'この曲は本家の動画の情報が足りず、再生できません'}
-                onClick={() => playable && start(song.id)}
-                className="flex w-full min-w-0 items-center gap-4 px-3 py-2 text-left disabled:cursor-default disabled:text-muted/50"
+                title={item ? undefined : 'この曲は本家の動画の情報が足りず、再生できません'}
+                onClick={() => item && start(song.id)}
+                className="flex min-w-0 flex-1 items-center gap-4 px-3 py-2 text-left disabled:cursor-default disabled:text-muted/50"
               >
                 <span className="flex w-6 shrink-0 justify-end text-sm tabular-nums text-muted">
                   {active ? <Bars playing={playing} /> : i + 1}
@@ -119,6 +120,7 @@ export function ProducerPlayer({
                   </span>
                 </span>
               </button>
+              {item && <FavoriteButton song={item} />}
             </li>
           );
         })}

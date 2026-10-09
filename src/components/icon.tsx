@@ -114,6 +114,16 @@ const ICONS = {
       <path d="M11.2 10.8 12.4 10v4" strokeWidth={1.6} />
     </>
   ),
+  heart: (
+    <path d="M12 19.5s-7.5-4.6-7.5-10.2A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 7.5 2.3c0 5.6-7.5 10.2-7.5 10.2z" />
+  ),
+  heartFill: (
+    <path
+      {...ROUND_FILL}
+      strokeWidth={2}
+      d="M12 19.5s-7.5-4.6-7.5-10.2A4.1 4.1 0 0 1 12 7a4.1 4.1 0 0 1 7.5 2.3c0 5.6-7.5 10.2-7.5 10.2z"
+    />
+  ),
   install: <path d="M12 4v10m-4-4 4 4 4-4M5 19.5h14" />,
   left: <path d="M14.5 6.5 9 12l5.5 5.5" strokeWidth={2.5} />,
   right: <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.5} />,
