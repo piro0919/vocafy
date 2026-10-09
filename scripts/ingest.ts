@@ -119,16 +119,19 @@ const MAX_NEW_PRODUCERS = 20;
 
 /**
  * 種の曲。評価点の上位 seedCount 曲・ニコニコの伝説入り・YouTube の再生数のどれかを満たすもの。
- * since を渡すと、伝説入りと YouTube の再生数は、その日より後に出た曲だけを見る（評価点の上位は全体のまま）
+ * since を渡すと、伝説入りと YouTube の再生数はその日より後に出た曲だけを見て、評価点の上位は見ない。
+ * 1年以内の曲が歴代の上位に入ることはまれで、入る曲はたいてい再生数の線にも掛かるので、毎週 32 回聞くのを省く
  */
 async function seedSongs(seedCount: number, since?: string): Promise<VdbSong[]> {
-  const rated = (await topRatedSongs(seedCount)).filter(isEligible);
+  const rated = since ? [] : (await topRatedSongs(seedCount)).filter(isEligible);
   const legends = process.argv.includes('--no-legend') ? [] : await legendSongs(since);
   const watched = process.argv.includes('--no-youtube')
     ? []
     : await youtubeSongs(since ?? '2018-01-01');
   console.log(
-    `種: 評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲${since ? `（伝説入りと YouTube は ${since} より後の曲）` : ''}`,
+    since
+      ? `種: ${since} より後の曲のうち、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲`
+      : `種: 評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲`,
   );
   return [...new Map([...rated, ...legends, ...watched].map((s) => [s.id, s])).values()];
 }
@@ -189,7 +192,7 @@ async function main() {
     knownVocalists = recent.knownVocalists;
     console.log(`この ${recentDays} 日に出た曲のうち、取り込み済みのボカロPの曲: ${songs.size} 曲`);
 
-    // 新しいボカロP。種の線は全体の取り込みと同じで、見る曲の範囲だけを狭める。取り込み済みの人の種の曲は足さない
+    // 新しいボカロP。伝説入りと YouTube の線は全体の取り込みと同じで、見る曲の範囲だけを狭める。取り込み済みの人の種の曲は足さない
     // （その人の曲はもう全部入っている）
     for (const s of await seedSongs(seedCount, daysAgo(NEW_PRODUCER_DAYS))) {
       const fresh = producersOf(s).filter((p) => !recent.complete.has(p.id));
