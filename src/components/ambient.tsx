@@ -137,8 +137,8 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
             key={layer.id}
             className={
               layer.leaving
-                ? 'absolute inset-0 animate-[fade-out_0.7s_ease-in-out_both]'
-                : 'absolute inset-0 animate-[fade-in_0.7s_ease-out_both]'
+                ? 'absolute inset-0 animate-[fade-out_2s_ease-in-out_both]'
+                : 'absolute inset-0 animate-[fade-in_2s_ease-in-out_both]'
             }
             onAnimationEnd={() =>
               setLayers((prev) =>
