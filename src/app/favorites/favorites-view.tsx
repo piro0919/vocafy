@@ -29,7 +29,8 @@ export function FavoritesView() {
   }
 
   return (
-    <>
+    // 包んで、先頭の区画の上の余白（first:mt-0）が効くようにする。包まないと先頭はページの見出しになる
+    <div>
       {songs.length > 0 && (
         <Section title="曲" eyebrow="Songs" count={`${songs.length} 曲`}>
           <button
@@ -64,7 +65,7 @@ export function FavoritesView() {
           </div>
         </Section>
       )}
-    </>
+    </div>
   );
 }
 
