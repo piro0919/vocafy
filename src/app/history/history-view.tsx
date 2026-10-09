@@ -14,7 +14,7 @@ export function HistoryView() {
   const history = useHistory();
 
   if (history.length === 0) {
-    return <p className="text-sm text-muted">まだ曲を聴いていません。流した曲がここに残ります。</p>;
+    return <p className="text-sm text-muted">履歴はまだありません。聴いた曲がここに並びます。</p>;
   }
 
   return (
