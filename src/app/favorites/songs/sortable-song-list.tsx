@@ -4,7 +4,8 @@ import {
   closestCenter,
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type Announcements,
@@ -18,14 +19,17 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import type { SyntheticEvent } from 'react';
 import { Icon } from '@/components/icon';
 import { SongItem } from '@/components/song-list';
 import type { QueueItem } from '@/lib/catalog';
 import { moveFavoriteSong } from '@/lib/favorites';
 
 /**
- * お気に入りの曲の一覧。各行の右端の取っ手をつかんで、好きな順に並べ替えられる。
- * 行そのものは押すと流れるので、つかめるのは取っ手だけにする（スマホでは行をなぞると画面が流れるため）。
+ * お気に入りの曲の一覧。好きな順に並べ替えられる。
+ * パソコンは行のどこでも、押したまま動かすとつかめる（押してすぐ離せば流れる。Spotify のパソコン版と同じ）。
+ * スマホは各行の右端の取っ手だけ。行をなぞると画面が流れ、長押しでつかむ形は見ても分からないうえ、
+ * iPhone の長押しの文字選択ともぶつかるため。
  * キーボードでは、取っ手で Space を押してから上下の矢印で動かし、もう一度 Space で置く
  */
 export function SortableSongList({
@@ -37,7 +41,8 @@ export function SortableSongList({
 }) {
   const sensors = useSensors(
     // 少し動かしてからつかむ。押しただけで並べ替えが始まらないように
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const titleOf = (id: string | number) => songs.find((s) => s.songId === id)?.title ?? '';
@@ -102,12 +107,19 @@ function SortableSong({
     transition,
     isDragging,
   } = useSortable({ id: song.songId });
+  // dnd-kit は受け口を Function の表で返すので、置き場所ごとに1つずつ取り出す
+  const on = (name: 'onMouseDown' | 'onTouchStart' | 'onKeyDown') =>
+    listeners?.[name] as ((event: SyntheticEvent) => void) | undefined;
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
+      // マウスは行のどこからでもつかむ。指は取っ手だけ（下の handle）
+      onMouseDown={on('onMouseDown')}
+      // 表紙の画像をブラウザが自前で引きずらないように
+      onDragStart={(e) => e.preventDefault()}
       // つかんでいる行は、ほかの行の上に浮かせる
-      className={isDragging ? 'relative z-10 rounded-md bg-background shadow-lg' : undefined}
+      className={`select-none ${isDragging ? 'relative z-10 rounded-md bg-background shadow-lg' : ''}`}
     >
       <SongItem
         song={song}
@@ -118,7 +130,8 @@ function SortableSong({
             ref={setActivatorNodeRef}
             type="button"
             {...attributes}
-            {...listeners}
+            onTouchStart={on('onTouchStart')}
+            onKeyDown={on('onKeyDown')}
             aria-label={`${song.title}を並べ替える`}
             className={`grid size-9 shrink-0 touch-none place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-foreground/8 hover:text-foreground ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           >
