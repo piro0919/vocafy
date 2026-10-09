@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useSyncExternalStore } from 'react';
+import { type ReactNode, useEffect, useRef, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -40,9 +40,23 @@ export function ProducerPlayer({
   // 共有されたリンク（?song=曲の id）で来たときの曲。ページは作り置きなので、住所の ?song= はサーバーでは読まずブラウザで読む
   // （サーバーで読むと開くたびに作り直しになり、DB を起こす）。開いただけでは流さない（ブラウザが押す操作の無い再生を止めるため）。
   // その曲を一覧で目立たせ、大きな再生ボタンをその曲からにする
-  const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  // この人の曲を流しているあいだは、住所に流している曲を入れる（?song=曲の id）。読み込み直したときや、
+  // 住所をそのまま写して送ったときに、共有のリンクと同じくその曲から流せる。曲が変わるたびに履歴を増やさずに書き換える
   useEffect(() => {
-    if (linked) document.getElementById(`song-${linked}`)?.scrollIntoView({ block: 'center' });
+    if (!here || !current) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('song') === String(current.songId)) return;
+    url.searchParams.set('song', String(current.songId));
+    window.history.replaceState(window.history.state, '', url);
+  }, [here, current]);
+
+  const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  // その曲の行までスクロールするのは、開いたときの1回だけ。流しているあいだは住所の曲が曲ごとに変わるが、そのたびには動かさない
+  const scrolledToLinked = useRef(false);
+  useEffect(() => {
+    if (!linked || scrolledToLinked.current) return;
+    scrolledToLinked.current = true;
+    document.getElementById(`song-${linked}`)?.scrollIntoView({ block: 'center' });
   }, [linked]);
   const linkedItem = !here && linked ? playable.get(linked) : undefined;
 
