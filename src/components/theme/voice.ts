@@ -70,22 +70,23 @@ export function setVoice(voice: Voice) {
 
 /**
  * 流している曲の歌声の色にする設定（2026-10-10）。ON のあいだは、流している曲の歌声に9人のキャラがいれば、その色にする。
- * 選んだサイトカラー（setVoice）はそのまま残り、9人のいない曲と、何も流していないときはその色に戻る
+ * 選んだサイトカラー（setVoice）はそのまま残り、9人のいない曲と、何も流していないときはその色に戻る。
+ * はじめは ON（2026-10-10 に本人が決めた）。切ったときだけ 'off' を残す
  */
 const FOLLOW_KEY = 'vocafy-voice-follow';
 
 export function readFollowVoice(): boolean {
   try {
-    return localStorage.getItem(FOLLOW_KEY) === 'on';
+    return localStorage.getItem(FOLLOW_KEY) !== 'off';
   } catch {
-    return false;
+    return true;
   }
 }
 
 export function setFollowVoice(on: boolean) {
   try {
-    if (on) localStorage.setItem(FOLLOW_KEY, 'on');
-    else localStorage.removeItem(FOLLOW_KEY);
+    if (on) localStorage.removeItem(FOLLOW_KEY);
+    else localStorage.setItem(FOLLOW_KEY, 'off');
   } catch {
     // 保存できない窓では、この画面のあいだだけ効く
   }

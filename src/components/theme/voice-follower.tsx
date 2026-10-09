@@ -10,7 +10,7 @@ import { applyVoice, readFollowVoice, readVoice, subscribeVoice, voiceOfVocalist
  */
 export function VoiceFollower() {
   const { current } = usePlayer();
-  const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => false);
+  const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => true);
   const saved = useSyncExternalStore(subscribeVoice, readVoice, () => 'miku' as const);
   useEffect(() => {
     applyVoice((follow && current && voiceOfVocalists(current.vocalists)) || saved);

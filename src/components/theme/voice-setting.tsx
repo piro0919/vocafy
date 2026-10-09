@@ -15,7 +15,7 @@ import {
 /** 設定の画面のサイトカラー（キャラの色）の選択。選んだ時点で切り替わり、このブラウザに残る */
 export function VoiceSetting() {
   const voice = useSyncExternalStore(subscribeVoice, readVoice, () => 'miku' as const);
-  const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => false);
+  const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => true);
   return (
     <section className={SECTION}>
       <div className="mb-3">
@@ -60,12 +60,7 @@ export function VoiceSetting() {
           onChange={() => setFollowVoice(!follow)}
           className="mt-1 size-4 shrink-0 accent-accent"
         />
-        <span>
-          流している曲の歌声の色にする
-          <span className="block text-xs text-muted">
-            この9人が歌う曲のときだけ。ほかの曲では、上で選んだ色になります
-          </span>
-        </span>
+        <span>歌っているキャラの色に変える</span>
       </label>
     </section>
   );
