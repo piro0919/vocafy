@@ -51,7 +51,6 @@ function Heart({ on, beat, size }: { on: boolean; beat: number; size: string }) 
       />
       {beat > 0 && on && (
         <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
-          <span className="absolute size-[180%] animate-[heart-ring_300ms_ease-out_forwards] rounded-full border-accent opacity-0" />
           {NOTES.map(({ angle, tilt, beamed }, i) => (
             <span
               key={angle}

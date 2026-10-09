@@ -352,7 +352,7 @@ body {
 
 /*
  * お気に入りに入れたときのハート（favorite-button.tsx）。ハートは縮んでから大きく弾んで落ち着き、
- * 同時に差し色の輪が広がって消え、音符が上寄りに舞い散る。外したときは小さく縮んで戻るだけ
+ * 同時に音符が上に舞い散る。外したときは小さく縮んで戻るだけ
  */
 @keyframes heart-pop {
   0% {
@@ -371,18 +371,6 @@ body {
   }
   100% {
     transform: scale(1);
-  }
-}
-@keyframes heart-ring {
-  0% {
-    transform: scale(0.3);
-    opacity: 0.7;
-    border-width: 6px;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-    border-width: 1px;
   }
 }
 /*
