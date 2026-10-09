@@ -11,6 +11,7 @@ import { PlayerStage, SwipeToLeave } from './player-stage';
 import { usePlayer } from './player/player-provider';
 import { PlaybackMode } from './player/playback-mode';
 import { Marquee } from './marquee';
+import { ScrollRow } from './scroll-row';
 
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
@@ -238,11 +239,8 @@ function YearJump({ songs, className = '' }: { songs: Song[]; className?: string
   for (const s of songs) if (s.year && !firsts.has(s.year)) firsts.set(s.year, s.id);
   if (songs.length <= YEAR_JUMP_MIN || firsts.size < 2) return null;
   return (
-    <nav
-      aria-label="年で飛ぶ"
-      // 1行で横にスクロールする。右端をぼかして、続きがあることを見せる
-      className={`-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [mask-image:linear-gradient(to_right,black_85%,transparent)] ${className}`}
-    >
+    // 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow）
+    <ScrollRow label="年で飛ぶ" className={`-mx-1 gap-1.5 px-1 ${className}`}>
       {[...firsts].map(([year, id]) => (
         <button
           key={year}
@@ -257,6 +255,6 @@ function YearJump({ songs, className = '' }: { songs: Song[]; className?: string
           {year}
         </button>
       ))}
-    </nav>
+    </ScrollRow>
   );
 }
