@@ -63,11 +63,14 @@ export function SongItem({
   eager = false,
   onOpen,
   handle,
+  favorite = true,
 }: {
   song: QueueItem;
   eager?: boolean;
   onOpen: () => void;
   handle?: ReactNode;
+  /** お気に入りのハートを置くか。次に流れる曲の板では置かない（流している曲は再生の帯のハートで入れる） */
+  favorite?: boolean;
 }) {
   const { current, playing } = usePlayer();
   const active = current?.songId === song.songId;
@@ -99,7 +102,7 @@ export function SongItem({
           </span>
         </span>
       </button>
-      <FavoriteButton song={song} quiet />
+      {favorite && <FavoriteButton song={song} quiet />}
       {handle}
     </div>
   );

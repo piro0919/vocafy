@@ -76,7 +76,7 @@ export function QueuePanel({
           <div className="px-2">
             <div className="flex items-center">
               <div className="min-w-0 flex-1">
-                <SongItem song={current} onOpen={onClose} />
+                <SongItem song={current} onOpen={onClose} favorite={false} />
               </div>
               <OriginalLink song={current} />
             </div>
@@ -91,6 +91,7 @@ export function QueuePanel({
                 <SongItem
                   key={`${index}-${item.songId}`}
                   song={item}
+                  favorite={false}
                   onOpen={() => jumpTo(index)}
                 />
               ))
