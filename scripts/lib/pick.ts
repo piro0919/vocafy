@@ -27,10 +27,14 @@ const SYNTH = new Set([
 const has = (categories: string, name: string) =>
   categories.split(',').some((c) => c.trim() === name);
 
-/** 曲の作者（Producer の役割が付いた人）。VocaDB に登録の無い人は入れない */
+/**
+ * 曲の作者（Producer の役割が付いた人）。VocaDB に登録の無い人と、補助（isSupport）の人は入れない。
+ * 補助は調声や編曲を手伝った人で、拾うとその人の全曲がついてくる。ギガの「ガッチュー！」の調声に載った
+ * 「Unknown producer(s)」から作者不明の 1321 曲が、ほかの人の曲の調声からずきお・かごめPなど 15 人の曲が入っていた
+ */
 export function producersOf(song: VdbSong) {
   return (song.artists ?? []).flatMap((a) =>
-    a.artist && has(a.categories, 'Producer') ? [a.artist] : [],
+    a.artist && has(a.categories, 'Producer') && !a.isSupport ? [a.artist] : [],
   );
 }
 

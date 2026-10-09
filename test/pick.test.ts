@@ -103,4 +103,19 @@ describe('producersOf', () => {
     });
     expect(producersOf(s).map((p) => p.name)).toEqual(['wowaka']);
   });
+
+  it('調声などを手伝った補助の人は作者にしない', () => {
+    const s = song({
+      artists: [
+        ...song().artists!,
+        {
+          categories: 'Producer',
+          isSupport: true,
+          artist: { id: 23966, name: 'Unknown producer(s)', artistType: 'Producer' },
+          name: 'Unknown producer(s)',
+        },
+      ],
+    });
+    expect(producersOf(s).map((p) => p.name)).toEqual(['wowaka']);
+  });
 });
