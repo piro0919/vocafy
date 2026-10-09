@@ -18,7 +18,7 @@ export function FavoriteSongs() {
   const { items: songs } = useFavorites();
   useRefreshFavorites();
   const { current, playing, context, radioHome, playQueue, toggle } = usePlayer();
-  // お気に入りの並びのときと、この画面で始めたラジオのとき（ラジオには自分の画面が無い）に、動画をここに大きく出す
+  // お気に入りの並びのときと、ラジオをやめてお気に入りの並びに戻した直後（流していたラジオの曲が終わるまで）に、動画をここに大きく出す
   const here = !!current && (context === 'favorites' || radioHome === '/favorites/songs');
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 

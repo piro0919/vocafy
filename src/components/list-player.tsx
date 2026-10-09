@@ -42,7 +42,7 @@ export function ListPlayer({
   total: number;
 }) {
   const { current, playing, listSource, radioHome, playAll, toggle } = usePlayer();
-  // この一覧を流しているときと、この画面で始めたラジオのとき（ラジオには自分の画面が無い）に、動画をここに大きく出す
+  // この一覧を流しているときと、ラジオをやめてこの一覧に戻した直後（流していたラジオの曲が終わるまで）に、動画をここに大きく出す
   const here = current !== null && (listSource === source || radioHome === `/${source}/play`);
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
 

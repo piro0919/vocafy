@@ -34,11 +34,11 @@ export function ProducerPlayer({
 }) {
   const { current, playing, context, listSource, radioHome, playQueue, adoptQueue, toggle } =
     usePlayer();
-  // 動画をここに大きく出すのは、この人の曲の並びを流しているときと、この画面で始めたラジオのときだけ。お気に入りの並び・
-  // 一覧の「再生」の並び・ほかの画面で始めたラジオの曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
+  // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並び・
+  // ラジオの曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
   // この画面にいるまま動画が右下の窓へ飛んだ
   const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
-  // ラジオは、この画面で始めたものなら、別の人の曲に進んでもここで大きく出し続ける（ラジオには自分の画面が無い）
+  // ラジオをやめてこの人の並びに戻した直後は、流していたラジオの曲（ほかの人の曲のこともある）が終わるまでここで大きく出す
   const radioHere = radioHome === `/producers/${producerId}`;
   const ownHere = ownQueue && current?.producerId === producerId;
   const here = radioHere || ownHere;

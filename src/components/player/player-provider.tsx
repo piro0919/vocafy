@@ -84,17 +84,24 @@ type PlayerContext = {
   /** 「すべて再生」で流している一覧の住所。ほかの並びを流しているときは null */
   listSource: string | null;
   /**
-   * ラジオを始めた画面の住所（/producers/45 など）。ラジオには自分の画面が無いので、始めた画面がその間の置き場所になる。
-   * その画面にいるあいだは、別の人の曲に進んでも動画を大きく出したままにする。ラジオでないときは null
+   * いまの曲を大きく出す画面の住所。ラジオのあいだはラジオの画面（/radio/123）。ラジオをやめた直後は、
+   * 戻した並びの持ち主の画面（いま流しているラジオの曲が終わるまで、その画面で大きく出したままにする）。ほかは null
    */
   radioHome: string | null;
-  /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
+  /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える。ラジオの画面へ移るのは呼んだ側 */
   startRadio: (seed: QueueItem) => void;
+  /** ラジオの画面の一覧（先頭が元の曲、続いて関連曲）を、at 番目から流す */
+  playRadio: (items: QueueItem[], at: number) => void;
+  /**
+   * ラジオを始めたばかりで並びがまだ元の曲だけなら、ラジオの画面が持っている関連曲で埋める（取りに行くのを待たない）
+   */
+  fillRadio: (items: QueueItem[]) => void;
   /**
    * ラジオをやめる。いまの曲は止めずに、ラジオを始める前に流していた並びに戻す。いまの曲が終わったら、
-   * ラジオを始めた曲の次から続く（ラジオの曲を流しているなら、その曲を始めた曲のすぐ後ろに挟む）
+   * ラジオを始めた曲の次から続く（ラジオの曲を流しているなら、その曲を始めた曲のすぐ後ろに挟む）。
+   * 戻した並びの持ち主の画面の住所を返す
    */
-  stopRadio: () => void;
+  stopRadio: () => string;
   /**
    * 次に流れる曲を読む。流す順（ランダムなら混ぜたあとの順）で、いまの曲の次から UPCOMING_LIMIT 曲まで。
    * ループ（全体）なら、並びの最後のあとに先頭からの曲も続ける（ラジオは足していくので続けない）。
@@ -513,12 +520,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         };
       }
       clearMore();
-      // かなの行（/kana/あ/play）は住所の中で %E3%81%82 の形になるので、戻した形で覚える（一覧の住所と比べるため）
-      const home = decodeURIComponent(window.location.pathname);
+      const home = `/radio/${seed.songId}`;
       const { queue: q, index: i } = state.current;
+      // ラジオの画面へ移る途中。一覧の再生用の画面へ移るとき（playAll の moving）と同じく、置き場所を待つ
+      const waitForSlot = () => {
+        clearTimeout(waitTimer.current);
+        setWaitingForSlot(true);
+        waitTimer.current = setTimeout(() => setWaitingForSlot(false), WAIT_FOR_SLOT);
+      };
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');
         setRadioHome(home);
+        waitForSlot();
         return;
       }
       // 関連曲を足すときに、待っているあいだに並びが替わっていないかを同じ配列かどうかで見るので、1つの配列を使い回す
@@ -531,21 +544,50 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIndex(0);
       setContext('radio');
       setRadioHome(home);
+      waitForSlot();
     },
     [load, clearMore, listSource],
+  );
+
+  const playRadio = useCallback(
+    (items: QueueItem[], at: number) => {
+      if (items.length === 0) return;
+      if (contextRef.current !== 'radio') {
+        beforeRadio.current = {
+          ...state.current,
+          context: contextRef.current,
+          listSource,
+          more: more.current,
+        };
+      }
+      clearMore();
+      load(items, at, 'radio');
+      setRadioHome(`/radio/${items[0].songId}`);
+    },
+    [load, clearMore, listSource],
+  );
+
+  const fillRadio = useCallback(
+    (items: QueueItem[]) => {
+      const { queue: q } = state.current;
+      if (contextRef.current !== 'radio' || q.length !== 1 || items[0]?.songId !== q[0].songId) {
+        return;
+      }
+      extend([q[0], ...items.slice(1)]);
+    },
+    [extend],
   );
 
   const stopRadio = useCallback(() => {
     const { queue: q, index: i } = state.current;
     const now = q[i];
     const before = beforeRadio.current;
-    const home = radioHome;
     beforeRadio.current = null;
     setRadioHome(null);
-    if (!before || !now) {
-      // 戻す並びが無ければ、いまの曲だけのふつうの並びにする
+    if (!before || !now || before.queue.length === 0) {
+      // 戻す並びが無ければ（ラジオの画面を直に開いて流した）、いまの曲だけのふつうの並びにする。持ち主はその曲のボカロPの画面
       adopt(now ? [now] : [], 0);
-      return;
+      return now ? `/producers/${now.producerId}` : '/';
     }
     // 始めた曲のまま（ラジオでまだ次へ進んでいない）なら、元の並びのその位置に戻す。ラジオの曲を流しているなら、
     // 始めた曲のすぐ後ろに挟み、いまの曲が終わったら元の並びの続きへ進む
@@ -559,9 +601,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     );
     more.current = before.more;
     setListSource(before.listSource);
-    // いま流しているラジオの曲が終わるまでは、ラジオを始めた画面で大きく出したままにする。次の曲を読み込むと忘れる（load）
+    const home =
+      before.context === 'favorites'
+        ? '/favorites/songs'
+        : before.listSource
+          ? `/${before.listSource}/play`
+          : `/producers/${before.queue[before.index]?.producerId ?? now.producerId}`;
+    // いま流しているラジオの曲（ほかの人の曲のこともある）が終わるまでは、戻した並びの持ち主の画面で大きく出したままにする。
+    // 次の曲を読み込むと忘れる（load）
     if (!same) setRadioHome(home);
-  }, [adopt, radioHome]);
+    return home;
+  }, [adopt]);
 
   // ラジオで並びの終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
   // 足せる曲が無ければ、次の曲に移ったときにその曲の関連曲でもう一度試す
@@ -748,6 +798,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       listSource,
       radioHome,
       startRadio,
+      playRadio,
+      fillRadio,
       stopRadio,
       // ループ（全体）なら、並びの最後のあとは先頭に戻って続くので、先頭からいまの曲の手前までも続けて並べる
       upcoming: () =>
@@ -810,6 +862,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       radioHome,
       clearMore,
       startRadio,
+      playRadio,
+      fillRadio,
       stopRadio,
       step,
       close,

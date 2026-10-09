@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from '../icon';
@@ -64,18 +65,32 @@ export function PlaybackMode({
   );
 }
 
-/** ラジオ。押すと、いまの曲から関連曲を流し続ける。ラジオで流しているあいだは差し色にする */
+/**
+ * ラジオ。押すと、いまの曲から関連曲を流し続け、ラジオの画面（/radio/123）へ移る。ラジオで流しているあいだは差し色にする。
+ * もう一度押すとやめて、ラジオを始める前の並びに戻す。ラジオの画面にいたら、戻した並びの持ち主の画面へ移る
+ */
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
-  const { context, startRadio, stopRadio } = usePlayer();
+  const { context, radioHome, startRadio, stopRadio } = usePlayer();
+  const router = useRouter();
+  const pathname = usePathname();
   const on = context === 'radio';
+  const toggle = () => {
+    if (!on) {
+      startRadio(song);
+      router.push(`/radio/${song.songId}`);
+      return;
+    }
+    const onRadioPage = decodeURIComponent(pathname) === radioHome;
+    const home = stopRadio();
+    if (onRadioPage) router.push(home);
+  };
   return (
-    // 押すたびに入・切。切ると、ラジオを始める前の並びに戻る（stopRadio）
     <button
       type="button"
       aria-label={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       aria-pressed={on}
       title={on ? 'ラジオ: 入（押すとやめる）' : 'この曲からラジオを流す（関連曲を流し続ける）'}
-      onClick={() => (on ? stopRadio() : startRadio(song))}
+      onClick={toggle}
       className={`${className} size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Icon name="radio" className="size-5" />
