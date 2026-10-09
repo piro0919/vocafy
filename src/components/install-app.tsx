@@ -94,7 +94,7 @@ export function InstallButton({ className = '', menu }: { className?: string; me
           className={`flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold text-muted transition-colors duration-150 hover:text-foreground ${className}`}
         >
           <Icon name="install" />
-          アプリを入れる
+          アプリをインストール
         </button>
         {guide}
       </>
