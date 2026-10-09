@@ -120,7 +120,8 @@ function SortableSong({
       // 表紙の画像をブラウザが自前で引きずらないように
       onDragStart={(e) => e.preventDefault()}
       // つかんでいる行は、ほかの行の上に浮かせる
-      className={`select-none ${isDragging ? 'relative z-10 rounded-md bg-background shadow-lg' : ''}`}
+      // min-w-0: 格子の中の行は、既定では中の文字の長さより縮まない。長い曲名や歌声で画面の外まで広がった
+      className={`min-w-0 select-none ${isDragging ? 'relative z-10 rounded-md bg-background shadow-lg' : ''}`}
     >
       <SongItem
         song={song}
