@@ -8,7 +8,7 @@ import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from '../fade-image';
 import { FavoriteButton } from '../favorite-button';
 import { Icon } from '../icon';
-import { PlaybackMode } from './playback-mode';
+import { PlaybackMode, RadioButton } from './playback-mode';
 import { type PlaybackTime, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
 
@@ -100,7 +100,8 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
             {!loading && (
               <>
                 <FavoriteButton song={item} />
-                <RadioButton song={item} />
+                {/* スマホは帯が狭いので、ラジオは画面の中のランダム・ループの隣に置く（playback-mode.tsx） */}
+                <RadioButton song={item} className="hidden md:grid" />
               </>
             )}
           </div>
@@ -306,24 +307,6 @@ function BarButton({
       }`}
     >
       {children}
-    </button>
-  );
-}
-
-/** ラジオ。押すと、いまの曲から関連曲を流し続ける。ラジオで流しているあいだは差し色にする */
-function RadioButton({ song }: { song: QueueItem }) {
-  const { context, startRadio } = usePlayer();
-  const on = context === 'radio';
-  return (
-    <button
-      type="button"
-      aria-label={on ? 'ラジオで流しています' : `${song.title}からラジオを流す`}
-      aria-pressed={on}
-      title={on ? 'ラジオで流しています' : 'この曲からラジオを流す（関連曲を流し続ける）'}
-      onClick={() => startRadio(song)}
-      className={`grid size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
-    >
-      <Icon name="radio" className="size-5" />
     </button>
   );
 }

@@ -90,8 +90,8 @@ export function ProducerPlayer({
             producerId={producerId}
             songId={here ? current?.songId : linkedItem?.songId}
           />
-          {/* スマホは下の帯にランダムとループが入りきらないので、ここに置く */}
-          <PlaybackMode className="md:hidden" />
+          {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
+          <PlaybackMode className="md:hidden" radio />
         </div>
       </div>
 
