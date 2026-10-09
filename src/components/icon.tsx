@@ -188,6 +188,7 @@ const ICONS = {
     <path d="M12 14.5V4m0 0L8 8m4-4 4 4M8.5 11H7a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1.5" />
   ),
   left: <path d="M14.5 6.5 9 12l5.5 5.5" strokeWidth={2.5} />,
+  down: <path d="M6.5 9.5 12 15l5.5-5.5" strokeWidth={2.5} />,
   right: <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.5} />,
 } satisfies Record<string, ReactNode>;
 
