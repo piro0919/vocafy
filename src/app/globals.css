@@ -19,6 +19,8 @@
   --accent: #39c5bb;
   --heart: #ff6b9a;
   --miku: #39c5bb;
+  /* 画面の上部の表紙の色（ambient.tsx）の濃さ。明るい画面では薄くする */
+  --ambient-strength: 100%;
   color-scheme: dark;
 }
 
@@ -32,6 +34,7 @@
   --muted: #5d6f73;
   --accent: #0b7770;
   --heart: #e2336f;
+  --ambient-strength: 35%;
   color-scheme: light;
 }
 
@@ -45,6 +48,7 @@
     --muted: #5d6f73;
     --accent: #0b7770;
     --heart: #e2336f;
+    --ambient-strength: 35%;
     color-scheme: light;
   }
 }
@@ -428,4 +432,29 @@ html[data-player='dock'] .page-bottom {
   html[data-player='dock'] .page-bottom {
     padding-bottom: calc(0.75rem + 4rem + 0.75rem + 200px + 2.25rem + 2rem);
   }
+}
+
+/*
+ * 画面の上部の表紙の色（ambient.tsx）を、その上に重なる要素の地にも同じ位置関係で描く。
+ * スマホのボカロPの画面で、動画の下に貼り付けた名前とボタンの地に使う。地を塗らないと一覧が透け、
+ * 単色で塗ると上部の色が消えて、その部分だけ色が違って見えた。
+ * 上部の色は画面に固定なので、要素の画面の上からの位置（--backdrop-top）だけ上へずらして描く。
+ * background-attachment: fixed を使わないのは、iPhone の Safari が効かないため
+ */
+@utility ambient-backdrop {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      60% 80% at 85% 0%,
+      color-mix(in oklab, var(--ambient-to, transparent) var(--ambient-strength), transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ambient-from, transparent) var(--ambient-strength), transparent),
+      transparent
+    );
+  background-size: 100vw 32rem;
+  background-position: 0 calc(-1 * var(--backdrop-top, 0px));
+  background-repeat: no-repeat;
 }
