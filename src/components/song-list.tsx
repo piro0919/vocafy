@@ -17,10 +17,13 @@ import { Marquee } from './marquee';
 export function SongList({
   songs,
   columns,
+  onOpen,
   className = 'grid gap-1',
 }: {
   songs: QueueItem[];
   columns?: boolean;
+  /** 曲を押したときの動き。渡さなければ、その曲のボカロPの画面へ移る（useOpenSong） */
+  onOpen?: (index: number) => void;
   /** 棚に入れないときの並べ方 */
   className?: string;
 }) {
@@ -47,7 +50,7 @@ export function SongList({
           >
             <button
               type="button"
-              onClick={() => open(song)}
+              onClick={() => (onOpen ? onOpen(i) : open(song))}
               className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
             >
               <FadeImage

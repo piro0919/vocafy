@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { MusicGroup, WithContext } from 'schema-dts';
 import { AmbientSource } from '@/components/ambient';
+import { FavoriteProducerButton } from '@/components/favorite-button';
 import { JsonLd } from '@/components/json-ld';
 import { ProducerPlayer } from '@/components/producer-player';
 import { findProducer, queueOf } from '@/lib/catalog';
@@ -60,6 +61,9 @@ export default async function ProducerPage({ params }: PageProps<'/producers/[id
             <Heading as="h1" size="page" eyebrow="Producer">
               {producer.name}
             </Heading>
+            <FavoriteProducerButton
+              producer={{ id: producer.id, name: producer.name, picture: producer.picture }}
+            />
           </div>
         }
         producerId={producer.id}

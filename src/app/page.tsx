@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { WebSite, WithContext } from 'schema-dts';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
+import { FavoriteShelves } from '@/components/favorite-shelves';
 import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
@@ -24,7 +25,7 @@ export const revalidate = 3600;
 
 /**
  * トップ。人気で並べず、どの曲も同じ扱いで出会えるようにする（2026-10-08 に本人と決めた）。
- * 上から、きょうの日付の曲、日替わりの無作為の並び、歌声、年代、あいうえお順。毎日変わるものを上に、探しに行く入口を下に置く
+ * 上から、お気に入りの棚（あれば）、きょうの日付の曲、日替わりの無作為の並び、歌声、年代、あいうえお順。毎日変わるものを上に、探しに行く入口を下に置く
  */
 export default async function Home() {
   const date = today();
@@ -41,6 +42,7 @@ export default async function Home() {
   return (
     <>
       <JsonLd data={jsonLd} />
+      <FavoriteShelves />
 
       {hero && (
         <section className="mt-2 sm:mt-4">
