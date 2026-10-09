@@ -470,6 +470,8 @@ export type SearchIndex = {
   producers: [number, string, string | null, number][];
   /** [曲名, producers の何番目か, 曲名のローマ字（無ければ null）] */
   songs: [string, number, string | null][];
+  /** [id, 名前, 曲数]。キャラごとにまとめた歌声（voices と同じ） */
+  voices: [number, string, number][];
 };
 
 /** 2段目。[曲の id, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）]。1段目のそのボカロPの曲と同じ順 */
@@ -535,7 +537,7 @@ function loadSearchRows(): Promise<SearchRow[]> {
 }
 
 export const searchIndex = cache(async (): Promise<SearchIndex> => {
-  const [list, rows] = await Promise.all([producers(), loadSearchRows()]);
+  const [list, rows, voiceList] = await Promise.all([producers(), loadSearchRows(), voices()]);
   const at = new Map(list.map((p, i) => [p.id, i]));
   return {
     producers: list.map((p) => [p.id, p.name, p.picture, p.songCount]),
@@ -543,6 +545,7 @@ export const searchIndex = cache(async (): Promise<SearchIndex> => {
       const i = at.get(r.producerId);
       return i === undefined ? [] : [[r.name, i, r.romaji]];
     }),
+    voices: voiceList.map((v) => [v.id, v.name, v.songCount]),
   };
 });
 

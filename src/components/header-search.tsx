@@ -16,8 +16,8 @@ function Field({ value, onChange }: { value: string; onChange?: (value: string) 
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         readOnly={!onChange}
-        placeholder="曲名・ボカロP"
-        aria-label="曲名かボカロPの名前で探す"
+        placeholder="曲名・ボカロP・歌声"
+        aria-label="曲名・ボカロP・歌声の名前で探す"
         className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
       />
     </label>

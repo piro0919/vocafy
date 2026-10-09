@@ -9,10 +9,14 @@ import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails, SearchIndex } from '@/lib/catalog';
 import { normalize, normalizeRomaji, score } from '@/lib/search';
 import { thumbOf } from '@/lib/thumb';
+import { voiceArt } from '@/lib/voice-art';
 
 /** 一度に出す曲の数。それより多く当たったときは、言葉を足して絞ってもらう */
 const SONG_LIMIT = 100;
 const PRODUCER_LIMIT = 12;
+const VOICE_LIMIT = 12;
+
+type Voice = { id: number; name: string; songCount: number; key: string };
 
 type Producer = {
   id: number;
@@ -30,6 +34,7 @@ type Prepared = {
    * 2段目（ボカロPごとのファイル）の何番目を見ればよいかに使う
    */
   songs: { name: string; producer: Producer; nth: number; title: string; romaji: string }[];
+  voices: Voice[];
 };
 
 /** 1段目は画面を移っても一度だけ読む */
@@ -38,7 +43,7 @@ let loading: Promise<Prepared> | undefined;
 function loadIndex(): Promise<Prepared> {
   const pending = (loading ??= fetch('/search-index')
     .then((res) => res.json() as Promise<SearchIndex>)
-    .then(({ producers, songs }): Prepared => {
+    .then(({ producers, songs, voices }): Prepared => {
       const list = producers.map(([id, name, picture, songCount]) => ({
         id,
         name,
@@ -48,6 +53,12 @@ function loadIndex(): Promise<Prepared> {
       }));
       const counts = new Map<number, number>();
       return {
+        voices: voices.map(([id, name, songCount]) => ({
+          id,
+          name,
+          songCount,
+          key: normalize(name),
+        })),
         producers: list,
         songs: songs.map(([name, at, romaji]) => {
           const producer = list[at];
@@ -135,7 +146,12 @@ export function SearchView() {
       .filter((x) => x.rank > 0)
       .toSorted((a, b) => b.rank - a.rank)
       .map((x) => x.s);
-    return { producers, songs };
+    const voices = index.voices
+      .map((v) => ({ v, s: score(v.key, query) }))
+      .filter((x) => x.s > 0)
+      .toSorted((a, b) => b.s - a.s || b.v.songCount - a.v.songCount)
+      .map((x) => x.v);
+    return { producers, songs, voices };
   }, [index, query]);
 
   // 出す曲のボカロPの分だけ2段目を読み、曲の一覧に組み立てる。打つあいだに古い結果が後から届いても使わない
@@ -188,8 +204,8 @@ export function SearchView() {
           type="search"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="曲名・ボカロP"
-          aria-label="曲名かボカロPの名前で探す"
+          placeholder="曲名・ボカロP・歌声"
+          aria-label="曲名・ボカロP・歌声の名前で探す"
           // 検索の画面に来たら、すぐ打てるようにする
           autoFocus
           className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
@@ -201,7 +217,7 @@ export function SearchView() {
       )}
       {!failed && query && !index && <p className="mt-6 text-sm text-muted">読み込んでいます…</p>}
 
-      {found && found.producers.length + found.songs.length === 0 && (
+      {found && found.producers.length + found.songs.length + found.voices.length === 0 && (
         <p className="mt-6 text-sm text-muted">
           「{text.trim()}」に当てはまる曲は見つかりませんでした。
         </p>
@@ -233,6 +249,33 @@ export function SearchView() {
                 </Link>
               </li>
             ))}
+          </ul>
+        </section>
+      )}
+
+      {found && found.voices.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 font-display text-xl">歌声</h2>
+          <ul className="flex flex-wrap gap-2">
+            {found.voices.slice(0, VOICE_LIMIT).map((v) => {
+              const art = voiceArt(v.id);
+              return (
+                <li key={v.id}>
+                  <Link
+                    href={`/voices/${v.id}`}
+                    className={`flex items-center gap-2 rounded-full border border-line/60 bg-sidebar/60 py-1 pr-4 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95 ${art ? 'pl-1' : 'pl-4'}`}
+                  >
+                    {art && (
+                      <span className="relative size-8 shrink-0 rounded-full bg-surface">
+                        <FadeImage src={art} alt="" fill unoptimized className="object-contain" />
+                      </span>
+                    )}
+                    {v.name}
+                    <span className="text-xs font-normal text-muted">{v.songCount} 曲</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
