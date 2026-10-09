@@ -64,9 +64,9 @@ test('歌声の画面と、あいうえお順の行の画面が開く', async ({
   await expect(page.getByRole('heading', { level: 1, name: '初音ミク' })).toBeVisible();
   // 全曲の一覧はやめ、年ごとの代表曲だけにした。ページ送りは無い（年ごとの全曲の画面にはある）
   expect((await page.goto('/voices/1/2'))?.status()).toBe(404);
-  // 年の「すべて表示」から、その年の全曲へ
-  await page.goto('/voices/1/2020');
-  await expect(page.getByRole('heading', { level: 1, name: '初音ミクの2020年の曲' })).toBeVisible();
+  // 年の「すべて表示」から、その年の全曲へ。CI の台帳（db/fixture.sql）にある年を開く
+  await page.goto('/voices/1/2016');
+  await expect(page.getByRole('heading', { level: 1, name: '初音ミクの2016年の曲' })).toBeVisible();
   await page.goto('/kana/か');
   await expect(page.getByRole('heading', { level: 1, name: 'か行の曲' })).toBeVisible();
   const res = await page.goto('/kana/xyz');
@@ -75,7 +75,7 @@ test('歌声の画面と、あいうえお順の行の画面が開く', async ({
 
 test('検索で、曲名をひらがなで打ってもカタカナの曲が見つかる', async ({ page }) => {
   await page.goto('/search');
-  await page.getByRole('searchbox', { name: '曲名かボカロPの名前で探す' }).fill('ごーすと');
+  await page.getByRole('searchbox', { name: '曲名・ボカロP・歌声の名前で探す' }).fill('ごーすと');
   await expect(page.getByRole('button', { name: /ゴーストルール(?!をお気に入り)/ })).toBeVisible();
 });
 
