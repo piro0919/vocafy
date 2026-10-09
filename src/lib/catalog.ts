@@ -413,8 +413,10 @@ export const songsOfRow = cache(async (row: string, page: number): Promise<Paged
 export type SearchIndex = {
   /** [id, 名前, 画像, 曲数] */
   producers: [number, string, string | null, number][];
-  /** [id, 曲名, producers の何番目か, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）] */
-  songs: [number, string, number, string, string | null][];
+  /**
+   * [id, 曲名, producers の何番目か, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）, 曲名のローマ字（無ければ null）]
+   */
+  songs: [number, string, number, string, string | null, string | null][];
 };
 
 export const searchIndex = cache(async (): Promise<SearchIndex> => {
@@ -426,9 +428,10 @@ export const searchIndex = cache(async (): Promise<SearchIndex> => {
     youtube_id: string | null;
     niconico_id: string | null;
     niconico_thumb: string | null;
+    romaji: string | null;
     producer_id: number;
   }>(
-    `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, p.id as producer_id
+    `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, p.id as producer_id
      from song s
      join lateral (
        select p.id from song_producer sp join producer p on p.id = sp.producer_id
@@ -444,7 +447,14 @@ export const searchIndex = cache(async (): Promise<SearchIndex> => {
       const source = sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb);
       if (i === undefined || !source) return [];
       return [
-        [r.id, r.name, i, source.videoId, source.service === 'niconico' ? source.thumb : null],
+        [
+          r.id,
+          r.name,
+          i,
+          source.videoId,
+          source.service === 'niconico' ? source.thumb : null,
+          r.romaji,
+        ],
       ];
     }),
   };

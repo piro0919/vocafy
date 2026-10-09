@@ -7,7 +7,7 @@ import { FadeImage } from '@/components/fade-image';
 import { Icon } from '@/components/icon';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchIndex } from '@/lib/catalog';
-import { normalize, score } from '@/lib/search';
+import { normalize, normalizeRomaji, score } from '@/lib/search';
 import { thumbOf } from '@/lib/thumb';
 
 /** 一度に出す曲の数。それより多く当たったときは、言葉を足して絞ってもらう */
@@ -17,7 +17,8 @@ const PRODUCER_LIMIT = 12;
 /** 索引に、探すための正規化した文字を足したもの */
 type Prepared = {
   producers: { id: number; name: string; picture: string | null; songCount: number; key: string }[];
-  songs: { item: QueueItem; title: string; producer: string }[];
+  /** title と romaji は探すための形。romaji はローマ字の曲名が無ければ空 */
+  songs: { item: QueueItem; title: string; romaji: string; producer: string }[];
 };
 
 /** 索引は画面を移っても一度だけ読む */
@@ -36,7 +37,7 @@ function loadIndex(): Promise<Prepared> {
       }));
       return {
         producers: list,
-        songs: songs.map(([songId, title, at, videoId, niconicoThumb]) => {
+        songs: songs.map(([songId, title, at, videoId, niconicoThumb, romaji]) => {
           const p = list[at];
           return {
             item: {
@@ -50,6 +51,7 @@ function loadIndex(): Promise<Prepared> {
               vocalists: '',
             },
             title: normalize(title),
+            romaji: romaji ? normalizeRomaji(romaji) : '',
             producer: p.key,
           };
         }),
@@ -94,7 +96,12 @@ export function SearchView() {
       .map((x) => x.p);
     // 曲名で当たった曲を先に、ボカロP名だけで当たった曲を後にする。同じ当たり方の中は新しい順（索引の並び）
     const songs = index.songs
-      .map((s) => ({ s, rank: score(s.title, query) * 2 || score(s.producer, query) }))
+      .map((s) => ({
+        s,
+        // 曲名（ローマ字の曲名も含む）で当たれば先、ボカロP名だけなら後
+        rank:
+          Math.max(score(s.title, query), score(s.romaji, query)) * 2 || score(s.producer, query),
+      }))
       .filter((x) => x.rank > 0)
       .toSorted((a, b) => b.rank - a.rank)
       .map((x) => x.s.item);

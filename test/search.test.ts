@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalize, score } from '@/lib/search';
+import { normalize, normalizeRomaji, score } from '@/lib/search';
 
 describe('normalize', () => {
   it('カタカナとひらがなを区別しない', () => {
@@ -23,5 +23,12 @@ describe('score', () => {
     expect(score(normalize('「千本桜」ver.'), normalize('千本'))).toBe(2);
     expect(score(normalize('ゴーストルール'), normalize('ルール'))).toBe(1);
     expect(score(normalize('ゴーストルール'), normalize('メルト'))).toBe(0);
+  });
+});
+
+describe('normalizeRomaji', () => {
+  it('長音の記号と空白を外し、記号なしで打っても当たるようにする', () => {
+    expect(normalizeRomaji('Roshin Yūkai')).toBe('roshinyukai');
+    expect(score(normalizeRomaji('Senbonzakura'), normalize('senbon'))).toBe(2);
   });
 });

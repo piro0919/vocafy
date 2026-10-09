@@ -12,6 +12,14 @@ export function normalize(text: string): string {
 }
 
 /**
+ * ローマ字の曲名を、探すための形にする。長音の記号（Yūkai の ū など）を外してから normalize にかける。
+ * かなの曲名には使わない（濁点まで外れてしまうため）
+ */
+export function normalizeRomaji(text: string): string {
+  return normalize(text.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''));
+}
+
+/**
  * どれだけ当てはまるか。頭から一致するものを先、途中に含むものを後にする。当てはまらなければ 0
  */
 export function score(target: string, query: string): number {
