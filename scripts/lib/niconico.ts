@@ -22,8 +22,8 @@ const TAGS = [
   'VOICEVOX',
 ];
 const PAGE = 100;
-/** 取り込みは週に2回なので、VocaDB の曲の一覧と同じく 6 日（scripts/lib/vocadb.ts の maxAgeDays） */
-const MAX_AGE_DAYS = 6;
+/** 伝説入りは全体の取り込み（手元で走らせる）でしか使わないので、VocaDB の控えと同じく 30 日（scripts/lib/vocadb.ts） */
+const MAX_AGE_DAYS = 30;
 
 /** 伝説入りの動画の ID（sm で始まるもの）。再生数の多い順 */
 export async function legendVideos(): Promise<string[]> {

@@ -9,6 +9,7 @@ import {
   rootVoicebank,
   songByNiconico,
   songsByArtist,
+  songsPublishedAfter,
   topRatedSongs,
   youtubeCandidates,
   type VdbSong,
@@ -22,6 +23,7 @@ import { deadYouTube, viewCounts } from './lib/youtube';
  *   pnpm ingest --seeds 400 --dry    書かずに、何曲・何人になるかだけ数える
  *   pnpm ingest --no-legend          ニコニコの伝説入りを種に入れない
  *   pnpm ingest --no-youtube         YouTube の再生数の線を種に入れない（YOUTUBE_API_KEY が要らなくなる）
+ *   pnpm ingest --recent 30          この 30 日に出た曲のうち、取り込み済みのボカロPの曲だけを足す（自動の取り込みが使う）
  *
  * 種の曲からボカロPを拾い、その人の曲をすべて入れる。線を下げる（--seeds を増やす）ときは、先に --dry で
  * 増え方を数える。ボカロPが1人増えると、その人の全曲がついてくるので、曲数は種の数に比例しない。
@@ -93,28 +95,77 @@ const MAX_DEAD = 300;
  */
 const PRODUCER_NAMES = new Map([[23966, '作者不明']]);
 
+/**
+ * 新しく出た曲を足すだけの取り込み（--recent <日数>）。その日数のうちに出たオリジナル曲を VocaDB にまとめて聞き、
+ * すでに全曲を取り込んだボカロPの曲だけを足す。種の選び直しやボカロPの全曲の取り直しはしないので、
+ * VocaDB に聞くのは曲の一覧の数ページ（1週間でおよそ 370 曲）と、表に無い歌声だけで済む。
+ * 自動の取り込み（.github/workflows/ingest.yml）はこれを使う。新しいボカロPや種の入れ替えは、手元で全体の取り込みを走らせる
+ */
+async function recentSongs(days: number): Promise<{
+  songs: VdbSong[];
+  knownVocalists: Map<number, { name: string; baseId: number }>;
+}> {
+  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
+  try {
+    const producers = await pool.query<{ id: number }>('select id from producer where complete');
+    const complete = new Set(producers.rows.map((r) => r.id));
+    const vocalists = await pool.query<{ id: number; name: string; base_id: number }>(
+      'select id, name, base_id from vocalist',
+    );
+    const after = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const songs = (await songsPublishedAfter(after)).filter(
+      (s) => isEligible(s) && producersOf(s).some((p) => complete.has(p.id)),
+    );
+    return {
+      songs,
+      knownVocalists: new Map(
+        vocalists.rows.map((v) => [v.id, { name: v.name, baseId: v.base_id }]),
+      ),
+    };
+  } finally {
+    await pool.end();
+  }
+}
+
 async function main() {
   const seedCount = Number(arg('seeds') ?? 200);
+  const recentDays = arg('recent') === undefined ? undefined : Number(arg('recent'));
   const dry = process.argv.includes('--dry');
 
-  const rated = (await topRatedSongs(seedCount)).filter(isEligible);
-  const legends = process.argv.includes('--no-legend') ? [] : await legendSongs();
-  const watched = process.argv.includes('--no-youtube') ? [] : await youtubeSongs();
-  const seeds = [...new Map([...rated, ...legends, ...watched].map((s) => [s.id, s])).values()];
-  const seedIds = new Set(seeds.map((s) => s.id));
-  const producerIds = new Set(seeds.flatMap((s) => producersOf(s).map((p) => p.id)));
-  console.log(
-    `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲）、ボカロP ${producerIds.size} 人`,
-  );
+  const songs = new Map<number, VdbSong>();
+  const seedIds = new Set<number>();
+  // 全曲を取り込むボカロP。新しく出た曲を足すだけのときは空（ボカロPの画像やリンクも取り直さない）
+  const producerIds = new Set<number>();
+  let knownVocalists = new Map<number, { name: string; baseId: number }>();
 
-  // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）
-  const songs = new Map<number, VdbSong>(seeds.map((s) => [s.id, s]));
-  let done = 0;
-  for (const id of producerIds) {
-    for (const song of await songsByArtist(id)) {
-      if (isEligible(song) && producersOf(song).some((p) => p.id === id)) songs.set(song.id, song);
+  if (recentDays !== undefined) {
+    const recent = await recentSongs(recentDays);
+    for (const s of recent.songs) songs.set(s.id, s);
+    knownVocalists = recent.knownVocalists;
+    console.log(`この ${recentDays} 日に出た曲のうち、取り込み済みのボカロPの曲: ${songs.size} 曲`);
+  } else {
+    const rated = (await topRatedSongs(seedCount)).filter(isEligible);
+    const legends = process.argv.includes('--no-legend') ? [] : await legendSongs();
+    const watched = process.argv.includes('--no-youtube') ? [] : await youtubeSongs();
+    const seeds = [...new Map([...rated, ...legends, ...watched].map((s) => [s.id, s])).values()];
+    for (const s of seeds) {
+      songs.set(s.id, s);
+      seedIds.add(s.id);
+      for (const p of producersOf(s)) producerIds.add(p.id);
     }
-    if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
+    console.log(
+      `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲）、ボカロP ${producerIds.size} 人`,
+    );
+
+    // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）
+    let done = 0;
+    for (const id of producerIds) {
+      for (const song of await songsByArtist(id)) {
+        if (isEligible(song) && producersOf(song).some((p) => p.id === id))
+          songs.set(song.id, song);
+      }
+      if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
+    }
   }
 
   // 合作の相手も作者として表に入る。その人の全曲までは取りに行かない（線を下げたときに広がりすぎる）
@@ -173,6 +224,13 @@ async function main() {
   // 歌声をキャラごとにまとめるため、元の歌声を根までたどる。根の歌声が曲に出てこなくても、表には入れる
   const roots = new Map<number, number>();
   for (const v of [...vocalists.values()]) {
+    // 表にある歌声は、表の名前と根をそのまま使う（新しく出た曲を足すだけのとき、VocaDB に聞き直さないため）
+    const known = knownVocalists.get(v.id);
+    if (known) {
+      vocalists.set(v.id, { ...v, name: known.name });
+      roots.set(v.id, known.baseId);
+      continue;
+    }
     const { self, root } = await rootVoicebank(v.id);
     vocalists.set(v.id, { ...v, name: self.name });
     roots.set(v.id, root.id);

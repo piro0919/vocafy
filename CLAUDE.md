@@ -40,18 +40,19 @@ pnpm dev -p 3100
 
 - `.env.local` は `DATABASE_URL=postgres://vocafy:vocafy@localhost:5434/vocafy` のほか、YOUTUBE_API_KEY とログインの鍵（BETTER_AUTH_SECRET・BETTER_AUTH_URL・GOOGLE_CLIENT_ID・GOOGLE_CLIENT_SECRET）。サイトを動かすだけなら DATABASE_URL だけでよい
 - 手元のサーバーは 3100 番で立てる（`pnpm dev -p 3100`）。Google のログインの戻り先が localhost:3100 のため
-- VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。曲の一覧は6日、ボカロPや歌声の項目などは30日たつと取り直す（`scripts/lib/vocadb.ts` の maxAgeDays。2026-10-09 までは期限が無く、消さないと新しい曲を拾えなかった）。ニコニコの伝説入りの一覧も6日
+- VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。30日たつと取り直す（`scripts/lib/vocadb.ts` の MAX_AGE_DAYS）。ニコニコの伝説入りの一覧も30日。問い合わせは1秒に1回まで
 - 取り込みは、YouTube の動画が流せるかを oEmbed で確かめる（`scripts/lib/youtube.ts`）。流せない動画の曲はニコニコに切り替え、ニコニコにも無ければ DB から消す。結果は `data/raw/youtube/oembed.json` に残し、30日たったものだけ確かめ直す。初回は 1万4千本で数分かかった。2026-10-09 の時点で流せないのは 25 本
   - 埋め込みを止めている動画（動画は生きているが、ほかのサイトでは流せない）にも oEmbed が 200 以外を返すかは未確認
 - 再生中に流せなかった動画も拾う（2026-10-09）。YouTube の 100・101・150 とニコニコの error を、プレイヤーが `/api/unplayable` に知らせる（`src/components/player/report.ts`）。API は知らせを信じず、oEmbed かニコニコの getthumbinfo（失敗か `embeddable` が 0 なら流せない）に問い合わせ直し、流せないときだけ `unplayable` の表に書いて曲を直す（YouTube が駄目ならニコニコに切り替え、無ければ外す）。DB を起こすのはそのときだけ
   - 作り直すのはその曲のボカロPの画面だけ。ほかの画面は次の配備で反映される（全部を作り直すと、開かれるたびに DB を読むため）
   - 取り込みも `unplayable` の表を見る。見ないと、手元の確かめの結果（30日残る）で外した曲が戻る
-- **取り込みは自動で回る**（2026-10-09）。GitHub Actions の `ingest.yml` が、月曜と木曜の午前4時（日本時間）に本番の DB へ `ingest --seeds 1600` を走らせ、Vercel の Deploy Hook（vocafy の「ingest」、main を配備）で配備し直す。手でも Actions の画面から走らせられる
-  - 鍵はリポジトリの secrets の PROD_DATABASE_URL（DATABASE_URL_UNPOOLED の値）・YOUTUBE_API_KEY・VERCEL_DEPLOY_HOOK
-  - 控え（`data/raw/`）は actions/cache で持ち越す。actions/cache は7日使われない控えを消すので週2回にした。控えが空の初回は1時間から1時間半かかる見込み
-  - 人の目を通さないので、YouTube で流せないとみなした動画が300本（`ingest.ts` の MAX_DEAD）を超えたら書かずに止める。YouTube が一時的に 403 などを返して、曲をまとめて外すのを防ぐため。止まると GitHub からメールが来る。取り込みは足すか書き換えるだけで、消すのは流せないと確かめた曲だけ
-  - 費用はほぼ0（公開リポジトリの Actions は無料、Neon は月 0.2 CU 時間ほど、Vercel は配備が月8回増えるだけ）
+- **新しく出た曲は自動で足す**（2026-10-09）。GitHub Actions の `ingest.yml` が、月曜の午前4時（日本時間）に本番の DB へ `ingest --recent 30` を走らせ、Vercel の Deploy Hook（vocafy の「ingest」、main を配備）で配備し直す。手でも Actions の画面から走らせられる
+  - `--recent 30` は、この30日に出たオリジナル曲を VocaDB に日付で聞き、取り込み済みのボカロPの曲だけを足す。VocaDB に聞くのは35回ほど（1秒に1回で40秒）。新しいボカロP・種の入れ替え・評価点の更新はしない。それは手元の全体の取り込みでやる
+  - 最初は全体の取り込みを週2回自動で回す形で作った。Actions には控えが無いので初回に VocaDB へ約7000回聞く作りで、同じ日に VocaDB の API が 503 で1時間ほど止まったこともあり、日付で聞く形に変えた。止まった原因がこちらかは分からない
+  - 鍵はリポジトリの secrets の PROD_DATABASE_URL（DATABASE_URL_UNPOOLED の値）・VERCEL_DEPLOY_HOOK。YOUTUBE_API_KEY も置いてあるが、`--recent` では使わない
+  - 人の目を通さないので、YouTube で流せないとみなした動画が300本（`ingest.ts` の MAX_DEAD）を超えたら書かずに止める。VocaDB が 503・429 を返したら 1・2・4・8 分待って聞き直す。止まると GitHub からメールが来る。取り込みは足すか書き換えるだけで、消すのは流せないと確かめた曲だけ
   - **表を変えたときは、push より先に本番に当てる**のは変わらない。自動の取り込みは表を変えない
+- **全体の取り込み（手元）は、VocaDB に数千回聞く。** 走らせる前に回数を見積もって本人に伝える。VocaDB の控えは30日で取り直すので、前回から30日たっていれば、曲の一覧とボカロPや歌声の項目をほぼすべて聞き直すことになる
 - **本番の DB への取り込み（手で）**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、書く時間は短い（200 曲の種で 6 秒ほど）。VocaDB の返事が手元に残っていれば、取りに行く時間もかからない
   - **取り込んだら、本番を配備し直す**（`vercel redeploy vocafy.kkweb.io --target production --scope kkweb`）。トップ以外のページは時間では作り直さず、配備ごとに作り置くので、配備し直さないと新しい曲が出ない。Vercel は新しい配備で作り置きを捨てる（[ISR の資料](https://vercel.com/docs/incremental-static-regeneration)「each new deployment uses its own ISR cache」）
 - **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない

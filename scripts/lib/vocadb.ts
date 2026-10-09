@@ -3,20 +3,22 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 
 /**
  * VocaDB の API（https://vocadb.net/api）。鍵は要らない。
- * 同じ問い合わせを何度も投げないよう、返ってきた JSON は data/raw/vocadb/ に残し、次からはそれを読む。
- * 残したものには期限があり、過ぎたら取り直す（maxAgeDays）。相手に負荷をかけないよう、取りに行くときは 1 秒に 2 回までにする
+ * 同じ問い合わせを何度も投げないよう、返ってきた JSON は data/raw/vocadb/ に残し、MAX_AGE_DAYS 日のあいだはそれを読む。
+ * 相手に負荷をかけないよう、取りに行くときは 1 秒に 1 回までにする。
+ *
+ * 2026-10-09 に、1日で約 4400 回（1 秒に 2 回弱で数時間）聞いたあと、VocaDB の API が 503 で1時間ほど止まった。
+ * こちらが原因かは分からないが、千回を超えて聞く取り込みは、走らせる前に回数を見積もる
  */
 const BASE = 'https://vocadb.net/api';
 const CACHE = new URL('../../data/raw/vocadb/', import.meta.url);
-const INTERVAL = 500;
+const INTERVAL = 1000;
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
- * 残したものを使う日数。曲の一覧（/songs）は新しい曲を拾うために短くする。取り込みは週に2回（月曜と木曜）
- * 自動で回るので（.github/workflows/ingest.yml）、7 日にすると前の週の同じ曜日に取った分が数分の差で期限前になり、
- * 2週に1回しか取り直さなくなる。ボカロPや歌声の項目、動画からの曲の引き当てはほとんど変わらないので長くする
+ * 残したものを使う日数。新しく出た曲は自動の取り込み（ingest --recent）が日付で聞くので、ここを短くして拾う必要は無い。
+ * 全体の取り込みを手元で走らせたとき、評価点の順位やボカロPの全曲が古くなりすぎない程度にする
  */
-const maxAgeDays = (path: string) => (path === '/songs' ? 6 : 30);
+const MAX_AGE_DAYS = 30;
 
 export type VdbArtist = {
   id: number;
@@ -96,7 +98,7 @@ async function get<T>(path: string, params: Record<string, string | number | str
   const url = `${BASE}${path}?${search}`;
   const file = new URL(`${createHash('sha1').update(url).digest('hex')}.json`, CACHE);
   try {
-    if (Date.now() - (await stat(file)).mtimeMs < maxAgeDays(path) * DAY) {
+    if (Date.now() - (await stat(file)).mtimeMs < MAX_AGE_DAYS * DAY) {
       return JSON.parse(await readFile(file, 'utf8')) as T;
     }
   } catch {
@@ -147,6 +149,22 @@ export async function youtubeCandidates(after: string, minScore: number): Promis
     });
     songs.push(...items);
     if (songs.length % 2000 < PAGE) console.log(`  候補 ${songs.length} 曲`);
+    if (items.length < PAGE) return songs;
+  }
+}
+
+/** after より後に出たオリジナル曲をすべて。新しく出た曲を足すだけの取り込み（ingest --recent）が使う */
+export async function songsPublishedAfter(after: string): Promise<VdbSong[]> {
+  const songs: VdbSong[] = [];
+  for (let start = 0; ; start += PAGE) {
+    const { items } = await get<{ items: VdbSong[] }>('/songs', {
+      ...SONG_FIELDS,
+      afterDate: after,
+      sort: 'PublishDate',
+      maxResults: PAGE,
+      start,
+    });
+    songs.push(...items);
     if (items.length < PAGE) return songs;
   }
 }
