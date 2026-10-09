@@ -12,14 +12,15 @@ test('トップからボカロPの画面へ移り、その人の曲が並ぶ', a
   await page.goto('/producers');
   // 合作の相手として名前だけ入った人は、一覧に出さない
   await expect(page.getByText('合作の相手')).toHaveCount(0);
-  await page
-    .getByRole('link', { name: /DECO＊27/ })
-    .first()
-    .click();
+  // 一覧は見えている段だけを描く（virtual-producer-grid.tsx）ので、手元の台帳で下のほうにいる人は押せない。
+  // 名前ではなく、一覧の先頭の人を押して、その人の画面が開くことを見る
+  const first = page.locator('[data-index] a').first();
+  const name = (await first.locator('p span').first().textContent()) ?? '';
+  await first.click();
   // ボカロPの画面はビルドのときに作らず、最初に開かれたときに作る。手元の台帳では、一覧に見えている人の画面を
   // 先読みがまとめて作り始めるので、サーバー1台だと押した画面ができるまで5秒を超えることがある
-  await expect(page).toHaveURL(/\/producers\/45$/, { timeout: 20_000 });
-  await expect(page.getByRole('heading', { level: 1, name: 'DECO＊27' })).toBeVisible();
+  await expect(page).toHaveURL(/\/producers\/\d+$/, { timeout: 20_000 });
+  await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 });
 
 test('ニコニコにしか本家が無い曲は、ニコニコのプレイヤーで流す', async ({ page }) => {
