@@ -404,6 +404,13 @@ body {
   }
 }
 
+/* サイトカラーを変えたときのフェード（voice.ts の setVoice）。ほかの所では View Transitions を使っていない */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: var(--ease-out);
+}
+
 /* 動きを減らす設定の人には、出入りや移動の動きを見せない */
 @media (prefers-reduced-motion: reduce) {
   *,

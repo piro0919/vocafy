@@ -19,9 +19,32 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
       className="group relative flex h-full flex-col transition-[scale] duration-150 ease-(--ease-out) active:scale-95"
     >
+      <CharacterFace name={name} sub={`${formatCount(songCount)}曲`} art={art} />
+    </Link>
+  );
+}
+
+/**
+ * 絵の札の中身（台・絵・名前）。包む側が group と --c（キャラの色）を持つ。
+ * トップと歌声の画面のリンクの札と、設定の画面のキャラの色の選択で同じ見た目にするために分けた。
+ * selected は設定の画面で選んでいる札。台の色は色の見本なので全員そのまま残し、選んだ札の台にだけ輪を付ける
+ */
+export function CharacterFace({
+  name,
+  sub,
+  art,
+  selected = false,
+}: {
+  name: string;
+  sub?: string;
+  art: string;
+  selected?: boolean;
+}) {
+  return (
+    <>
       <span
         aria-hidden
-        className="absolute inset-x-0 top-[42%] bottom-0 rounded-2xl bg-[color-mix(in_oklab,var(--c)_30%,var(--sidebar))] shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-[background-color] duration-150 ease-(--ease-out) group-hover:bg-[color-mix(in_oklab,var(--c)_42%,var(--sidebar))] dark:bg-[color-mix(in_oklab,var(--c)_48%,var(--sidebar))] dark:group-hover:bg-[color-mix(in_oklab,var(--c)_60%,var(--sidebar))]"
+        className={`absolute inset-x-0 top-[42%] bottom-0 rounded-2xl bg-[color-mix(in_oklab,var(--c)_30%,var(--sidebar))] shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-[background-color] duration-150 ease-(--ease-out) group-hover:bg-[color-mix(in_oklab,var(--c)_42%,var(--sidebar))] dark:bg-[color-mix(in_oklab,var(--c)_48%,var(--sidebar))] dark:group-hover:bg-[color-mix(in_oklab,var(--c)_60%,var(--sidebar))] ${selected ? 'outline-[3px] outline-offset-2 outline-(--c) outline-solid' : ''}`}
       />
       <span className="relative block aspect-square">
         {/* 背丈をそろえるため、絵の枠を左右に広げる。横に広いキャラ（ミクのツインテールなど）が札の幅で縮まないように、
@@ -39,9 +62,9 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
       </span>
       <span className="relative min-w-0 px-3 pt-1.5 pb-2.5">
         <span className="block truncate text-sm font-bold">{name}</span>
-        <span className="block text-xs text-muted">{formatCount(songCount)}曲</span>
+        {sub && <span className="block text-xs text-muted">{sub}</span>}
       </span>
-    </Link>
+    </>
   );
 }
 

@@ -50,7 +50,20 @@ export function setVoice(voice: Voice) {
   } catch {
     // 保存できない窓では、開き直すと初音ミクに戻る
   }
-  if (voice === 'miku') delete document.documentElement.dataset.voice;
-  else document.documentElement.dataset.voice = voice;
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+  const apply = () => {
+    if (voice === 'miku') delete document.documentElement.dataset.voice;
+    else document.documentElement.dataset.voice = voice;
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+  };
+  // 色は画面じゅうで一度に変わるので、前と後の画面を重ねてフェードさせる（View Transitions）。
+  // そのあいだは画面を写真にして重ねるため、流している動画の絵が一瞬止まって見える（音は止まらない）。
+  // 対応していないブラウザと、動きを減らす設定の人には、いままでどおり一瞬で切り替える
+  if (
+    !document.startViewTransition ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    apply();
+    return;
+  }
+  document.startViewTransition(apply);
 }
