@@ -157,6 +157,9 @@ export function usePlayer(): PlayerContext {
  */
 const DOCK =
   'fixed right-3 bottom-[calc(8.25rem+12px)] h-[200px] w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px)] md:w-[356px]';
+/** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
+const WAIT_FOR_SLOT = 1000;
+
 /** 窓のすぐ上に付ける帯 */
 const DOCK_STRIP =
   'fixed right-3 bottom-[calc(8.25rem+12px+200px)] h-9 w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px+200px)] md:w-[356px]';
@@ -187,6 +190,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [context]);
   const [time, setTime] = useState<PlaybackTime>({ current: 0, duration: 0, at: 0 });
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+  // 曲の一覧から押してボカロPの画面へ移る途中（pending）は、置き場所が見つかるまで右下の窓を出さずに待つ。
+  // 出すと、窓に出てから大きな置き場所へ移る動きが見えた（作り置きの無いボカロPの画面は開くのに時間がかかる）。
+  // プレイヤーは流しているあいだ見せておく決まり（YouTube の規約）なので、待つのは WAIT_FOR_SLOT まで。
+  // 埋め込みが読み込まれて鳴り始めるまでにも1秒前後かかるので、見えないまま鳴ることはほぼ無い
+  const [waitingForSlot, setWaitingForSlot] = useState(false);
+  const waitTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   // 残しておいた音量は、最初に曲を流したときに読む（サーバーでは localStorage を読めず、帯も曲を流すまで出ない）
   const [sound, setSound] = useState({ volume: 100, muted: false });
   const soundRef = useRef<{ volume: number; muted: boolean } | null>(null);
@@ -210,6 +219,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback((items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
     setContext(ctx);
+    clearTimeout(waitTimer.current);
+    setWaitingForSlot(ctx === 'pending');
+    if (ctx === 'pending') {
+      waitTimer.current = setTimeout(() => setWaitingForSlot(false), WAIT_FOR_SLOT);
+    }
     if (!soundRef.current) {
       soundRef.current = savedVolume();
       setSound(soundRef.current);
@@ -403,7 +417,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const current = queue[index] ?? null;
   useWakeLock(playing);
-  const mode = queue.length === 0 ? 'none' : slot ? 'slot' : 'dock';
+  const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
 
   // 閉じたあとも、帯が下へ消えきるまでは最後の曲を出しておく
   const [shown, setShown] = useState<QueueItem | null>(null);
@@ -628,7 +642,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-lg bg-black shadow-2xl shadow-black/20 dark:shadow-black/60 [&>iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
         }
       />
-      <PlayerBar item={shown} open={mode !== 'none'} />
+      {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
+      <PlayerBar item={shown} open={queue.length > 0} />
       <PlayerKeys />
     </Context>
   );
