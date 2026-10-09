@@ -189,6 +189,13 @@ const ICONS = {
   ),
   left: <path d="M14.5 6.5 9 12l5.5 5.5" strokeWidth={2.5} />,
   down: <path d="M6.5 9.5 12 15l5.5-5.5" strokeWidth={2.5} />,
+  // 次に流れる曲（順番待ち）。3本の線に、再生の三角を添える
+  queue: (
+    <>
+      <path d="M4 6.5h11M4 12h11M4 17.5h7" />
+      <path {...ROUND_FILL} strokeWidth={1.5} d="M15.5 15v5l4-2.5z" />
+    </>
+  ),
   right: <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.5} />,
 } satisfies Record<string, ReactNode>;
 

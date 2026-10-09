@@ -90,6 +90,14 @@ type PlayerContext = {
   radioHome: string | null;
   /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
   startRadio: (seed: QueueItem) => void;
+  /**
+   * 次に流れる曲を読む。流す順（ランダムなら混ぜたあとの順）で、いまの曲の次から UPCOMING_LIMIT 曲まで。
+   * index は並び（queue）の何番目か。jumpTo に渡す。流す順は描くたびに変わらない入れ物（ref）に持っているので、
+   * 値ではなく、開いた画面が読む関数として渡す（曲や並びが変わると、この値の持ち主ごと描き直される）
+   */
+  upcoming: () => { item: QueueItem; index: number }[];
+  /** 並びの index 番目の曲へ飛ぶ。並びと流す順はそのまま */
+  jumpTo: (index: number) => void;
   toggle: () => void;
   step: (dir: 1 | -1) => void;
   /** 再生をやめ、プレイヤーを消す */
@@ -184,6 +192,9 @@ export function usePlayer(): PlayerContext {
  */
 const DOCK =
   'fixed right-3 bottom-[calc(8.25rem+12px)] h-[200px] w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px)] md:w-[356px]';
+/** 次に流れる曲として見せる数 */
+const UPCOMING_LIMIT = 100;
+
 /** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
 const WAIT_FOR_SLOT = 1000;
 
@@ -684,6 +695,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       listSource,
       radioHome,
       startRadio,
+      upcoming: () =>
+        order.current
+          .slice(position + 1, position + 1 + UPCOMING_LIMIT)
+          .flatMap((i) => (queue[i] ? [{ item: queue[i], index: i }] : [])),
+      jumpTo: (i) => {
+        const { queue: q } = state.current;
+        if (q[i]) load(q, i, contextRef.current);
+      },
       toggle: () => (playing ? player.current?.pause() : player.current?.play()),
       step,
       close,
