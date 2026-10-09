@@ -61,7 +61,9 @@ pnpm dev -p 3100
 
 ## 公開の構成
 
-- DB は Vercel の Neon 連携で作った vocafy-db（無料プラン・iad1）。DATABASE_URL などは連携が Vercel に入れている
+- DB は Vercel の Neon 連携で作った vocafy-db-sin（無料プラン・シンガポール）。DATABASE_URL などは連携が Vercel に入れている
+  - 関数のリージョンは sin1（シンガポール）で、DB と同じ場所に置く（2026-10-10）。初めは関数も DB も既定の iad1（米国東部）のままで、選んだものではなかった。利用者はほぼ日本で、Neon には東京が無いので、いちばん近いシンガポールにした。関数だけ日本に寄せると、1枚のページで DB に何回も聞くたびに太平洋を往復するので、関数と DB は必ず同じ場所にそろえる
+  - 移し方: 連携で新しい DB を `vercel integration add neon -m region=sin1 --prefix SIN_` で作り、Postgres 18 の `pg_dump`・`pg_restore`（`postgres:18-alpine` の docker で。手元の pg_dump は古い）で中身を移し、両方の DB を外してから新しい DB を接頭辞無しでつなぎ直した（Vercel の API の `/v1/storage/stores/{id}/connections`。CLI に接続のコマンドが無い）。関数のリージョンはプロジェクトの `resourceConfig.functionDefaultRegions`。Neon のリージョンは後から変えられない
 - `vercel project add` で作ったプロジェクトは framework が空で、ビルドは通るのに全ページが 404 になった。API で framework を nextjs にして直した
 - vocafy.kkweb.io の CNAME と `_vercel` の TXT は、Janify の `.env.local` の CLOUDFLARE_API_TOKEN（kkweb.io の DNS 編集のみ）で API から足した
 
@@ -130,8 +132,8 @@ pnpm dev -p 3100
   - 一覧の小さな表紙（85×48 ほど）は、YouTube の default（120×90、3.5KB）を使う（`thumb.ts` の smallThumbOf）。320×180 の mqdefault（14.5KB）の4分の1。default は上下に黒い帯の付いた 4:3 で、16:9 の枠に収めると帯だけが切れる。表紙の切り抜きを禁じる文は、YouTube の開発者向けの規約とブランドの手引きに無かった（2026-10-09。変えてはいけないのはロゴ）。大きな表紙と日替わりの壁は mqdefault のまま
 - Vercel は kk-web チームの Pro。月 $20 の使用枠を、チームの全プロジェクトで共有する
   - 2026-10-09 に画面で確かめた: 今月の使用枠は $2.83 / $20。使用枠を超えた分の予算は $50（通知は 50%・75%・100%。超えても止めない）。過去3か月の平均は、枠を超えた分が月 $13.99
-- Neon の計算の大きさは 0.25 CU に固定してある（Neon の画面の Computes → Edit で、Scale from と Scale up to が両方 0.25）。2026-10-09 の時点で vocafy-db は作ってから10時間で 0.39 CU 時間。Neon の全プロジェクトの合計（今月 61 CU 時間）はほかのプロジェクトの分がほとんどで、上限はプロジェクトごとなので響かない
-  - Neon の画面へは、Vercel の Storage → vocafy-db →「Open in Neon」で入る。使用量はプロジェクトの概要の右の欄の「Usage」
+- Neon の計算の大きさは 0.25 CU に固定する（Neon の画面の Computes → Edit で、Scale from と Scale up to が両方 0.25）。2026-10-09 の時点で前の vocafy-db（iad1）は作ってから10時間で 0.39 CU 時間。Neon の全プロジェクトの合計（今月 61 CU 時間）はほかのプロジェクトの分がほとんどで、上限はプロジェクトごとなので響かない
+  - Neon の画面へは、Vercel の Storage → vocafy-db-sin →「Open in Neon」で入る。使用量はプロジェクトの概要の右の欄の「Usage」
   - トップとボカロPの一覧はビルドのときに作るので、ビルドに DATABASE_URL が要る。CI は Postgres を立てて `db/fixture.sql` を入れる
 - 歌声の一覧は「キャラクター」（絵のある歌声）と「歌声ライブラリ」（絵の無い歌声）の2つに分ける（2026-10-09。`src/app/voices/page.tsx`）。キャラクターは絵の札を小さくして列を増やし（スマホ3・パソコン8。スマホは4では苦しかったので 2026-10-09 に3へ）、全員を出す。歌声ライブラリは VY1・女声1・Mai のようにキャラの絵を持たない声が多いのでこう呼び、名前の札を1つの並びにして、20曲以上だけ札を大きくする。563 件を同じ札で並べると、1曲の歌声と初音ミクが同じ重さに見えた。途中で試してやめた形: 曲の多い順に人数（36、48）で切る（人数が列の数からの逆算で、画面から意味が読めない）、絵の札を大きいまま全員出す（79人で壁が長く、最後の段が1人）、20曲で段を分ける（11件だけの段が半端）。絵の無い Fukase（100曲超）が下に来ること、絵を足すほどキャラクターが伸びることは承知の上。エンジンで分ける案は、ミクやテトのように複数のエンジンにまたがる歌声の置き場が決まらないのでやめた
 - 歌声の画面は、全曲の一覧をやめて年ごとの代表曲にした（2026-10-09 に壁打ちで決めた）。各年の評価点の上位5曲を、新しい年から年の見出しで区切って並べる（`catalog.ts` の PICKS_PER_YEAR）。ページ送りは無い
