@@ -6,7 +6,7 @@ import { PlayerStage, SwipeToLeave } from '@/components/player-stage';
 import { PlaybackMode } from '@/components/player/playback-mode';
 import { usePlayer } from '@/components/player/player-provider';
 import { SongList } from '@/components/song-list';
-import { useFavorites } from '@/lib/favorites';
+import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
@@ -14,6 +14,7 @@ import { useFavorites } from '@/lib/favorites';
  */
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
+  useRefreshFavorites();
   const { current, playing, context, playQueue, toggle } = usePlayer();
   const here = context === 'favorites' && !!current;
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');

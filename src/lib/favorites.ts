@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { hasSignInHint } from './auth-client';
 import type { QueueItem } from './catalog';
 
 /**
@@ -118,4 +119,69 @@ export function localFavoriteIds() {
 export function replaceFavorites(next: { songs: QueueItem[]; producers: FavoriteProducer[] }) {
   songs.write(next.songs);
   producers.write(next.producers);
+}
+
+/** 手元のお気に入りを最後に引き直した時刻。引き直すのは1日1回まで（開くたびに関数と DB を起こさないため） */
+const REFRESHED_KEY = 'vocafy-favorites-refreshed';
+const REFRESH_EVERY = 24 * 60 * 60 * 1000;
+
+/**
+ * 手元のお気に入りを、いまの情報で引き直す（/api/favorites/fresh）。足したときの情報のままだと、
+ * 動画の差し替えや表紙・名前の変化が反映されない。流せなくなった曲と台帳から消えた人は外す。
+ * 待っているあいだに足したものはそのまま残す。ログインしている人は AccountSync がアカウントの中身で置き換えるので引き直さない
+ */
+async function refreshFavorites() {
+  const sentSongs = songs.read();
+  const sentProducers = producers.read();
+  if (sentSongs.length + sentProducers.length === 0) return;
+  const res = await fetch('/api/favorites/fresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      songs: sentSongs.map(songs.idOf),
+      producers: sentProducers.map(producers.idOf),
+    }),
+  });
+  if (!res.ok) return;
+  const fresh = (await res.json()) as { songs: QueueItem[]; producers: FavoriteProducer[] };
+  if (signedIn) return;
+  const merge = <T>(
+    store: { read: () => T[]; write: (items: T[]) => void; idOf: (item: T) => number },
+    sent: T[],
+    got: T[],
+  ) => {
+    const sentIds = new Set(sent.map(store.idOf));
+    const byId = new Map(got.map((item) => [store.idOf(item), item]));
+    store.write(
+      store.read().flatMap((item) => {
+        const id = store.idOf(item);
+        if (!sentIds.has(id)) return [item];
+        const now = byId.get(id);
+        return now ? [now] : [];
+      }),
+    );
+  };
+  merge(songs, sentSongs, fresh.songs);
+  merge(producers, sentProducers, fresh.producers);
+  try {
+    localStorage.setItem(REFRESHED_KEY, String(Date.now()));
+  } catch {
+    // 残せなければ、次に開いたときにまた引き直す
+  }
+}
+
+/** お気に入りの画面で呼ぶ。前に引き直してから1日たっていれば、いまの情報で引き直す */
+export function useRefreshFavorites() {
+  useEffect(() => {
+    // ログインしたことのある端末は、AccountSync がアカウントの中身で置き換える
+    if (signedIn || hasSignInHint()) return;
+    let last = 0;
+    try {
+      last = Number(localStorage.getItem(REFRESHED_KEY)) || 0;
+    } catch {
+      return;
+    }
+    if (Date.now() - last < REFRESH_EVERY) return;
+    void refreshFavorites().catch(() => {});
+  }, []);
 }

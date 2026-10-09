@@ -8,7 +8,7 @@ import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';
 import { usePlayer } from '@/components/player/player-provider';
 import { SongList } from '@/components/song-list';
-import { useFavoriteProducers, useFavorites } from '@/lib/favorites';
+import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { clearHistory, useHistory } from '@/lib/history';
 
 /** お気に入りの画面に出す曲の数。全部はお気に入りの曲の画面（/favorites/songs）で見る */
@@ -28,6 +28,7 @@ export function FavoritesView() {
   const history = useHistory();
   const { playQueue } = usePlayer();
   const router = useRouter();
+  useRefreshFavorites();
 
   if (songs.length + producers.length + history.length === 0) {
     return (
