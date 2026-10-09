@@ -197,7 +197,7 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
         {/* 題名の部分と同じく、下へ引くと前の画面に戻り、流している曲は右下の窓に縮む */}
         <SwipeToLeave className="flex size-full items-center justify-center">
           {extra}
-          <PlaybackMode radio />
+          <PlaybackMode radio portal />
         </SwipeToLeave>
       </div>
     </>

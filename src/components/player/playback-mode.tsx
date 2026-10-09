@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from '../icon';
 import { usePlayer } from './player-provider';
@@ -10,14 +11,19 @@ import { QueuePanel } from './queue-panel';
 /**
  * ランダム再生とループの切り替え。入っているあいだは差し色にする。
  * パソコンでは下の帯に置き、スマホでは帯に入りきらないので、詳細画面の「再生」ボタンの横に置く。
- * radio を付けると、流している曲からのラジオのボタンも並べる。曲を流しているあいだは、次に流れる曲を開くボタンも置く
+ * radio を付けると、流している曲からのラジオのボタンも並べる。曲を流しているあいだは、次に流れる曲を開くボタンも置く。
+ * すりガラスの板の中では、fixed の基準が画面でなくその板になる。パソコンの下の帯はそれを使って次に流れる曲の板を置いているが、
+ * スマホの動画の下の帯（player-stage.tsx の StageControls）では板が動画の裏に回って見えなかった。そこでは portal で body の直下に出す
  */
 export function PlaybackMode({
   className = '',
   radio = false,
+  portal = false,
 }: {
   className?: string;
   radio?: boolean;
+  /** 次に流れる曲の板を body の直下に出す */
+  portal?: boolean;
 }) {
   const { current, shuffle, repeat, toggleShuffle, toggleRepeat } = usePlayer();
   const [queueOpen, setQueueOpen] = useState(false);
@@ -61,7 +67,15 @@ export function PlaybackMode({
           <Icon name="queue" className="size-5" />
         </button>
       )}
-      {current && <QueuePanel open={queueOpen} onClose={closeQueue} trigger={queueButton} />}
+      {current &&
+        (portal ? (
+          createPortal(
+            <QueuePanel open={queueOpen} onClose={closeQueue} trigger={queueButton} />,
+            document.body,
+          )
+        ) : (
+          <QueuePanel open={queueOpen} onClose={closeQueue} trigger={queueButton} />
+        ))}
     </div>
   );
 }
