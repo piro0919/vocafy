@@ -97,6 +97,8 @@ export function SwipeBack() {
       const from: Side | undefined =
         t.clientX <= EDGE ? 'left' : t.clientX >= window.innerWidth - EDGE ? 'right' : undefined;
       if (from === undefined || inHorizontalScroller(e.target)) return;
+      // 右下の窓の帯は、横に引くと窓を左右に寄せる（dock-strip.tsx）
+      if (e.target instanceof Element && e.target.closest('[data-dock-strip]')) return;
       start = { x: t.clientX, y: t.clientY, side: from };
       setSide(from);
       popped = false;

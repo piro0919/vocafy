@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { EASE_OUT, prefersReducedMotion } from '@/lib/motion';
+import { DOCK_SIDE_EVENT } from './player-storage';
 
 /** プレイヤーの形。none は何も流していない（か置き場所を待っている）、slot は画面の置き場所、dock は右下の窓 */
 export type FrameMode = 'none' | 'slot' | 'dock';
@@ -69,12 +70,16 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
       el.style.removeProperty('width');
       el.style.removeProperty('height');
       el.style.removeProperty('clip-path');
-      // 右下の窓は画面に固定なので、大きさが変わるのは画面の幅が変わったときだけ
+      // 右下の窓は画面に固定なので、位置と大きさが変わるのは画面の幅が変わったときと、左右に寄せ直したときだけ
       const remember = () => {
         lastBox.current = el.getBoundingClientRect();
       };
       window.addEventListener('resize', remember);
-      cleanup = () => window.removeEventListener('resize', remember);
+      window.addEventListener(DOCK_SIDE_EVENT, remember);
+      cleanup = () => {
+        window.removeEventListener('resize', remember);
+        window.removeEventListener(DOCK_SIDE_EVENT, remember);
+      };
     }
 
     const to = el.getBoundingClientRect();
