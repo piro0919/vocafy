@@ -12,19 +12,11 @@ export const VOICES = [
   { value: 'rin', label: '鏡音リン', art: 14, color: '#f29b00' },
   { value: 'len', label: '鏡音レン', art: 15, color: '#f5c400' },
   { value: 'luka', label: '巡音ルカ', art: 2, color: '#f37fa6' },
-  { value: 'meiko', label: 'メイコ', art: 176, color: '#d9363e' },
-  { value: 'kaito', label: 'カイト', art: 71, color: '#3d6fd8' },
-  { value: 'gumi', label: 'グミ', art: 3, color: '#78c13f' },
-  { value: 'gakupo', label: '神威がくぽ', art: 12, color: '#7d55c7' },
+  { value: 'meiko', label: 'MEIKO', art: 176, color: '#d9363e' },
+  { value: 'kaito', label: 'KAITO', art: 71, color: '#3d6fd8' },
+  { value: 'gumi', label: 'GUMI', art: 3, color: '#78c13f' },
   { value: 'teto', label: '重音テト', art: 140308, color: '#e0405a' },
-  { value: 'ia', label: 'イア', art: 504, color: '#e8b4cf' },
   { value: 'kafu', label: '可不', art: 83928, color: '#7fb7ec' },
-  { value: 'yukari', label: '結月ゆかり', art: 134288, color: '#a679d8' },
-  { value: 'yuki', label: '歌愛ユキ', art: 191, color: '#e85d8c' },
-  { value: 'flower', label: 'ブイフラワ', art: 21165, color: '#8a4fbf' },
-  { value: 'una', label: '音街ウナ', art: 170649, color: '#f08a3c' },
-  { value: 'lily', label: 'リリィ', art: 139, color: '#e3c13b' },
-  { value: 'mayu', label: 'MAYU', art: 1766, color: '#d9a0dc' },
 ] as const;
 
 export type Voice = (typeof VOICES)[number]['value'];

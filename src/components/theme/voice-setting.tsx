@@ -10,7 +10,7 @@ export function VoiceSetting() {
   return (
     <fieldset className="mt-7 sm:mt-10">
       <legend className="mb-3 font-bold">キャラの色</legend>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {VOICES.map((o) => {
           const selected = voice === o.value;
           return (
