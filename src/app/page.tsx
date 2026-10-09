@@ -95,7 +95,7 @@ export default async function Home() {
       </section>
 
       <div className="mt-6 sm:mt-10">
-        <Shelf title="年代" eyebrow="Years" href="/years">
+        <Shelf title="年代" eyebrow="Years">
           {/* Orbitron は数字ごとに幅が違い、札の幅がそろわないので、幅を決め打ちにする（一番広い年でも収まる幅） */}
           {yearList.map((y) => (
             <YearCard
