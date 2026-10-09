@@ -5,6 +5,7 @@ import { SwipeBackSetting } from '@/components/swipe-back/swipe-back-setting';
 import { ThemeSetting } from '@/components/theme/theme-setting';
 import { VoiceSetting } from '@/components/theme/voice-setting';
 import { Heading } from '@/components/heading';
+import { SupportLink } from '@/components/support-link';
 
 export const metadata: Metadata = { title: '設定', robots: { index: false } };
 
@@ -21,6 +22,7 @@ export default function SettingsPage() {
       <InstallApp />
       <SwipeBackSetting />
       <KeyboardHelp />
+      <SupportLink />
     </div>
   );
 }

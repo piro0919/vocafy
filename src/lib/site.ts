@@ -5,3 +5,6 @@ export const CONTACT_FORM_URL =
 export const OPERATOR = 'kk-web';
 
 export const SITE_URL = 'https://vocafy.kkweb.io';
+
+/** 支援の窓口（Buy Me a Coffee）。設定の画面の一番下にだけ置く（support-link.tsx） */
+export const SUPPORT_URL = 'https://buymeacoffee.com/piro0919';
