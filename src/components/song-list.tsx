@@ -1,6 +1,7 @@
 'use client';
 
 import type { QueueItem } from '@/lib/catalog';
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
@@ -53,15 +54,20 @@ export function SongList({
   );
 }
 
-/** 一覧の1曲。サムネイル・曲名・ボカロPと歌声・ハート。流している曲は地の色を変え、曲名の横に音の棒を出す */
+/**
+ * 一覧の1曲。サムネイル・曲名・ボカロPと歌声・ハート。流している曲は地の色を変え、曲名の横に音の棒を出す。
+ * handle はハートの右に置く部品（お気に入りの曲の並べ替えの取っ手）
+ */
 export function SongItem({
   song,
   eager = false,
   onOpen,
+  handle,
 }: {
   song: QueueItem;
   eager?: boolean;
   onOpen: () => void;
+  handle?: ReactNode;
 }) {
   const { current, playing } = usePlayer();
   const active = current?.songId === song.songId;
@@ -94,6 +100,7 @@ export function SongItem({
         </span>
       </button>
       <FavoriteButton song={song} quiet />
+      {handle}
     </div>
   );
 }

@@ -196,6 +196,17 @@ const ICONS = {
       <path {...ROUND_FILL} strokeWidth={1.5} d="M15.5 15v5l4-2.5z" />
     </>
   ),
+  // 並べ替えの取っ手。2列3段の点
+  grip: (
+    <g fill="currentColor" stroke="none">
+      <circle cx="9" cy="6.5" r="1.6" />
+      <circle cx="15" cy="6.5" r="1.6" />
+      <circle cx="9" cy="12" r="1.6" />
+      <circle cx="15" cy="12" r="1.6" />
+      <circle cx="9" cy="17.5" r="1.6" />
+      <circle cx="15" cy="17.5" r="1.6" />
+    </g>
+  ),
   right: <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.5} />,
 } satisfies Record<string, ReactNode>;
 

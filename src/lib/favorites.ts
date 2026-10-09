@@ -7,7 +7,7 @@ import type { QueueItem } from './catalog';
 /**
  * お気に入りの曲とボカロP。このブラウザの localStorage に残す。
  * お気に入りの画面を DB を読まずに出せるよう、id だけでなく、出すのに要る情報ごと残す
- * （曲は流すのに要る QueueItem、ボカロPは名前とアイコン）。並びは足した順の新しいものが先。
+ * （曲は流すのに要る QueueItem、ボカロPは名前とアイコン）。並びは足した順の新しいものが先で、曲は手で並べ替えられる。
  *
  * ログインしているあいだは、アカウントのお気に入り（/api/favorites）が元で、localStorage はその写しになる。
  * 押すたびに手元を書き換えてからアカウントにも送る。アカウントから読んで写しを置き換えるのは AccountSync
@@ -109,6 +109,28 @@ const producers = createStore<FavoriteProducer>(
 
 export const useFavorites = songs.useStore;
 export const useFavoriteProducers = producers.useStore;
+
+/**
+ * お気に入りの曲を1曲動かす。from の曲を、to の曲がいた位置へ。ログインしていれば、並びをアカウントにも送る
+ */
+export function moveFavoriteSong(from: number, to: number) {
+  const now = songs.read();
+  const i = now.findIndex((s) => s.songId === from);
+  const j = now.findIndex((s) => s.songId === to);
+  if (i < 0 || j < 0 || i === j) return;
+  const next = [...now];
+  const [moved] = next.splice(i, 1);
+  next.splice(j, 0, moved!);
+  songs.write(next);
+  if (signedIn) {
+    // 送れなくても手元は並べ替えたまま。次に開いたときにアカウントの並びに戻る
+    fetch('/api/favorites', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ songs: next.map(songs.idOf) }),
+    }).catch(() => {});
+  }
+}
 
 /** 手元のお気に入りの id。初めてログインした端末で、アカウントに足すのに使う */
 export function localFavoriteIds() {

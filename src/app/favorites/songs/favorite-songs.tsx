@@ -5,12 +5,13 @@ import { Icon } from '@/components/icon';
 import { PlayerStage, SwipeToLeave } from '@/components/player-stage';
 import { PlaybackMode } from '@/components/player/playback-mode';
 import { usePlayer } from '@/components/player/player-provider';
-import { SongList } from '@/components/song-list';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
+import { SortableSongList } from './sortable-song-list';
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
- * 左に大きなプレイヤーの置き場所、右に曲の一覧を置く。押した曲は、この画面のまま、お気に入りの並びで流れる
+ * 左に大きなプレイヤーの置き場所、右に曲の一覧を置く。押した曲は、この画面のまま、お気に入りの並びで流れる。
+ * 一覧は取っ手で並べ替えられる
  */
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
@@ -56,7 +57,7 @@ export function FavoriteSongs() {
       {songs.length === 0 ? (
         <p className="text-sm text-muted">お気に入りの曲はまだありません。</p>
       ) : (
-        <SongList songs={songs} onOpen={(i) => play(i)} />
+        <SortableSongList songs={songs} onOpen={(i) => play(i)} />
       )}
     </div>
   );
