@@ -3,11 +3,19 @@
 import { useSyncExternalStore } from 'react';
 import { CharacterFace } from '../browse-cards';
 import { Heading, SECTION } from '../heading';
-import { readVoice, setVoice, subscribeVoice, VOICES } from './voice';
+import {
+  readFollowVoice,
+  readVoice,
+  setFollowVoice,
+  setVoice,
+  subscribeVoice,
+  VOICES,
+} from './voice';
 
 /** 設定の画面のサイトカラー（キャラの色）の選択。選んだ時点で切り替わり、このブラウザに残る */
 export function VoiceSetting() {
   const voice = useSyncExternalStore(subscribeVoice, readVoice, () => 'miku' as const);
+  const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => false);
   return (
     <section className={SECTION}>
       <div className="mb-3">
@@ -44,6 +52,21 @@ export function VoiceSetting() {
           </label>
         ))}
       </div>
+      {/* 行の形は、スワイプで戻るの「使う」と同じ */}
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-foreground/8 sm:max-w-sm">
+        <input
+          type="checkbox"
+          checked={follow}
+          onChange={() => setFollowVoice(!follow)}
+          className="mt-1 size-4 shrink-0 accent-accent"
+        />
+        <span>
+          流している曲の歌声の色にする
+          <span className="block text-xs text-muted">
+            この9人が歌う曲のときだけ。ほかの曲では、上で選んだ色になります
+          </span>
+        </span>
+      </label>
     </section>
   );
 }

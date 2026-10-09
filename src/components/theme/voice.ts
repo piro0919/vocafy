@@ -67,3 +67,48 @@ export function setVoice(voice: Voice) {
   }
   document.startViewTransition(apply);
 }
+
+/**
+ * 流している曲の歌声の色にする設定（2026-10-10）。ON のあいだは、流している曲の歌声に9人のキャラがいれば、その色にする。
+ * 選んだサイトカラー（setVoice）はそのまま残り、9人のいない曲と、何も流していないときはその色に戻る
+ */
+const FOLLOW_KEY = 'vocafy-voice-follow';
+
+export function readFollowVoice(): boolean {
+  try {
+    return localStorage.getItem(FOLLOW_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+export function setFollowVoice(on: boolean) {
+  try {
+    if (on) localStorage.setItem(FOLLOW_KEY, 'on');
+    else localStorage.removeItem(FOLLOW_KEY);
+  } catch {
+    // 保存できない窓では、この画面のあいだだけ効く
+  }
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+/** 曲の歌声（「初音ミク・鏡音リン」の形）のうち、先に名前の出てくる9人のキャラ。いなければ null */
+export function voiceOfVocalists(vocalists: string): Voice | null {
+  for (const name of vocalists.split('・')) {
+    const found = VOICES.find((o) => o.label === name.trim());
+    if (found) return found.value;
+  }
+  return null;
+}
+
+/**
+ * 画面の色だけを変える（保存しない）。歌声に合わせて曲ごとに変えるときに使う。
+ * setVoice と違ってフェード（View Transitions）させない。フェードのあいだは画面を写真にして重ねるので、
+ * 曲が変わるたびに動画の絵が止まって見える
+ */
+export function applyVoice(voice: Voice) {
+  const now = document.documentElement.dataset.voice ?? 'miku';
+  if (now === voice) return;
+  if (voice === 'miku') delete document.documentElement.dataset.voice;
+  else document.documentElement.dataset.voice = voice;
+}

@@ -10,6 +10,7 @@ import { MobileTabs, Sidebar } from '@/components/nav';
 import { AccountButton } from '@/components/account/account-button';
 import { AccountSync } from '@/components/account/account-sync';
 import { HistoryRecorder } from '@/components/player/history-recorder';
+import { VoiceFollower } from '@/components/theme/voice-follower';
 import { PlayerProvider } from '@/components/player/player-provider';
 import { Toaster } from '@/components/toaster';
 import { ScrollChrome } from '@/components/scroll-chrome';
@@ -108,6 +109,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             </div>
             <MobileTabs />
             <HistoryRecorder />
+            <VoiceFollower />
           </PlayerProvider>
         </Progress>
         <Toaster />
