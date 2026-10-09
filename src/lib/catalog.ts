@@ -544,3 +544,30 @@ export async function relatedSongs(songId: number): Promise<QueueItem[]> {
     return r ? [toItem(r)] : [];
   });
 }
+
+/** id で引いた流せる曲（順番待ちの形）。並びは ids のとおり。流せない曲や、もう台帳に無い曲は落とす */
+export async function songsByIds(ids: number[]): Promise<QueueItem[]> {
+  if (ids.length === 0) return [];
+  const { rows } = await db().query<QueueRow>(`${QUEUE_SELECT} and s.id = any($1)`, [ids]);
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.flatMap((id) => {
+    const r = byId.get(id);
+    return r ? [toItem(r)] : [];
+  });
+}
+
+/** id で引いたボカロPの名前と画像。並びは ids のとおり。もう台帳に無い人は落とす */
+export async function producersByIds(
+  ids: number[],
+): Promise<{ id: number; name: string; picture: string | null }[]> {
+  if (ids.length === 0) return [];
+  const { rows } = await db().query<{ id: number; name: string; picture: string | null }>(
+    'select id, name, picture from producer where id = any($1)',
+    [ids],
+  );
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.flatMap((id) => {
+    const r = byId.get(id);
+    return r ? [r] : [];
+  });
+}

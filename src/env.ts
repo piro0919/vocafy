@@ -9,8 +9,20 @@ export const env = createEnv({
   server: {
     // 曲の台帳。手元は compose.yaml の Postgres、本番は Neon（プールを通す接続文字列）
     DATABASE_URL: z.string().min(1),
+    // ログイン（Better Auth と Google）。ログインは任意なので、無くてもビルドは通す。
+    // 欠けたままログインの受け口に来たら、そこで名前を挙げて止まる（src/lib/auth.ts）
+    BETTER_AUTH_SECRET: z.string().min(32).optional(),
+    BETTER_AUTH_URL: z.url().optional(),
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   },
   client: {},
-  runtimeEnv: { DATABASE_URL: process.env.DATABASE_URL },
+  runtimeEnv: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  },
   emptyStringAsUndefined: true,
 });
