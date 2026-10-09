@@ -38,7 +38,7 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
       </span>
       <span className="relative min-w-0 px-3 pt-1.5 pb-2.5">
         <span className="block truncate text-sm font-bold">{name}</span>
-        <span className="block text-xs text-muted">{formatCount(songCount)} 曲</span>
+        <span className="block text-xs text-muted">{formatCount(songCount)}曲</span>
       </span>
     </Link>
   );
@@ -60,7 +60,7 @@ export function YearCard({
       className={`flex flex-col items-start rounded-2xl border border-line/60 bg-sidebar/60 px-4 py-3 transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 ${className}`}
     >
       <span className="font-tech text-2xl font-black text-accent sm:text-3xl">{year}</span>
-      <span className="mt-1 text-xs text-muted">{formatCount(count)} 曲</span>
+      <span className="mt-1 text-xs text-muted">{formatCount(count)}曲</span>
     </Link>
   );
 }

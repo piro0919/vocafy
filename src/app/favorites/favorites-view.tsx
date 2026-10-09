@@ -48,7 +48,7 @@ export function FavoritesView() {
         <Section
           title="最近聴いた曲"
           eyebrow="Recently played"
-          count={`${formatCount(history.length)} 曲`}
+          count={`${formatCount(history.length)}曲`}
           action={
             <button
               type="button"
@@ -71,7 +71,7 @@ export function FavoritesView() {
         <Section
           title="曲"
           eyebrow="Songs"
-          count={`${formatCount(songs.length)} 曲`}
+          count={`${formatCount(songs.length)}曲`}
           action={
             // 頭から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
             <button
@@ -98,7 +98,7 @@ export function FavoritesView() {
         </Section>
       )}
       {producers.length > 0 && (
-        <Section title="ボカロP" eyebrow="Producers" count={`${formatCount(producers.length)} 人`}>
+        <Section title="ボカロP" eyebrow="Producers" count={`${formatCount(producers.length)}人`}>
           <div className={ARTIST_GRID}>
             {producers.map((p, i) => (
               <CoverCard

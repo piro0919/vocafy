@@ -21,7 +21,7 @@ export async function ProducerList({ page }: { page: number }) {
         <Heading as="h1" size="page" eyebrow="Producers">
           ボカロP
         </Heading>
-        <p className="mt-2 text-sm text-muted">{formatCount(list.length)} 人</p>
+        <p className="mt-2 text-sm text-muted">{formatCount(list.length)}人</p>
       </div>
       <VirtualProducerGrid producers={list} start={start} />
     </>

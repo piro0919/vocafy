@@ -223,7 +223,7 @@ export function SearchView() {
                   )}
                   {p.name}
                   <span className="text-xs font-normal text-muted">
-                    {formatCount(p.songCount)} 曲
+                    {formatCount(p.songCount)}曲
                   </span>
                 </Link>
               </li>
@@ -251,7 +251,7 @@ export function SearchView() {
                     )}
                     {v.name}
                     <span className="text-xs font-normal text-muted">
-                      {formatCount(v.songCount)} 曲
+                      {formatCount(v.songCount)}曲
                     </span>
                   </Link>
                 </li>
@@ -265,9 +265,9 @@ export function SearchView() {
         <section className="mt-8">
           <h2 className="mb-1 font-display text-xl">曲</h2>
           <p className="mb-3 text-sm text-muted">
-            {formatCount(found.songs.length)} 曲
+            {formatCount(found.songs.length)}曲
             {found.songs.length > SONG_LIMIT &&
-              `（多いので先頭の ${SONG_LIMIT} 曲。言葉を足すと絞れます）`}
+              `（多いので先頭の${SONG_LIMIT}曲。言葉を足すと絞れます）`}
           </p>
           {items ? (
             <SongList songs={items} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />

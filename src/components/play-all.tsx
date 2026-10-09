@@ -54,7 +54,8 @@ export function PlayAll({
         <Icon name={here && playing ? 'pause' : 'play'} className="size-4" />
         {here && playing ? '一時停止' : '再生'}
       </button>
-      <p className="text-sm text-muted">{count}</p>
+      {/* 折り返すのは空きの位置だけ。字の間で折ると「（全11,002曲）」の「曲）」だけが次の行に落ちた */}
+      <p className="text-sm text-muted [word-break:keep-all]">{count}</p>
     </div>
   );
 }

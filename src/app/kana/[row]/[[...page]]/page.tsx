@@ -45,7 +45,7 @@ export default async function KanaPage({ params }: PageProps<'/kana/[row]/[[...p
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${formatCount(total)} 曲`}
+          count={`${formatCount(total)}曲`}
           list={{ source: `kana/${row}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>

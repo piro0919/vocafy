@@ -48,7 +48,7 @@ export default async function VoiceYearPage({
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${formatCount(total)} 曲`}
+          count={`${formatCount(total)}曲`}
           list={{
             source: `voices/${voice.id}/${year}`,
             page,

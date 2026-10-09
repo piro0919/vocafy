@@ -43,7 +43,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${formatCount(total)} 曲`}
+          count={`${formatCount(total)}曲`}
           list={{ source: `days/${day}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>

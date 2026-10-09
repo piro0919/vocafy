@@ -39,7 +39,7 @@ export default async function YearPage({ params }: PageProps<'/years/[year]/[[..
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${formatCount(total)} 曲`}
+          count={`${formatCount(total)}曲`}
           list={{ source: `years/${year}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>

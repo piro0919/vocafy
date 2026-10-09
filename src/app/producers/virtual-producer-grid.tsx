@@ -81,7 +81,7 @@ export function VirtualProducerGrid({
               cover={p.picture}
               round
               title={p.name}
-              sub={`${formatCount(p.songCount)} 曲`}
+              sub={`${formatCount(p.songCount)}曲`}
               eager={row.index * columns + c < 10}
             />
           ))}

@@ -64,7 +64,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           {/* 流すのは代表曲だけ。全曲（1万曲を超える歌声もある）を年の新しい順に流すと、画面の見せ方と食い違う */}
           <PlayAll
             songs={songs}
-            count={`代表曲 ${songs.length} 曲（全 ${formatCount(voice.songCount)} 曲）`}
+            count={`代表曲 ${songs.length}曲（全${formatCount(voice.songCount)}曲）`}
             list={{ source: `voices/${voice.id}`, page: 1, last: 1 }}
           />
         </div>
