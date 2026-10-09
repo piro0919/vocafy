@@ -888,7 +888,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       <div
         aria-hidden={mode !== 'dock'}
         inert={mode !== 'dock'}
-        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-30 flex items-center rounded-t-2xl border border-b-0 border-line/60 bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
+        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-30 flex items-center gap-0.5 rounded-t-2xl border border-b-0 border-line/60 bg-sidebar/60 pr-1 backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
       >
         {shown && (
           <Link
@@ -901,14 +901,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                     ? radioHome
                     : `/producers/${shown.producerId}`
             }
-            className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
+            className="group flex h-full min-w-0 flex-1 items-center gap-1 pl-3 text-xs text-muted transition-colors hover:text-foreground"
           >
             <span className="min-w-0 flex-1 truncate">
               <span className="font-bold text-foreground">{shown.title}</span>
               {' ・ '}
               {shown.producerName}
             </span>
-            <Icon name="expand" className="size-4 shrink-0" />
+            {/* 拡げる印と × は、同じ形のボタンに見せる（丸い押し場所と、指を乗せたときの地） */}
+            <span className="grid size-7 shrink-0 place-items-center rounded-full transition-[background-color,scale] duration-150 ease-out group-hover:bg-foreground/8 group-active:scale-90">
+              <Icon name="expand" className="size-4" />
+            </span>
           </Link>
         )}
         {/* 窓だけ消して音を流し続けることはできない（プレイヤーは見えている必要がある）ので、下の帯の × と同じく再生ごと止める */}
@@ -916,7 +919,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           type="button"
           aria-label="プレイヤーを閉じる"
           onClick={close}
-          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
+          className="grid size-7 shrink-0 place-items-center rounded-full text-muted transition-[color,background-color,scale] duration-150 ease-out hover:bg-foreground/8 hover:text-foreground active:scale-90"
         >
           <Icon name="close" className="size-4" />
         </button>
