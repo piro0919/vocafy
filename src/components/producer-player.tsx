@@ -75,12 +75,7 @@ export function ProducerPlayer({
           label={linkedItem ? `「${linkedItem.title}」を再生` : 'このボカロPの曲を再生'}
           onPlay={() => start(linkedItem?.songId)}
         />
-        <SwipeToLeave className="lg:mt-4">
-          {heading}
-          <p className="mt-0.5 text-sm text-muted">
-            {queue.length} 曲{queue.length < songs.length && `（全 ${songs.length} 曲）`}
-          </p>
-        </SwipeToLeave>
+        <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         <div className="flex items-center gap-2 lg:mt-4">
           <button
             type="button"
