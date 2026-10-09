@@ -274,11 +274,12 @@ html[data-player='dock'] .page-bottom {
   .page-bottom {
     padding-bottom: 2rem;
   }
+  /* 下の帯は画面の下から 0.75rem 浮いているので、その分も足す */
   html[data-player='slot'] .page-bottom {
-    padding-bottom: calc(4rem + 2rem);
+    padding-bottom: calc(0.75rem + 4rem + 2rem);
   }
   /* 右下の窓（高さ 200px と上の帯 2.25rem）が、ページの最後の部分を隠さないよう、その分の余白を足す */
   html[data-player='dock'] .page-bottom {
-    padding-bottom: calc(4rem + 200px + 2.25rem + 2rem);
+    padding-bottom: calc(0.75rem + 4rem + 0.75rem + 200px + 2.25rem + 2rem);
   }
 }

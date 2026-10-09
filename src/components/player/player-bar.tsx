@@ -15,6 +15,7 @@ import { Marquee } from '../marquee';
 /**
  * 画面の下に出したままにする操作の帯。曲を選ぶと下からせり上がり、閉じると下へ消える。
  * スマホでは下のタブの上に載せ、タブと合わせて一枚の浮いた板に見せる。タブが隠れたときは、帯だけで角の丸い板になる（globals.css）。
+ * パソコンでは、左のメニューや上の段と同じく、画面の端から 12px 離した角丸の板として浮かせる。
  * 消えきるまでは最後の曲を出しておくので、item は今の曲ではなく「最後に出した曲」。
  * 最初の1曲でもせり上がって見えるよう、曲を選ぶ前から閉じた状態で置いておく
  */
@@ -39,7 +40,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     <div
       aria-hidden={!open}
       inert={!open}
-      className={`chrome-bottom chrome-bar fixed inset-x-3 bottom-[4.25rem] z-30 h-16 rounded-t-2xl border border-b-0 border-line/60 bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity] duration-300 ease-(--ease-out) md:inset-x-0 md:bottom-0 md:rounded-none md:border-x-0 ${
+      className={`chrome-bottom chrome-bar fixed inset-x-3 bottom-[4.25rem] z-30 h-16 rounded-t-2xl border border-b-0 border-line/60 bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity] duration-300 ease-(--ease-out) md:bottom-3 md:rounded-2xl md:border-b md:shadow-lg md:shadow-black/5 ${
         open ? '' : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >
