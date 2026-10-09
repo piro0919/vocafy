@@ -418,12 +418,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIndex(at);
   }, []);
 
-  /** ラジオの並びを後ろに伸ばす。いまの曲は止めず、流す順は並びのとおり（ラジオでは混ぜない） */
+  /**
+   * ラジオの並びを後ろに伸ばす。items はいまの並びに曲を足したもの。いまの曲と流してきた順はそのままで、
+   * 足した曲を流す順の後ろに付ける（ランダムなら混ぜて。append と同じ）
+   */
   const extend = useCallback((items: QueueItem[]) => {
-    const { index: at } = state.current;
-    order.current = buildOrder(items.length, 0, false);
-    positionRef.current = at;
-    setPosition(at);
+    const { queue: q, index: at } = state.current;
+    const added = buildOrder(items.length - q.length, 0, playbackRef.current?.shuffle ?? false);
+    order.current = [...order.current, ...added.map((i) => q.length + i)];
     state.current = { queue: items, index: at };
     setQueue(items);
   }, []);
@@ -555,13 +557,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return home;
   }, [adopt]);
 
-  // ラジオで並びの終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
+  // ラジオで流す順の終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
   // いまの曲の関連曲がどれも並びに入っているとき（ラジオの画面で一覧の最後の曲を押したときなど）は、並びの後ろの曲から
   // 順にさかのぼって、足せる曲が見つかるまで RADIO_TRIES 曲まで試す。足さないと次に流れる曲が空になり、最後の曲のあとは
   // 先頭に戻っていた。関連曲の答えは CDN に置いてあるので、さかのぼっても DB はほぼ起きない
   const extending = useRef(false);
   useEffect(() => {
-    if (context !== 'radio' || queue.length === 0 || index < queue.length - 2) return;
+    if (context !== 'radio' || queue.length === 0 || position < order.current.length - 2) return;
     if (extending.current) return;
     extending.current = true;
     const seeds = [queue[index], ...queue.filter((_, i) => i !== index).toReversed()].slice(
@@ -587,7 +589,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         extending.current = false;
       }
     })();
-  }, [context, index, queue, extend]);
+  }, [context, index, position, queue, extend]);
 
   const close = useCallback(() => {
     sleepRef.current = null;
