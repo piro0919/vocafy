@@ -61,3 +61,41 @@ export function RadioPlayer({ songs, heading }: { songs: QueueItem[]; heading: R
     </div>
   );
 }
+
+/**
+ * ラジオの画面を作っているあいだの形（loading.tsx）。初めて開く曲のラジオは、サーバーで VocaDB に関連曲を聞いてから描くので
+ * 数秒かかることがある。そのあいだも動画の置き場所を先に出し、ラジオを流しているなら動画をここに大きく出す。
+ * 置き場所が無いと、待ち（WAIT_FOR_SLOT）を越えて右下の窓に出てから、画面ができたところで大きな置き場所へ移った
+ */
+export function RadioLoading() {
+  const { current, context } = usePlayer();
+  return (
+    <div className="pt-4">
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+        <div className="contents lg:sticky lg:top-25 lg:block">
+          <PlayerStage
+            active={current !== null && context === 'radio'}
+            cover={current?.thumb ?? null}
+            label="このラジオを再生"
+            onPlay={() => {}}
+          />
+          <div aria-hidden className="flex flex-col gap-2 lg:mt-4">
+            <span className="h-3 w-12 animate-pulse rounded bg-surface" />
+            <span className="h-9 w-2/3 animate-pulse rounded bg-surface" />
+          </div>
+        </div>
+        <div aria-hidden className="-mx-1.5 flex flex-col gap-1">
+          {Array.from({ length: 12 }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 p-1.5">
+              <span className="aspect-video w-[85px] shrink-0 animate-pulse rounded bg-surface" />
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
+                <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
