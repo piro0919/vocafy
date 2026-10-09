@@ -1,6 +1,7 @@
 'use client';
 
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
+import { type ReactNode, useEffect, useSyncExternalStore } from 'react';
+import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
@@ -159,15 +160,14 @@ function linkedSong(): number | null {
  * スマホなど共有の窓（Web Share API）が出せるブラウザでは窓を出し、出せなければリンクを写す
  */
 function ShareButton({ producerId, songId }: { producerId: number; songId?: number }) {
-  const [copied, setCopied] = useState(false);
-  // 共有の窓が出せないブラウザ（パソコンの多く）では、押すとリンクを写すだけなので、初めからそう書く。
-  // サーバーでは分からないので「共有」で作り、ブラウザで読み直す
+  // 共有の窓が出せないブラウザ（パソコンの多く）では、押すとリンクを写す。字は出さずアイコンだけにし、写したことはトーストで知らせる
   const canShare = useSyncExternalStore(
     noSubscribe,
     () => 'share' in navigator,
     () => true,
   );
   const what = songId ? 'この曲' : 'このボカロP';
+  const label = canShare ? `${what}を共有` : `${what}のリンクをコピー`;
   const share = async () => {
     const url = new URL(`/producers/${producerId}`, window.location.origin);
     if (songId) url.searchParams.set('song', String(songId));
@@ -178,21 +178,17 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
       return;
     }
     await navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    toast('リンクをコピーしました');
   };
   return (
     <button
       type="button"
       onClick={share}
-      aria-label={canShare ? `${what}を共有` : `${what}のリンクをコピー`}
-      title={canShare ? `${what}を共有` : `${what}のリンクをコピー`}
-      className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold whitespace-nowrap text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-95"
+      aria-label={label}
+      title={label}
+      className="grid size-10 shrink-0 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
     >
       <Icon name="share" className="size-5" />
-      <span aria-live="polite">
-        {copied ? 'コピーしました' : canShare ? '共有' : 'リンクをコピー'}
-      </span>
     </button>
   );
 }

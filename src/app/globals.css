@@ -429,3 +429,18 @@ html[data-player='dock'] .page-bottom {
     padding-bottom: calc(0.75rem + 4rem + 0.75rem + 200px + 2.25rem + 2rem);
   }
 }
+
+/* トースト（toaster.tsx）を出す高さ。再生の帯の上。スマホは下のタブと帯を重ねた板の上 */
+:root {
+  --toast-bottom: calc(8.25rem + 24px);
+}
+/* スマホの動画の画面（ボカロPの画面など）は下のタブを隠すので、帯だけの上 */
+:root[data-watch] {
+  --toast-bottom: calc(4rem + 24px);
+}
+@media (width >= 48rem) {
+  :root,
+  :root[data-watch] {
+    --toast-bottom: calc(4rem + 36px);
+  }
+}

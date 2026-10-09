@@ -12,6 +12,7 @@ import { AccountButton } from '@/components/account/account-button';
 import { AccountSync } from '@/components/account/account-sync';
 import { HistoryRecorder } from '@/components/player/history-recorder';
 import { PlayerProvider } from '@/components/player/player-provider';
+import { Toaster } from '@/components/toaster';
 import { ScrollChrome } from '@/components/scroll-chrome';
 import { SwipeBack } from '@/components/swipe-back/swipe-back';
 import { Progress } from '@/components/progress';
@@ -125,6 +126,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             <HistoryRecorder />
           </PlayerProvider>
         </Progress>
+        <Toaster />
         <ThemeWatcher />
         <AccountSync />
         <ScrollChrome />
