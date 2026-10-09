@@ -17,7 +17,7 @@ export function KeyboardHelp() {
         {KEYS.map(([key, label]) => (
           <div key={key} className="contents">
             <dt>
-              <kbd className="rounded border border-line bg-surface px-1.5 py-0.5 font-sans text-xs">
+              <kbd className="rounded border border-line/60 bg-surface px-1.5 py-0.5 font-sans text-xs">
                 {key}
               </kbd>
             </dt>

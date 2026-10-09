@@ -64,13 +64,13 @@ export function PlayerStage({
       </div>
       <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-40 max-md:bg-background">
         {on ? (
-          <div ref={slot} className="aspect-video w-full bg-black md:rounded-lg" />
+          <div ref={slot} className="aspect-video w-full bg-black md:rounded-2xl" />
         ) : (
           <button
             type="button"
             onClick={onPlay}
             aria-label={label}
-            className="group relative block aspect-video w-full overflow-hidden bg-surface md:rounded-lg"
+            className="group relative block aspect-video w-full overflow-hidden bg-surface md:rounded-2xl"
           >
             {cover && (
               <FadeImage

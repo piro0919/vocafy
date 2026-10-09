@@ -56,19 +56,22 @@ export function SongList({
 
 /**
  * 一覧の1曲。サムネイル・曲名・ボカロPと歌声・ハート。流している曲は地の色を変え、曲名の横に音の棒を出す。
- * handle はハートの右に置く部品（お気に入りの曲の並べ替えの取っ手）
+ * handle はハートの右に置く部品（お気に入りの曲の並べ替えの取っ手）、meta は曲名の右に添える字（トップのきょうの日付の曲の年）。
+ * 曲の行はどこでもこの部品を使い、行を書き起こさない（写すと表紙の角などが少しずつずれた）
  */
 export function SongItem({
   song,
   eager = false,
   onOpen,
   handle,
+  meta,
   favorite = true,
 }: {
   song: QueueItem;
   eager?: boolean;
   onOpen: () => void;
   handle?: ReactNode;
+  meta?: ReactNode;
   /** お気に入りのハートを置くか。次に流れる曲の板では置かない（流している曲は再生の帯のハートで入れる） */
   favorite?: boolean;
 }) {
@@ -91,7 +94,7 @@ export function SongItem({
           height={48}
           className="aspect-video shrink-0 rounded object-cover"
         />
-        <span className="min-w-0">
+        <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-sm font-bold">
             <Marquee active={active}>{song.title}</Marquee>
             {active && <Bars playing={playing} />}
@@ -101,6 +104,7 @@ export function SongItem({
             {song.vocalists && ` ・ ${song.vocalists}`}
           </span>
         </span>
+        {meta}
       </button>
       {favorite && <FavoriteButton song={song} quiet />}
       {handle}

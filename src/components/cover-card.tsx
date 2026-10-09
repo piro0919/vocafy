@@ -59,7 +59,7 @@ export function CoverCard({
             )}
           </div>
         ) : (
-          <div className="relative aspect-video overflow-hidden rounded-md bg-surface">
+          <div className="relative aspect-video overflow-hidden rounded-xl bg-surface">
             {cover && (
               <FadeImage
                 src={cover}
