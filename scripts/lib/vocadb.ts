@@ -68,6 +68,26 @@ export type VdbSong = {
 
 let last = 0;
 
+/**
+ * VocaDB の API は一時的に 503 を返して止まることがある（2026-10-09 に、自動の取り込みの初回がこれで落ちた。
+ * そのときトップのページは 200 を返していた）。取り込みは人の目を通さずに回るので、混み合いと止まっているときは
+ * 1分・2分・4分・8分と待って聞き直す。それでも駄目なら落とし、次の回に任せる
+ */
+const RETRY_MINUTES = [1, 2, 4, 8];
+
+async function fetchWithRetry(url: string): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const wait = last + INTERVAL - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    last = Date.now();
+    const res = await fetch(url, { headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' } });
+    const minutes = RETRY_MINUTES[attempt];
+    if ((res.status !== 429 && res.status < 500) || minutes === undefined) return res;
+    console.log(`  VocaDB ${res.status}。${minutes} 分待って聞き直します`);
+    await new Promise((r) => setTimeout(r, minutes * 60 * 1000));
+  }
+}
+
 async function get<T>(path: string, params: Record<string, string | number | string[]>) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -82,10 +102,7 @@ async function get<T>(path: string, params: Record<string, string | number | str
   } catch {
     // まだ取っていない
   }
-  const wait = last + INTERVAL - Date.now();
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  last = Date.now();
-  const res = await fetch(url, { headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' } });
+  const res = await fetchWithRetry(url);
   if (!res.ok) throw new Error(`VocaDB ${res.status}: ${url}`);
   const body = (await res.json()) as T;
   await mkdir(CACHE, { recursive: true });
