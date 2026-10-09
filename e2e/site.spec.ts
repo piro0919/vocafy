@@ -16,7 +16,9 @@ test('トップからボカロPの画面へ移り、その人の曲が並ぶ', a
     .getByRole('link', { name: /DECO＊27/ })
     .first()
     .click();
-  await expect(page).toHaveURL(/\/producers\/45$/);
+  // ボカロPの画面はビルドのときに作らず、最初に開かれたときに作る。手元の台帳では、一覧に見えている人の画面を
+  // 先読みがまとめて作り始めるので、サーバー1台だと押した画面ができるまで5秒を超えることがある
+  await expect(page).toHaveURL(/\/producers\/45$/, { timeout: 20_000 });
   await expect(page.getByRole('heading', { level: 1, name: 'DECO＊27' })).toBeVisible();
 });
 
