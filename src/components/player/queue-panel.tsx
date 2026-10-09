@@ -9,7 +9,8 @@ import { usePlayer } from './player-provider';
  * 次に流れる曲（順番待ち）。流す順（ランダムなら混ぜたあとの順）で並べ、押すとその曲へ飛ぶ。
  * パソコンは下の帯の右上、スマホは帯の上に、画面の幅いっぱいの板で出す（高さはトーストと同じ --toast-bottom の上）。
  *
- * 置いたままにして、open で出し入れする（閉じるときも下へ少しずらしながら消す）。開いたら板にフォーカスを移し、
+ * 置いたままにして、open で出し入れする（閉じるときも下へ少しずらしながら消す）。出入りの動きは右下の窓（player-provider.tsx の FADE・HIDDEN）と
+ * 同じにする。窓の上に積んで一続きに見せるので、前の 200ms で縮みながら消える動きは、窓と別の部品に見えた。開いたら板にフォーカスを移し、
  * 閉じたら開いたボタンに戻す。見出しの × か、板の外を押すか、Esc で閉じる。板の中のスクロールは後ろのページに伝えない
  */
 export function QueuePanel({
@@ -71,12 +72,12 @@ export function QueuePanel({
       // 上の段の下まで、スマホは画面の幅で上の端まで（上の動画の置き場所は表紙だけなので重ねてよい）。
       // 板は portal で body の直下に出す（playback-mode.tsx）ので、位置はどれも画面からの値で書く。
       // 前は、パソコンでは窓の左の画面の真ん中に浮き、スマホでは窓の下に潜っていた
-      className={`fixed inset-x-3 bottom-(--toast-bottom) z-50 flex max-h-[60dvh] origin-bottom flex-col overflow-hidden rounded-2xl border border-line/60 bg-glass shadow-2xl shadow-black/20 outline-none backdrop-blur-lg backdrop-saturate-150 duration-200 ease-(--ease-out) md:right-3 md:left-auto md:w-96 max-md:[html[data-watch]_&]:max-h-[calc(100dvh-56.25vw-var(--toast-bottom)-12px)] [html[data-player=dock]_&]:bottom-[calc(var(--dock-top)+12px)] max-md:[html[data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-24px)] max-md:[html[data-watch][data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-24px)] md:[html[data-player=dock]_&]:w-[356px] md:[html[data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-12px-80px)] motion-reduce:transition-none ${
+      className={`fixed inset-x-3 bottom-(--toast-bottom) z-50 flex max-h-[60dvh] flex-col overflow-hidden rounded-2xl border border-line/60 bg-glass shadow-2xl shadow-black/20 outline-none backdrop-blur-lg backdrop-saturate-150 duration-300 ease-(--ease-out) md:right-3 md:left-auto md:w-96 max-md:[html[data-watch]_&]:max-h-[calc(100dvh-56.25vw-var(--toast-bottom)-12px)] [html[data-player=dock]_&]:bottom-[calc(var(--dock-top)+12px)] max-md:[html[data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-24px)] max-md:[html[data-watch][data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-24px)] md:[html[data-player=dock]_&]:w-[356px] md:[html[data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-12px-80px)] motion-reduce:transition-none ${
         // 見える・見えないの切り替え（visibility）は閉じるときだけ動きに乗せ、消えきってから見えなくする。
         // 開くときにも乗せると、出し始めはまだ見えない扱いで、フォーカスを受け付けなかった
         open
-          ? 'transition-[opacity,translate,scale]'
-          : 'invisible translate-y-2 scale-[0.98] opacity-0 transition-[opacity,translate,scale,visibility]'
+          ? 'transition-[opacity,translate]'
+          : 'invisible translate-y-4 opacity-0 transition-[opacity,translate,visibility]'
       }`}
     >
       {/* 閉じる × は、右下の窓の帯の × と同じ形にそろえる（player-provider.tsx） */}
