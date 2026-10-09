@@ -372,21 +372,32 @@ export const voices = cache(async (): Promise<Voice[]> => {
   return rows;
 });
 
-/** その歌声（キャラ）が主に歌っている流せる曲。新しい順 */
+/** 歌声の画面に、1年あたり出す代表曲の数 */
+const PICKS_PER_YEAR = 5;
+
+/**
+ * その歌声（キャラ）が主に歌っている流せる曲から、年ごとに評価点の上位 PICKS_PER_YEAR 曲を選んだ代表曲。
+ * 新しい年から並べ、年の中は評価点の順。初音ミクは1万曲を超え、全曲を新しい順に並べても1ページ目しか見られなかった。
+ * 評価点の上位をそのまま選ぶと 2013 年より前に偏るので、年ごとにならす
+ */
 export const findVoice = cache(
-  async (id: number, page: number): Promise<({ voice: Voice } & Paged) | undefined> => {
+  async (id: number): Promise<{ voice: Voice; songs: DatedItem[] } | undefined> => {
     if (!Number.isSafeInteger(id)) return;
     const voice = (await voices()).find((v) => v.id === id);
     if (!voice) return;
-    const found = await paged(
-      `and exists (
-         select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
-         where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)`,
-      'q.published_on desc nulls last, q.id',
-      [id],
-      page,
+    const { rows } = await db().query<QueueRow>(
+      `select * from (
+         select q.*, row_number() over (
+           partition by left(q.published_on, 4) order by q.rating_score desc, q.id) as rank
+         from (${QUEUE_SELECT} and exists (
+           select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
+           where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)) q
+       ) r
+       where rank <= $2
+       order by left(published_on, 4) desc nulls last, rank`,
+      [id, PICKS_PER_YEAR],
     );
-    return { voice, ...found };
+    return { voice, songs: rows.map(toItem) };
   },
 );
 

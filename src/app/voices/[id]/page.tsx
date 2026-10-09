@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
-import { Pager, pageOf } from '@/components/pager';
 import { SongList } from '@/components/song-list';
-import { findVoice } from '@/lib/catalog';
+import { type DatedItem, findVoice } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
 
@@ -16,23 +15,22 @@ export function generateStaticParams() {
   return [];
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps<'/voices/[id]/[[...page]]'>): Promise<Metadata> {
-  const { id, page } = await params;
-  const n = pageOf(page);
-  const found = n ? await findVoice(Number(id), n) : undefined;
-  return { title: found && `${found.voice.name}${n && n > 1 ? `（${n}ページ目）` : ''}` };
+export async function generateMetadata({ params }: PageProps<'/voices/[id]'>): Promise<Metadata> {
+  const { id } = await params;
+  const found = await findVoice(Number(id));
+  return { title: found?.voice.name };
 }
 
-/** その歌声（キャラ）が歌っている曲。版の違い（V4X・Append など）はまとめる。多い歌声は PAGE_SIZE 曲ずつのページに分ける */
-export default async function VoicePage({ params }: PageProps<'/voices/[id]/[[...page]]'>) {
-  const { id, page: segments } = await params;
-  const page = pageOf(segments);
-  if (!page) notFound();
-  const found = await findVoice(Number(id), page);
+/**
+ * その歌声（キャラ）の年ごとの代表曲。版の違い（V4X・Append など）はまとめる。
+ * 全曲は並べない（多い歌声では誰も最後までたどらない）。曲を探すのは検索とボカロPの画面に任せる
+ */
+export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
+  const { id } = await params;
+  const found = await findVoice(Number(id));
   if (!found || found.songs.length === 0) notFound();
-  const { voice, songs, total } = found;
+  const { voice, songs } = found;
+  const byYear = Map.groupBy(songs, (s: DatedItem) => s.publishedOn.slice(0, 4));
   const art = voiceArt(voice.id);
   return (
     <>
@@ -60,11 +58,19 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]/[[..
           <Heading as="h1" size="page" eyebrow="Voice">
             {voice.name}
           </Heading>
-          <p className="mt-2 text-sm text-muted">{total} 曲</p>
+          <p className="mt-2 text-sm text-muted">{voice.songCount} 曲から、年ごとの代表曲</p>
         </div>
       </div>
-      <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
-      <Pager base={`/voices/${voice.id}`} page={page} total={total} />
+      <div className="grid gap-6">
+        {[...byYear].map(([year, list]) => (
+          <section key={year}>
+            <h2 className="mb-2 font-tech text-sm font-black tracking-[0.2em] text-accent">
+              {year}
+            </h2>
+            <SongList songs={list} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
+          </section>
+        ))}
+      </div>
     </>
   );
 }
