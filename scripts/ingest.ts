@@ -6,6 +6,7 @@ import {
   isEligible,
   isOwnVersion,
   linksOf,
+  UNKNOWN_PRODUCER,
   producersOf,
   sourcesOf,
   vocalistsOf,
@@ -69,6 +70,25 @@ async function ownersInDb(songIds: number[]): Promise<Map<number, Set<number>>> 
     for (const r of rows)
       owners.set(r.song_id, (owners.get(r.song_id) ?? new Set()).add(r.producer_id));
     return owners;
+  } finally {
+    await pool.end();
+  }
+}
+
+/**
+ * DB にある、今回集めた曲とは別の曲が使っている動画。出し直しの版が元の曲と同じ動画で登録されていることがあり
+ * （quiz と quiz (エルゴスム ver.)）、新しく出た曲を足すだけのときは元の曲が今回集めた曲に無いので、DB も見る
+ */
+async function videosInDb(videoIds: string[], except: number[]): Promise<Set<string>> {
+  if (videoIds.length === 0) return new Set();
+  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
+  try {
+    const { rows } = await pool.query<{ youtube_id: string | null; niconico_id: string | null }>(
+      `select youtube_id, niconico_id from song
+       where not (id = any($2)) and (youtube_id = any($1) or niconico_id = any($1))`,
+      [videoIds, except],
+    );
+    return new Set(rows.flatMap((r) => [r.youtube_id, r.niconico_id].filter((v) => v !== null)));
   } finally {
     await pool.end();
   }
@@ -157,7 +177,7 @@ async function seedSongs(seedCount: number, since?: string): Promise<VdbSong[]> 
  * VocaDB の名前を置き換えるボカロP。作者の分からない曲をまとめる VocaDB の入れ物（23966）は、どの言語で聞いても
  * 「Unknown producer(s)」で返る。別名にある「作者不明」を使う
  */
-const PRODUCER_NAMES = new Map([[23966, '作者不明']]);
+const PRODUCER_NAMES = new Map([[UNKNOWN_PRODUCER, '作者不明']]);
 
 /**
  * 新しく出た曲を足すだけの取り込み（--recent <日数>）。その日数のうちに出たオリジナル曲を VocaDB にまとめて聞き、
@@ -266,9 +286,31 @@ async function main() {
       others++;
     }
   }
+  // 同じ動画は1曲にだけ使う。オリジナル曲を先に、出し直しの版は古いものから動画を取る
+  const videosOf = (s: VdbSong) =>
+    [sourcesOf(s)?.youtubeId, sourcesOf(s)?.niconicoId].filter(
+      (v) => v !== null && v !== undefined,
+    );
+  const order = [...songs.values()].sort(
+    (a, b) =>
+      Number(a.songType !== 'Original') - Number(b.songType !== 'Original') ||
+      (a.publishDate ?? '').localeCompare(b.publishDate ?? ''),
+  );
+  const taken = await videosInDb(order.filter((s) => s.songType !== 'Original').flatMap(videosOf), [
+    ...songs.keys(),
+  ]);
+  for (const s of order) {
+    const videos = videosOf(s);
+    if (s.songType !== 'Original' && videos.some((v) => taken.has(v))) {
+      songs.delete(s.id);
+      others++;
+      continue;
+    }
+    for (const v of videos) taken.add(v);
+  }
   const versions = [...songs.values()].filter((s) => s.songType !== 'Original').length;
   console.log(
-    `出し直しの版: 本人の ${versions} 曲を入れ、他人のものと元の曲が分からないもの ${others} 曲を外す`,
+    `出し直しの版: ${versions} 曲を入れ、他人のもの・元の曲が分からないもの・入れない版・動画が重なるもの ${others} 曲を外す`,
   );
 
   // 合作の相手も作者として表に入る。その人の全曲までは取りに行かない（線を下げたときに広がりすぎる）

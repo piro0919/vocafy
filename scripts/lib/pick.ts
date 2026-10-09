@@ -119,16 +119,37 @@ export function sourcesOf(song: VdbSong): {
     : null;
 }
 
+/** VocaDB の、作者の分からない曲をまとめる入れ物（Unknown producer(s)） */
+export const UNKNOWN_PRODUCER = 23966;
+
+/**
+ * 出し直しの版のうち入れないもの。曲名で見分ける（2026-10-10 に本人の版 3807 曲の曲名と照らして決めた）。
+ * 単語の live や reverb で引くと、Prayer Will Live や Clean Tears の Reverberations のような曲名まで外れた
+ */
+const NOT_A_VERSION = [
+  // 元の曲を速く・遅くしただけ
+  /sped ?up|speed ?up|slowed/i,
+  // フル版がある
+  /\bshort\b|ショート|tv ?size/i,
+  // 歌が無い
+  /\binst(rumental)?\b|off ?vocal|karaoke|カラオケ/i,
+  // ライブ。マジカルミライの映像のように、上げているのがボカロP本人でないことが多い
+  /live ?(ver|mix|edit|arrange|recording|session|remix)|[(\[（【~\-–] ?(acoustic )?live\b|\d{4} live\b|\blive[)\]）】~\-]|」 ?live|ライブ(バージョン|ver)|[（(]ライブ[）)]|実演盤/i,
+];
+
 /**
  * 本人の出し直しか。オリジナル曲は常に true。出し直しの版は、元の曲（originalVersionId）が分かり、作者が全員元の曲の作者であるもの。
  * 他人のリミックスやアレンジ（2026-10-10 に数えて 1279 曲）と、元の曲が分からない版（888 曲）は入れない。
- * 本人の版は 3849 曲で、sped up 版・ライブ版・アコギのアレンジのような版も入る。ownersOf は元の曲の作者の番号で、分からなければ undefined
+ * 本人の版でも、sped up・短い版・インスト・ライブ（NOT_A_VERSION）と、作者不明の入れ物の版は入れない。
+ * アコギのアレンジや 8bit 版のような、別の聴きどころのある版は入れる。ownersOf は元の曲の作者の番号で、分からなければ undefined
  */
 export function isOwnVersion(
   song: VdbSong,
   ownersOf: (originalId: number) => Set<number> | undefined,
 ): boolean {
   if (song.songType === 'Original') return true;
+  if (NOT_A_VERSION.some((re) => re.test(song.name))) return false;
+  if (producersOf(song).some((p) => p.id === UNKNOWN_PRODUCER)) return false;
   const owners =
     song.originalVersionId === undefined ? undefined : ownersOf(song.originalVersionId);
   return owners !== undefined && producersOf(song).every((p) => owners.has(p.id));

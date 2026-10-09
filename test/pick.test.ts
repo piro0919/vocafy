@@ -110,6 +110,20 @@ describe('isOwnVersion', () => {
     expect(isOwnVersion(song({ songType: 'Remaster' }), owners)).toBe(false);
   });
 
+  it('sped up・短い版・インスト・ライブは入れず、曲名に live を含むだけの曲は入れる', () => {
+    const v = (name: string) => song({ name, songType: 'Remix', originalVersionId: 1500 });
+    expect(isOwnVersion(v('ゲンチアナ (Sped UP)'), owners)).toBe(false);
+    expect(isOwnVersion(v('SHIAWASE FOR YOU! (short ver.)'), owners)).toBe(false);
+    expect(isOwnVersion(v('月夜の乙女 (piano inst.)'), owners)).toBe(false);
+    expect(
+      isOwnVersion(v('砂の惑星-初音ミク「マジカルミライ」10th Anniversary Live-'), owners),
+    ).toBe(false);
+    expect(isOwnVersion(v('刹月華 (2018 LiveVer.)'), owners)).toBe(false);
+    expect(isOwnVersion(v('Prayer Will Live'), owners)).toBe(true);
+    expect(isOwnVersion(v('impure (Reverberations3 Remix)'), owners)).toBe(true);
+    expect(isOwnVersion(v('AGAINST'), owners)).toBe(true);
+  });
+
   it('オリジナル曲はそのまま入れる', () => {
     expect(isOwnVersion(song(), owners)).toBe(true);
   });
