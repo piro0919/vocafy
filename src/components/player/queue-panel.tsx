@@ -22,7 +22,7 @@ export function QueuePanel({
   trigger: RefObject<HTMLButtonElement | null>;
 }) {
   const { current, upcoming, jumpTo } = usePlayer();
-  // 閉じているあいだは並びを作らない（曲が変わるたびに 100 曲ぶん組み直さない）
+  // 閉じているあいだは並びを作らない（曲が変わるたびに組み直さない）
   const items = open ? upcoming() : [];
   const panel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);

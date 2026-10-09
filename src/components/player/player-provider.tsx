@@ -205,8 +205,11 @@ export function usePlayer(): PlayerContext {
  */
 const DOCK =
   'fixed right-3 bottom-[calc(8.25rem+12px)] h-[200px] w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px)] md:w-[356px]';
-/** 次に流れる曲として見せる数 */
-const UPCOMING_LIMIT = 100;
+/**
+ * 次に流れる曲として見せる数。並び全体は開いている画面の一覧に出ているので、板は次に来る曲を見るだけにする
+ * （100曲まで出していたら多すぎると言われた）
+ */
+const UPCOMING_LIMIT = 10;
 
 /** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
 const WAIT_FOR_SLOT = 1000;
