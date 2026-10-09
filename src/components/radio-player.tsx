@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from './icon';
-import { PlayerStage, SwipeToLeave } from './player-stage';
+import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
@@ -52,7 +52,7 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
           onPlay={() => playRadio(songs, 0)}
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
-        <div className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
+        <StageControls>
           <button
             type="button"
             onClick={() => (here ? toggle() : playRadio(songs, 0))}
@@ -63,7 +63,7 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
           </button>
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio />
-        </div>
+        </StageControls>
       </div>
 
       <div className="-mx-1.5 flex flex-col gap-1">

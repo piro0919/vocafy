@@ -2,7 +2,7 @@
 
 import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';
-import { PlayerStage, SwipeToLeave } from '@/components/player-stage';
+import { PlayerStage, StageControls, SwipeToLeave } from '@/components/player-stage';
 import { PlaybackMode } from '@/components/player/playback-mode';
 import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
@@ -37,7 +37,7 @@ export function FavoriteSongs() {
           </Heading>
         </SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <div className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
+        <StageControls>
           <button
             type="button"
             disabled={songs.length === 0}
@@ -51,7 +51,7 @@ export function FavoriteSongs() {
           </button>
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio />
-        </div>
+        </StageControls>
       </div>
 
       {songs.length === 0 ? (

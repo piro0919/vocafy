@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FadeImage } from './fade-image';
 import { Icon } from './icon';
+import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
 
@@ -150,6 +151,53 @@ export function SwipeToLeave({
     <div ref={area} className={className}>
       {children}
     </div>
+  );
+}
+
+/**
+ * 詳細画面の「再生」ボタンの段。スマホでスクロールしてこの段が動画の裏に隠れたら、動画の下の縁から細い帯を滑り出させ、
+ * ランダム・ループ・ラジオ・次に流れる曲のボタンを出し続ける。再生ボタンは下の再生の帯にあるので帯には入れない。
+ * 帯は下の再生の帯と同じく、画面の端から 12px 離した角丸の板にする。動画より奥に置き、隠れているあいだは動画の裏へ引っ込める。ボカロPの画面の共有のように、画面ごとのボタンは extra で帯にも並べる
+ */
+export function StageControls({ children, extra }: { children: ReactNode; extra?: ReactNode }) {
+  const row = useRef<HTMLDivElement>(null);
+  const [pinned, setPinned] = useState(false);
+
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    let observer: IntersectionObserver | null = null;
+    const watch = () => {
+      observer?.disconnect();
+      // 動画（幅いっぱいの 16:9）の下の縁より上へ出たら、隠れたとみなす
+      const top = Math.round((window.innerWidth * 9) / 16);
+      observer = new IntersectionObserver(
+        ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < top),
+        { rootMargin: `-${top}px 0px 0px 0px` },
+      );
+      observer.observe(el);
+    };
+    watch();
+    window.addEventListener('resize', watch);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', watch);
+    };
+  }, []);
+
+  return (
+    <>
+      <div ref={row} className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
+        {children}
+      </div>
+      <div
+        inert={!pinned}
+        className={`fixed inset-x-3 top-[calc(56.25vw+12px)] z-30 flex h-10 items-center justify-center rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity,visibility] duration-300 ease-(--ease-out) md:hidden ${pinned ? '' : 'invisible -translate-y-[calc(100%+12px)] opacity-0'}`}
+      >
+        {extra}
+        <PlaybackMode radio />
+      </div>
+    </>
   );
 }
 

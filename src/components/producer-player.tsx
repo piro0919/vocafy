@@ -7,7 +7,7 @@ import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
-import { PlayerStage, SwipeToLeave } from './player-stage';
+import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
 import { usePlayer } from './player/player-provider';
 import { PlaybackMode } from './player/playback-mode';
 import { Marquee } from './marquee';
@@ -94,6 +94,10 @@ export function ProducerPlayer({
         : 0,
     );
 
+  const share = (
+    <ShareButton producerId={producerId} songId={here ? current?.songId : linkedItem?.songId} />
+  );
+
   return (
     // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky）。
     // 貼り付く高さは、スクロールする前の位置（上の段 68px＋余白 32px）と同じにする。ずれていると、スクロールの最初の分だけ動いてから止まった
@@ -108,7 +112,7 @@ export function ProducerPlayer({
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <div className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
+        <StageControls extra={share}>
           <button
             type="button"
             onClick={() => (here ? toggle() : start(linkedItem?.songId))}
@@ -117,13 +121,10 @@ export function ProducerPlayer({
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}
           </button>
-          <ShareButton
-            producerId={producerId}
-            songId={here ? current?.songId : linkedItem?.songId}
-          />
+          {share}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio />
-        </div>
+        </StageControls>
       </div>
 
       <div className="min-w-0">
