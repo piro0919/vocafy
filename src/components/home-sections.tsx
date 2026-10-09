@@ -3,6 +3,7 @@
 import type { DatedItem } from '@/lib/catalog';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
+import { FavoriteButton } from './favorite-button';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
@@ -80,14 +81,14 @@ export function OnThisDay({
               // 縦に長くなりすぎるので、スマホの幅では6曲、1列になるパソコンの幅では7曲までにする
               <li
                 key={song.songId}
-                className={
-                  i >= 7 ? 'max-sm:hidden lg:hidden' : i >= 6 ? 'max-sm:hidden' : undefined
-                }
+                className={`group flex min-w-0 items-center rounded-xl transition-colors duration-150 ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'} ${
+                  i >= 7 ? 'max-sm:hidden lg:hidden' : i >= 6 ? 'max-sm:hidden' : ''
+                }`}
               >
                 <button
                   type="button"
                   onClick={() => open(song)}
-                  className={`flex w-full min-w-0 items-center gap-3 rounded-xl p-1.5 text-left transition-[background-color,scale] duration-150 ease-out active:scale-[0.98] ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
                 >
                   <FadeImage
                     src={smallThumbOf(song)}
@@ -110,6 +111,7 @@ export function OnThisDay({
                       : song.publishedOn.slice(0, 10).replaceAll('-', '.')}
                   </span>
                 </button>
+                <FavoriteButton song={song} quiet />
               </li>
             );
           })}

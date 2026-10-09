@@ -73,7 +73,7 @@ export function SongList({
                 </span>
               </span>
             </button>
-            <FavoriteButton song={song} />
+            <FavoriteButton song={song} quiet />
           </div>
         );
       })}
