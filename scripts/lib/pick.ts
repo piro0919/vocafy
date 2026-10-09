@@ -25,6 +25,17 @@ const SYNTH = new Set([
   'OtherVoiceSynthesizer',
 ]);
 
+/**
+ * 種の線（評価点・伝説入り・再生数）に掛からないが、本人の好みで全曲を入れるボカロP。VocaDB の番号。
+ * サイトの選び方に好みが入る唯一の入り口なので、増やしすぎない
+ */
+export const EXTRA_PRODUCERS = [
+  2954, // ずきお
+  886, // kk2
+  578, // AIR田F（VocaDB では AIR田）
+  1049, // 磯P
+];
+
 const has = (categories: string, name: string) =>
   categories.split(',').some((c) => c.trim() === name);
 

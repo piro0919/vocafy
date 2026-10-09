@@ -1,7 +1,14 @@
 import pg from 'pg';
 import { scriptEnv } from './lib/env';
 import type { ProducerLinks } from '../src/lib/catalog';
-import { isEligible, linksOf, producersOf, sourcesOf, vocalistsOf } from './lib/pick';
+import {
+  EXTRA_PRODUCERS,
+  isEligible,
+  linksOf,
+  producersOf,
+  sourcesOf,
+  vocalistsOf,
+} from './lib/pick';
 import { rowOf } from '../src/lib/kana';
 import { legendVideos } from './lib/niconico';
 import {
@@ -28,7 +35,8 @@ import { deadYouTube, viewCounts } from './lib/youtube';
  * 種の曲からボカロPを拾い、その人の曲をすべて入れる。線を下げる（--seeds を増やす）ときは、先に --dry で
  * 増え方を数える。ボカロPが1人増えると、その人の全曲がついてくるので、曲数は種の数に比例しない。
  *
- * 種は VocaDB の評価点、ニコニコの伝説入り（100万再生以上）、YouTube の再生数（100万回以上。2018年以降の曲から選ぶ）
+ * 種は VocaDB の評価点、ニコニコの伝説入り（100万再生以上）、YouTube の再生数（100万回以上。2018年以降の曲から選ぶ）。
+ * 種に掛からないボカロPも、pick.ts の EXTRA_PRODUCERS に書けば全曲を入れる
  */
 /** 再生中に流せないと分かった動画。表がまだ無い DB（0004 を当てる前）では空 */
 async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<string> }> {
@@ -153,8 +161,9 @@ async function main() {
       seedIds.add(s.id);
       for (const p of producersOf(s)) producerIds.add(p.id);
     }
+    for (const id of EXTRA_PRODUCERS) producerIds.add(id);
     console.log(
-      `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲）、ボカロP ${producerIds.size} 人`,
+      `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲）、ボカロP ${producerIds.size} 人（手で足した ${EXTRA_PRODUCERS.length} 人を含む）`,
     );
 
     // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）
