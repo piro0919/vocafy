@@ -1,6 +1,7 @@
 'use client';
 
 import { type RefObject, useEffect, useRef } from 'react';
+import { Icon } from '../icon';
 import { SongItem } from '../song-list';
 import { usePlayer } from './player-provider';
 
@@ -9,7 +10,7 @@ import { usePlayer } from './player-provider';
  * パソコンは下の帯の右上、スマホは帯の上に、画面の幅いっぱいの板で出す（高さはトーストと同じ --toast-bottom の上）。
  *
  * 置いたままにして、open で出し入れする（閉じるときも下へ少しずらしながら消す）。開いたら板にフォーカスを移し、
- * 閉じたら開いたボタンに戻す。板の外を押すか Esc で閉じる。板の中のスクロールは後ろのページに伝えない
+ * 閉じたら開いたボタンに戻す。見出しの × か、板の外を押すか、Esc で閉じる。板の中のスクロールは後ろのページに伝えない
  */
 export function QueuePanel({
   open,
@@ -73,7 +74,18 @@ export function QueuePanel({
             : 'invisible translate-y-2 scale-[0.98] opacity-0 transition-[opacity,translate,scale,visibility]'
         }`}
       >
-        <h2 className="px-4 pt-3 pb-2 font-display text-base">次に流れる曲</h2>
+        {/* 閉じる × は、右下の窓の帯の × と同じ形にそろえる（player-provider.tsx） */}
+        <div className="flex items-center pt-1.5 pb-0.5 pl-4">
+          <h2 className="min-w-0 flex-1 font-display text-base">次に流れる曲</h2>
+          <button
+            type="button"
+            aria-label="次に流れる曲を閉じる"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
+          >
+            <Icon name="close" className="size-4" />
+          </button>
+        </div>
         {current && (
           <div className="px-2">
             <SongItem song={current} onOpen={onClose} favorite={false} />
