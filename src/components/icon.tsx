@@ -183,6 +183,10 @@ const ICONS = {
       <path d="M3.5 12h17M12 3.5c2.3 2.4 3.4 5.2 3.4 8.5s-1.1 6.1-3.4 8.5c-2.3-2.4-3.4-5.2-3.4-8.5s1.1-6.1 3.4-8.5z" />
     </>
   ),
+  // 共有。箱から上へ出る矢印（iPhone の共有と同じ形）
+  share: (
+    <path d="M12 14.5V4m0 0L8 8m4-4 4 4M8.5 11H7a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1.5" />
+  ),
   left: <path d="M14.5 6.5 9 12l5.5 5.5" strokeWidth={2.5} />,
   right: <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.5} />,
 } satisfies Record<string, ReactNode>;

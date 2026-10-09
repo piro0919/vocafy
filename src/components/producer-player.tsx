@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
@@ -36,6 +36,15 @@ export function ProducerPlayer({
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
 
+  // 共有されたリンク（?song=曲の id）で来たときの曲。ページは作り置きなので、住所の ?song= はサーバーでは読まずブラウザで読む
+  // （サーバーで読むと開くたびに作り直しになり、DB を起こす）。開いただけでは流さない（ブラウザが押す操作の無い再生を止めるため）。
+  // その曲を一覧で目立たせ、大きな再生ボタンをその曲からにする
+  const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  useEffect(() => {
+    if (linked) document.getElementById(`song-${linked}`)?.scrollIntoView({ block: 'center' });
+  }, [linked]);
+  const linkedItem = !here && linked ? playable.get(linked) : undefined;
+
   // 曲の一覧から押して来たときは、その1曲だけを流している。曲は止めずに、順番待ちをこの人の曲にする
   useEffect(() => {
     if (!here || !current || context !== 'pending') return;
@@ -61,9 +70,9 @@ export function ProducerPlayer({
       <div className="contents lg:sticky lg:top-21 lg:block">
         <PlayerStage
           active={here}
-          cover={cover}
-          label="このボカロPの曲を再生"
-          onPlay={() => start()}
+          cover={linkedItem?.thumb ?? cover}
+          label={linkedItem ? `「${linkedItem.title}」を再生` : 'このボカロPの曲を再生'}
+          onPlay={() => start(linkedItem?.songId)}
         />
         <SwipeToLeave className="lg:mt-4">
           {heading}
@@ -74,12 +83,16 @@ export function ProducerPlayer({
         <div className="flex items-center gap-2 lg:mt-4">
           <button
             type="button"
-            onClick={() => (here ? toggle() : start())}
+            onClick={() => (here ? toggle() : start(linkedItem?.songId))}
             className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
           >
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}
           </button>
+          <ShareButton
+            producerId={producerId}
+            songId={here ? current?.songId : linkedItem?.songId}
+          />
           {/* スマホは下の帯にランダムとループが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" />
         </div>
@@ -96,8 +109,13 @@ export function ProducerPlayer({
           return (
             <li
               key={song.id}
+              id={`song-${song.id}`}
               className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
-                active ? 'bg-sidebar/60' : item ? 'hover:bg-foreground/8' : ''
+                active || linkedItem?.songId === song.id
+                  ? 'bg-sidebar/60'
+                  : item
+                    ? 'hover:bg-foreground/8'
+                    : ''
               }`}
             >
               <button
@@ -127,5 +145,47 @@ export function ProducerPlayer({
         })}
       </ol>
     </div>
+  );
+}
+
+/** 住所は画面の中では変わらないので、見張らない */
+const noSubscribe = () => () => {};
+
+/** 住所の ?song= の曲の id。無ければ null */
+function linkedSong(): number | null {
+  const id = Number(new URLSearchParams(window.location.search).get('song'));
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+/**
+ * 共有のボタン。この人の曲を流しているときは、その曲つきのリンク（?song=）を共有する。開いた人の画面ではその曲から流せる。
+ * スマホなど共有の窓が出せるブラウザでは窓を出し、出せなければリンクを写す
+ */
+function ShareButton({ producerId, songId }: { producerId: number; songId?: number }) {
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    const url = new URL(`/producers/${producerId}`, window.location.origin);
+    if (songId) url.searchParams.set('song', String(songId));
+    const link = url.toString();
+    if (navigator.share) {
+      // 窓を閉じただけでも失敗が返るので、何もしない
+      await navigator.share({ url: link }).catch(() => {});
+      return;
+    }
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={share}
+      aria-label={songId ? 'この曲を共有' : 'このボカロPを共有'}
+      title={songId ? 'この曲を共有' : 'このボカロPを共有'}
+      className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold whitespace-nowrap text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-95"
+    >
+      <Icon name="share" className="size-5" />
+      <span aria-live="polite">{copied ? 'コピーしました' : '共有'}</span>
+    </button>
   );
 }
