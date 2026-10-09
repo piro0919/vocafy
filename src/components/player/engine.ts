@@ -24,6 +24,8 @@ export type EngineEvents = {
   onPlaying(): void;
   onPaused(): void;
   onEnded(): void;
+  /** 押す操作の無い再生をブラウザに止められた（iPad の Safari など）。止まったまま次の操作を待っている */
+  onBlocked(): void;
   /** 流せない動画（削除・非公開・埋め込み不可など） */
   onError(): void;
 };

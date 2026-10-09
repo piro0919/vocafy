@@ -115,8 +115,8 @@ export function createYouTubeEngine(
           if (data === YT.PlayerState.ENDED) events.onEnded();
         },
         // 押す操作の無い再生をブラウザに止められた（iPad の Safari で、プレイヤーを作って最初の曲など）。
-        // 状態は未開始のまま何も届かないので、一時停止として扱い、再生ボタンを出す。ボタンから playVideo を送れば流れる
-        onAutoplayBlocked: () => events.onPaused(),
+        // 状態は未開始のまま何も届かない。ボタンから playVideo を送れば流れる
+        onAutoplayBlocked: () => events.onBlocked(),
         // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）。消えた・非公開（100）と
         // 埋め込み不可（101・150）は、台帳から外せるよう Vocafy に知らせる。ほかの番号は一時的な失敗のことがあるので知らせない
         onError: ({ data }) => {

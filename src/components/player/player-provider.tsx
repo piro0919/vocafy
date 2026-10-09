@@ -100,6 +100,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [radioHome, setRadioHome] = useState<string | null>(null);
   // 次のページを待っているあいだに並びの最後を越えたら、先頭に戻らず、届いたところで次の曲へ進む
   const advanceAfterMore = useRef(false);
+  // 待っているあいだの曲送りが、曲が終わって自動で進むものか。待つあいだに押された曲を、自動で進んだ先と取り違えないよう分けて持つ
+  const advanceAuto = useRef(false);
   const clearMore = useCallback(() => {
     more.current = null;
     advanceAfterMore.current = false;
@@ -109,6 +111,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const positionRef = useRef(0);
 
   const player = useRef<Engine | null>(null);
+  // ニコニコの曲を流すあいだ、止めて隠しておく YouTube のプレイヤー。プレイヤーごとの入れ物（枠の中の div）
+  const parked = useRef<Engine | null>(null);
+  const boxes = useRef(new WeakMap<Engine, HTMLElement>());
+  /** プレイヤーを壊し、入れ物も外す */
+  const drop = useCallback((engine: Engine | null) => {
+    if (!engine) return;
+    engine.destroy();
+    boxes.current.get(engine)?.remove();
+  }, []);
   // プレイヤーの知らせは作ったときの関数を持ち続けるので、今の順番待ちは ref にも持つ
   const state = useRef({ queue, index });
   // 曲が終わったときの処理。load から自分自身を呼ぶことになるので、ref を通して呼ぶ
@@ -119,9 +130,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const fading = useRef(false);
   const pendingSwap = useRef<(() => void) | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // 前後の曲へ進む（next）。load から呼ぶので、next より先に置く
+  const nextRef = useRef<(dir: 1 | -1) => void>(() => {});
+  // 曲が終わって自動で次へ進むところか。load が読んで下ろす。いま流している曲が自動で進んだ先か（auto）も持つ
+  const autoNext = useRef(false);
+  const auto = useRef(false);
+  // ニコニコの曲は、iPad の Safari では自動で進んだ先だと必ず止められる（曲ごとに埋め込みを作り直すので、押した記録が残らない）。
+  // 一度止められたら、このタブでは自動で進む先のニコニコの曲を読み込まずに飛ばす。自分で押した曲は ▶ で流せるので飛ばさない。
+  // 並びがニコニコの曲だけのときに回り続けないよう、続けて飛ばした数（skipped）が並びの数に届いたら止まる
+  const niconicoBlocked = useRef(false);
+  const skipped = useRef(0);
 
   const load = useCallback(
     (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
+      auto.current = autoNext.current;
+      autoNext.current = false;
       setContext(ctx);
       // ラジオの続き（曲送り）でなければ、ラジオを始めた画面は忘れる
       if (ctx !== 'radio') setRadioHome(null);
@@ -146,6 +169,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setTime({ current: 0, duration: 0, at: performance.now() });
       const { service, videoId } = items[at];
+      if (!auto.current || service !== 'niconico') skipped.current = 0;
+      else if (niconicoBlocked.current && skipped.current < items.length) {
+        skipped.current += 1;
+        autoNext.current = true;
+        nextRef.current(1);
+        return;
+      }
       const sound = soundRef.current ?? { volume: 100, muted: false };
       const swap = () => {
         // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
@@ -156,9 +186,35 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           player.current.setVolume(now.volume);
           return;
         }
-        player.current?.destroy();
+        // YouTube からニコニコに替えるときは、YouTube のプレイヤーを壊さず、止めて隠しておく。
+        // iPad の Safari は一度押して流れたプレイヤーなら自動で流すので、作り直すと次の YouTube の曲が止められる
+        const leaving = player.current;
         player.current = null;
+        if (leaving?.service === 'youtube') {
+          leaving.pause();
+          const box = boxes.current.get(leaving);
+          if (box) box.hidden = true;
+          parked.current = leaving;
+        } else drop(leaving);
+        if (service === 'youtube' && parked.current) {
+          const kept = parked.current;
+          parked.current = null;
+          const box = boxes.current.get(kept);
+          if (box) box.hidden = false;
+          player.current = kept;
+          kept.setMuted(now.muted);
+          kept.setVolume(now.volume);
+          kept.load(videoId);
+          return;
+        }
         if (!frame.current) return;
+        // 隠しているプレイヤーの知らせは拾わない（止めたときの一時停止が、流しているニコニコの曲の表示を変えないように）
+        let engine: Engine | null = null;
+        const live =
+          <A extends unknown[]>(f: (...args: A) => void) =>
+          (...args: A) => {
+            if (player.current === engine) f(...args);
+          };
         const events: EngineEvents = {
           onPlaying: () => {
             sounding.current = true;
@@ -175,6 +231,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             sounding.current = false;
             onEnded.current();
           },
+          // 自動で進んだ先のニコニコの曲なら飛ばして次へ。それ以外は一時停止として扱い、再生ボタンを出す
+          onBlocked: () => {
+            sounding.current = false;
+            setLoading(false);
+            const { queue: q, index: i } = state.current;
+            if (auto.current && q[i]?.service === 'niconico' && skipped.current < q.length) {
+              niconicoBlocked.current = true;
+              skipped.current += 1;
+              autoNext.current = true;
+              nextRef.current(1);
+              return;
+            }
+            setPlaying(false);
+          },
           // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
           onError: () => {
             sounding.current = false;
@@ -182,12 +252,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             onEnded.current();
           },
         };
-        player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
-          frame.current,
+        const box = document.createElement('div');
+        box.className = 'size-full';
+        frame.current.append(box);
+        engine = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
+          box,
           videoId,
           now,
-          events,
+          {
+            onPlaying: live(events.onPlaying),
+            onPaused: live(events.onPaused),
+            onEnded: live(events.onEnded),
+            onBlocked: live(events.onBlocked),
+            onError: live(events.onError),
+          },
         );
+        boxes.current.set(engine, box);
+        player.current = engine;
       };
       // 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。音量を絞りきってから切り替える。
       // 絞っているあいだに別の曲が選ばれたら、絞り終わったときに最後の曲へ替える
@@ -217,7 +298,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
       tick();
     },
-    [frame, waitForSlot],
+    [frame, waitForSlot, drop],
   );
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
@@ -230,7 +311,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setQueue(next);
   }, []);
 
-  const nextRef = useRef<(dir: 1 | -1) => void>(() => {});
   const fetchingMore = useRef(false);
   /** 一覧の次のページを取りに行って後ろに足す。取りに行っている途中なら何もしない */
   const fetchMore = useCallback(() => {
@@ -262,6 +342,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         fetchingMore.current = false;
         if (advanceAfterMore.current) {
           advanceAfterMore.current = false;
+          autoNext.current = advanceAuto.current;
           nextRef.current(1);
         }
       });
@@ -281,6 +362,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // 「すべて再生」の一覧にまだ続きのページがあれば、届くのを待ってから進む
         if (more.current) {
           advanceAfterMore.current = true;
+          advanceAuto.current = autoNext.current;
+          autoNext.current = false;
           fetchMore();
           return;
         }
@@ -382,6 +465,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         player.current.play();
         return;
       }
+      autoNext.current = true;
       next(1);
     };
   }, [next]);
@@ -600,14 +684,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     fading.current = false;
     pendingSwap.current = null;
     sounding.current = false;
-    player.current?.destroy();
+    drop(player.current);
     player.current = null;
+    drop(parked.current);
+    parked.current = null;
     state.current = { queue: [], index: 0 };
     setQueue([]);
     setIndex(0);
     setPlaying(false);
     setLoading(false);
-  }, [clearMore]);
+  }, [clearMore, drop]);
 
   // 再生中は時刻を拾う。間は帯の側で補ってなめらかに進める
   useEffect(() => {
@@ -753,8 +839,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         data-player-frame
         className={
           mode === 'slot'
-            ? 'fixed z-10 overflow-hidden bg-black md:rounded-2xl [&>iframe]:size-full'
-            : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60 [&>iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
+            ? 'fixed z-10 overflow-hidden bg-black md:rounded-2xl [&_iframe]:size-full'
+            : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60 [&_iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
         }
       />
       {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
