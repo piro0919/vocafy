@@ -2,7 +2,6 @@
 
 import { type RefObject, useEffect, useRef } from 'react';
 import { SongItem } from '../song-list';
-import { OriginalLink } from './original-link';
 import { usePlayer } from './player-provider';
 
 /**
@@ -74,12 +73,7 @@ export function QueuePanel({
         <h2 className="px-4 pt-3 pb-2 font-display text-base">次に流れる曲</h2>
         {current && (
           <div className="px-2">
-            <div className="flex items-center">
-              <div className="min-w-0 flex-1">
-                <SongItem song={current} onOpen={onClose} favorite={false} />
-              </div>
-              <OriginalLink song={current} />
-            </div>
+            <SongItem song={current} onOpen={onClose} favorite={false} />
           </div>
         )}
         <div

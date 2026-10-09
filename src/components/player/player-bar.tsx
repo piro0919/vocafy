@@ -10,7 +10,6 @@ import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from '../fade-image';
 import { FavoriteButton } from '../favorite-button';
 import { Icon } from '../icon';
-import { OriginalLink } from './original-link';
 import { PlaybackMode } from './playback-mode';
 import { type PlaybackTime, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
@@ -114,13 +113,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                 )}
               </Marquee>
             </div>
-            {!loading && (
-              <>
-                <FavoriteButton song={item} />
-                {/* 元の動画へ。スマホは帯が狭いので、次に流れる曲の板の「再生中」の行に置く（queue-panel.tsx） */}
-                <OriginalLink song={item} className="max-md:hidden" />
-              </>
-            )}
+            {!loading && <FavoriteButton song={item} />}
           </div>
         ) : (
           <div className="flex-1" />
