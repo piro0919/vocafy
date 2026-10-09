@@ -8,6 +8,7 @@ import { Icon } from '@/components/icon';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails } from '@/lib/catalog';
 import { normalize, score } from '@/lib/search';
+import { addRecentSearch, clearRecentSearches, useRecentSearches } from '@/lib/recent-searches';
 import { loadIndex, type Prepared } from '@/lib/search-index';
 import { thumbOf } from '@/lib/thumb';
 import { voiceArt } from '@/lib/voice-art';
@@ -62,6 +63,7 @@ export function SearchView() {
     return () => clearTimeout(id);
   }, [text, pathname, router]);
 
+  const recent = useRecentSearches();
   const query = normalize(text);
   const found = useMemo(() => {
     if (!index || !query) return null;
@@ -131,7 +133,15 @@ export function SearchView() {
   const items = shown?.query === query ? shown.items : null;
 
   return (
-    <div className="mt-4">
+    // 結果（ボカロP・歌声・曲）を押したら、そのときの言葉を最近の検索に残す。打っただけの言葉は残さない
+    <div
+      className="mt-4"
+      onClickCapture={(e) => {
+        const q = text.trim();
+        const hit = (e.target as HTMLElement).closest('a, button');
+        if (q && hit && hit.closest('section') && !hit.closest('[data-recent]')) addRecentSearch(q);
+      }}
+    >
       {/* パソコンは上の段に検索欄があるので、スマホだけで出す */}
       <label className="flex items-center gap-2 rounded-2xl border border-line/60 bg-sidebar/60 px-4 focus-within:border-accent/60 md:hidden">
         <Icon name="search" className="size-5 shrink-0 text-muted" />
@@ -146,6 +156,35 @@ export function SearchView() {
           className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
         />
       </label>
+
+      {/* 何も打っていないときは、最近の検索の言葉を出す。押すとその言葉で探す */}
+      {!query && recent.length > 0 && (
+        <section data-recent className="mt-6">
+          <div className="mb-2 flex items-center gap-3">
+            <h2 className="text-sm font-bold text-muted">最近の検索</h2>
+            <button
+              type="button"
+              onClick={clearRecentSearches}
+              className="ml-auto rounded-full px-3 py-1 text-xs font-bold text-muted transition-colors hover:text-foreground"
+            >
+              消す
+            </button>
+          </div>
+          <ul className="flex flex-wrap gap-2">
+            {recent.map((q) => (
+              <li key={q}>
+                <button
+                  type="button"
+                  onClick={() => setText(q)}
+                  className="rounded-full border border-line/60 bg-sidebar/60 px-4 py-1.5 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
+                >
+                  {q}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {failed && (
         <p className="mt-6 text-sm text-muted">索引を読めませんでした。開き直してください。</p>
