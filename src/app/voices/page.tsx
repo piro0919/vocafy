@@ -10,29 +10,22 @@ export const metadata: Metadata = { title: '歌声' };
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 export const revalidate = false;
 
-/**
- * 絵の札で大きく出す、絵のあるキャラの人数（曲の多い順）。絵のあるキャラ（79 人）を全員出すと、絵の札だけで長い壁になった。36 人では描いた絵の半分以上が中の段の小さな顔になったので 48 人にした。
- * 曲数の線で切ると端数が出て最後の段が1人になるので、列の数（3・4・6）のどれでも割り切れる数にする
- */
-const FEATURED = 48;
-
 /** これより曲の少ない歌声は、名前だけの小さな札にまとめる。1〜2曲の UTAU の音源などが数百あり、同じ札で並べると埋もれるため */
 const MINOR = 20;
 
 /**
- * 歌声の一覧。すべての歌声を、曲の多い順のまま3段に分けて並べる。
- * 上の段は曲の多い FEATURED 人の絵のあるキャラ（トップと同じ絵の札）、中の段は MINOR 曲以上の残り（絵があれば小さな顔）、
- * 下の段は残りを名前だけで詰める
+ * 歌声の一覧。曲の多い順のまま、絵のあるキャラと絵の無い歌声で上下に分ける。
+ * 上の段は絵のあるキャラ全員（トップと同じ絵の札）。絵の無い歌声は、MINOR 曲以上をいつもの札、残りを名前だけで詰める。
+ * 曲の多い順に人数で切っていた（36 人、のちに 48 人）が、人数は列の数から逆算した数で、なぜその段にいるかが画面から読めなかった。
+ * 絵があるかで分ければ見た目どおりに分かれる。そのかわり、絵の無い Fukase（100 曲超）が 40 曲台の絵のあるキャラより下に来る
  */
 export default async function VoicesPage() {
   const list = await voices();
-  const characters = list
-    .flatMap((v) => {
-      const art = voiceArt(v.id);
-      return art ? [{ ...v, art }] : [];
-    })
-    .slice(0, FEATURED);
-  const others = list.filter((v) => !characters.some((c) => c.id === v.id));
+  const characters = list.flatMap((v) => {
+    const art = voiceArt(v.id);
+    return art ? [{ ...v, art }] : [];
+  });
+  const others = list.filter((v) => !voiceArt(v.id));
   const major = others.filter((v) => v.songCount >= MINOR);
   const minor = others.filter((v) => v.songCount < MINOR);
   return (
