@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { isEligible, linksOf, producersOf, sourcesOf, vocalistsOf } from '../scripts/lib/pick';
+import {
+  isEligible,
+  isOwnVersion,
+  linksOf,
+  producersOf,
+  sourcesOf,
+  vocalistsOf,
+} from '../scripts/lib/pick';
 import type { VdbSong, VdbWebLink } from '../scripts/lib/vocadb';
 
 const miku = { id: 1, name: '初音ミク', artistType: 'Vocaloid' };
@@ -75,6 +82,36 @@ describe('sourcesOf', () => {
       niconicoThumb: null,
     });
     expect(isEligible(s)).toBe(true);
+  });
+});
+
+describe('isOwnVersion', () => {
+  const owners = (id: number) => (id === 1500 ? new Set([53]) : undefined);
+
+  it('本人の出し直しは入れる', () => {
+    expect(isOwnVersion(song({ songType: 'Remix', originalVersionId: 1500 }), owners)).toBe(true);
+  });
+
+  it('他人のリミックスは入れない', () => {
+    const dj = { id: 9, name: 'DJ', artistType: 'Producer' };
+    const s = song({
+      songType: 'Remix',
+      originalVersionId: 1500,
+      artists: [
+        ...song().artists!,
+        { categories: 'Producer', isSupport: false, artist: dj, name: 'DJ' },
+      ],
+    });
+    expect(isOwnVersion(s, owners)).toBe(false);
+  });
+
+  it('元の曲が分からない出し直しは入れない', () => {
+    expect(isOwnVersion(song({ songType: 'Remaster', originalVersionId: 7 }), owners)).toBe(false);
+    expect(isOwnVersion(song({ songType: 'Remaster' }), owners)).toBe(false);
+  });
+
+  it('オリジナル曲はそのまま入れる', () => {
+    expect(isOwnVersion(song(), owners)).toBe(true);
   });
 });
 

@@ -57,6 +57,7 @@ const YOUTUBE_STANDINS = new Map([
  * 入れる曲の種類。オリジナル曲と、その出し直し（リマスター・リミックス・PV 版）。出し直しは VocaDB では元の曲と別の項目で、
  * よく聴かれているのが出し直しの版のことがある（磯Pの「袖触れ合うも他生の縁」のリメイク、cosMo@暴走Pの「初音ミクの消失 -DEAD END-」）。
  * 元の曲を差し替えず、別の1曲として並べる。表紙と投稿日が違うので見分けられる。カバーや人が歌った曲は入れない。
+ * 出し直しの版は本人のものだけ（isOwnVersion）。
  * 種の線（評価点・YouTube の再生数）はオリジナル曲だけで選ぶ（scripts/lib/vocadb.ts）
  */
 export const SONG_TYPES = ['Original', 'Remaster', 'Remix', 'MusicPV'];
@@ -116,6 +117,21 @@ export function sourcesOf(song: VdbSong): {
   return youtubeId || niconicoId
     ? { youtubeId, niconicoId, niconicoThumb: niconico?.thumbUrl ?? null }
     : null;
+}
+
+/**
+ * 本人の出し直しか。オリジナル曲は常に true。出し直しの版は、元の曲（originalVersionId）が分かり、作者が全員元の曲の作者であるもの。
+ * 他人のリミックスやアレンジ（2026-10-10 に数えて 1279 曲）と、元の曲が分からない版（888 曲）は入れない。
+ * 本人の版は 3849 曲で、sped up 版・ライブ版・アコギのアレンジのような版も入る。ownersOf は元の曲の作者の番号で、分からなければ undefined
+ */
+export function isOwnVersion(
+  song: VdbSong,
+  ownersOf: (originalId: number) => Set<number> | undefined,
+): boolean {
+  if (song.songType === 'Original') return true;
+  const owners =
+    song.originalVersionId === undefined ? undefined : ownersOf(song.originalVersionId);
+  return owners !== undefined && producersOf(song).every((p) => owners.has(p.id));
 }
 
 /** Vocafy に入れられる曲か。オリジナル曲かその出し直しで、作者と合成音声の歌声があり、本家の動画がある */

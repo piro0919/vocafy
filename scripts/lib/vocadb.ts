@@ -62,6 +62,8 @@ export type VdbSong = {
   /** ほかの言語の曲名。漢字の曲名の読みを、ローマ字（Romaji）の名前から取る */
   names?: { language: string; value: string }[];
   songType: string;
+  /** 出し直しの版（リマスター・リミックス・PV 版）の、元の曲の番号 */
+  originalVersionId?: number;
   publishDate?: string;
   ratingScore: number;
   favoritedTimes: number;

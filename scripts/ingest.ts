@@ -4,6 +4,7 @@ import type { ProducerLinks } from '../src/lib/catalog';
 import {
   EXTRA_PRODUCERS,
   isEligible,
+  isOwnVersion,
   linksOf,
   producersOf,
   sourcesOf,
@@ -50,6 +51,24 @@ async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<s
     return { youtube: of('youtube'), niconico: of('niconico') };
   } catch {
     return { youtube: new Set(), niconico: new Set() };
+  } finally {
+    await pool.end();
+  }
+}
+
+/** DB にある曲の作者の番号。出し直しの版の元の曲が、今回集めた曲に無いとき（新しく出た曲を足すだけのときなど）に引く */
+async function ownersInDb(songIds: number[]): Promise<Map<number, Set<number>>> {
+  const owners = new Map<number, Set<number>>();
+  if (songIds.length === 0) return owners;
+  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
+  try {
+    const { rows } = await pool.query<{ song_id: number; producer_id: number }>(
+      'select song_id, producer_id from song_producer where song_id = any($1)',
+      [songIds],
+    );
+    for (const r of rows)
+      owners.set(r.song_id, (owners.get(r.song_id) ?? new Set()).add(r.producer_id));
+    return owners;
   } finally {
     await pool.end();
   }
@@ -227,6 +246,29 @@ async function main() {
     }
     if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
   }
+
+  // 出し直しの版は本人のものだけ。元の曲の作者は、今回集めた曲から引き、無ければ DB から引く
+  const missing = [...songs.values()].flatMap((s) =>
+    s.originalVersionId !== undefined && !songs.has(s.originalVersionId)
+      ? [s.originalVersionId]
+      : [],
+  );
+  const stored = await ownersInDb([...new Set(missing)]);
+  const ownersOf = (id: number) => {
+    const original = songs.get(id);
+    return original ? new Set(producersOf(original).map((p) => p.id)) : stored.get(id);
+  };
+  let others = 0;
+  for (const s of [...songs.values()]) {
+    if (!isOwnVersion(s, ownersOf)) {
+      songs.delete(s.id);
+      others++;
+    }
+  }
+  const versions = [...songs.values()].filter((s) => s.songType !== 'Original').length;
+  console.log(
+    `出し直しの版: 本人の ${versions} 曲を入れ、他人のものと元の曲が分からないもの ${others} 曲を外す`,
+  );
 
   // 合作の相手も作者として表に入る。その人の全曲までは取りに行かない（線を下げたときに広がりすぎる）
   const all = [...songs.values()];
