@@ -1,204 +1,32 @@
 'use client';
 
-import Link from 'next/link';
 import {
   createContext,
   type ReactNode,
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { EASE_OUT, prefersReducedMotion } from '@/lib/motion';
-import { Icon } from '../icon';
 import { PlayerBar } from './player-bar';
 import type { Engine, EngineEvents } from './engine';
 import { createNiconicoEngine } from './niconico';
 import { createYouTubeEngine } from './youtube';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
+import { DOCK, DockStrip, FADE, HIDDEN } from './dock-strip';
+import { buildOrder } from './play-order';
+import { savedPlayback, savedVolume, savePlayback, saveVolume } from './player-storage';
+import type { ListSource, PlaybackTime, PlayContext, PlayerContext, Repeat } from './player-types';
+import { useFrameLayout } from './use-frame-layout';
+import { useSlot } from './use-slot';
 
-/**
- * いま何の並びで流しているか。
- * - list: ボカロPの画面の曲の並び（その画面から流したとき）
- * - pending: 曲の一覧から1曲だけ流し始め、ボカロPの画面に着いたらその人の曲に差し替える途中
- */
-/**
- * 並びの出どころ。list はふつうの一覧、pending は曲の一覧から押して1曲だけ流している途中（ボカロPの画面で差し替える）、
- * radio はラジオ（押した曲から関連曲を足し続ける。並びの終わりが近づくと、いまの曲の関連曲を後ろに足す）、
- * favorites はお気に入りの曲の並び（お気に入りの曲の画面で大きく出す。Janify と同じ）
- */
-export type PlayContext = 'list' | 'pending' | 'radio' | 'favorites';
-
-/**
- * 「すべて再生」で流している一覧の続き。source は一覧の住所（years/2010 など）、start は押したページ、
- * next は次に足すページ、last は最後のページ。最後のページの次は1ページ目に戻り、押したページの手前まで足す
- */
-export type ListSource = { source: string; start: number; next: number; last: number };
-
-/** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
-export type PlaybackTime = { current: number; duration: number; at: number };
-
-type PlayerContext = {
-  queue: QueueItem[];
-  index: number;
-  current: QueueItem | null;
-  playing: boolean;
-  /** 曲を選んでから音が出るまで。最初の1曲は YouTube の仕組みやニコニコのプレイヤーの読み込みも待つ */
-  loading: boolean;
-  context: PlayContext;
-  /** 前の曲・次の曲へ進めるか。ループ（全体）なら最後の曲からも次へ進める */
-  hasPrev: boolean;
-  hasNext: boolean;
-  /** ループ。all は並び全体を繰り返し、one は今の曲を繰り返す */
-  repeat: Repeat;
-  /** ランダム再生。いま流している並びの中で混ぜる */
-  shuffle: boolean;
-  toggleRepeat: () => void;
-  toggleShuffle: () => void;
-  /** 曲の一覧を順番待ちに積み、start 番目から再生する */
-  playQueue: (items: QueueItem[], start: number, context?: PlayContext) => void;
-  /**
-   * 流している曲は止めずに、順番待ちだけを差し替える。曲の一覧から押したときは、まずその1曲を
-   * 流し始め、ボカロPの画面に着いたところでその人の曲に差し替える（producer-player.tsx）
-   */
-  adoptQueue: (items: QueueItem[], index: number) => void;
-  /**
-   * 一覧の1ページの曲を流し、並びの終わりが近づいたら、一覧の残りのページの曲を後ろに足していく（play-all.tsx）。
-   * ページ数が多い一覧（初音ミクの年など）を、押した時点で全部送らないため
-   */
-  playAll: (
-    items: QueueItem[],
-    source: Omit<ListSource, 'next'>,
-    options?: {
-      /** items の何番目から流すか。既定は先頭 */
-      at?: number;
-      /** 流し始めてから一覧の再生用の画面へ移るとき。置き場所が見つかるまで右下の窓を出さずに待つ */
-      moving?: boolean;
-    },
-  ) => void;
-  /** 「すべて再生」で流している一覧の住所。ほかの並びを流しているときは null */
-  listSource: string | null;
-  /**
-   * いまの曲を大きく出す画面の住所。ラジオのあいだはラジオの画面（/radio/123）。ラジオをやめた直後は、
-   * 戻した並びの持ち主の画面（いま流しているラジオの曲が終わるまで、その画面で大きく出したままにする）。ほかは null
-   */
-  radioHome: string | null;
-  /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える。ラジオの画面へ移るのは呼んだ側 */
-  startRadio: (seed: QueueItem) => void;
-  /** ラジオの画面の一覧（先頭が元の曲、続いて関連曲）を、at 番目から流す */
-  playRadio: (items: QueueItem[], at: number) => void;
-  /**
-   * ラジオを始めたばかりで並びがまだ元の曲だけなら、ラジオの画面が持っている関連曲で埋める（取りに行くのを待たない）
-   */
-  fillRadio: (items: QueueItem[]) => void;
-  /**
-   * ラジオをやめる。いまの曲は止めずに、ラジオを始める前に流していた並びに戻す。いまの曲が終わったら、
-   * ラジオを始めた曲の次から続く（ラジオの曲を流しているなら、その曲を始めた曲のすぐ後ろに挟む）。
-   * 戻した並びの持ち主の画面の住所を返す
-   */
-  stopRadio: () => string;
-  /**
-   * 次に流れる曲を読む。流す順（ランダムなら混ぜたあとの順）で、いまの曲の次から UPCOMING_LIMIT 曲まで。
-   * ループ（全体）なら、並びの最後のあとに先頭からの曲も続ける（ラジオは足していくので続けない）。
-   * index は並び（queue）の何番目か。jumpTo に渡す。流す順は描くたびに変わらない入れ物（ref）に持っているので、
-   * 値ではなく、開いた画面が読む関数として渡す（曲や並びが変わると、この値の持ち主ごと描き直される）
-   */
-  upcoming: () => { item: QueueItem; index: number }[];
-  /** 並びの index 番目の曲へ飛ぶ。並びと流す順はそのまま */
-  jumpTo: (index: number) => void;
-  toggle: () => void;
-  step: (dir: 1 | -1) => void;
-  /** 再生をやめ、プレイヤーを消す */
-  close: () => void;
-  seek: (seconds: number) => void;
-  time: PlaybackTime;
-  /** 音量（0〜100）と消音。このブラウザに残し、次に開いたときもその音量で始める */
-  volume: number;
-  muted: boolean;
-  setVolume: (volume: number) => void;
-  toggleMute: () => void;
-  /** ボカロPの画面で、プレイヤーを大きく置く場所 */
-  setSlot: (el: HTMLElement | null) => void;
-  /**
-   * 画面を移るあいだ、いま動画を大きく出している置き場所に、行き先の画面の置き場所ができるまで出し続けさせる。
-   * ラジオの入・切は、並びの持ち主が先に替わってから画面が移るので、そのあいだ動画が右下の窓へ出かかった。
-   * 行き先の置き場所ができるか、HOLD_SLOT を過ぎたら終わる
-   */
-  holdSlot: () => void;
-  /** holdSlot の途中か（player-stage.tsx が読む） */
-  holdingSlot: boolean;
-};
+export type { ListSource, PlaybackTime, PlayContext, Repeat } from './player-types';
 
 const Context = createContext<PlayerContext | null>(null);
-
-const VOLUME_KEY = 'vocafy-volume';
-const PLAYBACK_KEY = 'vocafy-playback';
-
-export type Repeat = 'all' | 'one';
-
-/** 残しておいたループとランダムの設定。読めなければ、ループは全体、ランダムは切 */
-function savedPlayback(): { repeat: Repeat; shuffle: boolean } {
-  try {
-    const saved = JSON.parse(localStorage.getItem(PLAYBACK_KEY) ?? 'null') as {
-      repeat?: unknown;
-      shuffle?: unknown;
-    } | null;
-    return { repeat: saved?.repeat === 'one' ? 'one' : 'all', shuffle: saved?.shuffle === true };
-  } catch {
-    return { repeat: 'all', shuffle: false };
-  }
-}
-
-function savePlayback(value: { repeat: Repeat; shuffle: boolean }) {
-  try {
-    localStorage.setItem(PLAYBACK_KEY, JSON.stringify(value));
-  } catch {
-    // 保存できない窓では、開き直すと元に戻る
-  }
-}
-
-/**
- * 流す順。ランダムでなければ並びどおり、ランダムなら start を先頭にして残りを混ぜる。
- * 前の曲へ戻ったときに同じ曲へ戻れるよう、混ぜた順は覚えておく
- */
-function buildOrder(length: number, start: number, shuffle: boolean): number[] {
-  const order = Array.from({ length }, (_, i) => i);
-  if (!shuffle) return order;
-  const rest = order.filter((i) => i !== start);
-  for (let i = rest.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [rest[i], rest[j]] = [rest[j], rest[i]];
-  }
-  return [start, ...rest];
-}
-
-/** 残しておいた音量と消音。読めなければ 100 で消音なし */
-function savedVolume(): { volume: number; muted: boolean } {
-  try {
-    const saved = JSON.parse(localStorage.getItem(VOLUME_KEY) ?? 'null') as {
-      volume?: unknown;
-      muted?: unknown;
-    } | null;
-    const volume =
-      typeof saved?.volume === 'number' ? Math.min(100, Math.max(0, saved.volume)) : 100;
-    return { volume, muted: saved?.muted === true };
-  } catch {
-    return { volume: 100, muted: false };
-  }
-}
-
-function saveVolume(volume: number, muted: boolean) {
-  try {
-    localStorage.setItem(VOLUME_KEY, JSON.stringify({ volume, muted }));
-  } catch {
-    // 保存できない窓では、開き直すと 100 に戻る
-  }
-}
 
 export function usePlayer(): PlayerContext {
   const ctx = useContext(Context);
@@ -207,40 +35,17 @@ export function usePlayer(): PlayerContext {
 }
 
 /**
- * 右下の窓の位置と大きさ。スマホでは下のタブと帯の上、パソコンでは帯の上。
- * スマホは画面が狭いので、規約の下限（200×200）ちょうどの正方形にする。16:9 の動画は窓の中で上下に黒い帯が入る。
- * パソコンは 16:9 の 356×200
- */
-const DOCK =
-  'fixed right-3 bottom-[calc(8.25rem+12px)] h-[200px] w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px)] md:w-[356px]';
-/**
  * 次に流れる曲として見せる数。並び全体は開いている画面の一覧に出ているので、板は次に来る曲を見るだけにする
  * （100曲まで出していたら多すぎると言われた）
  */
 const UPCOMING_LIMIT = 10;
 
-/** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
-const WAIT_FOR_SLOT = 1000;
-
 /** ラジオで足せる関連曲を探すときに、関連曲を聞く曲の数の上限 */
 const RADIO_TRIES = 6;
-
-/** holdSlot で前の画面に動画を出し続けさせる長さの上限（ミリ秒）。初めて開くラジオの画面も読み込み中の形はすぐ出る */
-const HOLD_SLOT = 3000;
 
 /** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
 const FADE_OUT_MS = 150;
 const FADE_STEPS = 10;
-
-/**
- * 窓のすぐ上に付ける帯。窓と帯で一枚の板に見せ、角の丸みと縁の線をほかの浮いた板（左のメニュー・下の再生の帯）にそろえる。
- * 動画の側の線は外へ描く（ring）。枠の内側に線（border）を引くと、動画が 200×200（YouTube の規約の下限）を割る
- */
-const DOCK_STRIP =
-  'fixed right-3 bottom-[calc(8.25rem+12px+200px)] h-9 w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px+200px)] md:w-[356px]';
-/** 出入りの動き。閉じたあとは少し下へずらして消す */
-const FADE = 'transition-[opacity,translate,visibility] duration-300 ease-(--ease-out)';
-const HIDDEN = 'pointer-events-none invisible translate-y-4 opacity-0';
 
 /**
  * ページを移っても再生が続く、全ページ共通のプレイヤー。ルートのレイアウトに1つだけ置く。
@@ -264,28 +69,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     contextRef.current = context;
   }, [context]);
   const [time, setTime] = useState<PlaybackTime>({ current: 0, duration: 0, at: 0 });
-  const [slot, setSlotState] = useState<HTMLElement | null>(null);
-  const [holdingSlot, setHoldingSlot] = useState(false);
-  const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const holdSlot = useCallback(() => {
-    clearTimeout(holdTimer.current);
-    setHoldingSlot(true);
-    holdTimer.current = setTimeout(() => setHoldingSlot(false), HOLD_SLOT);
-  }, []);
-  // 新しい置き場所ができたら、前の画面に出し続けさせるのをやめる
-  const setSlot = useCallback((el: HTMLElement | null) => {
-    setSlotState(el);
-    if (el) {
-      clearTimeout(holdTimer.current);
-      setHoldingSlot(false);
-    }
-  }, []);
-  // 曲の一覧から押してボカロPの画面へ移る途中（pending）は、置き場所が見つかるまで右下の窓を出さずに待つ。
-  // 出すと、窓に出てから大きな置き場所へ移る動きが見えた（作り置きの無いボカロPの画面は開くのに時間がかかる）。
-  // プレイヤーは流しているあいだ見せておく決まり（YouTube の規約）なので、待つのは WAIT_FOR_SLOT まで。
-  // 埋め込みが読み込まれて鳴り始めるまでにも1秒前後かかるので、見えないまま鳴ることはほぼ無い
-  const [waitingForSlot, setWaitingForSlot] = useState(false);
-  const waitTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { slot, setSlot, holdingSlot, holdSlot, waitingForSlot, waitForSlot } = useSlot();
+  const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
+  // プレイヤーの枠。置き場所か右下の窓に合わせ続ける（use-frame-layout.ts）
+  const frame = useFrameLayout(mode, slot);
   // 残しておいた音量は、最初に曲を流したときに読む（サーバーでは localStorage を読めず、帯も曲を流すまで出ない）
   const [sound, setSound] = useState({ volume: 100, muted: false });
   const soundRef = useRef<{ volume: number; muted: boolean } | null>(null);
@@ -311,7 +98,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [position, setPosition] = useState(0);
   const positionRef = useRef(0);
 
-  const frame = useRef<HTMLDivElement>(null);
   const player = useRef<Engine | null>(null);
   // プレイヤーの知らせは作ったときの関数を持ち続けるので、今の順番待ちは ref にも持つ
   const state = useRef({ queue, index });
@@ -324,106 +110,105 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const pendingSwap = useRef<(() => void) | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const load = useCallback((items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
-    setContext(ctx);
-    // ラジオの続き（曲送り）でなければ、ラジオを始めた画面は忘れる
-    if (ctx !== 'radio') setRadioHome(null);
-    clearTimeout(waitTimer.current);
-    setWaitingForSlot(ctx === 'pending');
-    if (ctx === 'pending') {
-      waitTimer.current = setTimeout(() => setWaitingForSlot(false), WAIT_FOR_SLOT);
-    }
-    if (!soundRef.current) {
-      soundRef.current = savedVolume();
-      setSound(soundRef.current);
-    }
-    if (!playbackRef.current) {
-      playbackRef.current = savedPlayback();
-      setPlayback(playbackRef.current);
-    }
-    // 新しい並びなら流す順を作り直す。同じ並びの中で曲を移るだけなら、流す順はそのまま
-    if (items !== state.current.queue) {
-      order.current = buildOrder(items.length, at, playbackRef.current.shuffle);
-    }
-    positionRef.current = Math.max(0, order.current.indexOf(at));
-    setPosition(positionRef.current);
-    state.current = { queue: items, index: at };
-    setQueue(items);
-    setIndex(at);
-    setLoading(true);
-    setTime({ current: 0, duration: 0, at: performance.now() });
-    const { service, videoId } = items[at];
-    const sound = soundRef.current ?? { volume: 100, muted: false };
-    const swap = () => {
-      // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
-      const now = soundRef.current ?? sound;
-      // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える。絞った音量は、止めてから戻す
-      if (player.current?.service === service) {
-        player.current.load(videoId);
-        player.current.setVolume(now.volume);
-        return;
+  const load = useCallback(
+    (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
+      setContext(ctx);
+      // ラジオの続き（曲送り）でなければ、ラジオを始めた画面は忘れる
+      if (ctx !== 'radio') setRadioHome(null);
+      waitForSlot(ctx === 'pending');
+      if (!soundRef.current) {
+        soundRef.current = savedVolume();
+        setSound(soundRef.current);
       }
-      player.current?.destroy();
-      player.current = null;
-      if (!frame.current) return;
-      const events: EngineEvents = {
-        onPlaying: () => {
-          sounding.current = true;
-          setPlaying(true);
-          setLoading(false);
-        },
-        // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
-        onPaused: () => {
-          sounding.current = false;
-          setPlaying(false);
-          setLoading(false);
-        },
-        onEnded: () => {
-          sounding.current = false;
-          onEnded.current();
-        },
-        // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
-        onError: () => {
-          sounding.current = false;
-          setLoading(false);
-          onEnded.current();
-        },
+      if (!playbackRef.current) {
+        playbackRef.current = savedPlayback();
+        setPlayback(playbackRef.current);
+      }
+      // 新しい並びなら流す順を作り直す。同じ並びの中で曲を移るだけなら、流す順はそのまま
+      if (items !== state.current.queue) {
+        order.current = buildOrder(items.length, at, playbackRef.current.shuffle);
+      }
+      positionRef.current = Math.max(0, order.current.indexOf(at));
+      setPosition(positionRef.current);
+      state.current = { queue: items, index: at };
+      setQueue(items);
+      setIndex(at);
+      setLoading(true);
+      setTime({ current: 0, duration: 0, at: performance.now() });
+      const { service, videoId } = items[at];
+      const sound = soundRef.current ?? { volume: 100, muted: false };
+      const swap = () => {
+        // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
+        const now = soundRef.current ?? sound;
+        // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える。絞った音量は、止めてから戻す
+        if (player.current?.service === service) {
+          player.current.load(videoId);
+          player.current.setVolume(now.volume);
+          return;
+        }
+        player.current?.destroy();
+        player.current = null;
+        if (!frame.current) return;
+        const events: EngineEvents = {
+          onPlaying: () => {
+            sounding.current = true;
+            setPlaying(true);
+            setLoading(false);
+          },
+          // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
+          onPaused: () => {
+            sounding.current = false;
+            setPlaying(false);
+            setLoading(false);
+          },
+          onEnded: () => {
+            sounding.current = false;
+            onEnded.current();
+          },
+          // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
+          onError: () => {
+            sounding.current = false;
+            setLoading(false);
+            onEnded.current();
+          },
+        };
+        player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
+          frame.current,
+          videoId,
+          now,
+          events,
+        );
       };
-      player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
-        frame.current,
-        videoId,
-        now,
-        events,
-      );
-    };
-    // 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。音量を絞りきってから切り替える。
-    // 絞っているあいだに別の曲が選ばれたら、絞り終わったときに最後の曲へ替える
-    pendingSwap.current = swap;
-    if (fading.current) return;
-    const current = player.current;
-    if (!current || !sounding.current || sound.muted || sound.volume === 0) {
-      pendingSwap.current = null;
-      swap();
-      return;
-    }
-    sounding.current = false;
-    fading.current = true;
-    let step = 0;
-    const tick = () => {
-      // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから一刻み待つ
-      if (step === FADE_STEPS) {
-        fading.current = false;
-        const next = pendingSwap.current;
+      // 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。音量を絞りきってから切り替える。
+      // 絞っているあいだに別の曲が選ばれたら、絞り終わったときに最後の曲へ替える
+      pendingSwap.current = swap;
+      if (fading.current) return;
+      const current = player.current;
+      if (!current || !sounding.current || sound.muted || sound.volume === 0) {
         pendingSwap.current = null;
-        next?.();
+        swap();
         return;
       }
-      step += 1;
-      current.setVolume(Math.round(sound.volume * (1 - step / FADE_STEPS)));
-      fadeTimer.current = setTimeout(tick, FADE_OUT_MS / FADE_STEPS);
-    };
-    tick();
-  }, []);
+      sounding.current = false;
+      fading.current = true;
+      let step = 0;
+      const tick = () => {
+        // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから一刻み待つ
+        if (step === FADE_STEPS) {
+          fading.current = false;
+          const next = pendingSwap.current;
+          pendingSwap.current = null;
+          next?.();
+          return;
+        }
+        step += 1;
+        current.setVolume(Math.round(sound.volume * (1 - step / FADE_STEPS)));
+        fadeTimer.current = setTimeout(tick, FADE_OUT_MS / FADE_STEPS);
+      };
+      tick();
+    },
+    [frame, waitForSlot],
+  );
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
   const append = useCallback((items: QueueItem[]) => {
@@ -575,15 +360,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       load(items, at, 'list');
       if (moving) {
         // 一覧の再生用の画面へ移る途中。曲の一覧から押してボカロPの画面へ移るとき（pending）と同じく、置き場所を待つ
-        clearTimeout(waitTimer.current);
-        setWaitingForSlot(true);
-        waitTimer.current = setTimeout(() => setWaitingForSlot(false), WAIT_FOR_SLOT);
+        waitForSlot();
       }
       const next = (source.start % source.last) + 1;
       more.current = next === source.start ? null : { ...source, next };
       setListSource(source.source);
     },
-    [load],
+    [load, waitForSlot],
   );
 
   // ラジオを始める前に流していた並び。ラジオをやめたら、ここへ戻す
@@ -609,12 +392,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       clearMore();
       const home = `/radio/${seed.songId}`;
       const { queue: q, index: i } = state.current;
-      // ラジオの画面へ移る途中。一覧の再生用の画面へ移るとき（playAll の moving）と同じく、置き場所を待つ
-      const waitForSlot = () => {
-        clearTimeout(waitTimer.current);
-        setWaitingForSlot(true);
-        waitTimer.current = setTimeout(() => setWaitingForSlot(false), WAIT_FOR_SLOT);
-      };
+      // ラジオの画面へ移る途中。一覧の再生用の画面へ移るとき（playAll の moving）と同じく、置き場所を待つ（waitForSlot）
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');
         setRadioHome(home);
@@ -633,7 +411,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setRadioHome(home);
       waitForSlot();
     },
-    [load, clearMore, listSource],
+    [load, clearMore, listSource, waitForSlot],
   );
 
   const playRadio = useCallback(
@@ -762,116 +540,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const current = queue[index] ?? null;
   useWakeLock(playing);
-  const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
-
   // 閉じたあとも、帯が下へ消えきるまでは最後の曲を出しておく
   const [shown, setShown] = useState<QueueItem | null>(null);
   if (current && current !== shown) setShown(current);
-
-  // 右下の窓と大きな置き場所を行き来するとき、元の位置と大きさから滑らかに移す（FLIP）。
-  // 動かすのは見た目の transform だけで、iframe そのものは動かさない
-  const lastBox = useRef<DOMRect | null>(null);
-  const lastMode = useRef(mode);
-  // 前の形になった時刻。一瞬（1フレームほど）しか続かなかった形からは、移る動きを見せない
-  const lastModeAt = useRef(0);
-
-  // ボカロPの画面では、プレイヤーを画面に固定し、置き場所の位置と大きさに合わせ続ける。
-  // 置き場所は曲目をスクロールしても上に貼り付く（sticky）ので、ページの中ではなく画面の座標で合わせる。
-  // 貼り付いているあいだは位置が変わらないので、スクロールに付いていく遅れは見えない。
-  // スクロールのたびに React を通すと全体が描き直しになるので、要素の style を直接書き換える
-  useLayoutEffect(() => {
-    const el = frame.current;
-    if (!el) return;
-    const from = lastBox.current;
-
-    let cleanup = () => {};
-    if (mode === 'slot' && slot) {
-      let pending = 0;
-      const place = () => {
-        pending = 0;
-        // 画面を移るとき、置き場所がページから外れたあとに一度だけ呼ばれることがある。外れた要素は
-        // 大きさ0として測られ、プレイヤーまで大きさ0になるので合わせない
-        if (!slot.isConnected) return;
-        const r = slot.getBoundingClientRect();
-        if (r.width === 0) return;
-        // プレイヤーはページの外側の層にあり、ページの中のヘッダーより上に描かれる。
-        // スクロールでヘッダーの下に潜った分は、上側を切り取って見せない（スマホは置き場所を貼り付けないので潜る）
-        const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
-        const hidden = Math.max(0, Math.min(r.height, headerBottom - r.top));
-        el.style.clipPath = hidden > 0 ? `inset(${hidden}px 0 0 0)` : '';
-        el.style.top = `${r.top}px`;
-        el.style.left = `${r.left}px`;
-        el.style.width = `${r.width}px`;
-        el.style.height = `${r.height}px`;
-        // 次に移るときの出発点。置き場所はスクロールで動くので、合わせるたびに覚えておく
-        lastBox.current = r;
-      };
-      const schedule = () => {
-        pending ||= requestAnimationFrame(place);
-      };
-      place();
-      const observer = new ResizeObserver(schedule);
-      observer.observe(slot);
-      observer.observe(document.body);
-      window.addEventListener('scroll', schedule, { passive: true });
-      window.addEventListener('resize', schedule);
-      cleanup = () => {
-        cancelAnimationFrame(pending);
-        observer.disconnect();
-        window.removeEventListener('scroll', schedule);
-        window.removeEventListener('resize', schedule);
-      };
-    } else {
-      el.style.removeProperty('top');
-      el.style.removeProperty('left');
-      el.style.removeProperty('width');
-      el.style.removeProperty('height');
-      el.style.removeProperty('clip-path');
-      // 右下の窓は画面に固定なので、大きさが変わるのは画面の幅が変わったときだけ
-      const remember = () => {
-        lastBox.current = el.getBoundingClientRect();
-      };
-      window.addEventListener('resize', remember);
-      cleanup = () => window.removeEventListener('resize', remember);
-    }
-
-    const to = el.getBoundingClientRect();
-    // 最初の1曲を流し始めたときは、置き場所が知らされるまでの一瞬だけ右下の窓の形になる。
-    // それを「右下から移ってきた」と取り違えないよう、すぐ切り替わった形は、無かったものとして扱う
-    const previous =
-      lastMode.current === 'dock' && performance.now() - lastModeAt.current < 100
-        ? 'none'
-        : lastMode.current;
-    const moved = previous !== mode && previous !== 'none' && mode !== 'none';
-    if (previous === 'none' && mode === 'slot' && !prefersReducedMotion()) {
-      // 何も流していなかったところから大きな置き場所に出るときは、その場でふわっと出す
-      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: EASE_OUT });
-    }
-    if (moved && from && to.width > 0 && !prefersReducedMotion()) {
-      el.animate(
-        [
-          {
-            transformOrigin: 'top left',
-            transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})`,
-          },
-          { transformOrigin: 'top left', transform: 'none' },
-        ],
-        { duration: 400, easing: EASE_OUT },
-      );
-    }
-    if (lastMode.current !== mode) lastModeAt.current = performance.now();
-    lastMode.current = mode;
-    lastBox.current = to;
-
-    // 出発点は後片付けの中では測らない。後片付けが動く時点では、要素はもう次の指定に切り替わっていて、
-    // 位置の決まっていない（ページの左下の）箱を測ってしまう
-    return cleanup;
-  }, [mode, slot]);
-
-  // 右下のプレイヤーが本文の最後を隠さないよう、本文の下の余白を変えるための印
-  useEffect(() => {
-    document.documentElement.dataset.player = mode;
-  }, [mode]);
 
   const value = useMemo<PlayerContext>(
     () => ({
@@ -982,48 +653,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return (
     <Context value={value}>
       {children}
-      {/*
-        右下の窓の上に付ける帯。押すと流しているボカロPの画面（お気に入りの並びならお気に入りの曲の画面）に移り、そこで大きく出る。
-        窓の中は YouTube かニコニコのプレイヤーで、押すとそちらの操作になるので、入口は窓の外に置く
-      */}
-      <div
-        aria-hidden={mode !== 'dock'}
-        inert={mode !== 'dock'}
-        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-30 flex items-center rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
-      >
-        {shown && (
-          <Link
-            href={
-              context === 'favorites'
-                ? '/favorites/songs'
-                : listSource
-                  ? `/${listSource}/play`
-                  : context === 'radio' && radioHome
-                    ? radioHome
-                    : `/producers/${shown.producerId}`
-            }
-            className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
-          >
-            <span className="min-w-0 flex-1 truncate">
-              <span className="font-bold text-foreground">{shown.title}</span>
-              {' ・ '}
-              {shown.producerName}
-              {/* 下の再生の帯と同じく、スマホ（帯が 200px）ではボカロPだけにする */}
-              {shown.vocalists && <span className="max-md:hidden">{` ・ ${shown.vocalists}`}</span>}
-            </span>
-            <Icon name="expand" className="size-4 shrink-0" />
-          </Link>
-        )}
-        {/* 窓だけ消して音を流し続けることはできない（プレイヤーは見えている必要がある）ので、下の帯の × と同じく再生ごと止める */}
-        <button
-          type="button"
-          aria-label="プレイヤーを閉じる"
-          onClick={close}
-          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
-        >
-          <Icon name="close" className="size-4" />
-        </button>
-      </div>
+      <DockStrip
+        mode={mode}
+        shown={shown}
+        context={context}
+        listSource={listSource}
+        radioHome={radioHome}
+        onClose={close}
+      />
       {/* プレイヤーの上には何も重ねない（YouTube の規約）。200×200 を下回らない */}
       <div
         ref={frame}
