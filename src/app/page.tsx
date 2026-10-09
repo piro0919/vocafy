@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { WebSite, WithContext } from 'schema-dts';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
+import { FavoriteNewSongs } from '@/components/favorite-new-songs';
 import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
@@ -55,6 +56,9 @@ export default async function Home() {
           <OnThisDay hero={hero} rest={rest.slice(0, 11)} today={date} />
         </section>
       )}
+
+      {/* お気に入りのボカロPがいる人にだけ出す、その人の棚。ブラウザで組み立てる */}
+      <FavoriteNewSongs />
 
       <section className="mt-10 sm:mt-14">
         <div className="mb-3">

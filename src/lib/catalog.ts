@@ -228,6 +228,20 @@ const toItem = (r: QueueRow): DatedItem => ({
   publishedOn: r.published_on ?? '',
 });
 
+/** 1人のボカロPの新しい曲として読む数（トップのお気に入りのボカロPの新曲の棚。/api/latest/[producer]） */
+const LATEST_PER_PRODUCER = 6;
+
+/** そのボカロPが作者に入っている流せる曲を、新しい順に LATEST_PER_PRODUCER 曲 */
+export const latestOfProducer = cache(async (id: number): Promise<DatedItem[]> => {
+  if (!Number.isSafeInteger(id)) return [];
+  const { rows } = await db().query<QueueRow>(
+    `${QUEUE_SELECT} and exists (select 1 from song_producer x where x.song_id = s.id and x.producer_id = $1)
+     order by s.published_on desc nulls last, s.id limit $2`,
+    [id, LATEST_PER_PRODUCER],
+  );
+  return rows.map(toItem);
+});
+
 /** 日本の暦できょうの日付（YYYY-MM-DD）。ページは1時間ごとに作り直すので、日付の変わり目から1時間までずれうる */
 export function today(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
