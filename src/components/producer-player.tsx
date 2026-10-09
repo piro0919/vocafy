@@ -243,6 +243,9 @@ function YearJump({ songs }: { songs: Song[] }) {
   const show = songs.length > YEAR_JUMP_MIN && firsts.length >= 2;
   const bar = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<number | null>(null);
+  // 札を押して送っているあいだと、送り終えたあとは、自分でスクロールし直すまで押した年を目立たせ続ける。
+  // 一覧の最後のほうの年は、ページの下が尽きて最初の曲を札の行のすぐ下まで送れず、位置からは別の年に見えるため
+  const chosen = useRef<number | null>(null);
 
   // いま見えている曲の年。札の行のすぐ下を通っている曲の年を、スクロールのたびに求める（年の最初の曲の位置だけを見る）
   const key = firsts.map(([y]) => y).join(',');
@@ -251,23 +254,38 @@ function YearJump({ songs }: { songs: Song[] }) {
     let frame = 0;
     const update = () => {
       frame = 0;
+      if (chosen.current !== null) return;
       const line = (bar.current?.getBoundingClientRect().bottom ?? 0) + 8;
+      // ページの一番下まで来ているときは、最後のほうの年の最初の曲を札の行のすぐ下まで送れない。そのときは、
+      // 画面に見えている年のうち一番古い年にする（一覧の最後の年を押したのに、一つ前の年が目立つのを避ける）
+      const bottom =
+        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
       let year = firsts[0][0];
       for (const [y, id] of firsts) {
         const top = document.getElementById(`song-${id}`)?.getBoundingClientRect().top;
-        if (top !== undefined && top <= line) year = y;
+        if (top !== undefined && top <= (bottom ? window.innerHeight - 40 : line)) year = y;
       }
       setActive(year);
     };
     const onScroll = () => {
       frame ||= requestAnimationFrame(update);
     };
+    // 自分でスクロールし始めたら、押した年を保つのをやめ、また位置から求める
+    const release = () => {
+      chosen.current = null;
+    };
     update();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
+    window.addEventListener('wheel', release, { passive: true });
+    window.addEventListener('touchstart', release, { passive: true });
+    window.addEventListener('keydown', release);
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      window.removeEventListener('wheel', release);
+      window.removeEventListener('touchstart', release);
+      window.removeEventListener('keydown', release);
       cancelAnimationFrame(frame);
     };
     // firsts は key が同じなら中身も同じ
@@ -305,6 +323,8 @@ function YearJump({ songs }: { songs: Song[] }) {
             onClick={() => {
               // その年の最初の曲を、札の行のすぐ下に送る（真ん中に送ると、札の行とのあいだに前の年の曲が残り、
               // そちらの年が目立ってしまった）
+              chosen.current = year;
+              setActive(year);
               const row = document.getElementById(`song-${id}`);
               // 札の行は、送ったあとには貼り付いている。押した時点の位置ではなく、貼り付く位置（CSS の top）で計る
               const el = bar.current;

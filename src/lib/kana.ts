@@ -93,9 +93,10 @@ const toHiragana = (c: string) =>
 
 /**
  * 曲名の行。かなで始まればその行、英字で始まれば5字ずつの行（a-e など）、数字で始まれば 0-9。漢字で始まる曲名は読みが分からないので、
- * VocaDB のローマ字の曲名（romaji）の頭の字で決める。ローマ字が無いときや、ほかの文字は etc
+ * VocaDB のローマ字の曲名（romaji）の頭の字で決める。ローマ字が無いときは、辞書で当てた読み（reading。カタカナ。
+ * scripts/lib/reading.ts）の頭の字で決める。どちらも無いときや、ほかの文字は etc
  */
-export function rowOf(title: string, romaji?: string): Row {
+export function rowOf(title: string, romaji?: string, reading?: string): Row {
   const c = head(title);
   if (!c) return 'etc';
   const kana = toHiragana(c);
@@ -108,6 +109,10 @@ export function rowOf(title: string, romaji?: string): Row {
   if (/\p{Script=Han}/u.test(c) && romaji) {
     const r = head(romaji)?.toLowerCase();
     return (r && ROMAJI[r]) || 'etc';
+  }
+  if (/\p{Script=Han}/u.test(c) && reading) {
+    const r = head(reading);
+    return r && !/\p{Script=Han}/u.test(r) ? rowOf(r) : 'etc';
   }
   return 'etc';
 }

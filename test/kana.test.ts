@@ -44,6 +44,16 @@ describe('rowOf', () => {
     expect(rowOf('脳漿炸裂ガール', 'Nousou Sakuretsu Girl')).toBe('な');
   });
 
+  it('ローマ字の曲名が無い漢字の曲名は、辞書で当てた読みの頭の字で決める', () => {
+    expect(rowOf('世界が終わる三日前', undefined, 'セカイガオワルミッカマエ')).toBe('さ');
+    expect(rowOf('千本桜', 'Senbonzakura', 'センボンザクラ')).toBe('さ');
+    expect(rowOf('天ノ弱', 'Amanojaku', 'テンノジャク')).toBe('あ');
+  });
+
+  it('辞書でも読めない字は etc', () => {
+    expect(rowOf('鵼', undefined, '鵼')).toBe('etc');
+  });
+
   it('読みの分からない曲名は etc', () => {
     expect(rowOf('千本桜')).toBe('etc');
     expect(rowOf('롤링 걸')).toBe('etc');
