@@ -52,7 +52,7 @@ export default async function VoicesPage() {
 
       <section className="mt-10 sm:mt-14">
         <div className="mb-3 sm:mb-4">
-          <Heading eyebrow="More voices">ほかの歌声</Heading>
+          <Heading eyebrow="Voices">{MINOR} 曲以上の歌声</Heading>
         </div>
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {major.map((v) => (
