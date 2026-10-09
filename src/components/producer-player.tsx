@@ -315,7 +315,7 @@ function YearJump({ songs }: { songs: Song[] }) {
       className="sticky top-[calc(56.25vw+60px)] z-10 mb-3 rounded-full border border-line/60 bg-glass-thick p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
-      <ScrollRow label="年で飛ぶ" className="gap-1">
+      <ScrollRow label="年ごとに移動" className="gap-1">
         {firsts.map(([year, id]) => (
           <button
             key={year}

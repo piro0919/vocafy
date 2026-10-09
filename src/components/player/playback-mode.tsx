@@ -36,8 +36,8 @@ export function PlaybackMode({
       <button
         type="button"
         aria-pressed={shuffle}
-        aria-label={shuffle ? 'ランダム再生を止める' : 'ランダム再生'}
-        title={shuffle ? 'ランダム再生: 入' : 'ランダム再生: 切'}
+        aria-label={shuffle ? 'ランダム再生をオフにする' : 'ランダム再生をオンにする'}
+        title={shuffle ? 'ランダム再生をオフにする' : 'ランダム再生をオンにする'}
         onClick={toggleShuffle}
         className={`${button} ${shuffle ? 'text-accent' : 'text-muted hover:text-foreground'}`}
       >
@@ -107,7 +107,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       type="button"
       aria-label={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       aria-pressed={on}
-      title={on ? 'ラジオ: 入（押すとやめる）' : 'この曲からラジオを流す（関連曲を流し続ける）'}
+      title={on ? 'ラジオをやめる' : 'この曲からラジオを流す（関連曲を流し続ける）'}
       onClick={toggle}
       className={`${className} relative size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
