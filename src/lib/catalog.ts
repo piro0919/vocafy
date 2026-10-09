@@ -60,14 +60,28 @@ type SongRow = {
   vocalists: string[];
 };
 
+/** キャラごとにまとめた歌声の id（元の歌声の id）。取り込む前の行は base_id が null なので、自分を根として扱う */
+const VOICE_OF = 'coalesce(v.base_id, v.id)';
+
+/**
+ * 曲 s の歌声の名前を、キャラの名前で並べる（補助の歌声は後ろ）。「初音ミク V4X (Original)」のような版の名前は、
+ * 聴く人にはほぼ意味が無いので、根の名前（初音ミク）にまとめる。同じキャラの版が2つ載っていても1つにする
+ */
+const VOCALIST_NAMES = `
+  select regexp_replace(b.name, ' \\(Unknown\\)$', '') as name, bool_and(sv.support) as support, b.id
+  from song_vocalist sv
+  join vocalist v on v.id = sv.vocalist_id
+  join vocalist b on b.id = ${VOICE_OF}
+  where sv.song_id = s.id
+  group by b.id, b.name`;
+
 /** 曲に、作者と歌声（補助の歌声は後ろ）を付けて読む。where と order は呼ぶ側が書く */
 const SONG_SELECT = `
   select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb,
     extract(year from s.published_on)::int as year,
     (select coalesce(json_agg(json_build_object('id', p.id, 'name', p.name) order by p.complete desc, p.id), '[]')
        from song_producer sp join producer p on p.id = sp.producer_id where sp.song_id = s.id) as producers,
-    (select coalesce(json_agg(v.name order by sv.support, v.id), '[]')
-       from song_vocalist sv join vocalist v on v.id = sv.vocalist_id where sv.song_id = s.id) as vocalists
+    (select coalesce(json_agg(x.name order by x.support, x.id), '[]') from (${VOCALIST_NAMES}) x) as vocalists
   from song s`;
 
 const toSong = (r: SongRow): Song => ({
@@ -195,8 +209,7 @@ const QUEUE_SELECT = `
   select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb,
     to_char(s.published_on, 'YYYY-MM-DD') as published_on, s.rating_score,
     p.id as producer_id, p.name as producer_name,
-    (select coalesce(string_agg(v.name, '・' order by sv.support, v.id), '')
-       from song_vocalist sv join vocalist v on v.id = sv.vocalist_id where sv.song_id = s.id) as vocalists
+    (select coalesce(string_agg(x.name, '・' order by x.support, x.id), '') from (${VOCALIST_NAMES}) x) as vocalists
   from song s
   join lateral (
     select p.id, p.name from song_producer sp join producer p on p.id = sp.producer_id
@@ -358,9 +371,6 @@ export const songsOfDay = cache(async (monthDay: string, page: number): Promise<
 });
 
 export type Voice = { id: number; name: string; songCount: number };
-
-/** キャラごとにまとめた歌声の id（元の歌声の id）。取り込む前の行は base_id が null なので、自分を根として扱う */
-const VOICE_OF = 'coalesce(v.base_id, v.id)';
 
 /**
  * 歌声をキャラごとにまとめ、主に歌っている（補助ではない）流せる曲の多い順に。
