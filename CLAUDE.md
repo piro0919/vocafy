@@ -65,6 +65,7 @@ pnpm dev -p 3100
   - 関数のリージョンは sin1（シンガポール）で、DB と同じ場所に置く（2026-10-10）。初めは関数も DB も既定の iad1（米国東部）のままで、選んだものではなかった。利用者はほぼ日本で、Neon には東京が無いので、いちばん近いシンガポールにした。関数だけ日本に寄せると、1枚のページで DB に何回も聞くたびに太平洋を往復するので、関数と DB は必ず同じ場所にそろえる
   - 移し方: 連携で新しい DB を `vercel integration add neon -m region=sin1 --prefix SIN_` で作り、Postgres 18 の `pg_dump`・`pg_restore`（`postgres:18-alpine` の docker で。手元の pg_dump は古い）で中身を移し、両方の DB を外してから新しい DB を接頭辞無しでつなぎ直した（Vercel の API の `/v1/storage/stores/{id}/connections`。CLI に接続のコマンドが無い）。関数のリージョンはプロジェクトの `resourceConfig.functionDefaultRegions`。Neon のリージョンは後から変えられない
 - `vercel project add` で作ったプロジェクトは framework が空で、ビルドは通るのに全ページが 404 になった。API で framework を nextjs にして直した
+- アクセスは Vercel の Web Analytics で数える（2026-10-10 に有効にした。コードの `<Analytics />` は最初から入っていたが、プロジェクトの側が無効で記録されていなかった）。有料の機能なので CLI は本人の確認を求め、Claude からは有効にできない。サイトマップは kkweb.io の Search Console に出してある（同じ日）
 - vocafy.kkweb.io の CNAME と `_vercel` の TXT は、Janify の `.env.local` の CLOUDFLARE_API_TOKEN（kkweb.io の DNS 編集のみ）で API から足した
 
 ## 分かっている問題
