@@ -85,8 +85,9 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
             />
             <div className="min-w-0">
               <Marquee className="text-sm font-bold">{item.title}</Marquee>
+              {/* パソコンはボカロP名と歌声、スマホはボカロP名だけ。スマホは帯が狭く、歌声まで並べるとボカロP名が途中で切れた */}
               <Marquee
-                className="text-xs text-muted"
+                className="text-xs text-muted max-md:hidden"
                 text={loading ? '' : `${item.producerName}・${item.vocalists}`}
               >
                 {loading ? (
@@ -98,6 +99,18 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                     </Link>
                     {item.vocalists && ` ・ ${item.vocalists}`}
                   </>
+                )}
+              </Marquee>
+              <Marquee
+                className="text-xs text-muted md:hidden"
+                text={loading ? '' : item.producerName}
+              >
+                {loading ? (
+                  '読み込んでいます…'
+                ) : (
+                  <Link href={`/producers/${item.producerId}`} className="hover:text-foreground">
+                    {item.producerName}
+                  </Link>
                 )}
               </Marquee>
             </div>
