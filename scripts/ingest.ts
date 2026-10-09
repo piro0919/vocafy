@@ -31,7 +31,8 @@ import { deadYouTube, viewCounts } from './lib/youtube';
  *   pnpm ingest --seeds 400 --dry    書かずに、何曲・何人になるかだけ数える
  *   pnpm ingest --no-legend          ニコニコの伝説入りを種に入れない
  *   pnpm ingest --no-youtube         YouTube の再生数の線を種に入れない（YOUTUBE_API_KEY が要らなくなる）
- *   pnpm ingest --recent 30          この 30 日に出た曲のうち、取り込み済みのボカロPの曲だけを足す（自動の取り込みが使う）
+ *   pnpm ingest --recent 30          この 30 日に出た曲のうち、取り込み済みのボカロPの曲を足し、この1年の曲で種に掛かった
+ *                                    新しいボカロPの全曲を入れる（自動の取り込みが使う）
  *
  * 種の曲からボカロPを拾い、その人の曲をすべて入れる。線を下げる（--seeds を増やす）ときは、先に --dry で
  * 増え方を数える。ボカロPが1人増えると、その人の全曲がついてくるので、曲数は種の数に比例しない。
@@ -61,12 +62,17 @@ function arg(name: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+/** 今日から days 日前の日付（2026-10-09 の形） */
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 /**
  * ニコニコの伝説入り（100万再生以上）の動画を VocaDB の曲に引き当てる。VocaDB に無い動画や、
- * 入れられない曲（カバー・作者や歌声の分からない曲など）は落とす
+ * 入れられない曲（カバー・作者や歌声の分からない曲など）は落とす。since を渡すと、その日より後に投稿された動画だけ
  */
-async function legendSongs(): Promise<VdbSong[]> {
-  const videos = await legendVideos();
+async function legendSongs(since?: string): Promise<VdbSong[]> {
+  const videos = await legendVideos(since);
   const songs: VdbSong[] = [];
   let done = 0;
   for (const id of videos) {
@@ -77,11 +83,11 @@ async function legendSongs(): Promise<VdbSong[]> {
   return songs;
 }
 
-/** YouTube の再生数の線。2018年以降で評価点が 10 以上の曲を候補にし、本家の動画の再生数が YOUTUBE_LINE 以上のものを選ぶ */
+/** YouTube の再生数の線。after より後に出た評価点が 10 以上の曲を候補にし、本家の動画の再生数が YOUTUBE_LINE 以上のものを選ぶ */
 const YOUTUBE_LINE = 1_000_000;
 
-async function youtubeSongs(): Promise<VdbSong[]> {
-  const candidates = (await youtubeCandidates('2018-01-01', 10)).filter(
+async function youtubeSongs(after: string): Promise<VdbSong[]> {
+  const candidates = (await youtubeCandidates(after, 10)).filter(
     (s) => isEligible(s) && sourcesOf(s)?.youtubeId,
   );
   const views = await viewCounts(
@@ -99,6 +105,35 @@ async function youtubeSongs(): Promise<VdbSong[]> {
 const MAX_DEAD = 300;
 
 /**
+ * 自動の取り込みが新しいボカロPを探す範囲。この日数のうちに出た曲だけを、伝説入りと YouTube の再生数の線にかける。
+ * 全体の取り込みと同じ 2018 年からにすると、VocaDB に毎週 400 回ほど聞くことになる。1年たってから線を越えた曲の作者は、
+ * 手元の全体の取り込みで拾う
+ */
+const NEW_PRODUCER_DAYS = 365;
+
+/**
+ * 自動の取り込みで、新しく全曲を入れるボカロPがこれより多ければ、DB に書かずに止める。人の目を通さないので、
+ * VocaDB の登録の誤りや線の決め方の誤りで、知らない人の曲がまとめて入るのを防ぐ。週に数人のつもり
+ */
+const MAX_NEW_PRODUCERS = 20;
+
+/**
+ * 種の曲。評価点の上位 seedCount 曲・ニコニコの伝説入り・YouTube の再生数のどれかを満たすもの。
+ * since を渡すと、伝説入りと YouTube の再生数は、その日より後に出た曲だけを見る（評価点の上位は全体のまま）
+ */
+async function seedSongs(seedCount: number, since?: string): Promise<VdbSong[]> {
+  const rated = (await topRatedSongs(seedCount)).filter(isEligible);
+  const legends = process.argv.includes('--no-legend') ? [] : await legendSongs(since);
+  const watched = process.argv.includes('--no-youtube')
+    ? []
+    : await youtubeSongs(since ?? '2018-01-01');
+  console.log(
+    `種: 評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲${since ? `（伝説入りと YouTube は ${since} より後の曲）` : ''}`,
+  );
+  return [...new Map([...rated, ...legends, ...watched].map((s) => [s.id, s])).values()];
+}
+
+/**
  * VocaDB の名前を置き換えるボカロP。作者の分からない曲をまとめる VocaDB の入れ物（23966）は、どの言語で聞いても
  * 「Unknown producer(s)」で返る。別名にある「作者不明」を使う
  */
@@ -112,6 +147,7 @@ const PRODUCER_NAMES = new Map([[23966, '作者不明']]);
  */
 async function recentSongs(days: number): Promise<{
   songs: VdbSong[];
+  complete: Set<number>;
   knownVocalists: Map<number, { name: string; baseId: number }>;
 }> {
   const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
@@ -121,12 +157,12 @@ async function recentSongs(days: number): Promise<{
     const vocalists = await pool.query<{ id: number; name: string; base_id: number }>(
       'select id, name, base_id from vocalist',
     );
-    const after = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const songs = (await songsPublishedAfter(after)).filter(
+    const songs = (await songsPublishedAfter(daysAgo(days))).filter(
       (s) => isEligible(s) && producersOf(s).some((p) => complete.has(p.id)),
     );
     return {
       songs,
+      complete,
       knownVocalists: new Map(
         vocalists.rows.map((v) => [v.id, { name: v.name, baseId: v.base_id }]),
       ),
@@ -137,13 +173,13 @@ async function recentSongs(days: number): Promise<{
 }
 
 async function main() {
-  const seedCount = Number(arg('seeds') ?? 200);
+  const seedCount = Number(arg('seeds') ?? 1600);
   const recentDays = arg('recent') === undefined ? undefined : Number(arg('recent'));
   const dry = process.argv.includes('--dry');
 
   const songs = new Map<number, VdbSong>();
   const seedIds = new Set<number>();
-  // 全曲を取り込むボカロP。新しく出た曲を足すだけのときは空（ボカロPの画像やリンクも取り直さない）
+  // 全曲を取り込むボカロP。新しく出た曲を足すときは、新しく種に掛かった人だけ（取り込み済みの人の画像やリンクは取り直さない）
   const producerIds = new Set<number>();
   let knownVocalists = new Map<number, { name: string; baseId: number }>();
 
@@ -152,11 +188,25 @@ async function main() {
     for (const s of recent.songs) songs.set(s.id, s);
     knownVocalists = recent.knownVocalists;
     console.log(`この ${recentDays} 日に出た曲のうち、取り込み済みのボカロPの曲: ${songs.size} 曲`);
+
+    // 新しいボカロP。種の線は全体の取り込みと同じで、見る曲の範囲だけを狭める。取り込み済みの人の種の曲は足さない
+    // （その人の曲はもう全部入っている）
+    for (const s of await seedSongs(seedCount, daysAgo(NEW_PRODUCER_DAYS))) {
+      const fresh = producersOf(s).filter((p) => !recent.complete.has(p.id));
+      if (fresh.length === 0) continue;
+      songs.set(s.id, s);
+      seedIds.add(s.id);
+      for (const p of fresh) producerIds.add(p.id);
+    }
+    for (const id of EXTRA_PRODUCERS) if (!recent.complete.has(id)) producerIds.add(id);
+    console.log(`新しく全曲を入れるボカロP: ${producerIds.size} 人`);
+    if (producerIds.size > MAX_NEW_PRODUCERS) {
+      throw new Error(
+        `新しいボカロPが ${MAX_NEW_PRODUCERS} 人を超えたので書きません。手元で --recent ${recentDays} --dry を走らせて確かめてください`,
+      );
+    }
   } else {
-    const rated = (await topRatedSongs(seedCount)).filter(isEligible);
-    const legends = process.argv.includes('--no-legend') ? [] : await legendSongs();
-    const watched = process.argv.includes('--no-youtube') ? [] : await youtubeSongs();
-    const seeds = [...new Map([...rated, ...legends, ...watched].map((s) => [s.id, s])).values()];
+    const seeds = await seedSongs(seedCount);
     for (const s of seeds) {
       songs.set(s.id, s);
       seedIds.add(s.id);
@@ -164,18 +214,17 @@ async function main() {
     }
     for (const id of EXTRA_PRODUCERS) producerIds.add(id);
     console.log(
-      `種: ${seeds.length} 曲（評価点の上位 ${seedCount} 曲のうち入れられる ${rated.length} 曲、伝説入り ${legends.length} 曲、YouTube で100万回以上 ${watched.length} 曲）、ボカロP ${producerIds.size} 人（手で足した ${EXTRA_PRODUCERS.length} 人を含む）`,
+      `種: ${seeds.length} 曲、ボカロP ${producerIds.size} 人（手で足した ${EXTRA_PRODUCERS.length} 人を含む）`,
     );
+  }
 
-    // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）
-    let done = 0;
-    for (const id of producerIds) {
-      for (const song of await songsByArtist(id)) {
-        if (isEligible(song) && producersOf(song).some((p) => p.id === id))
-          songs.set(song.id, song);
-      }
-      if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
+  // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）
+  let done = 0;
+  for (const id of producerIds) {
+    for (const song of await songsByArtist(id)) {
+      if (isEligible(song) && producersOf(song).some((p) => p.id === id)) songs.set(song.id, song);
     }
+    if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
   }
 
   // 合作の相手も作者として表に入る。その人の全曲までは取りに行かない（線を下げたときに広がりすぎる）

@@ -22,17 +22,22 @@ const TAGS = [
   'VOICEVOX',
 ];
 const PAGE = 100;
-/** 伝説入りは全体の取り込み（手元で走らせる）でしか使わないので、VocaDB の控えと同じく 30 日（scripts/lib/vocadb.ts） */
+/** 全体の取り込み（手元で走らせる）の控えは、VocaDB の控えと同じく 30 日（scripts/lib/vocadb.ts） */
 const MAX_AGE_DAYS = 30;
 
-/** 伝説入りの動画の ID（sm で始まるもの）。再生数の多い順 */
-export async function legendVideos(): Promise<string[]> {
-  try {
-    if (Date.now() - (await stat(CACHE)).mtimeMs < MAX_AGE_DAYS * 24 * 60 * 60 * 1000) {
-      return JSON.parse(await readFile(CACHE, 'utf8')) as string[];
+/**
+ * 伝説入りの動画の ID（sm で始まるもの）。再生数の多い順。since（2025-10-09 の形）を渡すと、その日より後に投稿された動画だけを
+ * 控えを使わずに聞く。新しいボカロPを拾う自動の取り込み（ingest --recent）が使い、2026-10-09 にこの1年で 4 本だった
+ */
+export async function legendVideos(since?: string): Promise<string[]> {
+  if (!since) {
+    try {
+      if (Date.now() - (await stat(CACHE)).mtimeMs < MAX_AGE_DAYS * 24 * 60 * 60 * 1000) {
+        return JSON.parse(await readFile(CACHE, 'utf8')) as string[];
+      }
+    } catch {
+      // まだ取っていない
     }
-  } catch {
-    // まだ取っていない
   }
   const ids: string[] = [];
   for (let offset = 0; ; offset += PAGE) {
@@ -46,6 +51,7 @@ export async function legendVideos(): Promise<string[]> {
       _limit: String(PAGE),
       _context: 'vocafy',
     });
+    if (since) params.set('filters[startTime][gte]', `${since}T00:00:00+09:00`);
     if (offset > 0) await new Promise((r) => setTimeout(r, 1000));
     const res = await fetch(`${BASE}?${params}`, {
       headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' },
@@ -55,6 +61,7 @@ export async function legendVideos(): Promise<string[]> {
     ids.push(...data.map((d) => d.contentId));
     if (data.length < PAGE) break;
   }
+  if (since) return ids;
   await mkdir(new URL('.', CACHE), { recursive: true });
   await writeFile(CACHE, JSON.stringify(ids));
   return ids;

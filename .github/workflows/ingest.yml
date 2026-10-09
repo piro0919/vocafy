@@ -1,14 +1,20 @@
-# 本番の DB に、この 30 日に出た曲のうち取り込み済みのボカロPの曲を足し、配備し直す。週に1回（月曜の午前4時、日本時間）と、手で走らせたとき。
+# 本番の DB に、この 30 日に出た曲のうち取り込み済みのボカロPの曲を足し、新しく種に掛かったボカロPの全曲を入れて、配備し直す。
+# 週に1回（月曜の午前4時、日本時間）と、手で走らせたとき。
 # 配備し直さないと、作り置きのページに新しい曲が出ない（CLAUDE.md の「本番の DB への取り込み」）。
 #
-# VocaDB に聞くのは、30 日分の曲の一覧（1週間でおよそ 370 曲、50 曲ずつで 30 ページほど）と、表に無い歌声だけ。
-# 1 秒に 1 回までなので1分ほどで済む。控えは持ち越さない。日付で聞くので毎回取り直しになるが、量が小さいため。
+# 新しいボカロPは、種の線（評価点の上位 1600 曲・ニコニコの伝説入り・YouTube で100万回以上）を全体の取り込みと同じにして、
+# 伝説入りと YouTube はこの1年に出た曲だけを見る。新しい人が 20 人を超えたら書かずに止める（scripts/ingest.ts）。
+#
+# VocaDB に聞くのは、30 日分の曲の一覧（30 ページほど）、評価点の上位（32 ページ）、この1年の YouTube の候補（50 ページほど）、
+# この1年の伝説入りの引き当て（数本）、新しいボカロPの全曲と項目、表に無い歌声。1 秒に 1 回までなので数分で済む。
+# YouTube Data API は 50 単位ほど（無料枠は1日 10,000 単位）。控えは持ち越さないので、毎回取り直す。
 # 30 日にしているのは、VocaDB への登録が投稿より遅れることがあるから。
-# 新しいボカロPや種の入れ替えは、手元で全体の取り込み（pnpm ingest --seeds 1600）を走らせる。こちらは VocaDB に数千回聞くので、
-# 走らせる前に回数を見積もる
+# 種の入れ替えや、1年より前の曲で線を越えた人は、手元で全体の取り込み（pnpm ingest --seeds 1600）を走らせる。
+# こちらは VocaDB に数千回聞くので、走らせる前に回数を見積もる
 #
 # 鍵（リポジトリの secrets）:
 #   PROD_DATABASE_URL   本番の DB（Vercel の DATABASE_URL_UNPOOLED。プールを通さない接続）
+#   YOUTUBE_API_KEY     YouTube Data API の鍵（再生数の線）
 #   VERCEL_DEPLOY_HOOK  Vercel の vocafy の Deploy Hook「ingest」（main を配備し直す）
 name: ingest
 
@@ -45,6 +51,7 @@ jobs:
       - run: pnpm exec tsx scripts/ingest.ts --recent 30
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
 
       - run: curl -fsS -X POST "$HOOK" > /dev/null
         env:
