@@ -356,16 +356,10 @@ body {
  */
 @keyframes heart-pop {
   0% {
-    transform: scale(0.6);
+    transform: scale(0.7);
   }
-  40% {
-    transform: scale(1.4);
-  }
-  65% {
-    transform: scale(0.9);
-  }
-  85% {
-    transform: scale(1.06);
+  50% {
+    transform: scale(1.25);
   }
   100% {
     transform: scale(1);
@@ -393,24 +387,20 @@ body {
 }
 /*
  * 音符は --angle の向きへ飛ぶ。飛ぶ向きに回したあと逆に回し戻して、音符そのものは立てたまま --tilt だけ傾ける。
- * 小さく出て、遠くで少し縮みながら消える
+ * 出たらそのまま薄れて消える。遠くで浮いたまま薄れると、変に残って見えた
  */
 @keyframes heart-note {
   0% {
-    transform: rotate(var(--angle)) translateY(-0.5rem) rotate(calc(var(--angle) * -1)) scale(0.4);
+    transform: rotate(var(--angle)) translateY(-0.6rem)
+      rotate(calc(var(--angle) * -1 + var(--tilt))) scale(0.6);
     opacity: 0;
   }
-  15% {
-    opacity: 1;
-  }
-  60% {
-    transform: rotate(var(--angle)) translateY(-1.9rem)
-      rotate(calc(var(--angle) * -1 + var(--tilt))) scale(1);
+  25% {
     opacity: 1;
   }
   100% {
-    transform: rotate(var(--angle)) translateY(-2.3rem)
-      rotate(calc(var(--angle) * -1 + var(--tilt))) scale(0.7);
+    transform: rotate(var(--angle)) translateY(-1.5rem)
+      rotate(calc(var(--angle) * -1 + var(--tilt))) scale(1);
     opacity: 0;
   }
 }

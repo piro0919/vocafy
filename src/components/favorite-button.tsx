@@ -47,15 +47,15 @@ function Heart({ on, beat, size }: { on: boolean; beat: number; size: string }) 
     <span key={beat} className="relative grid place-items-center">
       <Icon
         name={on ? 'heartFill' : 'heart'}
-        className={`${size} ${beat === 0 ? '' : on ? 'animate-[heart-pop_480ms_ease-out]' : 'animate-[heart-unpop_180ms_ease-out]'}`}
+        className={`${size} ${beat === 0 ? '' : on ? 'animate-[heart-pop_300ms_ease-out]' : 'animate-[heart-unpop_180ms_ease-out]'}`}
       />
       {beat > 0 && on && (
         <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
-          <span className="absolute size-[180%] animate-[heart-ring_420ms_ease-out_forwards] rounded-full border-accent opacity-0" />
+          <span className="absolute size-[180%] animate-[heart-ring_300ms_ease-out_forwards] rounded-full border-accent opacity-0" />
           {NOTES.map(({ angle, tilt, beamed }, i) => (
             <span
               key={angle}
-              className={`absolute animate-[heart-note_700ms_cubic-bezier(0.2,0.7,0.3,1)_forwards] opacity-0 ${i % 2 === 0 ? 'text-accent' : 'text-miku'}`}
+              className={`absolute animate-[heart-note_400ms_ease-out_forwards] opacity-0 ${i % 2 === 0 ? 'text-accent' : 'text-miku'}`}
               style={{ '--angle': `${angle}deg`, '--tilt': `${tilt}deg` } as CSSProperties}
             >
               <Note beamed={beamed} />
