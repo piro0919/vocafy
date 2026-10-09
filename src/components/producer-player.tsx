@@ -31,10 +31,9 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, parked, context, playQueue, adoptQueue, toggle } = usePlayer();
-  // お気に入りの並びで流している曲は、お気に入りの曲の画面で大きく出す。この人の曲でもここには出さない。
-  // 読み込み直して前の曲を帯に出しているだけ（parked）のときは、まだプレイヤーが無いので置き場所を使わない
-  const here = !parked && context !== 'favorites' && current?.producerId === producerId;
+  const { current, playing, context, playQueue, adoptQueue, toggle } = usePlayer();
+  // お気に入りの並びで流している曲は、お気に入りの曲の画面で大きく出す。この人の曲でもここには出さない
+  const here = context !== 'favorites' && current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
 

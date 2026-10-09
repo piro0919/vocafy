@@ -14,9 +14,8 @@ import { useFavorites } from '@/lib/favorites';
  */
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
-  const { current, playing, parked, context, playQueue, toggle } = usePlayer();
-  // 読み込み直して前の曲を帯に出しているだけ（parked）のときは、まだプレイヤーが無いので置き場所を使わない
-  const here = !parked && context === 'favorites' && !!current;
+  const { current, playing, context, playQueue, toggle } = usePlayer();
+  const here = context === 'favorites' && !!current;
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
   return (
