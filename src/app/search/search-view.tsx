@@ -172,11 +172,13 @@ export function SearchView() {
           </div>
           <ul className="flex flex-wrap gap-2">
             {recent.map((q) => (
-              <li key={q}>
+              <li key={q} className="min-w-0">
                 <button
                   type="button"
                   onClick={() => setText(q)}
-                  className="rounded-full border border-line/60 bg-sidebar/60 px-4 py-1.5 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
+                  title={q}
+                  // 長い言葉は「…」で切り、札が画面からはみ出さないようにする
+                  className="block max-w-60 truncate rounded-full border border-line/60 bg-sidebar/60 px-4 py-1.5 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
                 >
                   {q}
                 </button>

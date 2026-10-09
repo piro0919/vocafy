@@ -10,6 +10,8 @@ import { SongList } from './song-list';
 const PRODUCERS = 12;
 /** 棚に出す曲の数 */
 const SONGS = 12;
+/** 1人のボカロPから読む曲の数（/api/latest/[producer] が返す数） */
+const PER_PRODUCER = 6;
 
 /**
  * トップの「お気に入りのボカロPの新曲」。お気に入りに入れたボカロPの新しい曲を、投稿の新しい順に混ぜて並べる。
@@ -48,13 +50,30 @@ export function FavoriteNewSongs() {
   }, [key]);
 
   const songs = loaded?.key === key ? loaded.songs : null;
-  if (!key || !songs || songs.length === 0) return null;
+  // お気に入りのボカロPがいない人、読み終えて曲が無かった人には出さない
+  if (!key || songs?.length === 0) return null;
   return (
-    <section className="mt-10 sm:mt-14">
+    <section className="mt-10 sm:mt-14" aria-busy={!songs}>
       <div className="mb-3">
         <Heading eyebrow="From Your Favorites">お気に入りのボカロPの新曲</Heading>
       </div>
-      <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
+      {songs ? (
+        <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
+      ) : (
+        // 読み込むあいだは、曲の行の形だけを並べて場所を取っておく。読み終えたときに下の区画が押し下がらないように
+        <div aria-hidden className="grid gap-1 md:grid-cols-2 xl:grid-cols-3">
+          {/* 読み終えたときと同じ数（多くて SONGS 曲）を並べ、高さを合わせる */}
+          {Array.from({ length: Math.min(SONGS, ids.length * PER_PRODUCER) }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 p-1.5">
+              <span className="aspect-video w-[85px] shrink-0 animate-pulse rounded bg-surface" />
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
+                <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
