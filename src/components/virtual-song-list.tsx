@@ -1,6 +1,6 @@
 'use client';
 
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
+import { useWindowVirtualizer, windowScroll } from '@tanstack/react-virtual';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
@@ -73,6 +73,12 @@ export function VirtualSongList({
     scrollMargin: margin,
     // サーバーでも最初の数十行は描く（スクロールの位置が分からないので、上から）
     initialRect: { width: 0, height: 1200 },
+    // 付けたときに覚えている位置へ戻すスクロール（behavior の無いもの）は通さない。
+    // 別の画面から移ってきた直後は前の画面の位置を覚えていて、Next.js が先頭へ戻したあとにそこへ書き戻していた。
+    // 開発のときは effect が2回走るので必ず起き、本番でも順序しだいで起きうる。scrollToIndex は behavior を付けて呼ぶので通る
+    scrollToFn: (offset, options, instance) => {
+      if (options.behavior) windowScroll(offset, options, instance);
+    },
   });
   const items = virtualizer.getVirtualItems();
 
