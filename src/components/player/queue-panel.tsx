@@ -59,10 +59,13 @@ export function QueuePanel({
         aria-hidden={!open}
         inert={!open}
         tabIndex={-1}
-        // 動画の上に重ねない（YouTube の規約）。パソコンで右下の窓で流しているとき（html の data-player が dock）は
-        // 窓（幅 356px）の左に出す。スマホの動画の画面（data-watch）では、上に固定した動画（高さは幅の 56.25%）の下までに
-        // 高さを収める。60% まで伸ばしていたら、板の上が動画の下に潜り込んだ
-        className={`fixed inset-x-3 bottom-(--toast-bottom) z-50 flex max-h-[60dvh] origin-bottom flex-col overflow-hidden rounded-2xl border border-line/60 bg-sidebar/95 shadow-2xl shadow-black/20 outline-none backdrop-blur-lg backdrop-saturate-150 duration-200 ease-(--ease-out) md:right-3 md:left-auto md:w-96 md:[html[data-player=dock]_&]:right-[380px] max-md:[html[data-watch]_&]:max-h-[calc(100dvh-56.25vw-var(--toast-bottom)-12px)] motion-reduce:transition-none ${
+        // 動画の上に重ねない（YouTube の規約）。スマホの動画の画面（data-watch）では、上に固定した動画（高さは幅の 56.25%）の
+        // 下までに高さを収める。60% まで伸ばしていたら、板の上が動画の下に潜り込んだ。
+        // 右下の窓で流しているとき（html の data-player が dock）は、窓の帯の上に積む（--dock-top）。パソコンは窓と同じ幅で
+        // 上の段の下まで、スマホは画面の幅で上の端まで（上の動画の置き場所は表紙だけなので重ねてよい）。パソコンの板は
+        // 下の帯（画面の端から 12px、すりガラスなので中の fixed は帯が基準になる）の中にあるので、帯からの位置で書く。
+        // 前は、パソコンでは窓の左の画面の真ん中に浮き、スマホでは窓の下に潜っていた
+        className={`fixed inset-x-3 bottom-(--toast-bottom) z-50 flex max-h-[60dvh] origin-bottom flex-col overflow-hidden rounded-2xl border border-line/60 bg-sidebar/95 shadow-2xl shadow-black/20 outline-none backdrop-blur-lg backdrop-saturate-150 duration-200 ease-(--ease-out) md:right-3 md:left-auto md:w-96 max-md:[html[data-watch]_&]:max-h-[calc(100dvh-56.25vw-var(--toast-bottom)-12px)] [html[data-player=dock]_&]:bottom-[calc(var(--dock-top)+12px)] max-md:[html[data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-24px)] max-md:[html[data-watch][data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-24px)] md:[html[data-player=dock]_&]:right-0 md:[html[data-player=dock]_&]:bottom-(--dock-top) md:[html[data-player=dock]_&]:w-[356px] md:[html[data-player=dock]_&]:max-h-[calc(100dvh-var(--dock-top)-12px-80px)] motion-reduce:transition-none ${
           // 見える・見えないの切り替え（visibility）は閉じるときだけ動きに乗せ、消えきってから見えなくする。
           // 開くときにも乗せると、出し始めはまだ見えない扱いで、フォーカスを受け付けなかった
           open

@@ -444,3 +444,22 @@ html[data-player='dock'] .page-bottom {
     --toast-bottom: calc(4rem + 36px);
   }
 }
+
+/*
+ * 右下の窓の帯の上端の、画面の下からの高さ（player-provider.tsx の DOCK_STRIP と合わせる）。窓で流しているあいだ、
+ * 次に流れる曲の板（queue-panel.tsx）をこの上に積む。スマホでタブを隠しているあいだは、窓もタブの分だけ下がる（.chrome-bottom）
+ */
+:root {
+  --dock-top: calc(8.25rem + 12px + 200px + 2.25rem);
+}
+:root[data-watch],
+:root[data-chrome='hidden'] {
+  --dock-top: calc(8.25rem + 12px + 200px + 2.25rem - 3.5rem);
+}
+@media (width >= 48rem) {
+  :root,
+  :root[data-watch],
+  :root[data-chrome='hidden'] {
+    --dock-top: calc(4rem + 24px + 200px + 2.25rem);
+  }
+}
