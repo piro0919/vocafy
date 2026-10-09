@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { WebSite, WithContext } from 'schema-dts';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
-import { FavoriteShelves } from '@/components/favorite-shelves';
 import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
@@ -42,7 +41,6 @@ export default async function Home() {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <FavoriteShelves />
 
       {hero && (
         <section className="mt-2 sm:mt-4">
