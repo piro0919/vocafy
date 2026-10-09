@@ -71,6 +71,13 @@ export function clearHistory() {
   write([]);
 }
 
+/** 消した履歴を戻す（削除の知らせの「元に戻す」）。消したあとに聴いた曲は先頭に残す */
+export function restoreHistory(items: QueueItem[]) {
+  const now = read();
+  const added = new Set(now.map((s) => s.songId));
+  write([...now, ...items.filter((s) => !added.has(s.songId))].slice(0, LIMIT));
+}
+
 export function useHistory(): QueueItem[] {
   // サーバーでは localStorage を読めないので空にする
   return useSyncExternalStore(subscribe, read, () => empty);
