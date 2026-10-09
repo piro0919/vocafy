@@ -62,8 +62,11 @@ test('歌声の画面と、あいうえお順の行の画面が開く', async ({
   // 初音ミク（VocaDB の id は 1）。版の違いは、この画面にまとめて並ぶ
   await page.goto('/voices/1');
   await expect(page.getByRole('heading', { level: 1, name: '初音ミク' })).toBeVisible();
-  // 全曲の一覧はやめ、年ごとの代表曲だけにした。ページ送りは無い
+  // 全曲の一覧はやめ、年ごとの代表曲だけにした。ページ送りは無い（年ごとの全曲の画面にはある）
   expect((await page.goto('/voices/1/2'))?.status()).toBe(404);
+  // 年の「すべて表示」から、その年の全曲へ
+  await page.goto('/voices/1/2020');
+  await expect(page.getByRole('heading', { level: 1, name: '初音ミクの2020年の曲' })).toBeVisible();
   await page.goto('/kana/か');
   await expect(page.getByRole('heading', { level: 1, name: 'か行の曲' })).toBeVisible();
   const res = await page.goto('/kana/xyz');

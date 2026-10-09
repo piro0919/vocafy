@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { MoreLink } from '@/components/browse-cards';
 import { Heading } from '@/components/heading';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, findVoice } from '@/lib/catalog';
@@ -29,7 +30,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
   const { id } = await params;
   const found = await findVoice(Number(id));
   if (!found || found.songs.length === 0) notFound();
-  const { voice, songs } = found;
+  const { voice, songs, yearTotals } = found;
   const byYear = Map.groupBy(songs, (s: DatedItem) => s.publishedOn.slice(0, 4));
   const art = voiceArt(voice.id);
   return (
@@ -64,9 +65,15 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
       <div className="grid gap-6">
         {[...byYear].map(([year, list]) => (
           <section key={year}>
-            <h2 className="mb-2 font-tech text-sm font-black tracking-[0.2em] text-accent">
-              {year}
-            </h2>
+            {/* 代表曲に入りきらない年だけ、その年の全曲へ行けるようにする */}
+            <div className="mb-2 flex items-center gap-3">
+              <h2 className="font-tech text-sm font-black tracking-[0.2em] text-accent">{year}</h2>
+              {(yearTotals.get(year) ?? 0) > list.length && (
+                <div className="ml-auto">
+                  <MoreLink href={`/voices/${voice.id}/${year}`} />
+                </div>
+              )}
+            </div>
             <SongList songs={list} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
           </section>
         ))}

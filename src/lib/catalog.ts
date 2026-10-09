@@ -372,6 +372,11 @@ export const voices = cache(async (): Promise<Voice[]> => {
   return rows;
 });
 
+/** その歌声（キャラ）が主に歌っている曲の条件。表は s、歌声の id は $1 */
+const SUNG_BY = `exists (
+  select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
+  where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)`;
+
 /** 歌声の画面に、1年あたり出す代表曲の数 */
 const PICKS_PER_YEAR = 5;
 
@@ -381,23 +386,38 @@ const PICKS_PER_YEAR = 5;
  * 評価点の上位をそのまま選ぶと 2013 年より前に偏るので、年ごとにならす
  */
 export const findVoice = cache(
-  async (id: number): Promise<{ voice: Voice; songs: DatedItem[] } | undefined> => {
+  async (
+    id: number,
+  ): Promise<{ voice: Voice; songs: DatedItem[]; yearTotals: Map<string, number> } | undefined> => {
     if (!Number.isSafeInteger(id)) return;
     const voice = (await voices()).find((v) => v.id === id);
     if (!voice) return;
-    const { rows } = await db().query<QueueRow>(
+    const { rows } = await db().query<QueueRow & { year_total: number }>(
       `select * from (
          select q.*, row_number() over (
-           partition by left(q.published_on, 4) order by q.rating_score desc, q.id) as rank
-         from (${QUEUE_SELECT} and exists (
-           select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
-           where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)) q
+           partition by left(q.published_on, 4) order by q.rating_score desc, q.id) as rank,
+           count(*) over (partition by left(q.published_on, 4))::int as year_total
+         from (${QUEUE_SELECT} and ${SUNG_BY}) q
        ) r
        where rank <= $2
        order by left(published_on, 4) desc nulls last, rank`,
       [id, PICKS_PER_YEAR],
     );
-    return { voice, songs: rows.map(toItem) };
+    const yearTotals = new Map(rows.map((r) => [r.published_on?.slice(0, 4) ?? '', r.year_total]));
+    return { voice, songs: rows.map(toItem), yearTotals };
+  },
+);
+
+/** その歌声（キャラ）がその年に主に歌っている流せる曲。歌声の画面の年の「すべて表示」から。新しい順 */
+export const songsOfVoiceYear = cache(
+  async (id: number, year: number, page: number): Promise<Paged> => {
+    if (!Number.isSafeInteger(id) || !Number.isSafeInteger(year)) return { songs: [], total: 0 };
+    return paged(
+      `and ${SUNG_BY} and extract(year from s.published_on) = $2`,
+      'q.published_on desc, q.id',
+      [id, year],
+      page,
+    );
   },
 );
 
