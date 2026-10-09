@@ -18,6 +18,7 @@
   --muted: #9aabb0;
   --accent: #39c5bb;
   --heart: #ff6b9a;
+  --miku: #39c5bb;
   color-scheme: dark;
 }
 
@@ -48,6 +49,268 @@
   }
 }
 
+/*
+ * キャラの色（設定の画面で選ぶ。src/components/theme/voice.ts）。上の初音ミクの色を、キャラの色で塗り直す。
+ * 地と札はキャラの色をわずかに混ぜ、差し色は地に対して 5 : 1、押すボタンの地は字（on-miku）に対して 7 : 1 以上になるまで
+ * キャラの色を明るく・暗くした。data-theme と並べて書くのは、:root[data-theme='light'] より強くするため
+ */
+:root[data-voice='rin'][data-theme='dark'] {
+  --background: #1c1d17;
+  --sidebar: #161712;
+  --surface: #2c2c23;
+  --line: #3c3d32;
+  --accent: #f29b00;
+  --miku: #f29b00;
+}
+:root[data-voice='rin'][data-theme='light'] {
+  --background: #f6f2e9;
+  --sidebar: #eeeade;
+  --surface: #e7e1ce;
+  --line: #dad3bd;
+  --accent: #8f5b00;
+  --miku: #f29b00;
+}
+:root[data-voice='luka'][data-theme='dark'] {
+  --background: #1c1b1f;
+  --sidebar: #161519;
+  --surface: #2c2930;
+  --line: #3c3a43;
+  --accent: #f37fa6;
+  --miku: #f37fa6;
+}
+:root[data-voice='luka'][data-theme='light'] {
+  --background: #f6f1f3;
+  --sidebar: #eee8eb;
+  --surface: #e8dde2;
+  --line: #dacfd4;
+  --accent: #995069;
+  --miku: #f37fa6;
+}
+:root[data-voice='kaito'][data-theme='dark'] {
+  --background: #131a22;
+  --sidebar: #0f151b;
+  --surface: #1e2834;
+  --line: #2a3848;
+  --accent: #6189df;
+  --miku: #799ce4;
+}
+:root[data-voice='kaito'][data-theme='light'] {
+  --background: #ebf0f6;
+  --sidebar: #e0e7ef;
+  --surface: #d2dbe8;
+  --line: #c1cddb;
+  --accent: #3662be;
+  --miku: #799ce4;
+}
+:root[data-voice='len'][data-theme='dark'] {
+  --background: #1c1f17;
+  --sidebar: #161812;
+  --surface: #2c2f23;
+  --line: #3d4132;
+  --accent: #f5c400;
+  --miku: #f5c400;
+}
+:root[data-voice='len'][data-theme='light'] {
+  --background: #f6f5e9;
+  --sidebar: #efedde;
+  --surface: #e8e5ce;
+  --line: #dad9bd;
+  --accent: #7f6600;
+  --miku: #f5c400;
+}
+:root[data-voice='meiko'][data-theme='dark'] {
+  --background: #1b181a;
+  --sidebar: #151215;
+  --surface: #2a2428;
+  --line: #3a3239;
+  --accent: #e15e65;
+  --miku: #e77e83;
+}
+:root[data-voice='meiko'][data-theme='light'] {
+  --background: #f4eced;
+  --sidebar: #ece2e3;
+  --surface: #e4d4d5;
+  --line: #d6c5c6;
+  --accent: #bb2e35;
+  --miku: #e77e83;
+}
+:root[data-voice='gumi'][data-theme='dark'] {
+  --background: #161f1a;
+  --sidebar: #111815;
+  --surface: #222f28;
+  --line: #304039;
+  --accent: #78c13f;
+  --miku: #78c13f;
+}
+:root[data-voice='gumi'][data-theme='light'] {
+  --background: #eef5ed;
+  --sidebar: #e5ede3;
+  --surface: #d9e5d5;
+  --line: #c9d8c6;
+  --accent: #477225;
+  --miku: #78c13f;
+}
+:root[data-voice='gakupo'][data-theme='dark'] {
+  --background: #161921;
+  --sidebar: #11141a;
+  --surface: #232633;
+  --line: #313646;
+  --accent: #9879d3;
+  --miku: #ab91db;
+}
+:root[data-voice='gakupo'][data-theme='light'] {
+  --background: #efeef5;
+  --sidebar: #e5e5ee;
+  --surface: #d9d8e6;
+  --line: #cac9d9;
+  --accent: #7650bb;
+  --miku: #ab91db;
+}
+:root[data-voice='teto'][data-theme='dark'] {
+  --background: #1b181b;
+  --sidebar: #151316;
+  --surface: #2b242a;
+  --line: #3a333b;
+  --accent: #e45b71;
+  --miku: #ea7b8d;
+}
+:root[data-voice='teto'][data-theme='light'] {
+  --background: #f5edef;
+  --sidebar: #ede3e5;
+  --surface: #e5d6d9;
+  --line: #d7c6ca;
+  --accent: #b8344a;
+  --miku: #ea7b8d;
+}
+:root[data-voice='ia'][data-theme='dark'] {
+  --background: #1c1e21;
+  --sidebar: #16181b;
+  --surface: #2b2e34;
+  --line: #3b3f47;
+  --accent: #e8b4cf;
+  --miku: #e8b4cf;
+}
+:root[data-voice='ia'][data-theme='light'] {
+  --background: #f5f4f6;
+  --sidebar: #eeecee;
+  --surface: #e6e4e7;
+  --line: #d9d6da;
+  --accent: #7d6170;
+  --miku: #e8b4cf;
+}
+:root[data-voice='kafu'][data-theme='dark'] {
+  --background: #171e23;
+  --sidebar: #12181c;
+  --surface: #232e36;
+  --line: #313f4a;
+  --accent: #7fb7ec;
+  --miku: #7fb7ec;
+}
+:root[data-voice='kafu'][data-theme='light'] {
+  --background: #eff4f7;
+  --sidebar: #e5ecf1;
+  --surface: #dae4ea;
+  --line: #cad7de;
+  --accent: #4a6a89;
+  --miku: #7fb7ec;
+}
+:root[data-voice='yukari'][data-theme='dark'] {
+  --background: #181b22;
+  --sidebar: #13151b;
+  --surface: #262934;
+  --line: #353948;
+  --accent: #a679d8;
+  --miku: #b28cdd;
+}
+:root[data-voice='yukari'][data-theme='light'] {
+  --background: #f1f0f6;
+  --sidebar: #e8e7ef;
+  --surface: #dedce8;
+  --line: #cfcedb;
+  --accent: #79589e;
+  --miku: #b28cdd;
+}
+:root[data-voice='yuki'][data-theme='dark'] {
+  --background: #1c1a1e;
+  --sidebar: #161418;
+  --surface: #2b272e;
+  --line: #3b3640;
+  --accent: #e85d8c;
+  --miku: #ec779e;
+}
+:root[data-voice='yuki'][data-theme='light'] {
+  --background: #f5eff2;
+  --sidebar: #eee5e9;
+  --surface: #e6d9df;
+  --line: #d9cad1;
+  --accent: #a74365;
+  --miku: #ec779e;
+}
+:root[data-voice='flower'][data-theme='dark'] {
+  --background: #171920;
+  --sidebar: #12131a;
+  --surface: #242632;
+  --line: #323546;
+  --accent: #a476cd;
+  --miku: #b38dd5;
+}
+:root[data-voice='flower'][data-theme='light'] {
+  --background: #f0eef5;
+  --sidebar: #e6e4ed;
+  --surface: #dbd7e5;
+  --line: #cbc8d8;
+  --accent: #834bb5;
+  --miku: #b38dd5;
+}
+:root[data-voice='una'][data-theme='dark'] {
+  --background: #1c1c1a;
+  --sidebar: #161615;
+  --surface: #2c2a28;
+  --line: #3c3b38;
+  --accent: #f08a3c;
+  --miku: #f08a3c;
+}
+:root[data-voice='una'][data-theme='light'] {
+  --background: #f6f1ed;
+  --sidebar: #eee9e3;
+  --surface: #e7ded5;
+  --line: #dad1c6;
+  --accent: #975726;
+  --miku: #f08a3c;
+}
+:root[data-voice='lily'][data-theme='dark'] {
+  --background: #1c1f1a;
+  --sidebar: #161815;
+  --surface: #2b2f28;
+  --line: #3b4038;
+  --accent: #e3c13b;
+  --miku: #e3c13b;
+}
+:root[data-voice='lily'][data-theme='light'] {
+  --background: #f5f5ed;
+  --sidebar: #edede2;
+  --surface: #e6e5d5;
+  --line: #d8d8c5;
+  --accent: #78661f;
+  --miku: #e3c13b;
+}
+:root[data-voice='mayu'][data-theme='dark'] {
+  --background: #1b1d22;
+  --sidebar: #15171b;
+  --surface: #2a2c35;
+  --line: #3a3d48;
+  --accent: #d9a0dc;
+  --miku: #d9a0dc;
+}
+:root[data-voice='mayu'][data-theme='light'] {
+  --background: #f4f3f6;
+  --sidebar: #ecebef;
+  --surface: #e4e1e8;
+  --line: #d6d4dc;
+  --accent: #7e5d80;
+  --miku: #d9a0dc;
+}
+
 :root {
   /* 動きの曲線。src/lib/motion.ts の EASE_OUT と同じ値 */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -68,7 +331,7 @@
    * 押すボタンの地。明るい画面でも暗い画面でも、ロゴの影絵と同じ明るい青緑にして、字を黒に近い色で載せる
    * （#0b0f12 は #39c5bb に対して 9 : 1 ほど）。差し色（accent）は明るい画面では濃いので、ボタンには使わない
    */
-  --color-miku: #39c5bb;
+  --color-miku: var(--miku);
   --color-on-miku: #0b0f12;
   /* お気に入りのハート。差し色の青緑とは別に、ハートらしい桃色にする */
   --color-heart: var(--heart);

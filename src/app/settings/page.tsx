@@ -4,6 +4,7 @@ import { InstallApp } from '@/components/install-app';
 import { KeyboardHelp } from '@/components/player/keyboard-help';
 import { SwipeBackSetting } from '@/components/swipe-back/swipe-back-setting';
 import { ThemeSetting } from '@/components/theme/theme-setting';
+import { VoiceSetting } from '@/components/theme/voice-setting';
 import { Heading } from '@/components/heading';
 
 export const metadata: Metadata = { title: '設定', robots: { index: false } };
@@ -17,6 +18,7 @@ export default function SettingsPage() {
         </Heading>
       </div>
       <ThemeSetting />
+      <VoiceSetting />
       <AccountSetting />
       <InstallApp />
       <SwipeBackSetting />
