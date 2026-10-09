@@ -1,0 +1,68 @@
+# 本番の DB に VocaDB から取り込み、配備し直す。週に2回（月曜と木曜の午前4時、日本時間）と、手で走らせたとき。
+# 配備し直さないと、作り置きのページに新しい曲が出ない（CLAUDE.md の「本番の DB への取り込み」）。
+#
+# VocaDB などの返事の控え（data/raw/）は actions/cache で次の回へ持ち越す。持ち越さないと毎回 VocaDB に数千回聞き直し、
+# 1時間を超える。actions/cache は7日使われない控えを消すので、週1ではなく週2で回す。
+# 控えの期限は scripts/lib/vocadb.ts の maxAgeDays と、niconico.ts・youtube.ts にある
+#
+# 鍵（リポジトリの secrets）:
+#   PROD_DATABASE_URL   本番の DB（Vercel の DATABASE_URL_UNPOOLED。プールを通さない接続）
+#   YOUTUBE_API_KEY     .env.local と同じもの
+#   VERCEL_DEPLOY_HOOK  Vercel の vocafy の Deploy Hook（main を配備し直す）
+name: ingest
+
+on:
+  schedule:
+    # UTC の日曜と水曜の 19 時 = 日本時間の月曜と木曜の 4 時
+    - cron: '0 19 * * 0,3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    # 控えが空の初回は 1 時間から 1 時間半
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: data/raw
+          key: raw-${{ github.run_id }}
+          restore-keys: raw-
+
+      # 使われなくなった問い合わせの控え（問い合わせの形を変えたときの古いもの）を消す。
+      # 使っているものは長くても 30 日で取り直されて新しくなるので、45 日より古いものは使われていない
+      - run: find data/raw/vocadb -type f -mtime +45 -delete 2>/dev/null || true
+
+      - run: pnpm exec tsx scripts/ingest.ts --seeds 1600
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+
+      # 途中で落ちても、そこまでに取った分は次の回に使う
+      - if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/raw
+          key: raw-${{ github.run_id }}
+
+      - run: curl -fsS -X POST "$HOOK" > /dev/null
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}

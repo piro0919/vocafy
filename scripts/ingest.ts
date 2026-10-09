@@ -81,6 +81,13 @@ async function youtubeSongs(): Promise<VdbSong[]> {
 }
 
 /**
+ * YouTube で流せないとみなした動画がこれより多ければ、DB に書かずに止める。取り込みは人の目を通さずに自動で回るので
+ * （.github/workflows/ingest.yml）、YouTube が一時的に 403 などを返して大量の動画を流せないと誤ってみなしたとき、
+ * 曲をまとめて外したりニコニコに切り替えたりしないため。2026-10-09 の時点で 103 本。本当に増えたときは線を上げる
+ */
+const MAX_DEAD = 300;
+
+/**
  * VocaDB の名前を置き換えるボカロP。作者の分からない曲をまとめる VocaDB の入れ物（23966）は、どの言語で聞いても
  * 「Unknown producer(s)」で返る。別名にある「作者不明」を使う
  */
@@ -148,6 +155,11 @@ async function main() {
   console.log(
     `YouTube で流せない動画 ${dead.size} 本（ニコニコに切り替え ${dead.size - dropped.length} 曲・外す ${dropped.length} 曲）`,
   );
+  if (dead.size > MAX_DEAD) {
+    throw new Error(
+      `YouTube で流せない動画が ${MAX_DEAD} 本を超えたので書きません。data/raw/youtube/oembed.json を確かめてください`,
+    );
+  }
 
   // 画像とリンクは全曲を取ったボカロPの分だけ取りに行く。合作の相手は名前だけ
   const pictures = new Map<number, string | null>();

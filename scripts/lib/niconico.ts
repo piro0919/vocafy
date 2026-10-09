@@ -1,11 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 
 /**
  * ニコニコのスナップショット検索 API（https://site.nicovideo.jp/search-api-docs/snapshot）。鍵は要らない。
  * 合成音声のタグが付いた、再生数が LEGEND 以上の動画（伝説入り）の ID を集める。2026-10-09 に、VOCALOID のタグで 1,113 本、
  * 下の TAGS のどれかで 1,119 本が返るのを確かめた。
  *
- * 結果は data/raw/niconico/legend.json に残し、次からはそれを読む（新しい伝説入りを拾うときは消して取り直す）。
+ * 結果は data/raw/niconico/legend.json に残し、MAX_AGE_DAYS 日のあいだはそれを読む（新しい伝説入りを拾うため、過ぎたら取り直す）。
  * 1回に返るのは 100 本までなので、ずらしながら取る。相手に負荷をかけないよう、1 秒に 1 回までにする
  */
 const BASE = 'https://snapshot.search.nicovideo.jp/api/v2/snapshot/video/contents/search';
@@ -22,11 +22,15 @@ const TAGS = [
   'VOICEVOX',
 ];
 const PAGE = 100;
+/** 取り込みは週に2回なので、VocaDB の曲の一覧と同じく 6 日（scripts/lib/vocadb.ts の maxAgeDays） */
+const MAX_AGE_DAYS = 6;
 
 /** 伝説入りの動画の ID（sm で始まるもの）。再生数の多い順 */
 export async function legendVideos(): Promise<string[]> {
   try {
-    return JSON.parse(await readFile(CACHE, 'utf8')) as string[];
+    if (Date.now() - (await stat(CACHE)).mtimeMs < MAX_AGE_DAYS * 24 * 60 * 60 * 1000) {
+      return JSON.parse(await readFile(CACHE, 'utf8')) as string[];
+    }
   } catch {
     // まだ取っていない
   }

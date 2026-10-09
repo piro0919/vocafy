@@ -1,14 +1,22 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 
 /**
  * VocaDB の API（https://vocadb.net/api）。鍵は要らない。
- * 同じ問い合わせを何度も投げないよう、返ってきた JSON は data/raw/vocadb/ に残し、次からはそれを読む
- * （古くなったら消して取り直す）。相手に負荷をかけないよう、取りに行くときは 1 秒に 2 回までにする
+ * 同じ問い合わせを何度も投げないよう、返ってきた JSON は data/raw/vocadb/ に残し、次からはそれを読む。
+ * 残したものには期限があり、過ぎたら取り直す（maxAgeDays）。相手に負荷をかけないよう、取りに行くときは 1 秒に 2 回までにする
  */
 const BASE = 'https://vocadb.net/api';
 const CACHE = new URL('../../data/raw/vocadb/', import.meta.url);
 const INTERVAL = 500;
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * 残したものを使う日数。曲の一覧（/songs）は新しい曲を拾うために短くする。取り込みは週に2回（月曜と木曜）
+ * 自動で回るので（.github/workflows/ingest.yml）、7 日にすると前の週の同じ曜日に取った分が数分の差で期限前になり、
+ * 2週に1回しか取り直さなくなる。ボカロPや歌声の項目、動画からの曲の引き当てはほとんど変わらないので長くする
+ */
+const maxAgeDays = (path: string) => (path === '/songs' ? 6 : 30);
 
 export type VdbArtist = {
   id: number;
@@ -68,7 +76,9 @@ async function get<T>(path: string, params: Record<string, string | number | str
   const url = `${BASE}${path}?${search}`;
   const file = new URL(`${createHash('sha1').update(url).digest('hex')}.json`, CACHE);
   try {
-    return JSON.parse(await readFile(file, 'utf8')) as T;
+    if (Date.now() - (await stat(file)).mtimeMs < maxAgeDays(path) * DAY) {
+      return JSON.parse(await readFile(file, 'utf8')) as T;
+    }
   } catch {
     // まだ取っていない
   }
