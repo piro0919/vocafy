@@ -10,6 +10,7 @@ import { HeaderSearch, HeaderSearchFallback } from '@/components/header-search';
 import { MobileTabs, Sidebar } from '@/components/nav';
 import { AccountButton } from '@/components/account/account-button';
 import { AccountSync } from '@/components/account/account-sync';
+import { HistoryRecorder } from '@/components/player/history-recorder';
 import { PlayerProvider } from '@/components/player/player-provider';
 import { ScrollChrome } from '@/components/scroll-chrome';
 import { SwipeBack } from '@/components/swipe-back/swipe-back';
@@ -121,6 +122,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
               </AmbientProvider>
             </div>
             <MobileTabs />
+            <HistoryRecorder />
           </PlayerProvider>
         </Progress>
         <ThemeWatcher />
