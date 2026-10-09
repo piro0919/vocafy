@@ -31,12 +31,16 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, context, listSource, playQueue, adoptQueue, toggle } = usePlayer();
-  // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並び・ラジオで
-  // 流している曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
+  const { current, playing, context, listSource, radioHome, playQueue, adoptQueue, toggle } =
+    usePlayer();
+  // 動画をここに大きく出すのは、この人の曲の並びを流しているときと、この画面で始めたラジオのときだけ。お気に入りの並び・
+  // 一覧の「再生」の並び・ほかの画面で始めたラジオの曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
   // この画面にいるまま動画が右下の窓へ飛んだ
   const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
-  const here = ownQueue && current?.producerId === producerId;
+  // ラジオは、この画面で始めたものなら、別の人の曲に進んでもここで大きく出し続ける（ラジオには自分の画面が無い）
+  const radioHere = context === 'radio' && radioHome === `/producers/${producerId}`;
+  const ownHere = ownQueue && current?.producerId === producerId;
+  const here = radioHere || ownHere;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
 
@@ -46,7 +50,8 @@ export function ProducerPlayer({
   // この人の曲を流しているあいだは、住所に流している曲を入れる（?song=曲の id）。読み込み直したときや、
   // 住所をそのまま写して送ったときに、共有のリンクと同じくその曲から流せる。曲が変わるたびに履歴を増やさずに書き換える
   useEffect(() => {
-    if (!here || !current) return;
+    // ラジオで別の人の曲を流しているときは入れない（この人の画面の住所に、ほかの人の曲を指させない）
+    if (!ownHere || !current) return;
     const url = new URL(window.location.href);
     // ほかの画面へ移る途中（住所がもうこの画面のものでない）は書き換えない
     if (url.pathname !== `/producers/${producerId}`) return;
@@ -55,7 +60,7 @@ export function ProducerPlayer({
     // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
     // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
     window.history.replaceState(null, '', url);
-  }, [here, current, producerId]);
+  }, [ownHere, current, producerId]);
 
   const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
   // その曲の行までスクロールするのは、開いたときの1回だけ。流しているあいだは住所の曲が曲ごとに変わるが、そのたびには動かさない

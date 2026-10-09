@@ -83,6 +83,11 @@ type PlayerContext = {
   ) => void;
   /** 「すべて再生」で流している一覧の住所。ほかの並びを流しているときは null */
   listSource: string | null;
+  /**
+   * ラジオを始めた画面の住所（/producers/45 など）。ラジオには自分の画面が無いので、始めた画面がその間の置き場所になる。
+   * その画面にいるあいだは、別の人の曲に進んでも動画を大きく出したままにする。ラジオでないときは null
+   */
+  radioHome: string | null;
   /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
   startRadio: (seed: QueueItem) => void;
   toggle: () => void;
@@ -232,6 +237,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 「すべて再生」で流している一覧の続き。ほかの並びに替えたら消す
   const more = useRef<ListSource | null>(null);
   const [listSource, setListSource] = useState<string | null>(null);
+  const [radioHome, setRadioHome] = useState<string | null>(null);
   // 次のページを待っているあいだに並びの最後を越えたら、先頭に戻らず、届いたところで次の曲へ進む
   const advanceAfterMore = useRef(false);
   const clearMore = useCallback(() => {
@@ -251,6 +257,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback((items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
     setContext(ctx);
+    // ラジオの続き（曲送り）でなければ、ラジオを始めた画面は忘れる
+    if (ctx !== 'radio') setRadioHome(null);
     clearTimeout(waitTimer.current);
     setWaitingForSlot(ctx === 'pending');
     if (ctx === 'pending') {
@@ -432,6 +440,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPosition(positionRef.current);
     state.current = { queue: items, index: at };
     setContext('list');
+    setRadioHome(null);
     setQueue(items);
     setIndex(at);
   }, []);
@@ -469,9 +478,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const startRadio = useCallback(
     (seed: QueueItem) => {
       clearMore();
+      const home = window.location.pathname;
       const { queue: q, index: i } = state.current;
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');
+        setRadioHome(home);
         return;
       }
       // 関連曲を足すときに、待っているあいだに並びが替わっていないかを同じ配列かどうかで見るので、1つの配列を使い回す
@@ -483,6 +494,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setQueue(items);
       setIndex(0);
       setContext('radio');
+      setRadioHome(home);
     },
     [load, clearMore],
   );
@@ -511,6 +523,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [context, index, queue, extend]);
 
   const close = useCallback(() => {
+    setRadioHome(null);
     clearMore();
     player.current?.destroy();
     player.current = null;
@@ -669,6 +682,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       playAll,
       listSource,
+      radioHome,
       startRadio,
       toggle: () => (playing ? player.current?.pause() : player.current?.play()),
       step,
@@ -714,6 +728,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       adopt,
       playAll,
       listSource,
+      radioHome,
       clearMore,
       startRadio,
       step,
@@ -742,7 +757,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 ? '/favorites/songs'
                 : listSource
                   ? `/${listSource}/play`
-                  : `/producers/${shown.producerId}`
+                  : context === 'radio' && radioHome
+                    ? radioHome
+                    : `/producers/${shown.producerId}`
             }
             className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
           >

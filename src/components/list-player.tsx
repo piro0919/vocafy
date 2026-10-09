@@ -41,8 +41,11 @@ export function ListPlayer({
   songs: QueueItem[];
   total: number;
 }) {
-  const { current, playing, listSource, playAll, toggle } = usePlayer();
-  const here = listSource === source && current !== null;
+  const { current, playing, context, listSource, radioHome, playAll, toggle } = usePlayer();
+  // この一覧を流しているときと、この画面で始めたラジオのとき（ラジオには自分の画面が無い）に、動画をここに大きく出す
+  const here =
+    current !== null &&
+    (listSource === source || (context === 'radio' && radioHome === `/${source}/play`));
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
@@ -76,7 +79,8 @@ export function ListPlayer({
 
   // この一覧を流しているあいだは、住所に流している曲を入れる。曲が変わるたびに履歴を増やさずに書き換える
   useEffect(() => {
-    if (!here || !current) return;
+    // ラジオのときは入れない（この一覧の住所に、一覧に無い曲を指させない）
+    if (listSource !== source || !current) return;
     const url = new URL(window.location.href);
     // ほかの画面へ移る途中（住所がもうこの画面のものでない）は書き換えない
     if (url.pathname !== `/${source}/play`) return;
@@ -85,7 +89,7 @@ export function ListPlayer({
     // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
     // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
     window.history.replaceState(null, '', url);
-  }, [here, current, source]);
+  }, [listSource, current, source]);
 
   return (
     // ボカロPの画面（producer-player.tsx）と同じ組み立て
