@@ -26,7 +26,7 @@ export function PlayAll({ songs, count }: { songs: QueueItem[]; count: string })
         className="flex shrink-0 items-center gap-1.5 rounded-full bg-miku py-1.5 pr-4 pl-3 text-sm font-bold whitespace-nowrap text-on-miku shadow-md shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
       >
         <Icon name={here && playing ? 'pause' : 'play'} className="size-4" />
-        {here && playing ? '一時停止' : '通して再生'}
+        {here && playing ? '一時停止' : 'すべて再生'}
       </button>
       <p className="text-sm text-muted">{count}</p>
     </div>
