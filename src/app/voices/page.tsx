@@ -58,7 +58,7 @@ export default async function VoicesPage() {
             <li key={v.id} className="min-w-0">
               <Link
                 href={`/voices/${v.id}`}
-                className={`flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 transition-[background-color] duration-150 ease-out hover:bg-accent/10 ${
+                className={`flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 transition-[background-color] duration-150 ease-(--ease-out) hover:bg-accent/10 ${
                   v.songCount >= MINOR ? 'bg-glass px-4 py-1.5 text-sm' : 'px-3 py-1 text-xs'
                 }`}
               >

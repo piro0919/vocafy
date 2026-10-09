@@ -103,7 +103,7 @@ export function FavoriteButton({
         toggle(song);
         setBeat((b) => b + 1);
       }}
-      className={`${shown} size-9 shrink-0 place-items-center rounded-full transition-[color,scale,opacity] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'} ${className}`}
+      className={`${shown} size-9 shrink-0 place-items-center rounded-full transition-[color,scale,opacity] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95 ${on ? 'text-accent' : 'text-muted hover:text-foreground'} ${className}`}
     >
       <Heart on={on} beat={beat} size="size-5" />
     </button>
@@ -126,7 +126,7 @@ export function FavoriteProducerButton({ producer }: { producer: FavoriteProduce
         toggle(producer);
         setBeat((b) => b + 1);
       }}
-      className={`grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+      className={`grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Heart on={on} beat={beat} size="size-6" />
     </button>

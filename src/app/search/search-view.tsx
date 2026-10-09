@@ -179,7 +179,7 @@ export function SearchView() {
                   onClick={() => setText(q)}
                   title={q}
                   // 長い言葉は「…」で切り、札が画面からはみ出さないようにする
-                  className="block max-w-60 truncate rounded-full border border-line/60 bg-glass px-4 py-1.5 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
+                  className="block max-w-60 truncate rounded-full border border-line/60 bg-glass px-4 py-1.5 text-sm font-bold transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95"
                 >
                   {q}
                 </button>
@@ -208,7 +208,7 @@ export function SearchView() {
               <li key={p.id}>
                 <Link
                   href={`/producers/${p.id}`}
-                  className="flex items-center gap-2 rounded-full border border-line/60 bg-glass py-1 pr-4 pl-1 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95"
+                  className="flex items-center gap-2 rounded-full border border-line/60 bg-glass py-1 pr-4 pl-1 text-sm font-bold transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95"
                 >
                   {p.picture ? (
                     <FadeImage
@@ -242,7 +242,7 @@ export function SearchView() {
                 <li key={v.id}>
                   <Link
                     href={`/voices/${v.id}`}
-                    className={`flex items-center gap-2 rounded-full border border-line/60 bg-glass py-1 pr-4 text-sm font-bold transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95 ${art ? 'pl-1' : 'pl-4'}`}
+                    className={`flex items-center gap-2 rounded-full border border-line/60 bg-glass py-1 pr-4 text-sm font-bold transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95 ${art ? 'pl-1' : 'pl-4'}`}
                   >
                     {art && (
                       <span className="relative size-8 shrink-0 rounded-full bg-surface">

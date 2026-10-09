@@ -123,7 +123,7 @@ export default async function Home() {
                   <Link
                     href={`/kana/${row}`}
                     aria-label={`${ROW_LABEL[row]}（${formatCount(rowCounts.get(row) ?? 0)}曲）`}
-                    className="grid aspect-square place-items-center rounded-2xl border border-line/60 bg-glass font-display text-xl text-accent transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 sm:text-2xl"
+                    className="grid aspect-square place-items-center rounded-2xl border border-line/60 bg-glass font-display text-xl text-accent transition-[background-color,border-color,scale] duration-150 ease-(--ease-out) hover:border-accent/50 hover:bg-accent/10 active:scale-95 sm:text-2xl"
                   >
                     <span
                       className={

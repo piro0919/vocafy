@@ -1017,7 +1017,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           type="button"
           aria-label="プレイヤーを閉じる"
           onClick={close}
-          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
+          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
         >
           <Icon name="close" className="size-4" />
         </button>

@@ -28,7 +28,7 @@ function SessionAccount() {
         type="button"
         popoverTarget={id}
         aria-label="アカウント"
-        className="grid size-10 shrink-0 place-items-center rounded-full transition-[scale] duration-150 ease-out active:scale-95"
+        className="grid size-10 shrink-0 place-items-center rounded-full transition-[scale] duration-150 ease-(--ease-out) active:scale-95"
       >
         {user.image ? (
           <Image

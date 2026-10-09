@@ -37,7 +37,7 @@ export function Pager({
   if (last <= 1) return null;
   const pages = Array.from({ length: last }, (_, i) => i + 1);
   const arrow =
-    'grid size-9 place-items-center rounded-full border border-accent/40 text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95';
+    'grid size-9 place-items-center rounded-full border border-accent/40 text-accent transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95';
   return (
     <nav aria-label="ページ" className="mt-8 flex flex-wrap items-center justify-center gap-2">
       {page > 1 && (
@@ -50,7 +50,7 @@ export function Pager({
           key={p}
           href={href(p)}
           aria-current={p === page ? 'page' : undefined}
-          className={`grid h-9 min-w-9 place-items-center rounded-full px-2 font-tech text-sm font-black transition-[background-color,scale] duration-150 ease-out active:scale-95 ${
+          className={`grid h-9 min-w-9 place-items-center rounded-full px-2 font-tech text-sm font-black transition-[background-color,scale] duration-150 ease-(--ease-out) active:scale-95 ${
             p === page ? 'bg-miku text-on-miku' : 'text-accent hover:bg-accent/10'
           }`}
         >

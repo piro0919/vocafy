@@ -23,7 +23,7 @@ export function ProducerLinks({ name, links }: { name: string; links: Links }) {
             rel="noopener"
             aria-label={`${name}の${s.label}`}
             title={s.label}
-            className="grid size-9 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 hover:text-foreground active:scale-90"
+            className="grid size-9 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 hover:text-foreground active:scale-95"
           >
             <Icon name={s.key} className="size-5" />
           </a>

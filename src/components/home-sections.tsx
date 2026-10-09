@@ -49,9 +49,9 @@ export function OnThisDay({
             fill
             sizes="(min-width: 64rem) 40vw, (min-width: 40rem) 50vw, 100vw"
             loading="eager"
-            className="object-cover transition-[opacity,scale] duration-300 ease-out group-hover:scale-[1.03]"
+            className="object-cover transition-[opacity,scale] duration-300 ease-(--ease-out) group-hover:scale-[1.03]"
           />
-          <span className="absolute right-3 bottom-3 grid size-12 place-items-center rounded-full bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[scale] duration-150 ease-out group-hover:scale-105 group-active:scale-95">
+          <span className="absolute right-3 bottom-3 grid size-12 place-items-center rounded-full bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[scale] duration-150 ease-(--ease-out) group-hover:scale-105 group-active:scale-95">
             <Icon name={heroActive && playing ? 'pause' : 'play'} />
           </span>
         </span>
@@ -88,7 +88,7 @@ export function OnThisDay({
                 <button
                   type="button"
                   onClick={() => open(song)}
-                  className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
+                  className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.98]"
                 >
                   <FadeImage
                     src={smallThumbOf(song)}
@@ -141,14 +141,14 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             aria-label={`${song.title}（${song.producerName}）`}
             title={song.title}
             onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-out active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : ''}`}
+            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : ''}`}
           >
             <FadeImage
               src={song.thumb}
               alt=""
               fill
               sizes="(min-width: 64rem) 16vw, (min-width: 40rem) 25vw, 33vw"
-              className="object-cover transition-[opacity,scale] duration-300 ease-out group-hover:scale-105"
+              className="object-cover transition-[opacity,scale] duration-300 ease-(--ease-out) group-hover:scale-105"
             />
             <span
               className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}

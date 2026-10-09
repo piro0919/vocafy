@@ -81,7 +81,7 @@ export function SongItem({
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
+        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.98]"
       >
         <FadeImage
           src={smallThumbOf(song)}

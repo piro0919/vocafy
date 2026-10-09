@@ -81,7 +81,7 @@ export function PlayerStage({
                 className="object-cover"
               />
             )}
-            <span className="absolute top-1/2 left-1/2 grid size-16 -translate-1/2 place-items-center rounded-full bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[scale] duration-200 ease-out group-hover:scale-105 group-active:scale-95">
+            <span className="absolute top-1/2 left-1/2 grid size-16 -translate-1/2 place-items-center rounded-full bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[scale] duration-200 ease-(--ease-out) group-hover:scale-105 group-active:scale-95">
               <Icon name="play" className="size-9" />
             </span>
           </button>

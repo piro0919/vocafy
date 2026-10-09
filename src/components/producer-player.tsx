@@ -116,7 +116,7 @@ export function ProducerPlayer({
           <button
             type="button"
             onClick={() => (here ? toggle() : start(linkedItem?.songId))}
-            className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
+            className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-(--ease-out) hover:brightness-110 active:scale-95"
           >
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}
@@ -220,7 +220,7 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
       onClick={share}
       aria-label={label}
       title={label}
-      className="grid size-10 shrink-0 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
+      className="grid size-10 shrink-0 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
     >
       <Icon name="share" className="size-5" />
     </button>
@@ -337,7 +337,7 @@ function YearJump({ songs }: { songs: Song[] }) {
                   behavior: 'smooth',
                 });
             }}
-            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-150 ease-out active:scale-95 ${
+            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-150 ease-(--ease-out) active:scale-95 ${
               active === year
                 ? 'bg-miku text-on-miku'
                 : 'text-muted hover:bg-foreground/8 hover:text-foreground'

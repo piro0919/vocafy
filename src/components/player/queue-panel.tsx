@@ -87,7 +87,7 @@ export function QueuePanel({
           type="button"
           aria-label="次に流れる曲を閉じる"
           onClick={onClose}
-          className="grid h-9 w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
+          className="grid h-9 w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
         >
           <Icon name="close" className="size-4" />
         </button>
