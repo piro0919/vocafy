@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useSyncExternalStore } from 'react';
+import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -127,8 +127,7 @@ export function ProducerPlayer({
       </div>
 
       <div className="min-w-0">
-        {/* 一覧の上に1行で横に並べ、右端をぼかして続きがあることを見せる */}
-        <YearJump songs={songs} className="mb-3" />
+        <YearJump songs={songs} />
         {/*
           行の地の色は字の手前まで広げたいので、行の内側に余白（px-3）を取る。そのぶん並び全体を外へ出し（-mx-3）、
           番号の頭が題名の頭とそろうようにする
@@ -234,27 +233,98 @@ const YEAR_JUMP_MIN = 100;
  * 一覧の上に並べる年の札。押すと、その年の最初の曲の行までスクロールする。曲の多い人（ピノキオピーは 166 曲）で、
  * 古い曲まで長くスクロールしなくて済むように。曲が少ない人や、1年に収まる人には出さない
  */
-function YearJump({ songs, className = '' }: { songs: Song[]; className?: string }) {
-  const firsts = new Map<number, number>();
-  for (const s of songs) if (s.year && !firsts.has(s.year)) firsts.set(s.year, s.id);
-  if (songs.length <= YEAR_JUMP_MIN || firsts.size < 2) return null;
+function YearJump({ songs }: { songs: Song[] }) {
+  const firsts = [
+    ...songs.reduce(
+      (m, s) => (s.year && !m.has(s.year) ? m.set(s.year, s.id) : m),
+      new Map<number, number>(),
+    ),
+  ];
+  const show = songs.length > YEAR_JUMP_MIN && firsts.length >= 2;
+  const bar = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<number | null>(null);
+
+  // いま見えている曲の年。札の行のすぐ下を通っている曲の年を、スクロールのたびに求める（年の最初の曲の位置だけを見る）
+  const key = firsts.map(([y]) => y).join(',');
+  useEffect(() => {
+    if (!show) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = (bar.current?.getBoundingClientRect().bottom ?? 0) + 8;
+      let year = firsts[0][0];
+      for (const [y, id] of firsts) {
+        const top = document.getElementById(`song-${id}`)?.getBoundingClientRect().top;
+        if (top !== undefined && top <= line) year = y;
+      }
+      setActive(year);
+    };
+    const onScroll = () => {
+      frame ||= requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(frame);
+    };
+    // firsts は key が同じなら中身も同じ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, key]);
+
+  // 目立たせた札が行の外に出ていたら、見えるところまで行をずらす
+  useEffect(() => {
+    if (active === null) return;
+    const chip = bar.current?.querySelector<HTMLElement>(`[data-year="${active}"]`);
+    const row = chip?.parentElement;
+    if (!chip || !row) return;
+    const left = chip.offsetLeft - row.offsetLeft;
+    if (left < row.scrollLeft || left + chip.offsetWidth > row.scrollLeft + row.clientWidth) {
+      row.scrollTo({ left: left - row.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
+    }
+  }, [active]);
+
+  if (!show) return null;
   return (
-    // 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow）
-    <ScrollRow label="年で飛ぶ" className={`-mx-1 gap-1.5 px-1 ${className}`}>
-      {[...firsts].map(([year, id]) => (
-        <button
-          key={year}
-          type="button"
-          onClick={() =>
-            document
-              .getElementById(`song-${id}`)
-              ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-          }
-          className="shrink-0 rounded-full border border-line/60 px-3 py-1 font-tech text-xs font-black tracking-wider text-muted transition-[color,background-color,scale] duration-150 ease-out hover:bg-foreground/8 hover:text-foreground active:scale-95"
-        >
-          {year}
-        </button>
-      ))}
-    </ScrollRow>
+    // 一覧をスクロールしても、一覧の上に貼り付ける（パソコンは左の列と同じ高さ、スマホは固定した動画の下）。
+    // 地は、ほかの浮いた板（左のメニュー・再生の帯）と同じすりガラス。単色で塗ると上部の表紙の色の背景と合わなかった
+    <div
+      ref={bar}
+      className="sticky top-[calc(56.25vw+8px)] z-10 mb-3 rounded-full border border-line/60 bg-sidebar/80 p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
+    >
+      {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
+      <ScrollRow label="年で飛ぶ" className="gap-1">
+        {firsts.map(([year, id]) => (
+          <button
+            key={year}
+            type="button"
+            data-year={year}
+            aria-current={active === year ? 'true' : undefined}
+            onClick={() => {
+              // その年の最初の曲を、札の行のすぐ下に送る（真ん中に送ると、札の行とのあいだに前の年の曲が残り、
+              // そちらの年が目立ってしまった）
+              const row = document.getElementById(`song-${id}`);
+              // 札の行は、送ったあとには貼り付いている。押した時点の位置ではなく、貼り付く位置（CSS の top）で計る
+              const el = bar.current;
+              const below = el ? parseFloat(getComputedStyle(el).top) + el.offsetHeight + 4 : 0;
+              if (row)
+                window.scrollTo({
+                  top: window.scrollY + row.getBoundingClientRect().top - below,
+                  behavior: 'smooth',
+                });
+            }}
+            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-150 ease-out active:scale-95 ${
+              active === year
+                ? 'bg-miku text-on-miku'
+                : 'text-muted hover:bg-foreground/8 hover:text-foreground'
+            }`}
+          >
+            {year}
+          </button>
+        ))}
+      </ScrollRow>
+    </div>
   );
 }
