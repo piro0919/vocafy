@@ -22,7 +22,8 @@ test('トップからボカロPの画面へ移り、その人の曲が並ぶ', a
 
 test('ニコニコにしか本家が無い曲は、ニコニコのプレイヤーで流す', async ({ page }) => {
   await page.goto('/producers/45');
-  await page.getByRole('button', { name: /罪と罰/ }).click();
+  // 曲の行には「◯◯をお気に入りに入れる」ボタンも並ぶので、曲名のあとにそれが続かないボタンを選ぶ
+  await page.getByRole('button', { name: /罪と罰(?!をお気に入り)/ }).click();
   await expect(page.locator('[data-player-frame] iframe')).toHaveAttribute(
     'src',
     /embed\.nicovideo\.jp\/watch\/sm8166339/,
@@ -70,7 +71,7 @@ test('歌声の画面と、あいうえお順の行の画面が開く', async ({
 test('検索で、曲名をひらがなで打ってもカタカナの曲が見つかる', async ({ page }) => {
   await page.goto('/search');
   await page.getByRole('searchbox', { name: '曲名かボカロPの名前で探す' }).fill('ごーすと');
-  await expect(page.getByRole('button', { name: /ゴーストルール/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /ゴーストルール(?!をお気に入り)/ })).toBeVisible();
 });
 
 test('無いボカロPは 404', async ({ page }) => {
