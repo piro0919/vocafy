@@ -222,6 +222,9 @@ const UPCOMING_LIMIT = 10;
 /** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
 const WAIT_FOR_SLOT = 1000;
 
+/** ラジオで足せる関連曲を探すときに、関連曲を聞く曲の数の上限 */
+const RADIO_TRIES = 6;
+
 /** holdSlot で前の画面に動画を出し続けさせる長さの上限（ミリ秒）。初めて開くラジオの画面も読み込み中の形はすぐ出る */
 const HOLD_SLOT = 3000;
 
@@ -646,26 +649,37 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [adopt]);
 
   // ラジオで並びの終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
-  // 足せる曲が無ければ、次の曲に移ったときにその曲の関連曲でもう一度試す
+  // いまの曲の関連曲がどれも並びに入っているとき（ラジオの画面で一覧の最後の曲を押したときなど）は、並びの後ろの曲から
+  // 順にさかのぼって、足せる曲が見つかるまで RADIO_TRIES 曲まで試す。足さないと次に流れる曲が空になり、最後の曲のあとは
+  // 先頭に戻っていた。関連曲の答えは CDN に置いてあるので、さかのぼっても DB はほぼ起きない
   const extending = useRef(false);
   useEffect(() => {
     if (context !== 'radio' || queue.length === 0 || index < queue.length - 2) return;
     if (extending.current) return;
     extending.current = true;
-    fetch(`/api/related/${queue[index].songId}`)
-      .then((res) => (res.ok ? (res.json() as Promise<QueueItem[]>) : []))
-      .then((items) => {
-        const { queue: q } = state.current;
-        // 待っているあいだに別の並びに替わっていたら、足さない
-        if (q !== queue) return;
-        const have = new Set(q.map((s) => s.songId));
-        const fresh = items.filter((s) => !have.has(s.songId));
-        if (fresh.length > 0) extend([...q, ...fresh]);
-      })
-      .catch(() => {})
-      .finally(() => {
+    const seeds = [queue[index], ...queue.filter((_, i) => i !== index).toReversed()].slice(
+      0,
+      RADIO_TRIES,
+    );
+    void (async () => {
+      try {
+        for (const seed of seeds) {
+          const res = await fetch(`/api/related/${seed.songId}`).catch(() => null);
+          const items = res?.ok ? ((await res.json()) as QueueItem[]) : [];
+          const { queue: q } = state.current;
+          // 待っているあいだに別の並びに替わっていたら、足さない
+          if (q !== queue) return;
+          const have = new Set(q.map((s) => s.songId));
+          const fresh = items.filter((s) => !have.has(s.songId));
+          if (fresh.length > 0) {
+            extend([...q, ...fresh]);
+            return;
+          }
+        }
+      } finally {
         extending.current = false;
-      });
+      }
+    })();
   }, [context, index, queue, extend]);
 
   const close = useCallback(() => {
