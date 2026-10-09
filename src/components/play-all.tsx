@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import type { QueueItem } from '@/lib/catalog';
+import { PILL } from './browse-cards';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
 
@@ -15,16 +16,8 @@ import { usePlayer } from './player/player-provider';
  * 最後のページの次は1ページ目に戻り、押したページの手前まで流す。
  * list が無いとき（歌声の画面の代表曲）は、このページの曲だけを流す
  */
-export function PlayAll({
-  songs,
-  count,
-  list,
-}: {
-  songs: QueueItem[];
-  count: string;
-  /** 一覧の住所（years/2010 など）、このページ、最後のページ */
-  list?: { source: string; page: number; last: number };
-}) {
+/** 一覧を通して流す処理（PlayAll と PlayAllPill で共有する） */
+function usePlayAll(songs: QueueItem[], list?: { source: string; page: number; last: number }) {
   const { queue, current, playing, listSource, playQueue, playAll, toggle } = usePlayer();
   const router = useRouter();
   // この一覧を流しているか。一覧の続きを足すものは住所で、そうでないものは並びの先頭と長さで見る
@@ -44,6 +37,20 @@ export function PlayAll({
     playAll(songs, { source: list.source, start: list.page, last: list.last }, { moving: true });
     router.push(`/${list.source}/play`);
   };
+  return { here, playing, start, toggle, router };
+}
+
+export function PlayAll({
+  songs,
+  count,
+  list,
+}: {
+  songs: QueueItem[];
+  count: string;
+  /** 一覧の住所（years/2010 など）、このページ、最後のページ */
+  list?: { source: string; page: number; last: number };
+}) {
+  const { here, playing, start, toggle } = usePlayAll(songs, list);
   return (
     <div className="mt-3 flex items-center gap-3">
       <button
@@ -57,5 +64,29 @@ export function PlayAll({
       {/* 折り返すのは空きの位置だけ。字の間で折ると「（全11,002曲）」の「曲）」だけが次の行に落ちた */}
       <p className="text-sm text-muted [word-break:keep-all]">{count}</p>
     </div>
+  );
+}
+
+/**
+ * トップの区画の見出しの右に置く、小さな「再生」（形は「すべて表示」と同じ PILL）。押すと一覧を流し始めて、
+ * 一覧の再生用の画面へ移る。もうその一覧を流しているときは、止めずに移るだけ（お気に入りの「再生」と同じ）
+ */
+export function PlayAllPill({
+  songs,
+  list,
+}: {
+  songs: QueueItem[];
+  list: { source: string; page: number; last: number };
+}) {
+  const { here, start, router } = usePlayAll(songs, list);
+  return (
+    <button
+      type="button"
+      onClick={() => (here ? router.push(`/${list.source}/play`) : start())}
+      className={`${PILL} flex items-center gap-1`}
+    >
+      <Icon name="play" className="size-3.5" />
+      再生
+    </button>
   );
 }

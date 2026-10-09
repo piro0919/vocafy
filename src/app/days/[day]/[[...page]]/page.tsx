@@ -25,7 +25,8 @@ export async function generateMetadata({
 }
 
 /**
- * その月日に投稿された曲。トップの「きょうの日付の曲」に入りきらない分も、ここで全部見られる。
+ * その月日に投稿された曲。トップからはリンクしていない（トップの欄は横に送れば全曲をたどれ、「再生」は再生用の画面へ移る）。
+ * 住所を直接開いたときのために残している。
  * 何年の曲かが要なので、年ごとに区切って新しい年から並べる。多い日は PAGE_SIZE 曲ずつのページに分ける
  */
 export default async function DayPage({ params }: PageProps<'/days/[day]/[[...page]]'>) {

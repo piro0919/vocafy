@@ -11,22 +11,11 @@ import { FADE } from './scroll-row';
 const GLIDE_MS = 500;
 
 /**
- * 見出しの付いた、横に流せる棚。左右の矢印で1画面ぶん送る。
- * 棚と棚の間は、スマホでは詰める（縦に長い画面で棚を次々に流して見ると、空きが積み重なって間延びする）。
- * 年の札の帯（ScrollRow）と同じく、続きがある側の端だけをぼかす。パソコンでは本文の幅の中で流す。
- * 前は流す帯を画面の左端まで伸ばし、左の板の後ろへ流れ込ませていたが、板の字の後ろを札がにじんで通るのを本人が嫌った（2026-10-09）
+ * 横に流す帯の送り方（年代の棚と、トップのきょうの日付の曲の列で使う）。帯の要素に track を付け、onScroll で update を呼ぶ。
+ * edge は端にいるか（矢印を押せなくする・端をぼかすのに使う）、page は矢印で1画面ぶん送る
  */
-export function Shelf({
-  title,
-  eyebrow,
-  children,
-}: {
-  title: string;
-  /** 見出しの上に添える小さな英字 */
-  eyebrow?: string;
-  children: ReactNode;
-}) {
-  const track = useRef<HTMLDivElement>(null);
+export function useShelfScroll<T extends HTMLElement = HTMLDivElement>() {
+  const track = useRef<T>(null);
   const frame = useRef(0);
 
   /**
@@ -34,7 +23,7 @@ export function Shelf({
    * ゆっくり動き出してゆっくり止まる動きを自前で描く。動いているあいだは吸い付きを止める
    * （途中の位置で吸い付こうとして、止まり止まり動くブラウザがある）
    */
-  const glide = (el: HTMLDivElement, to: number) => {
+  const glide = (el: HTMLElement, to: number) => {
     cancelAnimationFrame(frame.current);
     if (prefersReducedMotion()) {
       el.scrollLeft = to;
@@ -94,26 +83,65 @@ export function Shelf({
     glide(el, Math.max(0, Math.min(max, target)));
   };
 
+  return { track, edge, update, page };
+}
+
+/** 帯を送る左右の矢印。パソコンの幅でだけ出す */
+export function ShelfArrows({
+  edge,
+  page,
+}: {
+  edge: { start: boolean; end: boolean };
+  page: (dir: 1 | -1) => void;
+}) {
+  return (
+    <>
+      <ArrowButton label="前へ" disabled={edge.start} onClick={() => page(-1)}>
+        <Icon name="left" className="size-5" />
+      </ArrowButton>
+      <ArrowButton label="次へ" disabled={edge.end} onClick={() => page(1)}>
+        <Icon name="right" className="size-5" />
+      </ArrowButton>
+    </>
+  );
+}
+
+/** 帯の端のぼかし。続きのある側だけ */
+export function edgeMask(edge: { start: boolean; end: boolean }) {
+  return `linear-gradient(to right, transparent, black ${edge.start ? 0 : FADE}px, black calc(100% - ${edge.end ? 0 : FADE}px), transparent)`;
+}
+
+/**
+ * 見出しの付いた、横に流せる棚。左右の矢印で1画面ぶん送る。
+ * 棚と棚の間は、スマホでは詰める（縦に長い画面で棚を次々に流して見ると、空きが積み重なって間延びする）。
+ * 年の札の帯（ScrollRow）と同じく、続きがある側の端だけをぼかす。パソコンでは本文の幅の中で流す。
+ * 前は流す帯を画面の左端まで伸ばし、左の板の後ろへ流れ込ませていたが、板の字の後ろを札がにじんで通るのを本人が嫌った（2026-10-09）
+ */
+export function Shelf({
+  title,
+  eyebrow,
+  children,
+}: {
+  title: string;
+  /** 見出しの上に添える小さな英字 */
+  eyebrow?: string;
+  children: ReactNode;
+}) {
+  const { track, edge, update, page } = useShelfScroll();
+
   return (
     <section className="mt-7 first:mt-2 sm:mt-10 sm:first:mt-4">
       <div className="mb-2 flex items-end gap-3">
         <Heading eyebrow={eyebrow}>{title}</Heading>
         <div className="ml-auto flex items-center gap-2">
-          <ArrowButton label="前へ" disabled={edge.start} onClick={() => page(-1)}>
-            <Icon name="left" className="size-5" />
-          </ArrowButton>
-          <ArrowButton label="次へ" disabled={edge.end} onClick={() => page(1)}>
-            <Icon name="right" className="size-5" />
-          </ArrowButton>
+          <ShelfArrows edge={edge} page={page} />
         </div>
       </div>
       <div
         ref={track}
         onScroll={update}
         className="-mx-4 flex snap-x scroll-px-6 gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8 md:mx-0 md:scroll-px-6 md:px-0 [&::-webkit-scrollbar]:hidden"
-        style={{
-          maskImage: `linear-gradient(to right, transparent, black ${edge.start ? 0 : FADE}px, black calc(100% - ${edge.end ? 0 : FADE}px), transparent)`,
-        }}
+        style={{ maskImage: edgeMask(edge) }}
       >
         {children}
       </div>

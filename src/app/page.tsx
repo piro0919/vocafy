@@ -6,7 +6,16 @@ import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
-import { dailyMix, kanaRows, onThisDay, today, voices, years } from '@/lib/catalog';
+import {
+  dailyMix,
+  kanaRows,
+  onThisDay,
+  PAGE_SIZE,
+  songsOfDay,
+  today,
+  voices,
+  years,
+} from '@/lib/catalog';
 import { KANA_ROWS, LATIN_ROWS, OTHER_ROWS, ROW_LABEL, type Row } from '@/lib/kana';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
@@ -30,8 +39,9 @@ export const revalidate = 3600;
  */
 export default async function Home() {
   const date = today();
-  const [day, mix, voiceList, yearList, rowCounts] = await Promise.all([
+  const [day, dayList, mix, voiceList, yearList, rowCounts] = await Promise.all([
     onThisDay(date, 8),
+    songsOfDay(date.slice(5), 1),
     dailyMix(date, 18),
     voices(),
     years(),
@@ -45,17 +55,17 @@ export default async function Home() {
       <JsonLd data={jsonLd} />
 
       {hero && (
-        <section className="mt-2 sm:mt-4">
-          <div className="mb-3 flex items-end gap-3">
-            <Heading eyebrow="On This Day">
-              {month}月{dayOfMonth}日に生まれた曲
-            </Heading>
-            <div className="ml-auto">
-              <MoreLink href={`/days/${date.slice(5)}`} />
-            </div>
-          </div>
-          <OnThisDay hero={hero} rest={rest.slice(0, 11)} today={date} />
-        </section>
+        <OnThisDay
+          title={`${month}月${dayOfMonth}日に生まれた曲`}
+          playlist={{
+            songs: dayList.songs,
+            source: `days/${date.slice(5)}`,
+            last: Math.ceil(dayList.total / PAGE_SIZE),
+          }}
+          hero={hero}
+          rest={rest}
+          today={date}
+        />
       )}
 
       {/* お気に入りのボカロPがいる人にだけ出す、その人の棚。ブラウザで組み立てる */}
