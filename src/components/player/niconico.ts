@@ -82,12 +82,19 @@ export function createNiconicoEngine(
   };
   window.addEventListener('message', onMessage);
 
+  let started = false;
   const load = (id: string) => {
     videoId = id;
     playerId = `vocafy-${++serial}`;
     current = 0;
     duration = 0;
-    iframe.src = `${ORIGIN}/watch/${encodeURIComponent(id)}?jsapi=1&playerId=${playerId}`;
+    const url = `${ORIGIN}/watch/${encodeURIComponent(id)}?jsapi=1&playerId=${playerId}`;
+    // 2曲目からは、埋め込みの中の画面を置き換える。src を書き換えると、ブラウザがページの履歴に1つ積み、
+    // 戻る操作の1回目が埋め込みの中を前の動画に戻すのに使われて、ページが戻らなかった。
+    // location.replace は、別のサイトの埋め込みにも親から呼べる
+    if (started && iframe.contentWindow) iframe.contentWindow.location.replace(url);
+    else iframe.src = url;
+    started = true;
   };
   load(videoId);
 
