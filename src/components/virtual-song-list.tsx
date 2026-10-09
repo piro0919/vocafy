@@ -1,8 +1,9 @@
 'use client';
 
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
+import { useColumns } from '@/lib/use-columns';
 import { SongItem, useOpenSong } from './song-list';
 
 /** /api/list が1回に返す曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
@@ -14,17 +15,7 @@ const ROW = 64;
 const COLUMNS = [
   { query: '(min-width: 80rem)', columns: 3 },
   { query: '(min-width: 48rem)', columns: 2 },
-];
-
-function subscribe(onChange: () => void) {
-  const lists = COLUMNS.map((c) => window.matchMedia(c.query));
-  for (const l of lists) l.addEventListener('change', onChange);
-  return () => {
-    for (const l of lists) l.removeEventListener('change', onChange);
-  };
-}
-
-const columnsNow = () => COLUMNS.find((c) => window.matchMedia(c.query).matches)?.columns ?? 1;
+] as const;
 
 /**
  * 長い曲の一覧（年・あいうえお順・歌声の年）。ページ番号で区切らず、下へスクロールすると続きが出る。
@@ -46,7 +37,7 @@ export function VirtualSongList({
   songs: QueueItem[];
   total: number;
 }) {
-  const columns = useSyncExternalStore(subscribe, columnsNow, () => 1);
+  const columns = useColumns(COLUMNS, 1);
   const open = useOpenSong();
   const [pages, setPages] = useState(() => new Map([[page, songs]]));
   const requested = useRef(new Set([page]));
