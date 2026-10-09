@@ -77,7 +77,8 @@ export function ProducerPlayer({
           onPlay={() => start(linkedItem?.songId)}
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
-        <div className="flex items-center gap-2 lg:mt-4">
+        {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
+        <div className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
           <button
             type="button"
             onClick={() => (here ? toggle() : start(linkedItem?.songId))}
