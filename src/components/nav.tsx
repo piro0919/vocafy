@@ -14,6 +14,14 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/favorites', label: 'お気に入り', icon: 'favorites' },
 ];
 
+/**
+ * 左のメニューにだけ足す項目。下のタブは5つで埋まっているので、スマホの履歴はお気に入りの画面の題名の横から行く
+ */
+const SIDEBAR_ITEMS = [
+  ...ITEMS,
+  { href: '/history', label: '履歴', icon: 'history' },
+] satisfies typeof ITEMS;
+
 function useActive() {
   const pathname = usePathname();
   return (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
@@ -53,7 +61,7 @@ export function Sidebar() {
         <div className="mb-5 px-3">
           <Logo />
         </div>
-        {ITEMS.map((item) => (
+        {SIDEBAR_ITEMS.map((item) => (
           <Link
             key={item.href}
             href={item.href}

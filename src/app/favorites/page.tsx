@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { PILL } from '@/components/browse-cards';
 import { Heading } from '@/components/heading';
 import { FavoritesView } from './favorites-view';
 
@@ -10,10 +12,14 @@ export const metadata: Metadata = { title: 'お気に入り', robots: { index: f
 export default function FavoritesPage() {
   return (
     <>
-      <div className="pt-4 pb-4 sm:pb-6">
+      <div className="flex items-end gap-3 pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow="Favorites">
           お気に入り
         </Heading>
+        {/* スマホの履歴の入り口。下のタブは5つで埋まっている。パソコンは左のメニューから行く */}
+        <Link href="/history" className={`${PILL} mb-1 ml-auto md:hidden`}>
+          履歴
+        </Link>
       </div>
       <FavoritesView />
     </>
