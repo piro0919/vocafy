@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { MoreLink } from '@/components/browse-cards';
 import { Heading } from '@/components/heading';
+import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, findVoice } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
@@ -59,7 +60,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           <Heading as="h1" size="page">
             {voice.name}
           </Heading>
-          <p className="mt-2 text-sm text-muted">{voice.songCount} 曲</p>
+          <PlayAll songs={songs} count={`${voice.songCount} 曲`} />
         </div>
       </div>
       <div className="grid gap-6">

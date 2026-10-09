@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
+import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, songsOfDay } from '@/lib/catalog';
 
@@ -44,7 +45,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
         <Heading as="h1" size="page" eyebrow="On This Day">
           {label(day)}に生まれた曲
         </Heading>
-        <p className="mt-2 text-sm text-muted">{total} 曲</p>
+        <PlayAll songs={songs} count={`${total} 曲`} />
       </div>
       <div className="grid gap-6">
         {[...byYear].map(([year, list]) => (

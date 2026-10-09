@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
+import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { songsOfRow } from '@/lib/catalog';
 import { isRow, ROW_LABEL, ROWS, type Row } from '@/lib/kana';
@@ -45,7 +46,7 @@ export default async function KanaPage({ params }: PageProps<'/kana/[row]/[[...p
         <Heading as="h1" size="page" eyebrow="Index">
           {rowTitle(row)}の曲
         </Heading>
-        <p className="mt-2 text-sm text-muted">{total} 曲</p>
+        <PlayAll songs={songs} count={`${total} 曲`} />
       </div>
       <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
       <Pager base={`/kana/${row}`} page={page} total={total} />

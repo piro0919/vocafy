@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
+import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { songsOfYear } from '@/lib/catalog';
 
@@ -35,7 +36,7 @@ export default async function YearPage({ params }: PageProps<'/years/[year]/[[..
         <Heading as="h1" size="page" eyebrow={String(year)}>
           {year}年の曲
         </Heading>
-        <p className="mt-2 text-sm text-muted">{total} 曲</p>
+        <PlayAll songs={songs} count={`${total} 曲`} />
       </div>
       <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
       <Pager base={`/years/${year}`} page={page} total={total} />
