@@ -109,7 +109,7 @@ export function SearchView() {
         const items = top.flatMap((s): QueueItem[] => {
           const row = byProducer.get(s.producer.id)?.[s.nth];
           if (!row) return [];
-          const [songId, videoId, niconicoThumb] = row;
+          const [songId, videoId, niconicoThumb, vocalists] = row;
           return [
             {
               songId,
@@ -119,7 +119,7 @@ export function SearchView() {
               thumb: niconicoThumb ?? thumbOf(videoId),
               producerId: s.producer.id,
               producerName: s.producer.name,
-              vocalists: '',
+              vocalists,
             },
           ];
         });

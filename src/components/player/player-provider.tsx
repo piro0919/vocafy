@@ -1008,6 +1008,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               <span className="font-bold text-foreground">{shown.title}</span>
               {' ・ '}
               {shown.producerName}
+              {/* 下の再生の帯と同じく、スマホ（帯が 200px）ではボカロPだけにする */}
+              {shown.vocalists && <span className="max-md:hidden">{` ・ ${shown.vocalists}`}</span>}
             </span>
             <Icon name="expand" className="size-4 shrink-0" />
           </Link>

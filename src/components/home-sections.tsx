@@ -102,7 +102,10 @@ export function OnThisDay({
                       <span className="truncate">{song.title}</span>
                       {active && <Bars playing={playing} />}
                     </span>
-                    <span className="block truncate text-xs text-muted">{song.producerName}</span>
+                    <span className="block truncate text-xs text-muted">
+                      {song.producerName}
+                      {song.vocalists && ` ・ ${song.vocalists}`}
+                    </span>
                   </span>
                   {/* 同じ日の曲は年だけ、前後の日から補った曲は月日も添える */}
                   <span className="shrink-0 font-tech text-xs font-black text-accent">

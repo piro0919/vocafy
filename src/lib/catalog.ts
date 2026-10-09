@@ -473,7 +473,7 @@ export const songsOfRow = cache(async (row: string, page: number): Promise<Paged
  * どちらも配備のときに作り置き、探すのはブラウザの中でする（src/app/search/search-view.tsx）。
  *
  * - 1段目（/search-index）: 当てるのに要るものだけ。曲名・ローマ字・ボカロP。検索の画面を開いたときに読む
- * - 2段目（/search-index/[producer]）: 当たった曲を出すのに要るもの。曲の id・動画の ID・ニコニコの表紙を、ボカロPごとに分けて持つ。
+ * - 2段目（/search-index/[producer]）: 当たった曲を出すのに要るもの。曲の id・動画の ID・ニコニコの表紙・歌声を、ボカロPごとに分けて持つ。
  *   当たった曲のボカロPの分だけ読む。曲の id と動画の ID は圧縮が効きにくく、1段目に入れると全体の4割近くを占めた
  *
  * 2段目のファイルの中の並びは、1段目でそのボカロPの曲が出てくる順と同じにしてあり、何番目かで引く。
@@ -488,8 +488,8 @@ export type SearchIndex = {
   voices: [number, string, number][];
 };
 
-/** 2段目。[曲の id, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）]。1段目のそのボカロPの曲と同じ順 */
-export type SearchDetails = [number, string, string | null][];
+/** 2段目。[曲の id, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）, 歌声]。1段目のそのボカロPの曲と同じ順 */
+export type SearchDetails = [number, string, string | null, string][];
 
 type SearchRow = {
   id: number;
@@ -498,6 +498,7 @@ type SearchRow = {
   producerId: number;
   videoId: string;
   niconicoThumb: string | null;
+  vocalists: string;
 };
 
 /**
@@ -516,8 +517,10 @@ function loadSearchRows(): Promise<SearchRow[]> {
       niconico_thumb: string | null;
       romaji: string | null;
       producer_id: number;
+      vocalists: string;
     }>(
-      `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, p.id as producer_id
+      `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, p.id as producer_id,
+         (select coalesce(string_agg(x.name, '・' order by x.support, x.id), '') from (${VOCALIST_NAMES}) x) as vocalists
        from song s
        join lateral (
          select p.id from song_producer sp join producer p on p.id = sp.producer_id
@@ -538,6 +541,7 @@ function loadSearchRows(): Promise<SearchRow[]> {
                 producerId: r.producer_id,
                 videoId: source.videoId,
                 niconicoThumb: source.service === 'niconico' ? source.thumb : null,
+                vocalists: r.vocalists,
               },
             ]
           : [];
@@ -569,7 +573,7 @@ export const searchDetails = cache(async (producerId: number): Promise<SearchDet
   if (!list.some((p) => p.id === producerId)) return [];
   return rows
     .filter((r) => r.producerId === producerId)
-    .map((r) => [r.id, r.videoId, r.niconicoThumb]);
+    .map((r) => [r.id, r.videoId, r.niconicoThumb, r.vocalists]);
 });
 
 /** VocaDB の関連曲の返事。3種類とも12曲ずつ */
