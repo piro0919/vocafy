@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
 import { FadeImage } from './fade-image';
 
