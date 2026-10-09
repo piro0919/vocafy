@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { PILL } from '@/components/browse-cards';
 import { FadeImage } from '@/components/fade-image';
-import { Icon } from '@/components/icon';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails } from '@/lib/catalog';
 import { normalize, score } from '@/lib/search';
-import { addRecentSearch, clearRecentSearches, useRecentSearches } from '@/lib/recent-searches';
+import {
+  addRecentSearch,
+  clearRecentSearches,
+  restoreRecentSearches,
+  useRecentSearches,
+} from '@/lib/recent-searches';
 import { loadIndex, type Prepared } from '@/lib/search-index';
 import { thumbOf } from '@/lib/thumb';
 import { voiceArt } from '@/lib/voice-art';
@@ -42,7 +48,7 @@ export function SearchView() {
   const pathname = usePathname();
   const fromUrl = params.get('q') ?? '';
   const [text, setText] = useState(fromUrl);
-  // パソコンでは上の段の欄（header-search.tsx）が住所を書き換えるので、住所が外から変わったら合わせる
+  // 打つ欄は上の帯にあり（header-search.tsx）、住所を書き換えるので、住所が外から変わったら合わせる
   const [seen, setSeen] = useState(fromUrl);
   if (seen !== fromUrl) {
     setSeen(fromUrl);
@@ -136,39 +142,32 @@ export function SearchView() {
   return (
     // 結果（ボカロP・歌声・曲）を押したら、そのときの言葉を最近の検索に残す。打っただけの言葉は残さない
     <div
-      className="mt-4"
+      className="md:mt-4"
       onClickCapture={(e) => {
         const q = text.trim();
         const hit = (e.target as HTMLElement).closest('a, button');
         if (q && hit && hit.closest('section') && !hit.closest('[data-recent]')) addRecentSearch(q);
       }}
     >
-      {/* パソコンは上の段に検索欄があるので、スマホだけで出す */}
-      <label className="flex items-center gap-2 rounded-2xl border border-line/60 bg-glass px-4 focus-within:border-accent/60 md:hidden">
-        <Icon name="search" className="size-5 shrink-0 text-muted" />
-        <input
-          type="search"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="曲名・ボカロP・歌声"
-          aria-label="曲名・ボカロP・歌声の名前で探す"
-          // 検索の画面に来たら、すぐ打てるようにする
-          autoFocus
-          className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
-        />
-      </label>
-
       {/* 何も打っていないときは、最近の検索の言葉を出す。押すとその言葉で探す */}
       {!query && recent.length > 0 && (
         <section data-recent className="mt-6">
           <div className="mb-2 flex items-center gap-3">
             <h2 className="text-sm font-bold text-muted">最近の検索</h2>
+            {/* 履歴の画面の「履歴を削除」と同じく、確かめずにすぐ消し、知らせの「元に戻す」で戻せるようにする */}
             <button
               type="button"
-              onClick={clearRecentSearches}
-              className="ml-auto rounded-full px-3 py-1 text-xs font-bold text-muted transition-colors hover:text-foreground"
+              onClick={() => {
+                const removed = recent;
+                clearRecentSearches();
+                toast('検索履歴を削除しました', {
+                  duration: 5000,
+                  action: { label: '元に戻す', onClick: () => restoreRecentSearches(removed) },
+                });
+              }}
+              className={`${PILL} ml-auto`}
             >
-              消す
+              検索履歴を削除
             </button>
           </div>
           <ul className="flex flex-wrap gap-2">

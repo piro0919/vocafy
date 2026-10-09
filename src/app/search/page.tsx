@@ -12,9 +12,12 @@ export const metadata: Metadata = { title: '検索' };
 export default function SearchPage() {
   return (
     <div className="pt-4">
-      <Heading as="h1" size="page" eyebrow="Search">
-        検索
-      </Heading>
+      {/* スマホは上の帯が検索欄になり、何の画面か分かるので題名を出さない（YouTube のアプリと同じ） */}
+      <div className="hidden md:block">
+        <Heading as="h1" size="page" eyebrow="Search">
+          検索
+        </Heading>
+      </div>
       <Suspense>
         <SearchView />
       </Suspense>

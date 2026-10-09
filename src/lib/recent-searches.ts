@@ -65,6 +65,12 @@ export function clearRecentSearches() {
   write([]);
 }
 
+/** 消した言葉を戻す（知らせの「元に戻す」）。消したあとに足した言葉は先頭に残す */
+export function restoreRecentSearches(items: string[]) {
+  const now = read();
+  write([...now, ...items.filter((s) => !now.includes(s))].slice(0, LIMIT));
+}
+
 export function useRecentSearches(): string[] {
   return useSyncExternalStore(subscribe, read, () => empty);
 }
