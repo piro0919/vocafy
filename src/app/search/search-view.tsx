@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FadeImage } from '@/components/fade-image';
 import { Icon } from '@/components/icon';
 import { SongList } from '@/components/song-list';
-import type { QueueItem, SearchIndex } from '@/lib/catalog';
+import type { QueueItem, SearchDetails, SearchIndex } from '@/lib/catalog';
 import { normalize, normalizeRomaji, score } from '@/lib/search';
 import { thumbOf } from '@/lib/thumb';
 
@@ -14,14 +14,25 @@ import { thumbOf } from '@/lib/thumb';
 const SONG_LIMIT = 100;
 const PRODUCER_LIMIT = 12;
 
-/** 索引に、探すための正規化した文字を足したもの */
-type Prepared = {
-  producers: { id: number; name: string; picture: string | null; songCount: number; key: string }[];
-  /** title と romaji は探すための形。romaji はローマ字の曲名が無ければ空 */
-  songs: { item: QueueItem; title: string; romaji: string; producer: string }[];
+type Producer = {
+  id: number;
+  name: string;
+  picture: string | null;
+  songCount: number;
+  key: string;
 };
 
-/** 索引は画面を移っても一度だけ読む */
+/** 1段目の索引に、探すための正規化した文字を足したもの */
+type Prepared = {
+  producers: Producer[];
+  /**
+   * title と romaji は探すための形（romaji はローマ字の曲名が無ければ空）。nth は、そのボカロPの曲の中で何番目か。
+   * 2段目（ボカロPごとのファイル）の何番目を見ればよいかに使う
+   */
+  songs: { name: string; producer: Producer; nth: number; title: string; romaji: string }[];
+};
+
+/** 1段目は画面を移っても一度だけ読む */
 let loading: Promise<Prepared> | undefined;
 
 function loadIndex(): Promise<Prepared> {
@@ -35,24 +46,19 @@ function loadIndex(): Promise<Prepared> {
         songCount,
         key: normalize(name),
       }));
+      const counts = new Map<number, number>();
       return {
         producers: list,
-        songs: songs.map(([songId, title, at, videoId, niconicoThumb, romaji]) => {
-          const p = list[at];
+        songs: songs.map(([name, at, romaji]) => {
+          const producer = list[at];
+          const nth = counts.get(at) ?? 0;
+          counts.set(at, nth + 1);
           return {
-            item: {
-              songId,
-              title,
-              service: niconicoThumb ? ('niconico' as const) : ('youtube' as const),
-              videoId,
-              thumb: niconicoThumb ?? thumbOf(videoId),
-              producerId: p.id,
-              producerName: p.name,
-              vocalists: '',
-            },
-            title: normalize(title),
+            name,
+            producer,
+            nth,
+            title: normalize(name),
             romaji: romaji ? normalizeRomaji(romaji) : '',
-            producer: p.key,
           };
         }),
       };
@@ -62,6 +68,23 @@ function loadIndex(): Promise<Prepared> {
       loading = undefined;
       throw error;
     }));
+  return pending;
+}
+
+/** 2段目（そのボカロPの曲の id・動画の ID・表紙）。読んだものは覚えておく */
+const details = new Map<number, Promise<SearchDetails>>();
+
+function loadDetails(producerId: number): Promise<SearchDetails> {
+  let pending = details.get(producerId);
+  if (!pending) {
+    pending = fetch(`/search-index/${producerId}`)
+      .then((res) => res.json() as Promise<SearchDetails>)
+      .catch((error: unknown) => {
+        details.delete(producerId);
+        throw error;
+      });
+    details.set(producerId, pending);
+  }
   return pending;
 }
 
@@ -94,19 +117,60 @@ export function SearchView() {
       .filter((x) => x.s > 0)
       .toSorted((a, b) => b.s - a.s || b.p.songCount - a.p.songCount)
       .map((x) => x.p);
-    // 曲名で当たった曲を先に、ボカロP名だけで当たった曲を後にする。同じ当たり方の中は新しい順（索引の並び）
+    // 曲名（ローマ字の曲名も含む）で当たった曲を先に、ボカロP名だけで当たった曲を後にする。同じ当たり方の中は新しい順（索引の並び）
     const songs = index.songs
       .map((s) => ({
         s,
-        // 曲名（ローマ字の曲名も含む）で当たれば先、ボカロP名だけなら後
         rank:
-          Math.max(score(s.title, query), score(s.romaji, query)) * 2 || score(s.producer, query),
+          Math.max(score(s.title, query), score(s.romaji, query)) * 2 ||
+          score(s.producer.key, query),
       }))
       .filter((x) => x.rank > 0)
       .toSorted((a, b) => b.rank - a.rank)
-      .map((x) => x.s.item);
+      .map((x) => x.s);
     return { producers, songs };
   }, [index, query]);
+
+  // 出す曲のボカロPの分だけ2段目を読み、曲の一覧に組み立てる。打つあいだに古い結果が後から届いても使わない
+  const [shown, setShown] = useState<{ query: string; items: QueueItem[] } | null>(null);
+  useEffect(() => {
+    if (!found || found.songs.length === 0) return;
+    const top = found.songs.slice(0, SONG_LIMIT);
+    let current = true;
+    Promise.all(
+      [...new Set(top.map((s) => s.producer.id))].map(
+        async (id) => [id, await loadDetails(id)] as const,
+      ),
+    ).then(
+      (loaded) => {
+        if (!current) return;
+        const byProducer = new Map(loaded);
+        const items = top.flatMap((s): QueueItem[] => {
+          const row = byProducer.get(s.producer.id)?.[s.nth];
+          if (!row) return [];
+          const [songId, videoId, niconicoThumb] = row;
+          return [
+            {
+              songId,
+              title: s.name,
+              service: niconicoThumb ? 'niconico' : 'youtube',
+              videoId,
+              thumb: niconicoThumb ?? thumbOf(videoId),
+              producerId: s.producer.id,
+              producerName: s.producer.name,
+              vocalists: '',
+            },
+          ];
+        });
+        setShown({ query, items });
+      },
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [found, query]);
+  const items = shown?.query === query ? shown.items : null;
 
   return (
     <div className="mt-4">
@@ -173,10 +237,11 @@ export function SearchView() {
             {found.songs.length > SONG_LIMIT &&
               `（多いので先頭の ${SONG_LIMIT} 曲。言葉を足すと絞れます）`}
           </p>
-          <SongList
-            songs={found.songs.slice(0, SONG_LIMIT)}
-            className="grid gap-1 md:grid-cols-2 xl:grid-cols-3"
-          />
+          {items ? (
+            <SongList songs={items} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
+          ) : (
+            <p className="text-sm text-muted">読み込んでいます…</p>
+          )}
         </section>
       )}
     </div>

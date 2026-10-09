@@ -405,59 +405,104 @@ export const songsOfRow = cache(async (row: string, page: number): Promise<Paged
 );
 
 /**
- * 検索の索引。全曲の曲名とボカロP名を、配備のときに1つにまとめて配る（src/app/search-index/route.ts）。
- * 検索のたびに DB を読むと、無料プランの計算時間を食う（DB は最後に読まれてから5分動き続ける）ので、
- * 探すのはブラウザの中でする。大きさを抑えるため、値は配列に詰め、ボカロPは番号で引く。
+ * 検索の索引。2段に分けて配る。検索のたびに DB を読むと、無料プランの計算時間を食う（DB は最後に読まれてから5分動き続ける）ので、
+ * どちらも配備のときに作り置き、探すのはブラウザの中でする（src/app/search/search-view.tsx）。
+ *
+ * - 1段目（/search-index）: 当てるのに要るものだけ。曲名・ローマ字・ボカロP。検索の画面を開いたときに読む
+ * - 2段目（/search-index/[producer]）: 当たった曲を出すのに要るもの。曲の id・動画の ID・ニコニコの表紙を、ボカロPごとに分けて持つ。
+ *   当たった曲のボカロPの分だけ読む。曲の id と動画の ID は圧縮が効きにくく、1段目に入れると全体の4割近くを占めた
+ *
+ * 2段目のファイルの中の並びは、1段目でそのボカロPの曲が出てくる順と同じにしてあり、何番目かで引く。
  * 曲は新しい順。曲の作者は、全曲を取り込んだ人を先にして1人だけ（QUEUE_SELECT と同じ）
  */
 export type SearchIndex = {
   /** [id, 名前, 画像, 曲数] */
   producers: [number, string, string | null, number][];
-  /**
-   * [id, 曲名, producers の何番目か, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）, 曲名のローマ字（無ければ null）]
-   */
-  songs: [number, string, number, string, string | null, string | null][];
+  /** [曲名, producers の何番目か, 曲名のローマ字（無ければ null）] */
+  songs: [string, number, string | null][];
 };
 
+/** 2段目。[曲の id, 流す先の動画の ID, ニコニコの表紙（YouTube の曲は null）]。1段目のそのボカロPの曲と同じ順 */
+export type SearchDetails = [number, string, string | null][];
+
+type SearchRow = {
+  id: number;
+  name: string;
+  romaji: string | null;
+  producerId: number;
+  videoId: string;
+  niconicoThumb: string | null;
+};
+
+/**
+ * 索引の元になる全曲。1段目と2段目（ボカロPの数だけ作る）で同じものを使うので、作り置きのあいだ1回だけ読む。
+ * 配備のときにだけ動く（どちらの住所も作り置きで、開かれても作り直さない）
+ */
+let searchRows: Promise<SearchRow[]> | undefined;
+
+function loadSearchRows(): Promise<SearchRow[]> {
+  searchRows ??= db()
+    .query<{
+      id: number;
+      name: string;
+      youtube_id: string | null;
+      niconico_id: string | null;
+      niconico_thumb: string | null;
+      romaji: string | null;
+      producer_id: number;
+    }>(
+      `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, p.id as producer_id
+       from song s
+       join lateral (
+         select p.id from song_producer sp join producer p on p.id = sp.producer_id
+         where sp.song_id = s.id order by p.complete desc, p.id limit 1
+       ) p on true
+       where ${PLAYABLE}
+       order by s.published_on desc nulls last, s.id`,
+    )
+    .then(({ rows }) =>
+      rows.flatMap((r) => {
+        const source = sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb);
+        return source
+          ? [
+              {
+                id: r.id,
+                name: r.name,
+                romaji: r.romaji,
+                producerId: r.producer_id,
+                videoId: source.videoId,
+                niconicoThumb: source.service === 'niconico' ? source.thumb : null,
+              },
+            ]
+          : [];
+      }),
+    )
+    .catch((error: unknown) => {
+      searchRows = undefined;
+      throw error;
+    });
+  return searchRows;
+}
+
 export const searchIndex = cache(async (): Promise<SearchIndex> => {
-  const list = await producers();
+  const [list, rows] = await Promise.all([producers(), loadSearchRows()]);
   const at = new Map(list.map((p, i) => [p.id, i]));
-  const { rows } = await db().query<{
-    id: number;
-    name: string;
-    youtube_id: string | null;
-    niconico_id: string | null;
-    niconico_thumb: string | null;
-    romaji: string | null;
-    producer_id: number;
-  }>(
-    `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, p.id as producer_id
-     from song s
-     join lateral (
-       select p.id from song_producer sp join producer p on p.id = sp.producer_id
-       where sp.song_id = s.id order by p.complete desc, p.id limit 1
-     ) p on true
-     where ${PLAYABLE}
-     order by s.published_on desc nulls last, s.id`,
-  );
   return {
     producers: list.map((p) => [p.id, p.name, p.picture, p.songCount]),
     songs: rows.flatMap((r) => {
-      const i = at.get(r.producer_id);
-      const source = sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb);
-      if (i === undefined || !source) return [];
-      return [
-        [
-          r.id,
-          r.name,
-          i,
-          source.videoId,
-          source.service === 'niconico' ? source.thumb : null,
-          r.romaji,
-        ],
-      ];
+      const i = at.get(r.producerId);
+      return i === undefined ? [] : [[r.name, i, r.romaji]];
     }),
   };
+});
+
+/** そのボカロPの曲の2段目。一覧に出るボカロP（全曲を取り込んだ人）でなければ空 */
+export const searchDetails = cache(async (producerId: number): Promise<SearchDetails> => {
+  const [list, rows] = await Promise.all([producers(), loadSearchRows()]);
+  if (!list.some((p) => p.id === producerId)) return [];
+  return rows
+    .filter((r) => r.producerId === producerId)
+    .map((r) => [r.id, r.videoId, r.niconicoThumb]);
 });
 
 /** VocaDB の関連曲の返事。3種類とも12曲ずつ */
