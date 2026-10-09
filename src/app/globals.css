@@ -352,7 +352,7 @@ body {
 
 /*
  * お気に入りに入れたときのハート（favorite-button.tsx）。ハートは縮んでから大きく弾んで落ち着き、
- * 同時に差し色の輪が広がって消え、粒が外へ飛び散る。外したときは小さく縮んで戻るだけ
+ * 同時に差し色の輪が広がって消え、音符が上寄りに舞い散る。外したときは小さく縮んで戻るだけ
  */
 @keyframes heart-pop {
   0% {
@@ -391,18 +391,26 @@ body {
     border-width: 1px;
   }
 }
-/* 粒は --angle の向きへ飛ぶ。真ん中から出て、遠くで小さくなって消える */
-@keyframes heart-particle {
+/*
+ * 音符は --angle の向きへ飛ぶ。飛ぶ向きに回したあと逆に回し戻して、音符そのものは立てたまま --tilt だけ傾ける。
+ * 小さく出て、遠くで少し縮みながら消える
+ */
+@keyframes heart-note {
   0% {
-    transform: rotate(var(--angle)) translateY(-0.6rem) scale(1);
+    transform: rotate(var(--angle)) translateY(-0.5rem) rotate(calc(var(--angle) * -1)) scale(0.4);
+    opacity: 0;
+  }
+  15% {
     opacity: 1;
   }
   60% {
-    transform: rotate(var(--angle)) translateY(-1.7rem) scale(0.8);
+    transform: rotate(var(--angle)) translateY(-1.9rem)
+      rotate(calc(var(--angle) * -1 + var(--tilt))) scale(1);
     opacity: 1;
   }
   100% {
-    transform: rotate(var(--angle)) translateY(-2rem) scale(0);
+    transform: rotate(var(--angle)) translateY(-2.3rem)
+      rotate(calc(var(--angle) * -1 + var(--tilt))) scale(0.7);
     opacity: 0;
   }
 }

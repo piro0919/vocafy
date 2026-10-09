@@ -5,11 +5,44 @@ import { type FavoriteProducer, useFavoriteProducers, useFavorites } from '@/lib
 import { type CSSProperties, useState } from 'react';
 import { Icon } from './icon';
 
-/** 飛び散る粒の向き（度）。8方向に散らし、1つおきに色を変える */
-const PARTICLES = [0, 45, 90, 135, 180, 225, 270, 315];
+/**
+ * 舞い散る音符。向き（度。0 が真上）と傾きと形。上寄りに6つ散らし、八分音符と連桁の音符を交互に置く。
+ * 点を散らすだけだと、どのサイトにもある「いいね」の動きでボカロらしさが無かった（2026-10-09）
+ */
+const NOTES = [
+  { angle: -110, tilt: -15, beamed: false },
+  { angle: -65, tilt: 10, beamed: true },
+  { angle: -22, tilt: -10, beamed: false },
+  { angle: 22, tilt: 15, beamed: true },
+  { angle: 65, tilt: -10, beamed: false },
+  { angle: 110, tilt: 15, beamed: true },
+];
+
+/** 12px の音符。beamed なら連桁の2つ（♫）、でなければ八分音符（♪） */
+function Note({ beamed }: { beamed: boolean }) {
+  return (
+    <svg viewBox="0 0 12 12" fill="currentColor" className="size-3">
+      {beamed ? (
+        <>
+          <ellipse cx="3" cy="10" rx="2.4" ry="1.8" transform="rotate(-20 3 10)" />
+          <ellipse cx="9.2" cy="9" rx="2.4" ry="1.8" transform="rotate(-20 9.2 9)" />
+          <rect x="4.5" y="2.4" width="1.2" height="7.6" rx="0.6" />
+          <rect x="10.6" y="1.4" width="1.2" height="7.6" rx="0.6" />
+          <path d="M4.5 2.4 11.8 1.2v2.1L4.5 4.5z" />
+        </>
+      ) : (
+        <>
+          <ellipse cx="4.2" cy="9.6" rx="2.8" ry="2.1" transform="rotate(-20 4.2 9.6)" />
+          <rect x="6.2" y="1.2" width="1.3" height="8.6" rx="0.6" />
+          <path d="M7.4 1.2c.4 1.8 2.9 2.4 3 4.8-.8-1.3-1.8-1.8-3-1.9z" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 /**
- * ハートと、押したときの動き。入れたときは弾んで粒が散り、外したときは小さく縮んで戻る。
+ * ハートと、押したときの動き。入れたときは弾んで音符が舞い、外したときは小さく縮んで戻る。
  * 押すたびに key を変えて、動きを頭から流し直す（最初に開いたときは動かさない）
  */
 function Heart({ on, beat, size }: { on: boolean; beat: number; size: string }) {
@@ -22,12 +55,14 @@ function Heart({ on, beat, size }: { on: boolean; beat: number; size: string }) 
       {beat > 0 && on && (
         <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
           <span className="absolute size-[180%] animate-[heart-ring_420ms_ease-out_forwards] rounded-full border-accent opacity-0" />
-          {PARTICLES.map((angle, i) => (
+          {NOTES.map(({ angle, tilt, beamed }, i) => (
             <span
               key={angle}
-              className={`absolute size-2 animate-[heart-particle_600ms_cubic-bezier(0.2,0.7,0.3,1)_forwards] rounded-full ${i % 2 === 0 ? 'bg-accent' : 'bg-miku'}`}
-              style={{ '--angle': `${angle}deg` } as CSSProperties}
-            />
+              className={`absolute animate-[heart-note_700ms_cubic-bezier(0.2,0.7,0.3,1)_forwards] opacity-0 ${i % 2 === 0 ? 'text-accent' : 'text-miku'}`}
+              style={{ '--angle': `${angle}deg`, '--tilt': `${tilt}deg` } as CSSProperties}
+            >
+              <Note beamed={beamed} />
+            </span>
           ))}
         </span>
       )}
