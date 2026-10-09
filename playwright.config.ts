@@ -19,6 +19,8 @@ export default defineConfig({
   ],
   webServer: {
     command: `pnpm build && pnpm start -p ${port}`,
+    // 手元の開発サーバー（.next）を上書きしないよう、別のフォルダにビルドする（next.config.ts の distDir）
+    env: { NEXT_DIST_DIR: '.next-e2e' },
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
