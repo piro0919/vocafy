@@ -223,8 +223,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 「すべて再生」で流している一覧の続き。ほかの並びに替えたら消す
   const more = useRef<ListSource | null>(null);
   const [listSource, setListSource] = useState<string | null>(null);
+  // 次のページを待っているあいだに並びの最後を越えたら、先頭に戻らず、届いたところで次の曲へ進む
+  const advanceAfterMore = useRef(false);
   const clearMore = useCallback(() => {
     more.current = null;
+    advanceAfterMore.current = false;
     setListSource(null);
   }, []);
   const [position, setPosition] = useState(0);
@@ -294,6 +297,53 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
+  const append = useCallback((items: QueueItem[]) => {
+    const { queue: q, index: at } = state.current;
+    const added = buildOrder(items.length, 0, playbackRef.current?.shuffle ?? false);
+    order.current = [...order.current, ...added.map((i) => q.length + i)];
+    const next = [...q, ...items];
+    state.current = { queue: next, index: at };
+    setQueue(next);
+  }, []);
+
+  const nextRef = useRef<(dir: 1 | -1) => void>(() => {});
+  const fetchingMore = useRef(false);
+  /** 一覧の次のページを取りに行って後ろに足す。取りに行っている途中なら何もしない */
+  const fetchMore = useCallback(() => {
+    const m = more.current;
+    if (!m || fetchingMore.current) return;
+    fetchingMore.current = true;
+    const q = state.current.queue;
+    fetch(`/api/list/${m.source}/${m.next}`)
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<QueueItem[]>)
+          : Promise.reject(new Error(String(res.status))),
+      )
+      .then((items) => {
+        // 待っているあいだに別の並びに替わっていたら、足さない
+        if (more.current !== m || state.current.queue !== q) return;
+        const next = (m.next % m.last) + 1;
+        more.current = next === m.start ? null : { ...m, next };
+        const have = new Set(q.map((s) => s.songId));
+        const fresh = items.filter((s) => !have.has(s.songId));
+        if (fresh.length > 0) append(fresh);
+      })
+      .catch(() => {
+        // 取れなかったとき、次の曲を待たせているなら続きはあきらめて、いまの並びの先頭に戻る。
+        // 待たせていなければ、次に曲が進んだときにもう一度取りに行く
+        if (advanceAfterMore.current && more.current === m) more.current = null;
+      })
+      .finally(() => {
+        fetchingMore.current = false;
+        if (advanceAfterMore.current) {
+          advanceAfterMore.current = false;
+          nextRef.current(1);
+        }
+      });
+  }, [append]);
+
   /**
    * 流す順で前後の曲へ。ループは全体なので、最後の曲の次は先頭へ戻る。
    * ランダムのときは、ひと回りしたら混ぜ直す（同じ順の繰り返しにしない）
@@ -305,6 +355,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       let pos = positionRef.current + dir;
       if (pos < 0) return;
       if (pos >= order.current.length) {
+        // 「すべて再生」の一覧にまだ続きのページがあれば、届くのを待ってから進む
+        if (more.current) {
+          advanceAfterMore.current = true;
+          fetchMore();
+          return;
+        }
         const shuffle = playbackRef.current?.shuffle ?? false;
         order.current = buildOrder(
           q.length,
@@ -315,9 +371,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       load(q, order.current[pos], contextRef.current);
     },
-    [load],
+    [load, fetchMore],
   );
   const step = next;
+  useEffect(() => {
+    nextRef.current = next;
+  }, [next]);
+
+  // 「すべて再生」で流す順の終わりが近づいたら（残り1曲まで）、一覧の次のページを取りに行って後ろに足す
+  useEffect(() => {
+    if (more.current?.source !== listSource || queue.length === 0) return;
+    if (position >= order.current.length - 2) fetchMore();
+  }, [listSource, queue, position, fetchMore]);
 
   useEffect(() => {
     // 曲が終わったら、ループが1曲なら頭から、そうでなければ流す順の次の曲へ（最後なら先頭に戻る）
@@ -372,16 +437,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setQueue(items);
   }, []);
 
-  /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
-  const append = useCallback((items: QueueItem[]) => {
-    const { queue: q, index: at } = state.current;
-    const added = buildOrder(items.length, 0, playbackRef.current?.shuffle ?? false);
-    order.current = [...order.current, ...added.map((i) => q.length + i)];
-    const next = [...q, ...items];
-    state.current = { queue: next, index: at };
-    setQueue(next);
-  }, []);
-
   const playAll = useCallback(
     (items: QueueItem[], source: Omit<ListSource, 'next'>) => {
       load(items, 0, 'list');
@@ -391,29 +446,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     },
     [load],
   );
-
-  // 「すべて再生」で流す順の終わりが近づいたら（残り1曲まで）、一覧の次のページを取りに行って後ろに足す
-  const fetchingMore = useRef(false);
-  useEffect(() => {
-    const m = more.current;
-    if (!m || listSource !== m.source || queue.length === 0) return;
-    if (position < order.current.length - 2 || fetchingMore.current) return;
-    fetchingMore.current = true;
-    fetch(`/api/list/${m.source}/${m.next}`)
-      .then((res) => (res.ok ? (res.json() as Promise<QueueItem[]>) : []))
-      .then((items) => {
-        // 待っているあいだに別の並びに替わっていたら、足さない
-        if (more.current !== m || state.current.queue !== queue) return;
-        const next = (m.next % m.last) + 1;
-        more.current = next === m.start ? null : { ...m, next };
-        const have = new Set(queue.map((s) => s.songId));
-        const fresh = items.filter((s) => !have.has(s.songId));
-        if (fresh.length > 0) append(fresh);
-      })
-      .finally(() => {
-        fetchingMore.current = false;
-      });
-  }, [listSource, queue, position, append]);
 
   const startRadio = useCallback(
     (seed: QueueItem) => {
