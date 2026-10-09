@@ -10,12 +10,15 @@ export function Heading({
   eyebrow,
   as: Tag = 'h2',
   size = 'section',
+  className = '',
   children,
 }: {
   eyebrow?: string;
   as?: 'h1' | 'h2';
   /** page は画面の題名、section は棚や欄の見出し */
   size?: 'page' | 'section';
+  /** 大きさを画面ごとに変えるときに足す指定 */
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -31,7 +34,7 @@ export function Heading({
       <Tag
         className={`font-display leading-tight ${
           size === 'page' ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'
-        }`}
+        } ${className}`}
       >
         {children}
       </Tag>

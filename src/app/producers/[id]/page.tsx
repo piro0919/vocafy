@@ -61,7 +61,8 @@ export default async function ProducerPage({ params }: PageProps<'/producers/[id
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <Heading as="h1" size="page">
+                {/* スマホでは、動画の下に名前とボタンを詰めて置くので、ほかの画面の題名より小さくする */}
+                <Heading as="h1" size="page" className="max-sm:text-2xl">
                   {producer.name}
                 </Heading>
                 <FavoriteProducerButton
