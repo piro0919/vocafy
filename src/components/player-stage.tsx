@@ -157,7 +157,7 @@ export function SwipeToLeave({
 /**
  * 詳細画面の「再生」ボタンの段。スマホでスクロールしてこの段が動画の裏に隠れたら、動画の下の縁から細い帯を滑り出させ、
  * ランダム・ループ・ラジオ・次に流れる曲のボタンを出し続ける。再生ボタンは下の再生の帯にあるので帯には入れない。
- * 帯は下の再生の帯と同じく、画面の端から 12px 離した角丸の板にする。動画より奥に置き、隠れているあいだは動画の裏へ引っ込める。ボカロPの画面の共有のように、画面ごとのボタンは extra で帯にも並べる
+ * 帯を下へ引くと、題名の部分（SwipeToLeave）と同じく前の画面に戻る。帯は下の再生の帯と同じく、画面の端から 12px 離した角丸の板にする。動画より奥に置き、隠れているあいだは動画の裏へ引っ込める。ボカロPの画面の共有のように、画面ごとのボタンは extra で帯にも並べる
  */
 export function StageControls({ children, extra }: { children: ReactNode; extra?: ReactNode }) {
   const row = useRef<HTMLDivElement>(null);
@@ -192,10 +192,13 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
       </div>
       <div
         inert={!pinned}
-        className={`fixed inset-x-3 top-[calc(56.25vw+12px)] z-30 flex h-10 items-center justify-center rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity,visibility] duration-300 ease-(--ease-out) md:hidden ${pinned ? '' : 'invisible -translate-y-[calc(100%+12px)] opacity-0'}`}
+        className={`fixed inset-x-3 top-[calc(56.25vw+12px)] z-30 h-10 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity,visibility] duration-300 ease-(--ease-out) md:hidden ${pinned ? '' : 'invisible -translate-y-[calc(100%+12px)] opacity-0'}`}
       >
-        {extra}
-        <PlaybackMode radio />
+        {/* 題名の部分と同じく、下へ引くと前の画面に戻り、流している曲は右下の窓に縮む */}
+        <SwipeToLeave className="flex size-full items-center justify-center">
+          {extra}
+          <PlaybackMode radio />
+        </SwipeToLeave>
       </div>
     </>
   );
