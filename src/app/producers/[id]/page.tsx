@@ -68,14 +68,9 @@ export default async function ProducerPage({ params }: PageProps<'/producers/[id
                   producer={{ id: producer.id, name: producer.name, picture: producer.picture }}
                 />
               </div>
-              {/* 本人の場所は名前の下に1行で（YouTube のチャンネルの画面と同じ置き場所）。曲数もこの人についての情報なので、
-                  同じ行の右に並べる（Spotify のアーティストの画面の、名前の下の聴いている人の数と同じ置き場所） */}
-              <div className="flex items-center gap-2">
-                <ProducerLinks name={producer.name} links={links} />
-                <p className="text-sm text-muted">
-                  {queue.length} 曲{queue.length < songs.length && `（全 ${songs.length} 曲）`}
-                </p>
-              </div>
+              {/* 本人の場所は名前の下に1行で（YouTube のチャンネルの画面と同じ置き場所）。曲数は出さない（右の一覧の番号で分かり、
+                  名前の下・リンクの横のどこに置いても浮いた） */}
+              <ProducerLinks name={producer.name} links={links} />
             </div>
           </div>
         }
