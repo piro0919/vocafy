@@ -76,7 +76,7 @@ export function SongItem({
   const active = current?.songId === song.songId;
   return (
     <div
-      className={`group flex min-w-0 snap-start items-center rounded-md pr-1 transition-colors duration-150 ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'}`}
+      className={`group flex min-w-0 snap-start items-center rounded-md pr-1 transition-colors duration-150 ${active ? 'bg-glass' : 'hover:bg-foreground/8'}`}
     >
       <button
         type="button"

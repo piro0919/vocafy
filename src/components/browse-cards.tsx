@@ -57,7 +57,7 @@ export function YearCard({
   return (
     <Link
       href={`/years/${year}`}
-      className={`flex flex-col items-start rounded-2xl border border-line/60 bg-sidebar/60 px-4 py-3 transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 ${className}`}
+      className={`flex flex-col items-start rounded-2xl border border-line/60 bg-glass px-4 py-3 transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 ${className}`}
     >
       <span className="font-tech text-2xl font-black text-accent sm:text-3xl">{year}</span>
       <span className="mt-1 text-xs text-muted">{formatCount(count)}曲</span>
@@ -67,7 +67,7 @@ export function YearCard({
 
 /** 小さな丸いボタンの形。「すべて表示」と右上のログインで同じ形を使う */
 export const PILL =
-  'shrink-0 rounded-full border border-accent/40 bg-sidebar/60 px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95';
+  'shrink-0 rounded-full border border-accent/40 bg-glass px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-out hover:bg-accent/10 active:scale-95';
 
 /** 見出しの右に置く「すべて表示」 */
 export function MoreLink({ href }: { href: string }) {

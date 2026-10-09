@@ -194,6 +194,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-sidebar: var(--sidebar);
+  /*
+   * 浮いた板（すりガラス）の地。濃さは役目で3段にし、新しい板もこの中から選ぶ。どれも backdrop-blur と合わせて使う
+   * - glass（60%）: 画面の枠としていつも出ている帯（上の帯・下のタブ・再生の帯・動画の下の操作の帯）と、ページの中の札
+   * - glass-thick（80%）: 後ろを一覧が通り続ける板（パソコンの左のメニューと上の段・年の札の帯）。60% では透けすぎた
+   * - glass-dense（95%）: 中身を読ませるために開く板（次に流れる曲・知らせ）。後ろの字が透けると読みにくい
+   */
+  --color-glass: color-mix(in oklab, var(--sidebar) 60%, transparent);
+  --color-glass-thick: color-mix(in oklab, var(--sidebar) 80%, transparent);
+  --color-glass-dense: color-mix(in oklab, var(--sidebar) 95%, transparent);
   --color-surface: var(--surface);
   --color-line: var(--line);
   --color-foreground: var(--foreground);

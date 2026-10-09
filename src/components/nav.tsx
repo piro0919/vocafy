@@ -57,7 +57,7 @@ export function Sidebar() {
   const active = useActive();
   return (
     <nav className="fixed inset-y-0 left-0 z-30 hidden w-63 py-3 pl-3 transition-[padding] duration-300 md:flex [html[data-player=dock]_&]:pb-[5.5rem] [html[data-player=slot]_&]:pb-[5.5rem]">
-      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-sidebar/80 px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-glass-thick px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
         <div className="mb-5 px-3">
           <Logo />
         </div>
@@ -103,7 +103,7 @@ export function Sidebar() {
 export function MobileTabs() {
   const active = useActive();
   return (
-    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-5 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
+    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-5 rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}

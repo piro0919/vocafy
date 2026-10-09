@@ -192,7 +192,7 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
       </div>
       <div
         inert={!pinned}
-        className={`fixed inset-x-3 top-[calc(56.25vw+12px)] z-30 h-10 rounded-2xl border border-line/60 bg-sidebar/60 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity,visibility] duration-300 ease-(--ease-out) md:hidden ${pinned ? '' : 'invisible -translate-y-[calc(100%+12px)] opacity-0'}`}
+        className={`fixed inset-x-3 top-[calc(56.25vw+12px)] z-30 h-10 rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity,visibility] duration-300 ease-(--ease-out) md:hidden ${pinned ? '' : 'invisible -translate-y-[calc(100%+12px)] opacity-0'}`}
       >
         {/* 題名の部分と同じく、下へ引くと前の画面に戻り、流している曲は右下の窓に縮む */}
         <SwipeToLeave className="flex size-full items-center justify-center">

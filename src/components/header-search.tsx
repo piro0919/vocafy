@@ -6,7 +6,7 @@ import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';
 
 const BOX =
-  'flex h-10 w-full max-w-md items-center gap-2 rounded-full border border-line/60 bg-sidebar/60 px-4 focus-within:border-accent/60';
+  'flex h-10 w-full max-w-md items-center gap-2 rounded-full border border-line/60 bg-glass px-4 focus-within:border-accent/60';
 
 function Field({ value, onChange }: { value: string; onChange?: (value: string) => void }) {
   return (

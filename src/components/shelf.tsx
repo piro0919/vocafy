@@ -138,7 +138,7 @@ function ArrowButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className="hidden size-8 place-items-center rounded-full border border-accent/40 bg-sidebar/60 text-accent transition-[background-color,scale,opacity] duration-150 ease-out hover:bg-accent/10 active:scale-95 disabled:opacity-40 disabled:hover:bg-sidebar/60 sm:grid"
+      className="hidden size-8 place-items-center rounded-full border border-accent/40 bg-glass text-accent transition-[background-color,scale,opacity] duration-150 ease-out hover:bg-accent/10 active:scale-95 disabled:opacity-40 disabled:hover:bg-glass sm:grid"
     >
       {children}
     </button>

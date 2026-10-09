@@ -143,7 +143,7 @@ export function ProducerPlayer({
                 id={`song-${song.id}`}
                 className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
                   active || linkedItem?.songId === song.id
-                    ? 'bg-sidebar/60'
+                    ? 'bg-glass'
                     : item
                       ? 'hover:bg-foreground/8'
                       : ''
@@ -312,7 +312,7 @@ function YearJump({ songs }: { songs: Song[] }) {
     // 地は、ほかの浮いた板（左のメニュー・再生の帯）と同じすりガラス。単色で塗ると上部の表紙の色の背景と合わなかった
     <div
       ref={bar}
-      className="sticky top-[calc(56.25vw+60px)] z-10 mb-3 rounded-full border border-line/60 bg-sidebar/80 p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
+      className="sticky top-[calc(56.25vw+60px)] z-10 mb-3 rounded-full border border-line/60 bg-glass-thick p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
       <ScrollRow label="年で飛ぶ" className="gap-1">
