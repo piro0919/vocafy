@@ -18,10 +18,22 @@ describe('rowOf', () => {
     expect(rowOf('ﾓｻﾞｲｸﾛｰﾙ')).toBe('ま');
   });
 
-  it('英字か数字で始まる曲名は abc', () => {
-    expect(rowOf('ECHO')).toBe('abc');
-    expect(rowOf('"bye-bye" by my 愛')).toBe('abc');
-    expect(rowOf('39')).toBe('abc');
+  it('英字で始まる曲名は、5字ずつの行', () => {
+    expect(rowOf('ECHO')).toBe('a-e');
+    expect(rowOf('"bye-bye" by my 愛')).toBe('a-e');
+    expect(rowOf('Just Be Friends')).toBe('f-j');
+    expect(rowOf('magnet')).toBe('k-o');
+    expect(rowOf('Tell Your World')).toBe('p-t');
+    expect(rowOf('Zero')).toBe('u-z');
+  });
+
+  it('飾りの付いた英字は、元の字の行', () => {
+    expect(rowOf('ÅMARA(大未来電脳)')).toBe('a-e');
+  });
+
+  it('数字で始まる曲名は 0-9。全角の数字も同じ', () => {
+    expect(rowOf('39')).toBe('0-9');
+    expect(rowOf('１８歳')).toBe('0-9');
   });
 
   it('漢字で始まる曲名は、ローマ字の曲名の頭の字で決める', () => {

@@ -3,8 +3,8 @@ import { PAGE_SIZE } from '@/lib/catalog';
 import { Icon } from './icon';
 
 /**
- * 住所の末尾のページ番号。/kana/abc は 1 ページ目、/kana/abc/2 は 2 ページ目。
- * 1 ページ目を /kana/abc/1 と書いたものや、数字でないものは null（無いページとして扱う）
+ * 住所の末尾のページ番号。/kana/a-e は 1 ページ目、/kana/a-e/2 は 2 ページ目。
+ * 1 ページ目を /kana/a-e/1 と書いたものや、数字でないものは null（無いページとして扱う）
  */
 export function pageOf(segments: string[] | undefined): number | null {
   if (!segments || segments.length === 0) return 1;

@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'static.vocadb.net', pathname: '/img/**' },
     ],
   },
+  redirects() {
+    return [
+      // 英字と数字をまとめていた行。2026-10 に英字を5字ずつ（a-e など）と数字（0-9）に分けたので、先頭の行へ送る
+      { source: '/kana/abc/:rest*', destination: '/kana/a-e', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

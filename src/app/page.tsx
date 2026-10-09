@@ -7,7 +7,7 @@ import { Heading } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
 import { dailyMix, kanaRows, onThisDay, today, voices, years } from '@/lib/catalog';
-import { ROW_LABEL, ROWS } from '@/lib/kana';
+import { KANA_ROWS, LATIN_ROWS, OTHER_ROWS, ROW_LABEL, type Row } from '@/lib/kana';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
 
@@ -113,23 +113,32 @@ export default async function Home() {
         <div className="mb-3">
           <Heading eyebrow="Index">あいうえお順</Heading>
         </div>
-        <ul className="grid grid-cols-6 gap-2 sm:grid-cols-12">
-          {ROWS.map((row) => (
-            <li key={row}>
-              <Link
-                href={`/kana/${row}`}
-                aria-label={`${ROW_LABEL[row]}（${rowCounts.get(row) ?? 0} 曲）`}
-                className="grid aspect-square place-items-center rounded-2xl border border-line/60 bg-sidebar/60 font-display text-xl text-accent transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 sm:text-2xl"
-              >
-                <span
-                  className={row === 'abc' || row === 'etc' ? 'text-sm sm:text-base' : undefined}
-                >
-                  {ROW_LABEL[row]}
-                </span>
-              </Link>
-            </li>
+        {/* かな・英字・そのほかの3段。段ごとに行を変え、札の大きさは3段でそろえる */}
+        <div className="flex flex-col gap-2">
+          {[KANA_ROWS, LATIN_ROWS, OTHER_ROWS].map((rows) => (
+            <ul key={rows[0]} className="grid grid-cols-6 gap-2 sm:grid-cols-12">
+              {rows.map((row: Row) => (
+                <li key={row}>
+                  <Link
+                    href={`/kana/${row}`}
+                    aria-label={`${ROW_LABEL[row]}（${rowCounts.get(row) ?? 0} 曲）`}
+                    className="grid aspect-square place-items-center rounded-2xl border border-line/60 bg-sidebar/60 font-display text-xl text-accent transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 sm:text-2xl"
+                  >
+                    <span
+                      className={
+                        (KANA_ROWS as readonly string[]).includes(row)
+                          ? undefined
+                          : 'text-sm sm:text-base'
+                      }
+                    >
+                      {ROW_LABEL[row]}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           ))}
-        </ul>
+        </div>
       </section>
     </>
   );

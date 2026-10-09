@@ -3,21 +3,15 @@
  * サイトはその行で曲を引く。DB にも VocaDB にも触らないので、テストから確かめられる
  */
 
-/** 索引の行。かなの10行と、英字・数字で始まる曲（abc）と、それ以外（etc） */
-export const ROWS = [
-  'あ',
-  'か',
-  'さ',
-  'た',
-  'な',
-  'は',
-  'ま',
-  'や',
-  'ら',
-  'わ',
-  'abc',
-  'etc',
-] as const;
+/** 索引のかなの10行 */
+export const KANA_ROWS = ['あ', 'か', 'さ', 'た', 'な', 'は', 'ま', 'や', 'ら', 'わ'] as const;
+/** 英字で始まる曲の行。かなの行と同じく5字ずつまとめる */
+export const LATIN_ROWS = ['a-e', 'f-j', 'k-o', 'p-t', 'u-z'] as const;
+/** 数字で始まる曲と、それ以外（etc） */
+export const OTHER_ROWS = ['0-9', 'etc'] as const;
+
+/** 索引の行。トップでは、かな・英字・そのほかの3段に分けて並べる */
+export const ROWS = [...KANA_ROWS, ...LATIN_ROWS, ...OTHER_ROWS] as const;
 export type Row = (typeof ROWS)[number];
 
 /** 札に出す字 */
@@ -32,7 +26,12 @@ export const ROW_LABEL: Record<Row, string> = {
   や: 'や',
   ら: 'ら',
   わ: 'わ',
-  abc: 'ABC',
+  'a-e': 'A–E',
+  'f-j': 'F–J',
+  'k-o': 'K–O',
+  'p-t': 'P–T',
+  'u-z': 'U–Z',
+  '0-9': '0–9',
   etc: 'ほか',
 };
 
@@ -93,7 +92,7 @@ const toHiragana = (c: string) =>
   c >= 'ァ' && c <= 'ヶ' ? String.fromCharCode(c.charCodeAt(0) - 0x60) : c;
 
 /**
- * 曲名の行。かなで始まればその行、英字か数字で始まれば abc。漢字で始まる曲名は読みが分からないので、
+ * 曲名の行。かなで始まればその行、英字で始まれば5字ずつの行（a-e など）、数字で始まれば 0-9。漢字で始まる曲名は読みが分からないので、
  * VocaDB のローマ字の曲名（romaji）の頭の字で決める。ローマ字が無いときや、ほかの文字は etc
  */
 export function rowOf(title: string, romaji?: string): Row {
@@ -102,7 +101,10 @@ export function rowOf(title: string, romaji?: string): Row {
   const kana = toHiragana(c);
   const found = KANA.find(([, chars]) => chars.includes(kana));
   if (found) return found[0];
-  if (/[a-z0-9]/i.test(c)) return 'abc';
+  if (/[0-9]/.test(c)) return '0-9';
+  // É や Å のような飾りの付いた字は、元の字の行に入れる
+  const latin = c.normalize('NFD')[0]?.toLowerCase();
+  if (latin && /[a-z]/.test(latin)) return LATIN_ROWS.find((r) => latin <= r[2]) ?? 'u-z';
   if (/\p{Script=Han}/u.test(c) && romaji) {
     const r = head(romaji)?.toLowerCase();
     return (r && ROMAJI[r]) || 'etc';
