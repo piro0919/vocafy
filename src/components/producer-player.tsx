@@ -159,15 +159,23 @@ function linkedSong(): number | null {
 
 /**
  * 共有のボタン。この人の曲を流しているときは、その曲つきのリンク（?song=）を共有する。開いた人の画面ではその曲から流せる。
- * スマホなど共有の窓が出せるブラウザでは窓を出し、出せなければリンクを写す
+ * スマホなど共有の窓（Web Share API）が出せるブラウザでは窓を出し、出せなければリンクを写す
  */
 function ShareButton({ producerId, songId }: { producerId: number; songId?: number }) {
   const [copied, setCopied] = useState(false);
+  // 共有の窓が出せないブラウザ（パソコンの多く）では、押すとリンクを写すだけなので、初めからそう書く。
+  // サーバーでは分からないので「共有」で作り、ブラウザで読み直す
+  const canShare = useSyncExternalStore(
+    noSubscribe,
+    () => 'share' in navigator,
+    () => true,
+  );
+  const what = songId ? 'この曲' : 'このボカロP';
   const share = async () => {
     const url = new URL(`/producers/${producerId}`, window.location.origin);
     if (songId) url.searchParams.set('song', String(songId));
     const link = url.toString();
-    if (navigator.share) {
+    if (canShare) {
       // 窓を閉じただけでも失敗が返るので、何もしない
       await navigator.share({ url: link }).catch(() => {});
       return;
@@ -180,12 +188,14 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
     <button
       type="button"
       onClick={share}
-      aria-label={songId ? 'この曲を共有' : 'このボカロPを共有'}
-      title={songId ? 'この曲を共有' : 'このボカロPを共有'}
+      aria-label={canShare ? `${what}を共有` : `${what}のリンクをコピー`}
+      title={canShare ? `${what}を共有` : `${what}のリンクをコピー`}
       className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold whitespace-nowrap text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-95"
     >
       <Icon name="share" className="size-5" />
-      <span aria-live="polite">{copied ? 'コピーしました' : '共有'}</span>
+      <span aria-live="polite">
+        {copied ? 'コピーしました' : canShare ? '共有' : 'リンクをコピー'}
+      </span>
     </button>
   );
 }
