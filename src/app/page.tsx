@@ -2,10 +2,20 @@ import type { WebSite, WithContext } from 'schema-dts';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
 import { FavoriteNewSongs } from '@/components/favorite-new-songs';
 import { MixWall, OnThisDay } from '@/components/home-sections';
+import { PlayAllPill } from '@/components/play-all';
 import { Heading, SECTION } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
-import { dailyMix, onThisDay, PAGE_SIZE, songsOfDay, today, voices, years } from '@/lib/catalog';
+import {
+  dailyMix,
+  MIX_SIZE,
+  onThisDay,
+  PAGE_SIZE,
+  songsOfDay,
+  today,
+  voices,
+  years,
+} from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
 
@@ -30,7 +40,7 @@ export default async function Home() {
   const [day, dayList, mix, voiceList, yearList] = await Promise.all([
     onThisDay(date, 8),
     songsOfDay(date.slice(5), 1),
-    dailyMix(date, 18),
+    dailyMix(date, MIX_SIZE),
     voices(),
     years(),
   ]);
@@ -59,8 +69,12 @@ export default async function Home() {
       <FavoriteNewSongs />
 
       <section className={SECTION}>
-        <div className="mb-3">
+        {/* 「再生」で18曲を通して流す（再生用の画面へ移る）。壁の曲を押したときは、その曲のボカロPの画面へ移る */}
+        <div className="mb-3 flex items-end gap-3">
           <Heading eyebrow="Daily Mix">きょうの出会い</Heading>
+          <div className="ml-auto">
+            <PlayAllPill songs={mix} list={{ source: `mix/${date}`, page: 1, last: 1 }} />
+          </div>
         </div>
         <MixWall songs={mix} />
       </section>

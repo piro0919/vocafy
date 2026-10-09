@@ -1,5 +1,7 @@
 import {
+  dailyMix,
   findVoice,
+  MIX_SIZE,
   type Paged,
   picksOfYear,
   songsOfDay,
@@ -16,6 +18,8 @@ export const revalidate = false;
 export function generateStaticParams() {
   return [];
 }
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const onePage = (songs: Paged['songs'], page: number): Paged => ({
   songs: page === 1 ? songs : [],
@@ -34,6 +38,10 @@ function read(source: string[], page: number): Promise<Paged> | null {
   }
   if (kind === 'years' && source.length === 2) {
     return picksOfYear(Number(a)).then(({ songs }) => onePage(songs, page));
+  }
+  // トップの日替わりの並び（mix/2026-10-10）。1ページに収まる
+  if (kind === 'mix' && source.length === 2 && DATE.test(a)) {
+    return dailyMix(a, MIX_SIZE).then((songs) => onePage(songs, page));
   }
   return null;
 }

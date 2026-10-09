@@ -299,6 +299,9 @@ export const onThisDay = cache(
 const MIX_POPULAR = 5;
 const MIX_POPULAR_POOL = 500;
 
+/** 日替わりの並びの曲の数。トップの壁と、その再生用の画面（/mix/2026-10-10/play）で同じ数にする */
+export const MIX_SIZE = 18;
+
 /**
  * 日替わりの無作為の並び。同じ日のうちは同じ並びになるよう、日付を混ぜた曲の id の要約で選んで並べる。
  * limit 曲のうち MIX_POPULAR 曲は評価点の上位 MIX_POPULAR_POOL 曲から、残りは全曲から選び、混ぜて並べる。
