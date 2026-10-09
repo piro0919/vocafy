@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
+import { Heading, YEAR_HEADING } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
@@ -51,9 +51,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
       <div className="grid gap-6">
         {[...byYear].map(([year, list]) => (
           <section key={year}>
-            <h2 className="mb-2 font-tech text-sm font-black tracking-[0.2em] text-accent">
-              {year}
-            </h2>
+            <h2 className={`mb-2 ${YEAR_HEADING}`}>{year}</h2>
             <SongList songs={list} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
           </section>
         ))}

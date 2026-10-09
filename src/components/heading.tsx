@@ -51,3 +51,6 @@ export function Heading({
  * （2026-10-09 にそろえた。前はトップの中でも 40px と 56px、検索は 32px、設定は 40px だった）
  */
 export const SECTION = 'mt-10 sm:mt-14';
+
+/** 一覧の中の年ごとの区切りの見出し（日付の画面・歌声の画面の年） */
+export const YEAR_HEADING = 'font-tech text-sm font-black tracking-[0.2em] text-accent';

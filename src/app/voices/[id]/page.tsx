@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { MoreLink } from '@/components/browse-cards';
-import { Heading } from '@/components/heading';
+import { Heading, YEAR_HEADING } from '@/components/heading';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, findVoice } from '@/lib/catalog';
@@ -74,7 +74,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           <section key={year}>
             {/* 代表曲に入りきらない年だけ、その年の全曲へ行けるようにする */}
             <div className="mb-2 flex items-center gap-3">
-              <h2 className="font-tech text-sm font-black tracking-[0.2em] text-accent">{year}</h2>
+              <h2 className={YEAR_HEADING}>{year}</h2>
               {(yearTotals.get(year) ?? 0) > list.length && (
                 <div className="ml-auto">
                   <MoreLink href={`/voices/${voice.id}/${year}`} />

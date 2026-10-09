@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { DatedItem } from '@/lib/catalog';
 import { useFavoriteProducers } from '@/lib/favorites';
-import { Heading } from './heading';
+import { Heading, SECTION } from './heading';
 import { SongList } from './song-list';
 
 /** 新しい曲を読むボカロPの数（お気に入りに足した新しい順） */
@@ -53,7 +53,7 @@ export function FavoriteNewSongs() {
   // お気に入りのボカロPがいない人、読み終えて曲が無かった人には出さない
   if (!key || songs?.length === 0) return null;
   return (
-    <section className="mt-10 sm:mt-14" aria-busy={!songs}>
+    <section className={SECTION} aria-busy={!songs}>
       <div className="mb-3">
         <Heading eyebrow="From Your Favorites">お気に入りのボカロPの新曲</Heading>
       </div>
