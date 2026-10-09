@@ -240,8 +240,8 @@ function Progress({
       }}
       // 当たり判定は見た目の線より広くとる。線は帯の上の縁に重ねる。
       // スマホは指で狙うので、上へ広げる（下へ広げると曲名や再生ボタンに重なる）。
-      // スマホでは帯の上の角が丸いので、線が角からはみ出さないよう左右を内に寄せる
-      className="group absolute inset-x-0 -top-2 h-4 max-md:inset-x-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
+      // 帯の角が丸いので、線が角からはみ出さないよう左右を内に寄せる（パソコンも浮いた板なので同じ）
+      className="group absolute inset-x-4 -top-2 h-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
     >
       <span
         ref={bubble}
