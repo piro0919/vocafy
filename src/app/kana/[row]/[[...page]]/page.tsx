@@ -4,7 +4,7 @@ import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
-import { songsOfRow } from '@/lib/catalog';
+import { PAGE_SIZE, songsOfRow } from '@/lib/catalog';
 import { isRow, ROW_LABEL, ROWS, type Row } from '@/lib/kana';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
@@ -46,7 +46,11 @@ export default async function KanaPage({ params }: PageProps<'/kana/[row]/[[...p
         <Heading as="h1" size="page" eyebrow="Index">
           {rowTitle(row)}の曲
         </Heading>
-        <PlayAll songs={songs} count={`${total} 曲`} />
+        <PlayAll
+          songs={songs}
+          count={`${total} 曲`}
+          list={{ source: `kana/${row}`, page, last: Math.ceil(total / PAGE_SIZE) }}
+        />
       </div>
       <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
       <Pager base={`/kana/${row}`} page={page} total={total} />

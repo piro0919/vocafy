@@ -4,7 +4,7 @@ import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
-import { songsOfVoiceYear, voices } from '@/lib/catalog';
+import { PAGE_SIZE, songsOfVoiceYear, voices } from '@/lib/catalog';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // ビルドのときには作らず、最初に開かれたときに作って残す
@@ -45,7 +45,15 @@ export default async function VoiceYearPage({
         <Heading as="h1" size="page" eyebrow={year}>
           {voice.name}の{year}年の曲
         </Heading>
-        <PlayAll songs={songs} count={`${total} 曲`} />
+        <PlayAll
+          songs={songs}
+          count={`${total} 曲`}
+          list={{
+            source: `voices/${voice.id}/${year}`,
+            page,
+            last: Math.ceil(total / PAGE_SIZE),
+          }}
+        />
       </div>
       <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
       <Pager base={`/voices/${voice.id}/${year}`} page={page} total={total} />

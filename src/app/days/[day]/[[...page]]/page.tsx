@@ -4,7 +4,7 @@ import { Heading } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
-import { type DatedItem, songsOfDay } from '@/lib/catalog';
+import { type DatedItem, PAGE_SIZE, songsOfDay } from '@/lib/catalog';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 日付の画面はビルドのときには作らず、最初に開かれたときに作って残す
@@ -45,7 +45,11 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
         <Heading as="h1" size="page" eyebrow="On This Day">
           {label(day)}に生まれた曲
         </Heading>
-        <PlayAll songs={songs} count={`${total} 曲`} />
+        <PlayAll
+          songs={songs}
+          count={`${total} 曲`}
+          list={{ source: `days/${day}`, page, last: Math.ceil(total / PAGE_SIZE) }}
+        />
       </div>
       <div className="grid gap-6">
         {[...byYear].map(([year, list]) => (

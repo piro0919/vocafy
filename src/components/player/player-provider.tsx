@@ -34,6 +34,12 @@ import { useWakeLock } from './use-wake-lock';
  */
 export type PlayContext = 'list' | 'pending' | 'radio' | 'favorites';
 
+/**
+ * 「すべて再生」で流している一覧の続き。source は一覧の住所（years/2010 など）、start は押したページ、
+ * next は次に足すページ、last は最後のページ。最後のページの次は1ページ目に戻り、押したページの手前まで足す
+ */
+export type ListSource = { source: string; start: number; next: number; last: number };
+
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
 
@@ -61,6 +67,13 @@ type PlayerContext = {
    * 流し始め、ボカロPの画面に着いたところでその人の曲に差し替える（producer-player.tsx）
    */
   adoptQueue: (items: QueueItem[], index: number) => void;
+  /**
+   * 一覧の1ページの曲を流し、並びの終わりが近づいたら、一覧の残りのページの曲を後ろに足していく（play-all.tsx）。
+   * ページ数が多い一覧（初音ミクの年など）を、押した時点で全部送らないため
+   */
+  playAll: (items: QueueItem[], source: Omit<ListSource, 'next'>) => void;
+  /** 「すべて再生」で流している一覧の住所。ほかの並びを流しているときは null */
+  listSource: string | null;
   /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
   startRadio: (seed: QueueItem) => void;
   toggle: () => void;
@@ -207,6 +220,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playbackRef = useRef<{ repeat: Repeat; shuffle: boolean } | null>(null);
   // 流す順（順番待ちの何番目を、どの順で流すか）と、いまその何番目にいるか
   const order = useRef<number[]>([]);
+  // 「すべて再生」で流している一覧の続き。ほかの並びに替えたら消す
+  const more = useRef<ListSource | null>(null);
+  const [listSource, setListSource] = useState<string | null>(null);
+  const clearMore = useCallback(() => {
+    more.current = null;
+    setListSource(null);
+  }, []);
   const [position, setPosition] = useState(0);
   const positionRef = useRef(0);
 
@@ -352,8 +372,52 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setQueue(items);
   }, []);
 
+  /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
+  const append = useCallback((items: QueueItem[]) => {
+    const { queue: q, index: at } = state.current;
+    const added = buildOrder(items.length, 0, playbackRef.current?.shuffle ?? false);
+    order.current = [...order.current, ...added.map((i) => q.length + i)];
+    const next = [...q, ...items];
+    state.current = { queue: next, index: at };
+    setQueue(next);
+  }, []);
+
+  const playAll = useCallback(
+    (items: QueueItem[], source: Omit<ListSource, 'next'>) => {
+      load(items, 0, 'list');
+      const next = (source.start % source.last) + 1;
+      more.current = next === source.start ? null : { ...source, next };
+      setListSource(source.source);
+    },
+    [load],
+  );
+
+  // 「すべて再生」で流す順の終わりが近づいたら（残り1曲まで）、一覧の次のページを取りに行って後ろに足す
+  const fetchingMore = useRef(false);
+  useEffect(() => {
+    const m = more.current;
+    if (!m || listSource !== m.source || queue.length === 0) return;
+    if (position < order.current.length - 2 || fetchingMore.current) return;
+    fetchingMore.current = true;
+    fetch(`/api/list/${m.source}/${m.next}`)
+      .then((res) => (res.ok ? (res.json() as Promise<QueueItem[]>) : []))
+      .then((items) => {
+        // 待っているあいだに別の並びに替わっていたら、足さない
+        if (more.current !== m || state.current.queue !== queue) return;
+        const next = (m.next % m.last) + 1;
+        more.current = next === m.start ? null : { ...m, next };
+        const have = new Set(queue.map((s) => s.songId));
+        const fresh = items.filter((s) => !have.has(s.songId));
+        if (fresh.length > 0) append(fresh);
+      })
+      .finally(() => {
+        fetchingMore.current = false;
+      });
+  }, [listSource, queue, position, append]);
+
   const startRadio = useCallback(
     (seed: QueueItem) => {
+      clearMore();
       const { queue: q, index: i } = state.current;
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');
@@ -369,7 +433,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIndex(0);
       setContext('radio');
     },
-    [load],
+    [load, clearMore],
   );
 
   // ラジオで並びの終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
@@ -396,6 +460,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [context, index, queue, extend]);
 
   const close = useCallback(() => {
+    clearMore();
     player.current?.destroy();
     player.current = null;
     state.current = { queue: [], index: 0 };
@@ -403,7 +468,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIndex(0);
     setPlaying(false);
     setLoading(false);
-  }, []);
+  }, [clearMore]);
 
   // 再生中は時刻を拾う。間は帯の側で補ってなめらかに進める
   useEffect(() => {
@@ -543,8 +608,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       shuffle: playback.shuffle,
       toggleRepeat,
       toggleShuffle,
-      playQueue: load,
-      adoptQueue: adopt,
+      playQueue: (items, start, ctx) => {
+        clearMore();
+        load(items, start, ctx);
+      },
+      adoptQueue: (items, at) => {
+        clearMore();
+        adopt(items, at);
+      },
+      playAll,
+      listSource,
       startRadio,
       toggle: () => (playing ? player.current?.pause() : player.current?.play()),
       step,
@@ -588,6 +661,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleShuffle,
       load,
       adopt,
+      playAll,
+      listSource,
+      clearMore,
       startRadio,
       step,
       close,
