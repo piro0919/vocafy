@@ -8,7 +8,7 @@ import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from '../fade-image';
 import { FavoriteButton } from '../favorite-button';
 import { Icon } from '../icon';
-import { PlaybackMode, RadioButton } from './playback-mode';
+import { PlaybackMode } from './playback-mode';
 import { type PlaybackTime, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
 
@@ -97,13 +97,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                 )}
               </Marquee>
             </div>
-            {!loading && (
-              <>
-                <FavoriteButton song={item} />
-                {/* スマホは帯が狭いので、ラジオは画面の中のランダム・ループの隣に置く（playback-mode.tsx） */}
-                <RadioButton song={item} className="hidden md:grid" />
-              </>
-            )}
+            {!loading && <FavoriteButton song={item} />}
           </div>
         ) : (
           <div className="flex-1" />
@@ -113,7 +107,8 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
           音量。iPhone と iPad は埋め込みの音量を Web から変えられず、本体のボタンで調節する決まりなので、
           スマホの幅では出さない
         */}
-        <PlaybackMode className="hidden md:flex" />
+        {/* ラジオはランダム・ループと同じ「この先どう流すか」のボタンなので並べる（スマホは画面の中に同じ並びで置く） */}
+        <PlaybackMode className="hidden md:flex" radio />
         <div className="hidden items-center gap-1 md:flex">
           <BarButton label={muted ? '消音を解除' : '消音'} onClick={toggleMute}>
             <Icon

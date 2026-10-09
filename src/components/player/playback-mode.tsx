@@ -7,7 +7,7 @@ import { usePlayer } from './player-provider';
 /**
  * ランダム再生とループの切り替え。入っているあいだは差し色にする。
  * パソコンでは下の帯に置き、スマホでは帯に入りきらないので、詳細画面の「再生」ボタンの横に置く。
- * radio を付けると、流している曲からのラジオのボタンも並べる（スマホの詳細画面。パソコンでは帯の曲名の横にある）
+ * radio を付けると、流している曲からのラジオのボタンも並べる
  */
 export function PlaybackMode({
   className = '',
@@ -46,7 +46,7 @@ export function PlaybackMode({
 }
 
 /** ラジオ。押すと、いまの曲から関連曲を流し続ける。ラジオで流しているあいだは差し色にする */
-export function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
+function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
   const { context, startRadio } = usePlayer();
   const on = context === 'radio';
   return (
