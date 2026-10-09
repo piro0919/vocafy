@@ -21,9 +21,9 @@ export function FavoritesView() {
   if (items.length === 0) {
     return (
       <p className="flex items-center gap-1.5 text-sm text-muted">
-        曲の横の
+        お気に入りはまだありません。曲の横の
         <Icon name="heart" className="size-4" />
-        を押すと、ここに集まります。お気に入りはこのブラウザに残ります。
+        で追加できます。
       </p>
     );
   }
