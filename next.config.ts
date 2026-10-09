@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
     return [
       // あいうえお順の行の画面。2026-10-10 に外した（行が3千曲あって探す役に立たず、眺める入口はほかにある）ので、トップへ送る
       { source: '/kana/:rest*', destination: '/', permanent: true },
+      // 年の全曲を300曲ずつに分けていたころのページ（/years/2010/2）。2026-10-10 に年の画面を月ごとの代表曲にして無くなった。
+      // 月の画面（/years/2010/03）は2桁なので、1桁の番号だけを送る（どの年も 2,200 曲に届かず、ページは8まで）
+      { source: '/years/:year/:page([1-9])', destination: '/years/:year', permanent: true },
     ];
   },
   async headers() {

@@ -359,16 +359,50 @@ async function paged(
   return { songs: rows.map(toItem), total: rows[0]?.total ?? 0 };
 }
 
-/** その年に投稿された流せる曲。新しい順 */
-export const songsOfYear = cache(async (year: number, page: number): Promise<Paged> => {
-  if (!Number.isSafeInteger(year)) return { songs: [], total: 0 };
-  return paged(
-    'and extract(year from s.published_on) = $1',
-    'q.published_on desc, q.id',
-    [year],
-    page,
-  );
-});
+/** 年の画面に、1か月あたり出す代表曲の数 */
+const PICKS_PER_MONTH = 5;
+
+/**
+ * その年の代表曲。月ごとに評価点の上位 PICKS_PER_MONTH 曲を選び、新しい月から並べる。月の中は新しい順（順位に見せないため）。
+ * 年の全曲を新しい順に並べると、どの年も1千〜2千曲あり、開いて最初に出るのはその年の12月のほとんど知られていない曲だった
+ * （2026-10-10 に本人と決めた。歌声の画面と同じ形）
+ */
+export const picksOfYear = cache(
+  async (year: number): Promise<{ songs: DatedItem[]; monthTotals: Map<string, number> }> => {
+    if (!Number.isSafeInteger(year)) return { songs: [], monthTotals: new Map() };
+    const { rows } = await db().query<QueueRow & { month_total: number }>(
+      `select * from (
+         select q.*, row_number() over (
+           partition by left(q.published_on, 7) order by q.rating_score desc, q.id) as rank,
+           count(*) over (partition by left(q.published_on, 7))::int as month_total
+         from (${QUEUE_SELECT} and extract(year from s.published_on) = $1) q
+       ) r
+       where rank <= $2
+       order by published_on desc, id`,
+      [year, PICKS_PER_MONTH],
+    );
+    const monthTotals = new Map(
+      rows.map((r) => [r.published_on?.slice(5, 7) ?? '', r.month_total]),
+    );
+    return { songs: rows.map(toItem), monthTotals };
+  },
+);
+
+/** 月（01〜12） */
+export const MONTH = /^(0[1-9]|1[0-2])$/;
+
+/** その年のその月（01〜12）に投稿された流せる曲。年の画面の月の「すべて表示」から。新しい順 */
+export const songsOfMonth = cache(
+  async (year: number, month: string, page: number): Promise<Paged> => {
+    if (!Number.isSafeInteger(year) || !MONTH.test(month)) return { songs: [], total: 0 };
+    return paged(
+      "and to_char(s.published_on, 'YYYY-MM') = $1",
+      'q.published_on desc, q.id',
+      [`${year}-${month}`],
+      page,
+    );
+  },
+);
 
 /** 月日（MM-DD）。2月29日も含む。日付として無い月日（02-31 など）は通るが、曲が無いので空になる */
 const MONTH_DAY = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
