@@ -59,7 +59,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           <Heading as="h1" size="page" eyebrow="Voice">
             {voice.name}
           </Heading>
-          <p className="mt-2 text-sm text-muted">{voice.songCount} 曲から、年ごとの代表曲</p>
+          <p className="mt-2 text-sm text-muted">{voice.songCount} 曲</p>
         </div>
       </div>
       <div className="grid gap-6">
