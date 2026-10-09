@@ -355,10 +355,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const { service, videoId } = items[at];
     const sound = soundRef.current ?? { volume: 100, muted: false };
     const swap = () => {
+      // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
+      const now = soundRef.current ?? sound;
       // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える。絞った音量は、止めてから戻す
       if (player.current?.service === service) {
         player.current.load(videoId);
-        player.current.setVolume(sound.volume);
+        player.current.setVolume(now.volume);
         return;
       }
       player.current?.destroy();
@@ -390,7 +392,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       player.current = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
         frame.current,
         videoId,
-        sound,
+        now,
         events,
       );
     };
