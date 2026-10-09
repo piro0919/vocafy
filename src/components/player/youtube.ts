@@ -52,8 +52,10 @@ function loadYouTubeApi(): Promise<YTNamespace> {
 }
 
 /**
- * YouTube のプレイヤーを作る。仕組み（iframe_api）の読み込みを待つあいだに別の曲が選ばれたら、
- * できたときに最後に選ばれた曲を流す
+ * YouTube のプレイヤーを作る。仕組み（iframe_api）の読み込みや、プレイヤーの準備（onReady）を待つあいだに
+ * 別の曲が選ばれたら、準備ができたときに最後に選ばれた曲を流す。
+ * プレイヤーの操作（loadVideoById など）は onReady までは生えていないので、それまでは呼ばない。
+ * 呼ぶと例外になり、帯は次の曲を出しているのに前の曲が鳴り続けた
  */
 export function createYouTubeEngine(
   container: HTMLElement,
@@ -61,16 +63,20 @@ export function createYouTubeEngine(
   sound: Sound,
   events: EngineEvents,
 ): Engine {
+  // 準備のできたプレイヤー。準備を待つあいだは null
   let player: YTPlayer | null = null;
   let latest = videoId;
+  // 準備を待つあいだに一時停止を押されたら、準備ができても流さない
+  let wantPlay = true;
   let destroyed = false;
 
   void loadYouTubeApi().then((YT) => {
     if (destroyed) return;
     const el = document.createElement('div');
     container.replaceChildren(el);
-    player = new YT.Player(el, {
-      videoId: latest,
+    const first = latest;
+    new YT.Player(el, {
+      videoId: first,
       // 表示はなるべく減らす。操作は Vocafy の帯でするので、YouTube の操作バーは出さない。
       // 上部の題名と「YouTube で見る」のロゴは、パラメータでは消せない（消そうとして上に重ねるのは規約違反）
       playerVars: {
@@ -83,10 +89,15 @@ export function createYouTubeEngine(
       },
       events: {
         onReady: (e) => {
+          if (destroyed) return;
+          player = e.target;
           // 残しておいた音量で始める
-          e.target.setVolume(sound.volume);
-          if (sound.muted) e.target.mute();
-          e.target.playVideo();
+          player.setVolume(sound.volume);
+          if (sound.muted) player.mute();
+          // 待つあいだに別の曲が選ばれていたら、その曲に替える（替えると流れ始める）
+          if (latest !== first) player.loadVideoById(latest);
+          else if (wantPlay) player.playVideo();
+          else player.pauseVideo();
         },
         onStateChange: ({ data }) => {
           if (data === YT.PlayerState.PLAYING) events.onPlaying();
@@ -107,10 +118,17 @@ export function createYouTubeEngine(
     service: 'youtube',
     load: (id) => {
       latest = id;
+      wantPlay = true;
       player?.loadVideoById(id);
     },
-    play: () => player?.playVideo(),
-    pause: () => player?.pauseVideo(),
+    play: () => {
+      wantPlay = true;
+      player?.playVideo();
+    },
+    pause: () => {
+      wantPlay = false;
+      player?.pauseVideo();
+    },
     seek: (seconds) => player?.seekTo(seconds, true),
     setVolume: (volume) => {
       sound = { ...sound, volume };
@@ -127,6 +145,7 @@ export function createYouTubeEngine(
     }),
     destroy: () => {
       destroyed = true;
+      // 準備を待つあいだのプレイヤーは destroy も持たないので、枠ごと外すだけにする
       player?.destroy();
       player = null;
       container.replaceChildren();
