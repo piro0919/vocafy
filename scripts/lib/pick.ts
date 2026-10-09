@@ -53,6 +53,14 @@ const YOUTUBE_STANDINS = new Map([
   [103770, 'CpwGKX2gNQo'], // 虹色スペクトル
 ]);
 
+/**
+ * 入れる曲の種類。オリジナル曲と、その出し直し（リマスター・リミックス・PV 版）。出し直しは VocaDB では元の曲と別の項目で、
+ * よく聴かれているのが出し直しの版のことがある（磯Pの「袖触れ合うも他生の縁」のリメイク、cosMo@暴走Pの「初音ミクの消失 -DEAD END-」）。
+ * 元の曲を差し替えず、別の1曲として並べる。表紙と投稿日が違うので見分けられる。カバーや人が歌った曲は入れない。
+ * 種の線（評価点・YouTube の再生数）はオリジナル曲だけで選ぶ（scripts/lib/vocadb.ts）
+ */
+export const SONG_TYPES = ['Original', 'Remaster', 'Remix', 'MusicPV'];
+
 const has = (categories: string, name: string) =>
   categories.split(',').some((c) => c.trim() === name);
 
@@ -110,10 +118,10 @@ export function sourcesOf(song: VdbSong): {
     : null;
 }
 
-/** Vocafy に入れられる曲か。オリジナル曲で、作者と合成音声の歌声があり、本家の動画がある */
+/** Vocafy に入れられる曲か。オリジナル曲かその出し直しで、作者と合成音声の歌声があり、本家の動画がある */
 export function isEligible(song: VdbSong): boolean {
   return (
-    song.songType === 'Original' &&
+    SONG_TYPES.includes(song.songType) &&
     producersOf(song).length > 0 &&
     vocalistsOf(song).length > 0 &&
     sourcesOf(song) !== null

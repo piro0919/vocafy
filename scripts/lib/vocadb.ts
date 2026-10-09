@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { SONG_TYPES } from './pick';
 
 /**
  * VocaDB の API（https://vocadb.net/api）。鍵は要らない。
@@ -112,7 +113,9 @@ async function get<T>(path: string, params: Record<string, string | number | str
   return body;
 }
 
+/** 種の線（評価点・YouTube の再生数）はオリジナル曲だけで選ぶ。ボカロPの曲と新しく出た曲は出し直しの版も聞く（SONG_TYPES） */
 const SONG_FIELDS = { fields: 'Artists,Names,PVs', lang: 'Japanese', songTypes: 'Original' };
+const ALL_TYPES = { ...SONG_FIELDS, songTypes: SONG_TYPES.join(',') };
 /** 1回で返る曲の数。VocaDB の上限が 100（2026-10-09 に 200 を頼んで 100 が返るのを確かめた）。前は 50 で、聞く回数が倍だった */
 const PAGE = 100;
 
@@ -154,12 +157,12 @@ export async function youtubeCandidates(after: string, minScore: number): Promis
   }
 }
 
-/** after より後に出たオリジナル曲をすべて。新しく出た曲を足すだけの取り込み（ingest --recent）が使う */
+/** after より後に出たオリジナル曲と出し直しの版をすべて。新しく出た曲を足すだけの取り込み（ingest --recent）が使う */
 export async function songsPublishedAfter(after: string): Promise<VdbSong[]> {
   const songs: VdbSong[] = [];
   for (let start = 0; ; start += PAGE) {
     const { items } = await get<{ items: VdbSong[] }>('/songs', {
-      ...SONG_FIELDS,
+      ...ALL_TYPES,
       afterDate: after,
       sort: 'PublishDate',
       maxResults: PAGE,
@@ -180,12 +183,12 @@ export async function songByNiconico(videoId: string): Promise<VdbSong | null> {
   });
 }
 
-/** その人が関わったオリジナル曲をすべて。作者かどうかは呼ぶ側で確かめる */
+/** その人が関わったオリジナル曲と出し直しの版をすべて。作者かどうかは呼ぶ側で確かめる */
 export async function songsByArtist(artistId: number): Promise<VdbSong[]> {
   const songs: VdbSong[] = [];
   for (let start = 0; ; start += PAGE) {
     const { items } = await get<{ items: VdbSong[] }>('/songs', {
-      ...SONG_FIELDS,
+      ...ALL_TYPES,
       'artistId[]': artistId,
       sort: 'PublishDate',
       maxResults: PAGE,

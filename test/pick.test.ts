@@ -46,6 +46,12 @@ describe('sourcesOf', () => {
     expect(sourcesOf(s)).toBeNull();
   });
 
+  it('出し直しの版（リミックス・PV 版）も入れ、カバーは入れない', () => {
+    expect(isEligible(song({ songType: 'Remix' }))).toBe(true);
+    expect(isEligible(song({ songType: 'MusicPV' }))).toBe(true);
+    expect(isEligible(song({ songType: 'Cover' }))).toBe(false);
+  });
+
   it('ニコニコにしか本家が無い曲も入れる', () => {
     const s = song({
       pvs: [{ service: 'NicoNicoDouga', pvType: 'Original', pvId: 'sm1', thumbUrl: 'https://t/1' }],
