@@ -44,6 +44,11 @@ type PlayerContext = {
   playing: boolean;
   /** 曲を選んでから音が出るまで。最初の1曲は YouTube の仕組みやニコニコのプレイヤーの読み込みも待つ */
   loading: boolean;
+  /**
+   * 読み込み直したあと、前の曲を帯に出しているだけで、まだプレイヤーを作っていない。再生を押すと前の位置から流す。
+   * このあいだは動画の置き場所を使わない（中身の無い枠が出る）
+   */
+  parked: boolean;
   context: PlayContext;
   /** 前の曲・次の曲へ進めるか。ループ（全体）なら最後の曲からも次へ進める */
   hasPrev: boolean;
@@ -157,6 +162,42 @@ export function usePlayer(): PlayerContext {
  */
 const DOCK =
   'fixed right-3 bottom-[calc(8.25rem+12px)] h-[200px] w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px)] md:w-[356px]';
+/**
+ * 流していた並び・曲・位置。読み込み直したとき（スマホで裏に回したあとに勝手に読み込み直される場合も含む）に、
+ * 下の帯に前の曲を止まった状態で出すために残す。押す操作の無い再生はブラウザが止めるので、勝手には流さない
+ */
+const SESSION_KEY = 'vocafy-session';
+/** 残す並びの長さの上限。ラジオは伸び続けるので、いまの曲のまわりだけ残す */
+const SESSION_QUEUE_LIMIT = 300;
+
+type Session = {
+  queue: QueueItem[];
+  index: number;
+  context: PlayContext;
+  seconds: number;
+  /** 曲の長さ（秒）。帯に「0:15 / 0:00」と出さないために残す */
+  duration?: number;
+};
+
+function savedSession(): Session | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null') as Session | null;
+    if (!saved || !Array.isArray(saved.queue) || !saved.queue[saved.index]) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session: Session | null) {
+  try {
+    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // 保存できない窓では、読み込み直すと帯が消える
+  }
+}
+
 /** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
 const WAIT_FOR_SLOT = 1000;
 
@@ -196,6 +237,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 埋め込みが読み込まれて鳴り始めるまでにも1秒前後かかるので、見えないまま鳴ることはほぼ無い
   const [waitingForSlot, setWaitingForSlot] = useState(false);
   const waitTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [parked, setParked] = useState(false);
+  // 再生を押して戻すときに飛ぶ位置（秒）と、鳴り始めたら飛ぶ位置
+  const parkedAt = useRef(0);
+  const parkedDuration = useRef(0);
+  const resumeAt = useRef(0);
   // 残しておいた音量は、最初に曲を流したときに読む（サーバーでは localStorage を読めず、帯も曲を流すまで出ない）
   const [sound, setSound] = useState({ volume: 100, muted: false });
   const soundRef = useRef<{ volume: number; muted: boolean } | null>(null);
@@ -219,6 +265,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback((items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
     setContext(ctx);
+    setParked(false);
+    resumeAt.current = 0;
     clearTimeout(waitTimer.current);
     setWaitingForSlot(ctx === 'pending');
     if (ctx === 'pending') {
@@ -256,6 +304,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       onPlaying: () => {
         setPlaying(true);
         setLoading(false);
+        // 読み込み直す前の位置から続ける
+        if (resumeAt.current > 0) {
+          const seconds = resumeAt.current;
+          resumeAt.current = 0;
+          player.current?.seek(seconds);
+          setTime((t) => ({ ...t, current: seconds, at: performance.now() }));
+        }
       },
       onPaused: () => setPlaying(false),
       onEnded: () => onEnded.current(),
@@ -398,12 +453,70 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => {
     player.current?.destroy();
     player.current = null;
+    setParked(false);
+    saveSession(null);
     state.current = { queue: [], index: 0 };
     setQueue([]);
     setIndex(0);
     setPlaying(false);
     setLoading(false);
   }, []);
+
+  // 読み込み直したら、前の曲を止まった状態で帯に出す（プレイヤーは再生を押したときに作る）
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const saved = savedSession();
+      if (!saved || state.current.queue.length > 0) return;
+      soundRef.current ??= savedVolume();
+      setSound(soundRef.current);
+      playbackRef.current ??= savedPlayback();
+      setPlayback(playbackRef.current);
+      const { queue: items, index: at } = saved;
+      order.current = buildOrder(items.length, at, playbackRef.current.shuffle);
+      positionRef.current = Math.max(0, order.current.indexOf(at));
+      setPosition(positionRef.current);
+      state.current = { queue: items, index: at };
+      parkedAt.current = saved.seconds;
+      parkedDuration.current = saved.duration ?? 0;
+      setQueue(items);
+      setIndex(at);
+      setContext(saved.context);
+      setParked(true);
+      setTime({ current: saved.seconds, duration: saved.duration ?? 0, at: performance.now() });
+    });
+    return () => clearTimeout(id);
+  }, []);
+
+  // 流している並びと位置を残す。曲が変わったときと、流しているあいだは数秒おきと、ページを離れるとき
+  const persist = useCallback(() => {
+    const { queue: q, index: i } = state.current;
+    if (q.length === 0) return;
+    const start = Math.max(0, i - SESSION_QUEUE_LIMIT / 2);
+    const now = player.current?.time();
+    const seconds = now ? now.current : parkedAt.current;
+    const duration = now ? now.duration : parkedDuration.current;
+    saveSession({
+      queue: q.slice(start, start + SESSION_QUEUE_LIMIT),
+      index: i - start,
+      // 一覧から押して移る途中のまま残すと、戻したときに置き場所を待ってしまうので、ふつうの並びとして残す
+      context: contextRef.current === 'pending' ? 'list' : contextRef.current,
+      seconds: Math.floor(seconds),
+      duration: Math.floor(duration),
+    });
+  }, []);
+  useEffect(() => {
+    if (parked || queue.length === 0) return;
+    persist();
+  }, [queue, index, context, parked, persist]);
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(persist, 5000);
+    window.addEventListener('pagehide', persist);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('pagehide', persist);
+    };
+  }, [playing, persist]);
 
   // 再生中は時刻を拾う。間は帯の側で補ってなめらかに進める
   useEffect(() => {
@@ -417,7 +530,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const current = queue[index] ?? null;
   useWakeLock(playing);
-  const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
+  const mode =
+    queue.length === 0 || parked ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
 
   // 閉じたあとも、帯が下へ消えきるまでは最後の曲を出しておく
   const [shown, setShown] = useState<QueueItem | null>(null);
@@ -535,6 +649,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       current,
       playing,
       loading,
+      parked,
       context,
       hasPrev: position > 0,
       // ループは全体か1曲なので、並びが2曲以上あれば最後の曲からも次へ進める
@@ -546,7 +661,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playQueue: load,
       adoptQueue: adopt,
       startRadio,
-      toggle: () => (playing ? player.current?.pause() : player.current?.play()),
+      toggle: () => {
+        if (parked) {
+          // 前の曲を作り直し、鳴り始めたら前の位置へ飛ぶ
+          const { queue: q, index: i } = state.current;
+          load(q, i, context);
+          resumeAt.current = parkedAt.current;
+          return;
+        }
+        if (playing) player.current?.pause();
+        else player.current?.play();
+      },
       step,
       close,
       seek: (seconds) => {
@@ -581,6 +706,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       current,
       playing,
       loading,
+      parked,
       context,
       position,
       playback,
