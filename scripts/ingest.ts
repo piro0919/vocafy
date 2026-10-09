@@ -238,26 +238,27 @@ async function main() {
     );
   }
 
-  // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）
+  // ボカロPの全曲。その人が作者として入っている曲だけを拾う（イラストだけ描いた曲などは除く）。
+  // 入れない曲も作者だけ覚えておく。出し直しの版の元の曲に動画が無く入らないことがある（エイリアンエイリアン）
+  const fetched = new Map<number, Set<number>>();
   let done = 0;
   for (const id of producerIds) {
     for (const song of await songsByArtist(id)) {
+      fetched.set(song.id, new Set(producersOf(song).map((p) => p.id)));
       if (isEligible(song) && producersOf(song).some((p) => p.id === id)) songs.set(song.id, song);
     }
     if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
   }
 
   // 出し直しの版は本人のものだけ。元の曲の作者は、今回集めた曲から引き、無ければ DB から引く
+  for (const s of songs.values()) fetched.set(s.id, new Set(producersOf(s).map((p) => p.id)));
   const missing = [...songs.values()].flatMap((s) =>
-    s.originalVersionId !== undefined && !songs.has(s.originalVersionId)
+    s.originalVersionId !== undefined && !fetched.has(s.originalVersionId)
       ? [s.originalVersionId]
       : [],
   );
   const stored = await ownersInDb([...new Set(missing)]);
-  const ownersOf = (id: number) => {
-    const original = songs.get(id);
-    return original ? new Set(producersOf(original).map((p) => p.id)) : stored.get(id);
-  };
+  const ownersOf = (id: number) => fetched.get(id) ?? stored.get(id);
   let others = 0;
   for (const s of [...songs.values()]) {
     if (!isOwnVersion(s, ownersOf)) {
