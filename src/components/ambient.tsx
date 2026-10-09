@@ -101,9 +101,11 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
 
   // 曲や画面が変わったとき、シークで大きく飛んだときは層を重ねてふわっと入れ替える。
   // 再生が進むだけのときは、いまの層の色をそのまま書き換える（0.5 秒ごとの小さな差なので段は見えない）。
-  // 下の層は、上の層が浮かび終わってから外す（onAnimationEnd）。曲を替えた直後は、前の曲の再生位置を拾ってから
-  // 0 に戻るので、入れ替えが続けて2回起きる。そこで前の層を外すと、浮かびかけの層しか残らず、一瞬地の色が見えた
-  const [layers, setLayers] = useState<{ id: number; colors: Colors }[]>([]);
+  // 下の層は、上の層が浮かび終わってから消し始め、消え終わったら外す（onAnimationEnd）。曲を替えた直後は、
+  // 前の曲の再生位置を拾ってから 0 に戻るので、入れ替えが続けて2回起きる。そこで前の層を外すと、浮かびかけの層しか
+  // 残らず、一瞬地の色が見えた。浮かび終わった時点で一度に外すと、上の層の透けた部分から見えていた下の層の色が
+  // 急に抜け、最後にガクッと変わって見えた
+  const [layers, setLayers] = useState<{ id: number; colors: Colors; leaving?: boolean }[]>([]);
   const nextId = useRef(0);
   const scene = useRef<{ image: string | undefined; progress: number }>({
     image: undefined,
@@ -133,8 +135,18 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
         {layers.map((layer) => (
           <div
             key={layer.id}
-            className="absolute inset-0 animate-[fade-in_0.7s_ease-out_both]"
-            onAnimationEnd={() => setLayers((prev) => prev.filter((l) => l.id >= layer.id))}
+            className={
+              layer.leaving
+                ? 'absolute inset-0 animate-[fade-out_0.7s_ease-in-out_both]'
+                : 'absolute inset-0 animate-[fade-in_0.7s_ease-out_both]'
+            }
+            onAnimationEnd={() =>
+              setLayers((prev) =>
+                layer.leaving
+                  ? prev.filter((l) => l.id !== layer.id)
+                  : prev.map((l) => (l.id < layer.id && !l.leaving ? { ...l, leaving: true } : l)),
+              )
+            }
             style={{
               background: [
                 `radial-gradient(60% 80% at 85% 0%, ${layer.colors[1]}, transparent 70%)`,

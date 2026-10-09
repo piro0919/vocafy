@@ -351,6 +351,15 @@ body {
     opacity: 1;
   }
 }
+/* 入れ替わった下の層を、上の層が浮かび終わってから消す動き（ambient.tsx） */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 
 /*
  * お気に入りに入れたときのハート（favorite-button.tsx）。ハートは縮んでから大きく弾んで落ち着き、
