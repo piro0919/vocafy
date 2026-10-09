@@ -61,7 +61,7 @@ test('日付の画面に、その月日の曲が年ごとに並ぶ', async ({ pa
   expect(res?.status()).toBe(404);
 });
 
-test('歌声の画面と、あいうえお順の行の画面が開く', async ({ page }) => {
+test('歌声の画面が開く', async ({ page }) => {
   // 初音ミク（VocaDB の id は 1）。版の違いは、この画面にまとめて並ぶ
   await page.goto('/voices/1');
   await expect(page.getByRole('heading', { level: 1, name: '初音ミク' })).toBeVisible();
@@ -70,10 +70,6 @@ test('歌声の画面と、あいうえお順の行の画面が開く', async ({
   // 年の「すべて表示」から、その年の全曲へ。CI の台帳（db/fixture.sql）にある年を開く
   await page.goto('/voices/1/2016');
   await expect(page.getByRole('heading', { level: 1, name: '初音ミクの2016年の曲' })).toBeVisible();
-  await page.goto('/kana/か');
-  await expect(page.getByRole('heading', { level: 1, name: 'か行の曲' })).toBeVisible();
-  const res = await page.goto('/kana/xyz');
-  expect(res?.status()).toBe(404);
 });
 
 test('検索で、曲名をひらがなで打ってもカタカナの曲が見つかる', async ({ page }) => {

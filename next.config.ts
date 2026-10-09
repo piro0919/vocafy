@@ -21,8 +21,8 @@ const nextConfig: NextConfig = {
   },
   redirects() {
     return [
-      // 英字と数字をまとめていた行。2026-10 に英字を5字ずつ（a-e など）と数字（0-9）に分けたので、先頭の行へ送る
-      { source: '/kana/abc/:rest*', destination: '/kana/a-e', permanent: true },
+      // あいうえお順の行の画面。2026-10-10 に外した（行が3千曲あって探す役に立たず、眺める入口はほかにある）ので、トップへ送る
+      { source: '/kana/:rest*', destination: '/', permanent: true },
     ];
   },
   async headers() {

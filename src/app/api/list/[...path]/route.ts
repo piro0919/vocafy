@@ -1,12 +1,4 @@
-import {
-  findVoice,
-  type Paged,
-  songsOfDay,
-  songsOfRow,
-  songsOfVoiceYear,
-  songsOfYear,
-} from '@/lib/catalog';
-import { isRow } from '@/lib/kana';
+import { findVoice, type Paged, songsOfDay, songsOfVoiceYear, songsOfYear } from '@/lib/catalog';
 
 // 台帳は取り込みのときにしか変わらないので、ボカロPの新曲（api/latest）と同じく、一覧とページごとに最初に読まれたときに作って
 // 次の配備まで使い回す（DB を起こすのは1回目だけ）。前は CDN に1日置く指定で、1日たつたびに DB を起こしていた。
@@ -23,10 +15,6 @@ function read(source: string[], page: number): Promise<Paged> | null {
   const [kind, a, b] = source;
   if (kind === 'years' && source.length === 2) return songsOfYear(Number(a), page);
   if (kind === 'days' && source.length === 2) return songsOfDay(a, page);
-  if (kind === 'kana' && source.length === 2) {
-    const row = decodeURIComponent(a);
-    return isRow(row) ? songsOfRow(row, page) : null;
-  }
   if (kind === 'voices' && source.length === 3) return songsOfVoiceYear(Number(a), Number(b), page);
   // 歌声の画面の代表曲（年ごとに数曲）。1ページに収まるので、2ページ目からは空
   if (kind === 'voices' && source.length === 2) {

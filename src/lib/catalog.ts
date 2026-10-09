@@ -454,20 +454,6 @@ export const songsOfVoiceYear = cache(
   },
 );
 
-/** 索引の行ごとの、流せる曲の数 */
-export const kanaRows = cache(async (): Promise<Map<string, number>> => {
-  const { rows } = await db().query<{ row: string; count: number }>(
-    `select s.kana_row as row, count(*)::int as count
-     from song s where ${PLAYABLE} and s.kana_row is not null group by 1`,
-  );
-  return new Map(rows.map((r) => [r.row, r.count]));
-});
-
-/** その行で始まる流せる曲。曲名の順 */
-export const songsOfRow = cache(async (row: string, page: number): Promise<Paged> =>
-  paged('and s.kana_row = $1', 'q.name, q.id', [row], page),
-);
-
 /**
  * 検索の索引。2段に分けて配る。検索のたびに DB を読むと、無料プランの計算時間を食う（DB は最後に読まれてから5分動き続ける）ので、
  * どちらも配備のときに作り置き、探すのはブラウザの中でする（src/app/search/search-view.tsx）。

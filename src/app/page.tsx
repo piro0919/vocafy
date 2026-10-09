@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { WebSite, WithContext } from 'schema-dts';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
 import { FavoriteNewSongs } from '@/components/favorite-new-songs';
@@ -6,20 +5,9 @@ import { MixWall, OnThisDay } from '@/components/home-sections';
 import { Heading, SECTION } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
-import {
-  dailyMix,
-  kanaRows,
-  onThisDay,
-  PAGE_SIZE,
-  songsOfDay,
-  today,
-  voices,
-  years,
-} from '@/lib/catalog';
-import { KANA_ROWS, LATIN_ROWS, OTHER_ROWS, ROW_LABEL, type Row } from '@/lib/kana';
+import { dailyMix, onThisDay, PAGE_SIZE, songsOfDay, today, voices, years } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
-import { formatCount } from '@/lib/format';
 
 /** サイトそのものの情報 */
 const jsonLd: WithContext<WebSite> = {
@@ -35,17 +23,16 @@ export const revalidate = 3600;
 
 /**
  * トップ。人気で並べず、どの曲も同じ扱いで出会えるようにする（2026-10-08 に本人と決めた）。
- * 上から、お気に入りの棚（あれば）、きょうの日付の曲、日替わりの無作為の並び、歌声、年代、あいうえお順。毎日変わるものを上に、探しに行く入口を下に置く
+ * 上から、お気に入りの棚（あれば）、きょうの日付の曲、日替わりの無作為の並び、歌声、年代。毎日変わるものを上に、探しに行く入口を下に置く
  */
 export default async function Home() {
   const date = today();
-  const [day, dayList, mix, voiceList, yearList, rowCounts] = await Promise.all([
+  const [day, dayList, mix, voiceList, yearList] = await Promise.all([
     onThisDay(date, 8),
     songsOfDay(date.slice(5), 1),
     dailyMix(date, 18),
     voices(),
     years(),
-    kanaRows(),
   ]);
   const { hero, rest } = day;
   const [month, dayOfMonth] = date.slice(5).split('-').map(Number);
@@ -118,39 +105,6 @@ export default async function Home() {
           ))}
         </Shelf>
       </div>
-
-      {/* あいうえお順。行の札だけを置き、曲の一覧は行ごとの画面にする */}
-      <section className={SECTION}>
-        <div className="mb-3">
-          <Heading eyebrow="Index">あいうえお順</Heading>
-        </div>
-        {/* かな・英字・そのほかの3段。段ごとに行を変え、札の大きさは3段でそろえる */}
-        <div className="flex flex-col gap-2">
-          {[KANA_ROWS, LATIN_ROWS, OTHER_ROWS].map((rows) => (
-            <ul key={rows[0]} className="grid grid-cols-6 gap-2 sm:grid-cols-12">
-              {rows.map((row: Row) => (
-                <li key={row}>
-                  <Link
-                    href={`/kana/${row}`}
-                    aria-label={`${ROW_LABEL[row]}（${formatCount(rowCounts.get(row) ?? 0)}曲）`}
-                    className="grid aspect-square place-items-center rounded-2xl border border-line/60 bg-glass font-display text-xl text-accent transition-[background-color,border-color,scale] duration-150 ease-(--ease-out) hover:border-accent/50 hover:bg-accent/10 active:scale-95 sm:text-2xl"
-                  >
-                    <span
-                      className={
-                        (KANA_ROWS as readonly string[]).includes(row)
-                          ? undefined
-                          : 'text-sm sm:text-base'
-                      }
-                    >
-                      {ROW_LABEL[row]}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ))}
-        </div>
-      </section>
     </>
   );
 }

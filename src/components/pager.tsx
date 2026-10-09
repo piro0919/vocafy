@@ -4,8 +4,8 @@ import { Icon } from './icon';
 import { ARROW } from './button-styles';
 
 /**
- * 住所の末尾のページ番号。/kana/a-e は 1 ページ目、/kana/a-e/2 は 2 ページ目。
- * 1 ページ目を /kana/a-e/1 と書いたものや、数字でないものは null（無いページとして扱う）
+ * 住所の末尾のページ番号。/years/2010 は 1 ページ目、/years/2010/2 は 2 ページ目。
+ * 1 ページ目を /years/2010/1 と書いたものや、数字でないものは null（無いページとして扱う）
  */
 export function pageOf(segments: string[] | undefined): number | null {
   if (!segments || segments.length === 0) return 1;

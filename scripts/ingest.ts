@@ -9,9 +9,7 @@ import {
   sourcesOf,
   vocalistsOf,
 } from './lib/pick';
-import { rowOf } from '../src/lib/kana';
 import { legendVideos } from './lib/niconico';
-import { readingOf } from './lib/reading';
 import {
   artist,
   rootVoicebank,
@@ -300,9 +298,6 @@ async function main() {
     roots.set(root.id, root.id);
   }
 
-  // あいうえお順の行を決めるための読み。辞書を読み込むのに1秒ほどかかるので、書く前に一度だけ
-  const read = await readingOf();
-
   const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
   const client = await pool.connect();
   try {
@@ -344,12 +339,12 @@ async function main() {
       ],
     );
     await client.query(
-      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, kana_row, niconico_thumb, romaji)
+      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, niconico_thumb, romaji)
        select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
          rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean,
-         kana_row text, niconico_thumb text, romaji text)
+         niconico_thumb text, romaji text)
        on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
-         kana_row = excluded.kana_row, niconico_thumb = excluded.niconico_thumb, romaji = excluded.romaji,
+         niconico_thumb = excluded.niconico_thumb, romaji = excluded.romaji,
          rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
          youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
          seed = song.seed or excluded.seed, imported_at = now()`,
@@ -367,8 +362,6 @@ async function main() {
               youtube_id: source.youtubeId,
               niconico_id: source.niconicoId,
               seed: seedIds.has(s.id),
-              // ローマ字の曲名が無いときだけ、辞書で読みを当てる
-              kana_row: rowOf(s.name, romaji, romaji ? undefined : read(s.name)),
               niconico_thumb: source.niconicoThumb,
               // 検索でローマ字でも引けるよう残す。曲名と同じなら（英語の曲名など）持たない
               romaji: romaji === s.name ? null : (romaji ?? null),

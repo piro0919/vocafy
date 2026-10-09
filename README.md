@@ -5,8 +5,8 @@
 ## ✨ Features
 
 - 🎤 Browse producers (ボカロP) and play their songs, newest first
-- 📅 A home page that stays flat: songs posted on today's date in past years, a daily random mix, voices, years and a kana index — no rankings
-- 🎙 Browse by voice (Hatsune Miku, Kasane Teto, KAFU, …) with character art, or by year and by kana
+- 📅 A home page that stays flat: songs posted on today's date in past years, a daily random mix, voices and years — no rankings
+- 🎙 Browse by voice (Hatsune Miku, Kasane Teto, KAFU, …) with character art, or by year
 - 🔎 Search songs and producers, including romaji titles
 - ❤️ Favorite songs and producers; sign in with Google to keep them across devices (optional)
 - 📻 Radio: keep playing related songs from the one you picked
