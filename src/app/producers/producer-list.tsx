@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { producers } from '@/lib/catalog';
-import { RandomProducer } from './random-producer';
 import { VirtualProducerGrid } from './virtual-producer-grid';
 import { formatCount } from '@/lib/format';
 
@@ -18,16 +17,11 @@ export async function ProducerList({ page }: { page: number }) {
   if (page > 1 && start >= list.length) notFound();
   return (
     <>
-      <div className="flex items-end gap-3 pt-4 pb-4 sm:pb-6">
-        <div>
-          <Heading as="h1" size="page" eyebrow="Producers">
-            ボカロP
-          </Heading>
-          <p className="mt-2 text-sm text-muted">{formatCount(list.length)}人</p>
-        </div>
-        <div className="mb-0.5 ml-auto">
-          <RandomProducer ids={list.map((p) => p.id)} />
-        </div>
+      <div className="pt-4 pb-4 sm:pb-6">
+        <Heading as="h1" size="page" eyebrow="Producers">
+          ボカロP
+        </Heading>
+        <p className="mt-2 text-sm text-muted">{formatCount(list.length)}人</p>
       </div>
       <VirtualProducerGrid producers={list} start={start} />
     </>
