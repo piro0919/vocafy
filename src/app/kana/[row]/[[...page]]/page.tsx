@@ -7,6 +7,7 @@ import { VirtualSongList } from '@/components/virtual-song-list';
 import { PAGE_SIZE, songsOfRow } from '@/lib/catalog';
 import { isRow, ROWS } from '@/lib/kana';
 import { rowTitle } from '@/lib/list-titles';
+import { formatCount } from '@/lib/format';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 export const revalidate = false;
@@ -44,7 +45,7 @@ export default async function KanaPage({ params }: PageProps<'/kana/[row]/[[...p
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${total} 曲`}
+          count={`${formatCount(total)} 曲`}
           list={{ source: `kana/${row}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>

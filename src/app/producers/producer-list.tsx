@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { producers } from '@/lib/catalog';
 import { VirtualProducerGrid } from './virtual-producer-grid';
+import { formatCount } from '@/lib/format';
 
 /**
  * 前の住所（/producers/page/2）の1ページの人数。いまはページに分けず全員を1つの格子にしている（VirtualProducerGrid）が、
@@ -20,7 +21,7 @@ export async function ProducerList({ page }: { page: number }) {
         <Heading as="h1" size="page" eyebrow="Producers">
           ボカロP
         </Heading>
-        <p className="mt-2 text-sm text-muted">{list.length} 人</p>
+        <p className="mt-2 text-sm text-muted">{formatCount(list.length)} 人</p>
       </div>
       <VirtualProducerGrid producers={list} start={start} />
     </>

@@ -4,6 +4,7 @@ import { CharacterCard } from '@/components/browse-cards';
 import { Heading } from '@/components/heading';
 import { voices } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
+import { formatCount } from '@/lib/format';
 
 export const metadata: Metadata = { title: '歌声' };
 
@@ -62,7 +63,7 @@ export default async function VoicesPage() {
                 }`}
               >
                 <span className="truncate font-bold">{v.name}</span>
-                <span className="shrink-0 text-xs text-muted">{v.songCount}</span>
+                <span className="shrink-0 text-xs text-muted">{formatCount(v.songCount)}</span>
               </Link>
             </li>
           ))}

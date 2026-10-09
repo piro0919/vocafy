@@ -10,6 +10,7 @@ import { usePlayer } from '@/components/player/player-provider';
 import { SongList } from '@/components/song-list';
 import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { clearHistory, useHistory } from '@/lib/history';
+import { formatCount } from '@/lib/format';
 
 /** お気に入りの画面に出す曲の数。全部はお気に入りの曲の画面（/favorites/songs）で見る（「再生」か曲を押して移る） */
 const SONG_PREVIEW = 12;
@@ -47,7 +48,7 @@ export function FavoritesView() {
         <Section
           title="最近聴いた曲"
           eyebrow="Recently played"
-          count={`${history.length} 曲`}
+          count={`${formatCount(history.length)} 曲`}
           action={
             <button
               type="button"
@@ -70,7 +71,7 @@ export function FavoritesView() {
         <Section
           title="曲"
           eyebrow="Songs"
-          count={`${songs.length} 曲`}
+          count={`${formatCount(songs.length)} 曲`}
           action={
             // 頭から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
             <button
@@ -97,7 +98,7 @@ export function FavoritesView() {
         </Section>
       )}
       {producers.length > 0 && (
-        <Section title="ボカロP" eyebrow="Producers" count={`${producers.length} 人`}>
+        <Section title="ボカロP" eyebrow="Producers" count={`${formatCount(producers.length)} 人`}>
           <div className={ARTIST_GRID}>
             {producers.map((p, i) => (
               <CoverCard

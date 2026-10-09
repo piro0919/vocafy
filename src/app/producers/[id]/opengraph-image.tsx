@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import { findProducer } from '@/lib/catalog';
+import { formatCount } from '@/lib/format';
 
 export const alt = 'Vocafy のボカロPの画面';
 export const size = { width: 1200, height: 630 };
@@ -40,7 +41,7 @@ export default async function OpengraphImage({ params }: { params: Promise<{ id:
   const found = await findProducer(Number((await params).id));
   const name = found?.producer.name ?? 'Vocafy';
   const picture = found?.producer.picture ?? null;
-  const count = `${found?.songs.length ?? 0} 曲`;
+  const count = `${formatCount(found?.songs.length ?? 0)} 曲`;
   const caption = 'の曲を、まとめて聴ける。';
   const font = await notoSansJp(`${name}${count}${caption}`);
   const nameSize = name.length > 14 ? 64 : name.length > 8 ? 84 : 104;

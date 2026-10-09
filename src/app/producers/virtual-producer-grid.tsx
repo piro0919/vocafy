@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CoverCard } from '@/components/cover-card';
 import type { Producer } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
+import { formatCount } from '@/lib/format';
 
 /** 段の数。cover-card.tsx の ARTIST_GRID（grid-cols-3 sm:4 lg:5 xl:6）と同じ幅で切り替える */
 const COLUMNS = [
@@ -80,7 +81,7 @@ export function VirtualProducerGrid({
               cover={p.picture}
               round
               title={p.name}
-              sub={`${p.songCount} 曲`}
+              sub={`${formatCount(p.songCount)} 曲`}
               eager={row.index * columns + c < 10}
             />
           ))}

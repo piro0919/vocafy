@@ -5,6 +5,7 @@ import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { VirtualSongList } from '@/components/virtual-song-list';
 import { PAGE_SIZE, songsOfVoiceYear, voices } from '@/lib/catalog';
+import { formatCount } from '@/lib/format';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // ビルドのときには作らず、最初に開かれたときに作って残す
@@ -47,7 +48,7 @@ export default async function VoiceYearPage({
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${total} 曲`}
+          count={`${formatCount(total)} 曲`}
           list={{
             source: `voices/${voice.id}/${year}`,
             page,

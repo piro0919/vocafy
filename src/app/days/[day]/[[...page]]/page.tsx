@@ -6,6 +6,7 @@ import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, PAGE_SIZE, songsOfDay } from '@/lib/catalog';
 import { dayLabel } from '@/lib/list-titles';
+import { formatCount } from '@/lib/format';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 日付の画面はビルドのときには作らず、最初に開かれたときに作って残す
@@ -42,7 +43,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
         </Heading>
         <PlayAll
           songs={songs}
-          count={`${total} 曲`}
+          count={`${formatCount(total)} 曲`}
           list={{ source: `days/${day}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>

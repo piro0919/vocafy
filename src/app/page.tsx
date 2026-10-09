@@ -10,6 +10,7 @@ import { dailyMix, kanaRows, onThisDay, today, voices, years } from '@/lib/catal
 import { KANA_ROWS, LATIN_ROWS, OTHER_ROWS, ROW_LABEL, type Row } from '@/lib/kana';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
+import { formatCount } from '@/lib/format';
 
 /** サイトそのものの情報 */
 const jsonLd: WithContext<WebSite> = {
@@ -121,7 +122,7 @@ export default async function Home() {
                 <li key={row}>
                   <Link
                     href={`/kana/${row}`}
-                    aria-label={`${ROW_LABEL[row]}（${rowCounts.get(row) ?? 0} 曲）`}
+                    aria-label={`${ROW_LABEL[row]}（${formatCount(rowCounts.get(row) ?? 0)} 曲）`}
                     className="grid aspect-square place-items-center rounded-2xl border border-line/60 bg-sidebar/60 font-display text-xl text-accent transition-[background-color,border-color,scale] duration-150 ease-out hover:border-accent/50 hover:bg-accent/10 active:scale-95 sm:text-2xl"
                   >
                     <span

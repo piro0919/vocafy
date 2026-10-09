@@ -12,6 +12,7 @@ import { addRecentSearch, clearRecentSearches, useRecentSearches } from '@/lib/r
 import { loadIndex, type Prepared } from '@/lib/search-index';
 import { thumbOf } from '@/lib/thumb';
 import { voiceArt } from '@/lib/voice-art';
+import { formatCount } from '@/lib/format';
 
 /** 一度に出す曲の数。それより多く当たったときは、言葉を足して絞ってもらう */
 const SONG_LIMIT = 100;
@@ -221,7 +222,9 @@ export function SearchView() {
                     <span className="size-8 rounded-full bg-surface" />
                   )}
                   {p.name}
-                  <span className="text-xs font-normal text-muted">{p.songCount} 曲</span>
+                  <span className="text-xs font-normal text-muted">
+                    {formatCount(p.songCount)} 曲
+                  </span>
                 </Link>
               </li>
             ))}
@@ -247,7 +250,9 @@ export function SearchView() {
                       </span>
                     )}
                     {v.name}
-                    <span className="text-xs font-normal text-muted">{v.songCount} 曲</span>
+                    <span className="text-xs font-normal text-muted">
+                      {formatCount(v.songCount)} 曲
+                    </span>
                   </Link>
                 </li>
               );
@@ -260,7 +265,7 @@ export function SearchView() {
         <section className="mt-8">
           <h2 className="mb-1 font-display text-xl">曲</h2>
           <p className="mb-3 text-sm text-muted">
-            {found.songs.length} 曲
+            {formatCount(found.songs.length)} 曲
             {found.songs.length > SONG_LIMIT &&
               `（多いので先頭の ${SONG_LIMIT} 曲。言葉を足すと絞れます）`}
           </p>
