@@ -70,6 +70,20 @@ const COLORS: Record<string, string> = {
   雨衣: '#4a5fa8',
   KYO: '#4a6a9a',
   弦巻マキ: '#f0c43a',
+  UNI: '#ef6fa8',
+  SeeU: '#f0a830',
+  りむる: '#7a4fa8',
+  逆音セシル: '#e85a8a',
+  東北ずん子: '#8cc96a',
+  雪歌ユフ: '#8a8f96',
+  めろう: '#4f9ac4',
+  ついなちゃん: '#e0453a',
+  無來: '#7a7f8a',
+  四国めたん: '#e85aa6',
+  星尘: '#6a6fd0',
+  暗鳴ニュイ: '#3cb8c8',
+  東北イタコ: '#7fb8e0',
+  ナクモ: '#2f4a7a',
 };
 
 export function voiceColor(name: string): string {
