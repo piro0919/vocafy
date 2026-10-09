@@ -214,7 +214,10 @@ const UPCOMING_LIMIT = 10;
 /** 曲の一覧から押したとき、ボカロPの画面の置き場所を待つ長さ（ミリ秒）。過ぎたら右下の窓に出す */
 const WAIT_FOR_SLOT = 1000;
 
-/** 窓のすぐ上に付ける帯 */
+/**
+ * 窓のすぐ上に付ける帯。窓と帯で一枚の板に見せ、角の丸みと縁の線をほかの浮いた板（左のメニュー・下の再生の帯）にそろえる。
+ * 動画の側の線は外へ描く（ring）。枠の内側に線（border）を引くと、動画が 200×200（YouTube の規約の下限）を割る
+ */
 const DOCK_STRIP =
   'fixed right-3 bottom-[calc(8.25rem+12px+200px)] h-9 w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px+200px)] md:w-[356px]';
 /** 出入りの動き。閉じたあとは少し下へずらして消す */
@@ -885,7 +888,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       <div
         aria-hidden={mode !== 'dock'}
         inert={mode !== 'dock'}
-        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-30 flex items-center rounded-t-lg bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
+        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-30 flex items-center rounded-t-2xl border border-b-0 border-line/60 bg-sidebar/60 backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
       >
         {shown && (
           <Link
@@ -926,7 +929,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         className={
           mode === 'slot'
             ? 'fixed z-10 overflow-hidden bg-black md:rounded-lg [&>iframe]:size-full'
-            : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-lg bg-black shadow-2xl shadow-black/20 dark:shadow-black/60 [&>iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
+            : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60 [&>iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
         }
       />
       {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
