@@ -24,7 +24,7 @@ export function PlaybackMode({
   const queueButton = useRef<HTMLButtonElement>(null);
   const closeQueue = useCallback(() => setQueueOpen(false), []);
   const button =
-    'grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out active:scale-90';
+    'relative grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out active:scale-90';
   return (
     <div className={`flex items-center ${className}`}>
       <button
@@ -36,6 +36,7 @@ export function PlaybackMode({
         className={`${button} ${shuffle ? 'text-accent' : 'text-muted hover:text-foreground'}`}
       >
         <Icon name="shuffle" className="size-5" />
+        {shuffle && <OnDot />}
       </button>
       <button
         type="button"
@@ -94,9 +95,24 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       aria-pressed={on}
       title={on ? 'ラジオ: 入（押すとやめる）' : 'この曲からラジオを流す（関連曲を流し続ける）'}
       onClick={toggle}
-      className={`${className} size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+      className={`${className} relative size-9 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-out hover:bg-foreground/8 active:scale-90 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Icon name="radio" className="size-5" />
+      {on && <OnDot />}
     </button>
+  );
+}
+
+/**
+ * 入っているボタン（ランダム・ラジオ）のアイコンの下の点。差し色と灰色だけでは小さなアイコンの入・切が見分けにくいので、
+ * 形でも分かるようにする（Spotify と同じ見せ方）。ループは切が無いので付けない。
+ * ボタンの大きさがランダム（40px）とラジオ（36px）で違うので、下の端からではなく真ん中から測って高さをそろえる
+ */
+function OnDot() {
+  return (
+    <span
+      aria-hidden
+      className="absolute top-[calc(50%+12px)] left-1/2 size-1 -translate-x-1/2 rounded-full bg-current"
+    />
   );
 }
