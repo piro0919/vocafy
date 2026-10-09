@@ -67,7 +67,6 @@ export function ProducerPlayer({
   return (
     // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky）。
     // 貼り付く高さは、スクロールする前の位置（上の段 68px＋余白 32px）と同じにする。ずれていると、スクロールの最初の分だけ動いてから止まった
-    // スマホは画面が狭く、貼り付けると一覧が見づらくなるので、貼り付けずに縦に並べる
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
       <div className="contents lg:sticky lg:top-25 lg:block">
         <PlayerStage
@@ -76,22 +75,26 @@ export function ProducerPlayer({
           label={linkedItem ? `「${linkedItem.title}」を再生` : 'このボカロPの曲を再生'}
           onPlay={() => start(linkedItem?.songId)}
         />
-        <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
-        <div className="flex items-center gap-2 lg:mt-4">
-          <button
-            type="button"
-            onClick={() => (here ? toggle() : start(linkedItem?.songId))}
-            className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
-          >
-            <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
-            {here && playing ? '一時停止' : '再生'}
-          </button>
-          <ShareButton
-            producerId={producerId}
-            songId={here ? current?.songId : linkedItem?.songId}
-          />
-          {/* スマホは下の帯にランダムとループが入りきらないので、ここに置く */}
-          <PlaybackMode className="md:hidden" />
+        {/* スマホでは、名前と再生のボタンも動画のすぐ下に貼り付ける。名前の部分を下へ引くと右下の窓に縮むので（SwipeToLeave）、
+            一覧をスクロールしたあとでも上まで戻らずに縮められるように。ランダムとループもいつでも押せる */}
+        <div className="flex flex-col gap-4 max-md:sticky max-md:top-[56.25vw] max-md:z-30 max-md:-mx-4 max-md:bg-background max-md:px-4 max-md:pb-3 sm:max-md:-mx-8 sm:max-md:px-8 lg:block">
+          <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
+          <div className="flex items-center gap-2 lg:mt-4">
+            <button
+              type="button"
+              onClick={() => (here ? toggle() : start(linkedItem?.songId))}
+              className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-out hover:brightness-110 active:scale-95"
+            >
+              <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
+              {here && playing ? '一時停止' : '再生'}
+            </button>
+            <ShareButton
+              producerId={producerId}
+              songId={here ? current?.songId : linkedItem?.songId}
+            />
+            {/* スマホは下の帯にランダムとループが入りきらないので、ここに置く */}
+            <PlaybackMode className="md:hidden" />
+          </div>
         </div>
       </div>
 
