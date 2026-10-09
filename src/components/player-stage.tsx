@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { FadeImage } from './fade-image';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
+import { leave } from '@/lib/leave';
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -15,8 +16,8 @@ import { usePlayer } from './player/player-provider';
  * スマホでは、YouTube のアプリの動画の画面と同じ形にする。流しているかどうかに関わらず、動画（流していなければ
  * サムネイルと再生ボタン）を画面の上に固定し、ヘッダーと下のタブを出さない。動画の下の題名の部分を下へ引くと、
  * 前の画面に戻る（SwipeToLeave）。流している間は、動画が右下の窓に縮む。
- * 題名の部分はスクロールで流れていくので、動画のすぐ下にも引くための取っ手の帯を固定で置く（LeaveHandle）。
- * 一覧を下まで見たあとでも、上まで戻らずに縮められる
+ * 題名の部分はスクロールで流れていくので、下の再生の帯の × を、この画面のあいだだけ縮めるボタンにしている（player-bar.tsx）。
+ * 一覧を下まで見たあとでも、上まで戻らずに縮められる。動画の下に取っ手の帯を固定する形は、見た目がうるさく外した
  */
 export function PlayerStage({
   active,
@@ -54,7 +55,6 @@ export function PlayerStage({
       {/* スマホで固定したぶん、本文が動画の下に潜らないよう、同じ高さの空きを置く */}
       <div aria-hidden className="md:hidden">
         <div className="aspect-video" />
-        <div className={HANDLE_HEIGHT} />
       </div>
       <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-40 max-md:bg-background">
         {active ? (
@@ -81,34 +81,8 @@ export function PlayerStage({
             </span>
           </button>
         )}
-        <LeaveHandle />
       </div>
     </>
-  );
-}
-
-const HANDLE_HEIGHT = 'h-7';
-
-/**
- * スマホで動画のすぐ下に固定する取っ手の帯。下へ引くか、左の矢印を押すと前の画面に戻る（流している曲は右下の窓に縮む）。
- * 真ん中の短い線は、下から出る板の取っ手と同じ形で、引けることを示す
- */
-function LeaveHandle() {
-  const router = useRouter();
-  return (
-    <SwipeToLeave
-      className={`relative flex items-center justify-center md:hidden ${HANDLE_HEIGHT}`}
-    >
-      <button
-        type="button"
-        onClick={() => leave(router)}
-        aria-label="前の画面に戻る"
-        className="absolute left-1 grid size-7 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-90"
-      >
-        <Icon name="down" className="size-5" />
-      </button>
-      <span aria-hidden className="h-1 w-10 rounded-full bg-foreground/20" />
-    </SwipeToLeave>
   );
 }
 
@@ -180,9 +154,3 @@ const MOBILE = '(max-width: 47.99rem)';
 
 /** 下へこれだけ引いて離したら戻る（px） */
 const PULL = 60;
-
-/** 前の画面に戻る。いきなりこの画面に来たときは、トップへ */
-function leave(router: ReturnType<typeof useRouter>) {
-  if (window.history.length > 1) router.back();
-  else router.push('/');
-}

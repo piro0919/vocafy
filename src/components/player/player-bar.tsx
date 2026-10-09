@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
+import { leave } from '@/lib/leave';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from '../fade-image';
@@ -35,6 +37,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     setVolume,
     toggleMute,
   } = usePlayer();
+  const router = useRouter();
 
   return (
     <div
@@ -126,8 +129,24 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
           />
         </div>
 
-        <BarButton label="プレイヤーを閉じる" onClick={close}>
+        {/*
+          スマホの動画の画面（ボカロPの画面など。html の data-watch）のあいだは、× の代わりに縮めるボタンを出す。
+          押すと前の画面に戻り、動画は右下の窓に縮む（YouTube のアプリの動画の画面の左上の矢印と同じ役目）。
+          帯に足すと曲名が削られるので、入れ替える。閉じたいときは、縮めたあとの窓か帯の × で閉じる
+        */}
+        <BarButton
+          label="プレイヤーを閉じる"
+          onClick={close}
+          className="max-md:[[data-watch]_&]:hidden"
+        >
           <Icon name="close" />
+        </BarButton>
+        <BarButton
+          label="動画を縮めて前の画面に戻る"
+          onClick={() => leave(router)}
+          className="md:hidden [html:not([data-watch])_&]:hidden"
+        >
+          <Icon name="down" />
         </BarButton>
       </div>
     </div>
@@ -280,12 +299,15 @@ function BarButton({
   large,
   disabled,
   onClick,
+  className = '',
   children,
 }: {
   label: string;
   large?: boolean;
   disabled?: boolean;
   onClick: () => void;
+  /** 見せる・隠すの切り替えなど、足す指定 */
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -295,7 +317,7 @@ function BarButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className={`grid shrink-0 place-items-center rounded-full transition-[scale,color,filter] duration-150 ease-out active:scale-90 disabled:opacity-30 ${
+      className={`grid shrink-0 place-items-center rounded-full transition-[scale,color,filter] duration-150 ease-out active:scale-90 disabled:opacity-30 ${className} ${
         large
           ? 'size-11 bg-miku text-on-miku shadow-md shadow-miku/30 hover:brightness-110 disabled:opacity-100 [&_svg]:size-6'
           : 'size-10 text-muted hover:text-foreground'
