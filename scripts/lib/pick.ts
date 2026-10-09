@@ -35,6 +35,7 @@ export const EXTRA_PRODUCERS = [
   578, // AIR田F（VocaDB では AIR田）
   1049, // 磯P
   926, // 夏空P（VocaDB では成田旬）。本人が動画をすべて消しているので、下の YOUTUBE_STANDINS で補う
+  317, // におP
 ];
 
 /**
