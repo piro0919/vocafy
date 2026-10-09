@@ -10,10 +10,10 @@
  */
 :root,
 :root[data-theme='dark'] {
-  --background: #0b0f12;
-  --sidebar: #070a0c;
-  --surface: #182024;
-  --line: #24303a;
+  --background: #12181b;
+  --sidebar: #0e1417;
+  --surface: #1e272c;
+  --line: #2b3740;
   --foreground: #eef6f6;
   --muted: #9aabb0;
   --accent: #39c5bb;

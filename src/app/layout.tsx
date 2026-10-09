@@ -51,7 +51,7 @@ export const metadata: Metadata = {
 // スマホのブラウザの枠の色。端末の設定に合わせて、地の色とそろえる
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#0b0f12' },
+    { media: '(prefers-color-scheme: dark)', color: '#12181b' },
     { media: '(prefers-color-scheme: light)', color: '#f5f9f9' },
   ],
 };
