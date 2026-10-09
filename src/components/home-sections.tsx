@@ -11,15 +11,9 @@ import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
 
-/** 「2012年10月8日」 */
-function longDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${y}年${m}月${d}日`;
-}
-
 /**
  * きょうの日付の曲。1曲を大きく見せ、残りを横に小さく並べる。
- * 大きく見せる1曲は、何年前のきょうに出た曲かを添える。前後の日から補った曲は、その日付を添える。
+ * 大きく見せる1曲は、右の一覧と同じく投稿された年を添える（前後の日から補った曲は月日も）。
  * 残りは6曲（パソコンは7曲）ずつの列にして横に送る（年代の棚と同じ矢印と端のぼかし）。画面を移らずにその日の全曲をたどれる。
  * 見出しの右の「再生」で、その日の曲を通して流せる（一覧の再生用の画面へ移る）。「すべて表示」は、送ればこの欄で全部見られるので外した。
  * 列の幅は欄の9割ほどにして、次の列の端を見せる（2026-10-09 に本人と決めた。前は先頭の6〜7曲だけで、古い年の曲が出なかった）。
@@ -45,7 +39,6 @@ export function OnThisDay({
   const { track, edge, update, page } = useShelfScroll<HTMLUListElement>();
   const open = useOpenSong();
   const sameDay = (iso: string) => iso.slice(5) === today.slice(5);
-  const yearsAgo = Number(today.slice(0, 4)) - Number(hero.publishedOn.slice(0, 4));
   const heroActive = current?.songId === hero.songId;
 
   return (
@@ -81,9 +74,10 @@ export function OnThisDay({
           </span>
           <span className="min-w-0">
             <span className="block font-tech text-xs font-black tracking-[0.2em] text-accent">
-              {sameDay(hero.publishedOn) && yearsAgo > 0
-                ? `${yearsAgo} YEARS AGO`
-                : longDate(hero.publishedOn)}
+              {/* 右の一覧と同じ形。同じ日の曲は年だけ、前後の日から補った曲は月日も（今のデータでは0曲の日は無い） */}
+              {sameDay(hero.publishedOn)
+                ? hero.publishedOn.slice(0, 4)
+                : hero.publishedOn.slice(0, 10).replaceAll('-', '.')}
             </span>
             <span className="mt-1 flex items-center gap-2 font-display text-2xl leading-tight sm:text-3xl">
               <span className="min-w-0 truncate">{hero.title}</span>
@@ -92,9 +86,6 @@ export function OnThisDay({
             <span className="mt-1 block truncate text-sm text-muted">
               {hero.producerName}
               {hero.vocalists && ` ・ ${hero.vocalists}`}
-            </span>
-            <span className="mt-0.5 block text-xs text-muted">
-              {longDate(hero.publishedOn)} 投稿
             </span>
           </span>
         </button>
