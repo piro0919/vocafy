@@ -87,16 +87,18 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     <HeaderBar />
                   </Header>
                   {/*
-                    パソコンは上の帯が無いので、検索欄とログインだけの段を本文の上に置く（Spotify・YouTube と同じ置き場所）。
-                    本文に重ねると、見出しの横の「すべて表示」とぶつかる
+                    パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。
+                    左のメニューと同じく、画面の端から離した角丸の板として画面の上に留める
                   */}
-                  <div className="hidden h-16 items-center justify-between gap-4 px-8 md:flex">
-                    <Suspense fallback={<HeaderSearchFallback />}>
-                      <HeaderSearch />
-                    </Suspense>
-                    <AccountButton />
+                  <div className="sticky top-0 z-20 hidden px-3 pt-3 md:block">
+                    <div className="flex h-14 items-center justify-between gap-4 rounded-2xl border border-line/60 bg-sidebar/80 px-3 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+                      <Suspense fallback={<HeaderSearchFallback />}>
+                        <HeaderSearch />
+                      </Suspense>
+                      <AccountButton />
+                    </div>
                   </div>
-                  <main className="flex-1 px-4 pb-12 sm:px-8">{children}</main>
+                  <main className="flex-1 px-4 pb-12 sm:px-8 md:pt-4">{children}</main>
                   {/* 375px の幅でも、リンク3つと © が1行に収まるよう、スマホでは字を小さく、間を詰める */}
                   <footer className="page-bottom flex items-center gap-x-3 px-4 pt-6 text-[11px] whitespace-nowrap text-muted sm:gap-x-6 sm:px-8 sm:text-sm">
                     <Link href="/terms" className="hover:text-foreground">

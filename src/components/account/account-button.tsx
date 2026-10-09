@@ -48,7 +48,7 @@ function SessionAccount() {
       <div
         id={id}
         popover="auto"
-        className="fixed inset-auto top-18 right-3 m-0 w-64 rounded-2xl border border-line/60 bg-sidebar p-2 text-foreground shadow-lg shadow-black/10 md:top-14 md:right-8"
+        className="fixed inset-auto top-18 right-3 m-0 w-64 rounded-2xl border border-line/60 bg-sidebar p-2 text-foreground shadow-lg shadow-black/10 md:right-3"
       >
         <div className="px-3 py-2">
           <p className="truncate text-sm font-bold">{user.name}</p>
