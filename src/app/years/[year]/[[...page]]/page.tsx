@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
-import { Pager, pageOf } from '@/components/pager';
+import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
-import { SongList } from '@/components/song-list';
+import { VirtualSongList } from '@/components/virtual-song-list';
 import { PAGE_SIZE, songsOfYear } from '@/lib/catalog';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
@@ -22,7 +22,7 @@ export async function generateMetadata({
   return { title: `${year}年の曲${n && n > 1 ? `（${n}ページ目）` : ''}` };
 }
 
-/** その年に投稿された曲。新しい順。多い年は PAGE_SIZE 曲ずつのページに分ける */
+/** その年に投稿された曲。新しい順。多い年もページに分けず、スクロールで続きを出す（VirtualSongList） */
 export default async function YearPage({ params }: PageProps<'/years/[year]/[[...page]]'>) {
   const { year: raw, page: segments } = await params;
   const year = Number(raw);
@@ -42,8 +42,7 @@ export default async function YearPage({ params }: PageProps<'/years/[year]/[[..
           list={{ source: `years/${year}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>
-      <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
-      <Pager base={`/years/${year}`} page={page} total={total} />
+      <VirtualSongList source={`years/${year}`} page={page} songs={songs} total={total} />
     </>
   );
 }

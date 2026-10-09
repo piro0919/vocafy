@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
-import { Pager, pageOf } from '@/components/pager';
+import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
-import { SongList } from '@/components/song-list';
+import { VirtualSongList } from '@/components/virtual-song-list';
 import { PAGE_SIZE, songsOfRow } from '@/lib/catalog';
 import { isRow, ROW_LABEL, ROWS, type Row } from '@/lib/kana';
 
@@ -31,7 +31,7 @@ export async function generateMetadata({
   };
 }
 
-/** 曲名の頭の文字で引く索引の1行。曲名の順。多い行は PAGE_SIZE 曲ずつのページに分ける */
+/** 曲名の頭の文字で引く索引の1行。曲名の順。多い行もページに分けず、スクロールで続きを出す（VirtualSongList） */
 export default async function KanaPage({ params }: PageProps<'/kana/[row]/[[...page]]'>) {
   const { row: raw, page: segments } = await params;
   const row = decodeURIComponent(raw);
@@ -52,8 +52,7 @@ export default async function KanaPage({ params }: PageProps<'/kana/[row]/[[...p
           list={{ source: `kana/${row}`, page, last: Math.ceil(total / PAGE_SIZE) }}
         />
       </div>
-      <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
-      <Pager base={`/kana/${row}`} page={page} total={total} />
+      <VirtualSongList source={`kana/${row}`} page={page} songs={songs} total={total} />
     </>
   );
 }

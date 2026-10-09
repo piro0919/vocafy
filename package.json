@@ -24,6 +24,7 @@
   "dependencies": {
     "@bprogress/next": "^3.2.12",
     "@t3-oss/env-nextjs": "^0.13.11",
+    "@tanstack/react-virtual": "^3.14.13",
     "@vercel/analytics": "^2.0.1",
     "better-auth": "1.7.7",
     "next": "16.3.8",

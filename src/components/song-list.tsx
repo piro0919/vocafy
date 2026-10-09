@@ -27,7 +27,6 @@ export function SongList({
   /** 棚に入れないときの並べ方 */
   className?: string;
 }) {
-  const { current, playing } = usePlayer();
   const open = useOpenSong();
   return (
     <div
@@ -41,42 +40,60 @@ export function SongList({
         columns ? { gridTemplateRows: `repeat(${Math.min(4, songs.length)}, auto)` } : undefined
       }
     >
-      {songs.map((song, i) => {
-        const active = current?.songId === song.songId;
-        return (
-          <div
-            key={song.songId}
-            className={`group flex min-w-0 snap-start items-center rounded-md pr-1 transition-colors duration-150 ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'}`}
-          >
-            <button
-              type="button"
-              onClick={() => (onOpen ? onOpen(i) : open(song))}
-              className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
-            >
-              <FadeImage
-                src={smallThumbOf(song)}
-                alt=""
-                // 最初の列は画面に入った時点で見えるので、遅延読み込みにしない
-                loading={i < 8 ? 'eager' : 'lazy'}
-                width={85}
-                height={48}
-                className="aspect-video shrink-0 rounded object-cover"
-              />
-              <span className="min-w-0">
-                <span className="flex items-center gap-1.5 text-sm font-bold">
-                  <Marquee active={active}>{song.title}</Marquee>
-                  {active && <Bars playing={playing} />}
-                </span>
-                <span className="block truncate text-xs text-muted">
-                  {song.producerName}
-                  {song.vocalists && ` ・ ${song.vocalists}`}
-                </span>
-              </span>
-            </button>
-            <FavoriteButton song={song} quiet />
-          </div>
-        );
-      })}
+      {songs.map((song, i) => (
+        <SongItem
+          key={song.songId}
+          song={song}
+          // 最初の列は画面に入った時点で見えるので、遅延読み込みにしない
+          eager={i < 8}
+          onOpen={() => (onOpen ? onOpen(i) : open(song))}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** 一覧の1曲。サムネイル・曲名・ボカロPと歌声・ハート。流している曲は地の色を変え、曲名の横に音の棒を出す */
+export function SongItem({
+  song,
+  eager = false,
+  onOpen,
+}: {
+  song: QueueItem;
+  eager?: boolean;
+  onOpen: () => void;
+}) {
+  const { current, playing } = usePlayer();
+  const active = current?.songId === song.songId;
+  return (
+    <div
+      className={`group flex min-w-0 snap-start items-center rounded-md pr-1 transition-colors duration-150 ${active ? 'bg-sidebar/60' : 'hover:bg-foreground/8'}`}
+    >
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-out active:scale-[0.98]"
+      >
+        <FadeImage
+          src={smallThumbOf(song)}
+          alt=""
+          loading={eager ? 'eager' : 'lazy'}
+          width={85}
+          height={48}
+          className="aspect-video shrink-0 rounded object-cover"
+        />
+        <span className="min-w-0">
+          <span className="flex items-center gap-1.5 text-sm font-bold">
+            <Marquee active={active}>{song.title}</Marquee>
+            {active && <Bars playing={playing} />}
+          </span>
+          <span className="block truncate text-xs text-muted">
+            {song.producerName}
+            {song.vocalists && ` ・ ${song.vocalists}`}
+          </span>
+        </span>
+      </button>
+      <FavoriteButton song={song} quiet />
     </div>
   );
 }

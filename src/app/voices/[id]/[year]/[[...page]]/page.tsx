@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
-import { Pager, pageOf } from '@/components/pager';
+import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
-import { SongList } from '@/components/song-list';
+import { VirtualSongList } from '@/components/virtual-song-list';
 import { PAGE_SIZE, songsOfVoiceYear, voices } from '@/lib/catalog';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
@@ -29,7 +29,7 @@ export async function generateMetadata({
   };
 }
 
-/** その歌声（キャラ）のその年の曲。歌声の画面の年の「すべて表示」から。多い年は PAGE_SIZE 曲ずつのページに分ける */
+/** その歌声（キャラ）のその年の曲。歌声の画面の年の「すべて表示」から。多い年もページに分けず、スクロールで続きを出す（VirtualSongList） */
 export default async function VoiceYearPage({
   params,
 }: PageProps<'/voices/[id]/[year]/[[...page]]'>) {
@@ -55,8 +55,12 @@ export default async function VoiceYearPage({
           }}
         />
       </div>
-      <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
-      <Pager base={`/voices/${voice.id}/${year}`} page={page} total={total} />
+      <VirtualSongList
+        source={`voices/${voice.id}/${year}`}
+        page={page}
+        songs={songs}
+        total={total}
+      />
     </>
   );
 }
