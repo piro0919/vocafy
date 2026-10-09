@@ -71,7 +71,16 @@ type PlayerContext = {
    * 一覧の1ページの曲を流し、並びの終わりが近づいたら、一覧の残りのページの曲を後ろに足していく（play-all.tsx）。
    * ページ数が多い一覧（初音ミクの年など）を、押した時点で全部送らないため
    */
-  playAll: (items: QueueItem[], source: Omit<ListSource, 'next'>) => void;
+  playAll: (
+    items: QueueItem[],
+    source: Omit<ListSource, 'next'>,
+    options?: {
+      /** items の何番目から流すか。既定は先頭 */
+      at?: number;
+      /** 流し始めてから一覧の再生用の画面へ移るとき。置き場所が見つかるまで右下の窓を出さずに待つ */
+      moving?: boolean;
+    },
+  ) => void;
   /** 「すべて再生」で流している一覧の住所。ほかの並びを流しているときは null */
   listSource: string | null;
   /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える */
@@ -438,8 +447,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playAll = useCallback(
-    (items: QueueItem[], source: Omit<ListSource, 'next'>) => {
-      load(items, 0, 'list');
+    (
+      items: QueueItem[],
+      source: Omit<ListSource, 'next'>,
+      { at = 0, moving = false }: { at?: number; moving?: boolean } = {},
+    ) => {
+      load(items, at, 'list');
+      if (moving) {
+        // 一覧の再生用の画面へ移る途中。曲の一覧から押してボカロPの画面へ移るとき（pending）と同じく、置き場所を待つ
+        clearTimeout(waitTimer.current);
+        setWaitingForSlot(true);
+        waitTimer.current = setTimeout(() => setWaitingForSlot(false), WAIT_FOR_SLOT);
+      }
       const next = (source.start % source.last) + 1;
       more.current = next === source.start ? null : { ...source, next };
       setListSource(source.source);
@@ -718,7 +737,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       >
         {shown && (
           <Link
-            href={context === 'favorites' ? '/favorites/songs' : `/producers/${shown.producerId}`}
+            href={
+              context === 'favorites'
+                ? '/favorites/songs'
+                : listSource
+                  ? `/${listSource}/play`
+                  : `/producers/${shown.producerId}`
+            }
             className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
           >
             <span className="min-w-0 flex-1 truncate">

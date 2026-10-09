@@ -29,6 +29,8 @@ export function VirtualSongList({
   page,
   songs,
   total,
+  columns: fixed,
+  onOpen,
 }: {
   /** 一覧の住所（years/2026 など）。/api/list の住所に使う */
   source: string;
@@ -36,8 +38,16 @@ export function VirtualSongList({
   page: number;
   songs: QueueItem[];
   total: number;
+  /** 段の数を幅で変えずに決めるとき（一覧の再生用の画面の、右の細い列では 1） */
+  columns?: number;
+  /**
+   * 曲を押したときの動き。その曲のページの曲と、ページの中の何番目かを渡す。
+   * 渡さなければ、その曲のボカロPの画面へ移る（useOpenSong）
+   */
+  onOpen?: (page: { number: number; songs: QueueItem[] }, at: number) => void;
 }) {
-  const columns = useColumns(COLUMNS, 1);
+  const byWidth = useColumns(COLUMNS, 1);
+  const columns = fixed ?? byWidth;
   const open = useOpenSong();
   const [pages, setPages] = useState(() => new Map([[page, songs]]));
   const requested = useRef(new Set([page]));
@@ -110,7 +120,16 @@ export function VirtualSongList({
             if (i >= total) return null;
             const song = songAt(i);
             return song ? (
-              <SongItem key={i} song={song} eager={i < 8} onOpen={() => open(song)} />
+              <SongItem
+                key={i}
+                song={song}
+                eager={i < 8}
+                onOpen={() => {
+                  const number = Math.floor(i / PAGE_SIZE) + 1;
+                  if (onOpen) onOpen({ number, songs: pages.get(number) ?? [] }, i % PAGE_SIZE);
+                  else open(song);
+                }}
+              />
             ) : (
               // まだ読んでいない曲。サムネイルと2行の字の形だけ出す
               <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">

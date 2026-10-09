@@ -5,7 +5,8 @@ import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { VirtualSongList } from '@/components/virtual-song-list';
 import { PAGE_SIZE, songsOfRow } from '@/lib/catalog';
-import { isRow, ROW_LABEL, ROWS, type Row } from '@/lib/kana';
+import { isRow, ROWS } from '@/lib/kana';
+import { rowTitle } from '@/lib/list-titles';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 export const revalidate = false;
@@ -13,11 +14,6 @@ export const revalidate = false;
 /** 行は12しかないので、各行の1ページ目はビルドのときに作る。2ページ目からは最初に開かれたときに作る */
 export function generateStaticParams() {
   return ROWS.map((row) => ({ row }));
-}
-
-/** 行の名前。かなの行は「あ行」、それ以外は札の字のまま */
-function rowTitle(row: Row): string {
-  return row === 'abc' ? 'ABC・数字' : row === 'etc' ? 'そのほか' : `${ROW_LABEL[row]}行`;
 }
 
 export async function generateMetadata({

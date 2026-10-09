@@ -5,6 +5,7 @@ import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, PAGE_SIZE, songsOfDay } from '@/lib/catalog';
+import { dayLabel } from '@/lib/list-titles';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 日付の画面はビルドのときには作らず、最初に開かれたときに作って残す
@@ -14,18 +15,12 @@ export function generateStaticParams() {
   return [];
 }
 
-/** 「10-09」→「10月9日」 */
-function label(day: string): string {
-  const [m, d] = day.split('-').map(Number);
-  return `${m}月${d}日`;
-}
-
 export async function generateMetadata({
   params,
 }: PageProps<'/days/[day]/[[...page]]'>): Promise<Metadata> {
   const { day, page } = await params;
   const n = pageOf(page);
-  return { title: `${label(day)}に生まれた曲${n && n > 1 ? `（${n}ページ目）` : ''}` };
+  return { title: `${dayLabel(day)}に生まれた曲${n && n > 1 ? `（${n}ページ目）` : ''}` };
 }
 
 /**
@@ -43,7 +38,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
     <>
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow="On This Day">
-          {label(day)}に生まれた曲
+          {dayLabel(day)}に生まれた曲
         </Heading>
         <PlayAll
           songs={songs}
