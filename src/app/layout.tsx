@@ -1,7 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
 import { M_PLUS_Rounded_1c, Orbitron, Zen_Kaku_Gothic_New } from 'next/font/google';
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { AmbientProvider } from '@/components/ambient';
 import { Header } from '@/components/header';
@@ -14,11 +13,12 @@ import { HistoryRecorder } from '@/components/player/history-recorder';
 import { PlayerProvider } from '@/components/player/player-provider';
 import { Toaster } from '@/components/toaster';
 import { ScrollChrome } from '@/components/scroll-chrome';
+import { SiteFooter } from '@/components/site-footer';
 import { SwipeBack } from '@/components/swipe-back/swipe-back';
 import { Progress } from '@/components/progress';
 import { themeScript } from '@/components/theme/theme-script';
 import { ThemeWatcher } from '@/components/theme/theme-watcher';
-import { CONTACT_FORM_URL, OPERATOR, SITE_URL } from '@/lib/site';
+import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
 // ロゴの字。合成音声の機械らしさを出す、角ばった字。使うのは「Vocafy」の6文字だけ
@@ -101,24 +101,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     </div>
                   </div>
                   <main className="flex-1 px-4 pb-12 sm:px-8 md:pt-4">{children}</main>
-                  {/* 375px の幅でも、リンク3つと © が1行に収まるよう、スマホでは字を小さく、間を詰める */}
-                  <footer className="page-bottom flex items-center gap-x-3 px-4 pt-6 text-[11px] whitespace-nowrap text-muted sm:gap-x-6 sm:px-8 sm:text-sm">
-                    <Link href="/terms" className="hover:text-foreground">
-                      利用規約
-                    </Link>
-                    <Link href="/privacy" className="hover:text-foreground">
-                      プライバシーポリシー
-                    </Link>
-                    <a
-                      href={CONTACT_FORM_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-foreground"
-                    >
-                      お問い合わせ
-                    </a>
-                    <span className="ml-auto">© {OPERATOR}</span>
-                  </footer>
+                  <SiteFooter />
                 </div>
               </AmbientProvider>
             </div>
