@@ -39,6 +39,9 @@ pnpm dev
 - VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。新しい曲を拾うときは消して取り直す
 - 取り込みは、YouTube の動画が流せるかを oEmbed で確かめる（`scripts/lib/youtube.ts`）。流せない動画の曲はニコニコに切り替え、ニコニコにも無ければ DB から消す。結果は `data/raw/youtube/oembed.json` に残し、30日たったものだけ確かめ直す。初回は 1万4千本で数分かかった。2026-10-09 の時点で流せないのは 25 本
   - 埋め込みを止めている動画（動画は生きているが、ほかのサイトでは流せない）にも oEmbed が 200 以外を返すかは未確認
+- 再生中に流せなかった動画も拾う（2026-10-09）。YouTube の 100・101・150 とニコニコの error を、プレイヤーが `/api/unplayable` に知らせる（`src/components/player/report.ts`）。API は知らせを信じず、oEmbed かニコニコの getthumbinfo（失敗か `embeddable` が 0 なら流せない）に問い合わせ直し、流せないときだけ `unplayable` の表に書いて曲を直す（YouTube が駄目ならニコニコに切り替え、無ければ外す）。DB を起こすのはそのときだけ
+  - 作り直すのはその曲のボカロPの画面だけ。ほかの画面は次の配備で反映される（全部を作り直すと、開かれるたびに DB を読むため）
+  - 取り込みも `unplayable` の表を見る。見ないと、手元の確かめの結果（30日残る）で外した曲が戻る
 - **本番の DB への取り込み**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、書く時間は短い（200 曲の種で 6 秒ほど）。VocaDB の返事が手元に残っていれば、取りに行く時間もかからない
   - **取り込んだら、本番を配備し直す**（`vercel redeploy vocafy.kkweb.io --target production --scope kkweb`）。トップ以外のページは時間では作り直さず、配備ごとに作り置くので、配備し直さないと新しい曲が出ない。Vercel は新しい配備で作り置きを捨てる（[ISR の資料](https://vercel.com/docs/incremental-static-regeneration)「each new deployment uses its own ISR cache」）
 - **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない

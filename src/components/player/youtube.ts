@@ -1,4 +1,5 @@
 import type { Engine, EngineEvents, Sound } from './engine';
+import { reportUnplayable } from './report';
 
 // YouTube の IFrame API のうち、使う分だけの型と読み込み
 type YTPlayer = {
@@ -92,8 +93,12 @@ export function createYouTubeEngine(
           if (data === YT.PlayerState.PAUSED) events.onPaused();
           if (data === YT.PlayerState.ENDED) events.onEnded();
         },
-        // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）
-        onError: () => events.onError(),
+        // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）。消えた・非公開（100）と
+        // 埋め込み不可（101・150）は、台帳から外せるよう Vocafy に知らせる。ほかの番号は一時的な失敗のことがあるので知らせない
+        onError: ({ data }) => {
+          if ([100, 101, 150].includes(data)) reportUnplayable('youtube', latest);
+          events.onError();
+        },
       },
     });
   });

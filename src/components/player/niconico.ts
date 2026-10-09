@@ -1,4 +1,5 @@
 import type { Engine, EngineEvents, Sound } from './engine';
+import { reportUnplayable } from './report';
 
 /**
  * ニコニコの埋め込みプレイヤー（embed.nicovideo.jp）を、postMessage で動かす。
@@ -31,7 +32,7 @@ let serial = 0;
 
 export function createNiconicoEngine(
   container: HTMLElement,
-  videoId: string,
+  firstVideoId: string,
   sound: Sound,
   events: EngineEvents,
 ): Engine {
@@ -41,6 +42,8 @@ export function createNiconicoEngine(
   container.replaceChildren(iframe);
 
   let playerId = '';
+  /** いま読み込んでいる動画。流せなかったときに知らせる */
+  let videoId = firstVideoId;
   let current = 0;
   let duration = 0;
   let volume = sound.volume;
@@ -71,11 +74,16 @@ export function createNiconicoEngine(
       current = (data?.currentTime ?? 0) / 1000;
       duration = (data?.duration ?? 0) / 1000;
     }
-    if (eventName === 'error') events.onError();
+    // 消えた・ほかのサイトでは流せない動画。台帳から外せるよう Vocafy に知らせる（確かめ直すのは API の側）
+    if (eventName === 'error') {
+      reportUnplayable('niconico', videoId);
+      events.onError();
+    }
   };
   window.addEventListener('message', onMessage);
 
   const load = (id: string) => {
+    videoId = id;
     playerId = `vocafy-${++serial}`;
     current = 0;
     duration = 0;

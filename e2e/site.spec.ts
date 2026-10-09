@@ -74,6 +74,12 @@ test('検索で、曲名をひらがなで打ってもカタカナの曲が見�
   await expect(page.getByRole('button', { name: /ゴーストルール(?!をお気に入り)/ })).toBeVisible();
 });
 
+test('流せない動画の知らせは、形の違う ID を断る', async ({ request }) => {
+  // 生きているか消えたかの確かめは外の窓口に問い合わせるので、ここでは形の確かめだけを見る
+  const res = await request.post('/api/unplayable', { data: { service: 'youtube', videoId: 'x' } });
+  expect(res.status()).toBe(400);
+});
+
 test('無いボカロPは 404', async ({ page }) => {
   const res = await page.goto('/producers/123456789');
   expect(res?.status()).toBe(404);

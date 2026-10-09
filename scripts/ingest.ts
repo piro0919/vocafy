@@ -25,6 +25,23 @@ import { deadYouTube } from './lib/youtube';
  *
  * 種は VocaDB の評価点と、ニコニコの伝説入り（100万再生以上）。YouTube の再生数の線は、次の周回で足す
  */
+/** 再生中に流せないと分かった動画。表がまだ無い DB（0004 を当てる前）では空 */
+async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<string> }> {
+  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
+  try {
+    const { rows } = await pool.query<{ service: string; video_id: string }>(
+      'select service, video_id from unplayable',
+    );
+    const of = (service: string) =>
+      new Set(rows.filter((r) => r.service === service).map((r) => r.video_id));
+    return { youtube: of('youtube'), niconico: of('niconico') };
+  } catch {
+    return { youtube: new Set(), niconico: new Set() };
+  } finally {
+    await pool.end();
+  }
+}
+
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
@@ -82,12 +99,20 @@ async function main() {
   // YouTube で消えた・埋め込めない動画は使わない。ニコニコに本家があればニコニコで流し、無ければその曲を外す。
   // VocaDB の登録は、YouTube の側で動画が消えてもそのまま残っていることがある（--dry では確かめない）
   const dead = await deadYouTube(all.flatMap((s) => sourcesOf(s)?.youtubeId ?? []));
+  // 再生中に流せないと分かった動画（API が確かめて unplayable の表に書いたもの）も使わない
+  const reported = await readUnplayable();
+  for (const id of reported.youtube) dead.add(id);
   const sources = new Map(
     all.map((s) => {
       const found = sourcesOf(s)!;
       return [
         s.id,
-        found.youtubeId && dead.has(found.youtubeId) ? { ...found, youtubeId: null } : found,
+        {
+          ...found,
+          youtubeId: found.youtubeId && dead.has(found.youtubeId) ? null : found.youtubeId,
+          niconicoId:
+            found.niconicoId && reported.niconico.has(found.niconicoId) ? null : found.niconicoId,
+        },
       ];
     }),
   );
