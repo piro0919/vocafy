@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useId, useSyncExternalStore } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
@@ -14,7 +15,7 @@ function LoginButton() {
   );
 }
 
-/** ログイン中の顔写真と、押すと開くメニュー（名前・ログアウト）。開閉はブラウザの popover に任せる。設定は歯車から行けるので入れない */
+/** ログイン中の顔写真と、押すと開くメニュー（名前・設定・ログアウト）。開閉はブラウザの popover に任せる */
 function SessionAccount() {
   const { data, isPending } = authClient.useSession();
   const id = useId();
@@ -53,6 +54,13 @@ function SessionAccount() {
           <p className="truncate text-sm font-bold">{user.name}</p>
           <p className="truncate text-xs text-muted">{user.email}</p>
         </div>
+        <Link
+          href="/settings"
+          onClick={() => document.getElementById(id)?.hidePopover()}
+          className="block rounded-lg px-3 py-2 text-sm font-bold text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
+        >
+          設定
+        </Link>
         <button
           type="button"
           onClick={() => {
