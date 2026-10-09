@@ -351,33 +351,58 @@ body {
 }
 
 /*
- * お気に入りに入れたときのハート（heart-button.tsx）。
- * ハートは小さく縮んでから一度だけ弾んで落ち着き、すぐ近くで小さな点が散って消える
+ * お気に入りに入れたときのハート（favorite-button.tsx）。ハートは縮んでから大きく弾んで落ち着き、
+ * 同時に差し色の輪が広がって消え、粒が外へ飛び散る。外したときは小さく縮んで戻るだけ
  */
-@keyframes pop {
+@keyframes heart-pop {
   0% {
-    transform: scale(0.5);
+    transform: scale(0.6);
   }
-  50% {
-    transform: scale(1.2);
+  40% {
+    transform: scale(1.4);
+  }
+  65% {
+    transform: scale(0.9);
+  }
+  85% {
+    transform: scale(1.06);
   }
   100% {
     transform: scale(1);
   }
 }
-@keyframes heart-spark {
+@keyframes heart-unpop {
   0% {
-    top: 40%;
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: scale(0.75);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes heart-ring {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.7;
+    border-width: 6px;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+/* 粒は --angle の向きへ飛ぶ。真ん中から出て、遠くで小さくなって消える */
+@keyframes heart-particle {
+  0% {
+    transform: rotate(var(--angle)) translateY(-0.6rem) scale(1);
     opacity: 1;
   }
   60% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: rotate(var(--angle)) translateY(-1.7rem) scale(0.8);
     opacity: 1;
   }
   100% {
-    top: -45%;
-    transform: translate(-50%, -50%) scale(0);
+    transform: rotate(var(--angle)) translateY(-2rem) scale(0);
     opacity: 0;
   }
 }
