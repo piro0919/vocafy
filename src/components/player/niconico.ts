@@ -14,7 +14,7 @@ import { reportUnplayable } from './report';
  * コメントは隠す。見た目を YouTube の曲とそろえるため（2026-10-08 に本人が決めた）。
  * URL の設定（noController・noHeader・defaultNoComment など）は、2026-10-08 に試した範囲では効かなかった。効いたのは開始位置の from だけ
  *
- * 動画を替えるときは iframe を読み込み直す。前の動画の知らせを拾わないよう、そのたびに playerId を変える
+ * 動画を替えるときは iframe を作り直す（load の説明）。前の動画の知らせを拾わないよう、そのたびに playerId を変える
  */
 const ORIGIN = 'https://embed.nicovideo.jp';
 
@@ -36,10 +36,7 @@ export function createNiconicoEngine(
   sound: Sound,
   events: EngineEvents,
 ): Engine {
-  const iframe = document.createElement('iframe');
-  iframe.allow = 'autoplay; fullscreen';
-  iframe.title = 'ニコニコ動画のプレイヤー';
-  container.replaceChildren(iframe);
+  let iframe: HTMLIFrameElement | null = null;
 
   let playerId = '';
   /** いま読み込んでいる動画。流せなかったときに知らせる */
@@ -50,7 +47,7 @@ export function createNiconicoEngine(
   let muted = sound.muted;
 
   const send = (eventName: string, data?: Record<string, unknown>) =>
-    iframe.contentWindow?.postMessage(
+    iframe?.contentWindow?.postMessage(
       { eventName, data, sourceConnectorType: 1, playerId },
       ORIGIN,
     );
@@ -82,19 +79,22 @@ export function createNiconicoEngine(
   };
   window.addEventListener('message', onMessage);
 
-  let started = false;
   const load = (id: string) => {
     videoId = id;
     playerId = `vocafy-${++serial}`;
     current = 0;
     duration = 0;
-    const url = `${ORIGIN}/watch/${encodeURIComponent(id)}?jsapi=1&playerId=${playerId}`;
-    // 2曲目からは、埋め込みの中の画面を置き換える。src を書き換えると、ブラウザがページの履歴に1つ積み、
-    // 戻る操作の1回目が埋め込みの中を前の動画に戻すのに使われて、ページが戻らなかった。
-    // location.replace は、別のサイトの埋め込みにも親から呼べる
-    if (started && iframe.contentWindow) iframe.contentWindow.location.replace(url);
-    else iframe.src = url;
-    started = true;
+    // 動画を替えるたびに、埋め込みごと作り直す。読み込み先（src）を付けてから置くので、ページの履歴は増えない。
+    // - src を書き換えると、ブラウザがページの履歴に1つ積み、戻る操作の1回目が埋め込みの中を前の動画に戻すのに
+    //   使われて、ページが戻らなかった
+    // - 埋め込みの中だけを location.replace で置き換えていたころは、src が1曲目のまま残った。Android で、2曲目を
+    //   流したあと画面を移ると、埋め込みが読み込み直されて1曲目が出て、playerId も合わず止まった（2026-10-09）
+    const next = document.createElement('iframe');
+    next.allow = 'autoplay; fullscreen';
+    next.title = 'ニコニコ動画のプレイヤー';
+    next.src = `${ORIGIN}/watch/${encodeURIComponent(id)}?jsapi=1&playerId=${playerId}`;
+    container.replaceChildren(next);
+    iframe = next;
   };
   load(videoId);
 
@@ -118,7 +118,7 @@ export function createNiconicoEngine(
     time: () => ({ current, duration }),
     destroy: () => {
       window.removeEventListener('message', onMessage);
-      iframe.remove();
+      iframe?.remove();
     },
   };
 }
