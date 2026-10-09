@@ -6,12 +6,15 @@ type YTPlayer = {
   loadVideoById(id: string): void;
   playVideo(): void;
   pauseVideo(): void;
+  stopVideo(): void;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
   setVolume(volume: number): void;
   mute(): void;
   unMute(): void;
+  /** 公式の資料には無い。'captions' で字幕を外す */
+  unloadModule(name: string): void;
   destroy(): void;
 };
 type YTNamespace = {
@@ -100,7 +103,12 @@ export function createYouTubeEngine(
           else player.pauseVideo();
         },
         onStateChange: ({ data }) => {
-          if (data === YT.PlayerState.PLAYING) events.onPlaying();
+          if (data === YT.PlayerState.PLAYING) {
+            // 字幕は出さない。止めるパラメータは無く（cc_load_policy は出す側の 1 しか無い）、資料に無い unloadModule で外す。
+            // 字幕の仕組みは流し始めてから読み込まれ、onApiChange の時点で外しても出た。流れ始めるたびに外す
+            player?.unloadModule('captions');
+            events.onPlaying();
+          }
           if (data === YT.PlayerState.PAUSED) events.onPaused();
           if (data === YT.PlayerState.ENDED) events.onEnded();
         },
@@ -119,6 +127,9 @@ export function createYouTubeEngine(
     load: (id) => {
       latest = id;
       wantPlay = true;
+      // 前の動画を止めてから次の動画を頼む。止めずに頼むと、次の動画が届くまで前の動画が鳴り続け、
+      // 曲を替えた直後に前の曲の音が一瞬聞こえた。止めても知らせ（onStateChange）は一時停止にならない
+      player?.stopVideo();
       player?.loadVideoById(id);
     },
     play: () => {
