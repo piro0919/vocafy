@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { PILL } from '@/components/browse-cards';
+import { PILL } from '@/components/button-styles';
 import { FadeImage } from '@/components/fade-image';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails } from '@/lib/catalog';

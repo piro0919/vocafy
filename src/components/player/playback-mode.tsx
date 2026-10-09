@@ -7,6 +7,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { Icon } from '../icon';
 import { usePlayer } from './player-provider';
 import { QueuePanel } from './queue-panel';
+import { ICON } from '../button-styles';
 
 /**
  * ランダム再生とループの切り替え。入っているあいだは差し色にする。
@@ -26,8 +27,7 @@ export function PlaybackMode({
   const [queueOpen, setQueueOpen] = useState(false);
   const queueButton = useRef<HTMLButtonElement>(null);
   const closeQueue = useCallback(() => setQueueOpen(false), []);
-  const button =
-    'relative grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-(--ease-out) active:scale-95';
+  const button = `relative grid ${ICON}`;
   return (
     <div className={`flex items-center ${className}`}>
       <button
@@ -102,7 +102,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       aria-pressed={on}
       title={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       onClick={toggle}
-      className={`${className} relative size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+      className={`${className} relative ${ICON} ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Icon name="radio" className="size-5" />
       {on && <OnDot />}

@@ -1,5 +1,6 @@
 import type { ProducerLinks as Links } from '@/lib/catalog';
 import { Icon } from './icon';
+import { ICON_SM } from './button-styles';
 
 /** 並べる順と、読み上げの名前。本人の場所が1つも無い人には何も出さない */
 const SERVICES = [
@@ -23,7 +24,7 @@ export function ProducerLinks({ name, links }: { name: string; links: Links }) {
             rel="noopener"
             aria-label={`${name}の${s.label}`}
             title={s.label}
-            className="grid size-9 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 hover:text-foreground active:scale-95"
+            className={`grid ${ICON_SM} text-muted hover:text-foreground`}
           >
             <Icon name={s.key} className="size-5" />
           </a>

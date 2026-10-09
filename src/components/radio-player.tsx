@@ -7,6 +7,7 @@ import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
+import { PRIMARY } from './button-styles';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -56,7 +57,7 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
           <button
             type="button"
             onClick={() => (here ? toggle() : playRadio(songs, 0))}
-            className="flex shrink-0 items-center gap-2 rounded-full bg-miku py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-(--ease-out) hover:brightness-110 active:scale-95"
+            className={PRIMARY}
           >
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}

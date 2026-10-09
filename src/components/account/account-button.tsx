@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useId, useSyncExternalStore } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
-import { PILL } from '@/components/browse-cards';
+import { ICON, PILL } from '@/components/button-styles';
 
 function LoginButton() {
   return (
@@ -24,12 +24,7 @@ function SessionAccount() {
   if (!user) return <LoginButton />;
   return (
     <>
-      <button
-        type="button"
-        popoverTarget={id}
-        aria-label="アカウント"
-        className="grid size-10 shrink-0 place-items-center rounded-full transition-[scale] duration-150 ease-(--ease-out) active:scale-95"
-      >
+      <button type="button" popoverTarget={id} aria-label="アカウント" className={`grid ${ICON}`}>
         {user.image ? (
           <Image
             src={user.image}

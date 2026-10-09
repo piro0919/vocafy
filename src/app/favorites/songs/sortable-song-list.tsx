@@ -24,6 +24,7 @@ import { Icon } from '@/components/icon';
 import { SongItem } from '@/components/song-list';
 import type { QueueItem } from '@/lib/catalog';
 import { moveFavoriteSong } from '@/lib/favorites';
+import { ICON_SM } from '@/components/button-styles';
 
 /**
  * お気に入りの曲の一覧。好きな順に並べ替えられる。
@@ -133,7 +134,7 @@ function SortableSong({
             onTouchStart={on('onTouchStart')}
             onKeyDown={on('onKeyDown')}
             aria-label={`${song.title}を並べ替える`}
-            className={`grid size-9 shrink-0 touch-none place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-foreground/8 hover:text-foreground ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            className={`grid ${ICON_SM} touch-none text-muted hover:text-foreground ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           >
             <Icon name="grip" className="size-5" />
           </button>

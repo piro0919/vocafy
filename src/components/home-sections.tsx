@@ -11,6 +11,7 @@ import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { useOpenSong } from './song-list';
+import { COVER_PLAY } from './button-styles';
 
 /** 「2012年10月8日」 */
 function longDate(iso: string): string {
@@ -76,7 +77,7 @@ export function OnThisDay({
               loading="eager"
               className="object-cover transition-[opacity,scale] duration-300 ease-(--ease-out) group-hover:scale-[1.03]"
             />
-            <span className="absolute right-3 bottom-3 grid size-12 place-items-center rounded-full bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[scale] duration-150 ease-(--ease-out) group-hover:scale-105 group-active:scale-95">
+            <span className={`absolute right-3 bottom-3 size-12 ${COVER_PLAY}`}>
               <Icon name={heroActive && playing ? 'pause' : 'play'} />
             </span>
           </span>

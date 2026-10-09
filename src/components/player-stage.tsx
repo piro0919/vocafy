@@ -7,6 +7,7 @@ import { Icon } from './icon';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
+import { COVER_PLAY } from './button-styles';
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -81,7 +82,7 @@ export function PlayerStage({
                 className="object-cover"
               />
             )}
-            <span className="absolute top-1/2 left-1/2 grid size-16 -translate-1/2 place-items-center rounded-full bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[scale] duration-200 ease-(--ease-out) group-hover:scale-105 group-active:scale-95">
+            <span className={`absolute top-1/2 left-1/2 size-16 -translate-1/2 ${COVER_PLAY}`}>
               <Icon name="play" className="size-9" />
             </span>
           </button>

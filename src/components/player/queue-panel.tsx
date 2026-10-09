@@ -4,6 +4,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import { Icon } from '../icon';
 import { SongItem } from '../song-list';
 import { usePlayer } from './player-provider';
+import { ICON_SM } from '../button-styles';
 
 /**
  * 次に流れる曲（順番待ち）。流す順（ランダムなら混ぜたあとの順）で並べ、押すとその曲へ飛ぶ。
@@ -87,7 +88,7 @@ export function QueuePanel({
           type="button"
           aria-label="次に流れる曲を閉じる"
           onClick={onClose}
-          className="grid h-9 w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
+          className={`grid ${ICON_SM} text-muted hover:text-foreground`}
         >
           <Icon name="close" className="size-4" />
         </button>

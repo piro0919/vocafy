@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { PILL } from '@/components/browse-cards';
+import { PILL } from '@/components/button-styles';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
 import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';

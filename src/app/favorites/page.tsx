@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PILL } from '@/components/browse-cards';
+import { PILL } from '@/components/button-styles';
 import { Heading } from '@/components/heading';
 import { FavoritesView } from './favorites-view';
 

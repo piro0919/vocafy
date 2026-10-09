@@ -6,6 +6,7 @@ import { NO_RESTORE } from '@/lib/no-restore';
 import { Icon } from './icon';
 import { Heading } from './heading';
 import { FADE } from './scroll-row';
+import { ARROW } from './button-styles';
 
 /** 矢印で送るときの時間（ミリ秒） */
 const GLIDE_MS = 500;
@@ -167,7 +168,7 @@ function ArrowButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className="hidden size-8 place-items-center rounded-full border border-accent/40 bg-glass text-accent transition-[background-color,scale,opacity] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95 disabled:opacity-40 disabled:hover:bg-glass sm:grid"
+      className={`hidden ${ARROW} sm:grid`}
     >
       {children}
     </button>

@@ -10,9 +10,9 @@ import { HeaderSearch, HeaderSearchFallback } from './header-search';
 import { Icon } from './icon';
 import { InstallButton } from './install-app';
 import { Logo } from './nav';
+import { ICON } from './button-styles';
 
-const ICON_BUTTON =
-  'grid size-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:text-foreground';
+const ICON_BUTTON = `grid ${ICON} text-muted hover:text-foreground`;
 
 /** 虫めがねから検索の画面を開いたか。開いていれば ← で戻り、住所から直に開いたときはトップへ移る */
 let openedFromSite = false;

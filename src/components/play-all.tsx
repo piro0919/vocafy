@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import type { QueueItem } from '@/lib/catalog';
-import { PILL } from './browse-cards';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
+import { PILL, PRIMARY } from './button-styles';
 
 /**
  * 曲の一覧（年・歌声・あいうえお順・日付）を、その画面の曲の順に通して流すボタン。曲の数を添える。
@@ -53,11 +53,7 @@ export function PlayAll({
   const { here, playing, start, toggle } = usePlayAll(songs, list);
   return (
     <div className="mt-3 flex items-center gap-3">
-      <button
-        type="button"
-        onClick={() => (here ? toggle() : start())}
-        className="flex shrink-0 items-center gap-2 rounded-full bg-miku py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-(--ease-out) hover:brightness-110 active:scale-95"
-      >
+      <button type="button" onClick={() => (here ? toggle() : start())} className={PRIMARY}>
         <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
         {here && playing ? '一時停止' : '再生'}
       </button>

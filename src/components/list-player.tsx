@@ -7,6 +7,7 @@ import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
+import { PRIMARY } from './button-styles';
 
 /** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -101,11 +102,7 @@ export function ListPlayer({
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         <StageControls>
-          <button
-            type="button"
-            onClick={() => (here ? toggle() : start())}
-            className="flex shrink-0 items-center gap-2 rounded-full bg-miku py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-(--ease-out) hover:brightness-110 active:scale-95"
-          >
+          <button type="button" onClick={() => (here ? toggle() : start())} className={PRIMARY}>
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}
           </button>

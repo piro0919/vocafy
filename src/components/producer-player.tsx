@@ -13,6 +13,7 @@ import { usePlayer } from './player/player-provider';
 import { PlaybackMode } from './player/playback-mode';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
+import { ICON, PRIMARY } from './button-styles';
 
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
@@ -117,7 +118,7 @@ export function ProducerPlayer({
           <button
             type="button"
             onClick={() => (here ? toggle() : start(linkedItem?.songId))}
-            className="flex shrink-0 items-center gap-2 rounded-full py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-(--ease-out) hover:brightness-110 active:scale-95"
+            className={PRIMARY}
           >
             <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
             {here && playing ? '一時停止' : '再生'}
@@ -221,7 +222,7 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
       onClick={share}
       aria-label={label}
       title={label}
-      className="grid size-10 shrink-0 place-items-center rounded-full text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
+      className={`grid ${ICON} text-muted hover:text-foreground`}
     >
       <Icon name="share" className="size-5" />
     </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { PILL } from '@/components/browse-cards';
+import { PILL } from '@/components/button-styles';
 import { SongList } from '@/components/song-list';
 import { formatCount } from '@/lib/format';
 import { toast } from 'sonner';

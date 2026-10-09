@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { PAGE_SIZE } from '@/lib/catalog';
 import { Icon } from './icon';
+import { ARROW } from './button-styles';
 
 /**
  * 住所の末尾のページ番号。/kana/a-e は 1 ページ目、/kana/a-e/2 は 2 ページ目。
@@ -36,8 +37,7 @@ export function Pager({
   const last = Math.ceil(total / size);
   if (last <= 1) return null;
   const pages = Array.from({ length: last }, (_, i) => i + 1);
-  const arrow =
-    'grid size-9 place-items-center rounded-full border border-accent/40 text-accent transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95';
+  const arrow = `grid ${ARROW}`;
   return (
     <nav aria-label="ページ" className="mt-8 flex flex-wrap items-center justify-center gap-2">
       {page > 1 && (

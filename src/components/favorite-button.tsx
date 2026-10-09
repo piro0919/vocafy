@@ -4,6 +4,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { type FavoriteProducer, useFavoriteProducers, useFavorites } from '@/lib/favorites';
 import { type CSSProperties, useState } from 'react';
 import { Icon } from './icon';
+import { ICON, ICON_SM } from './button-styles';
 
 /**
  * 舞い散る音符。向き（度。0 が真上）と傾きと形。ハートの周りに6つ、一周に等しく散らし、八分音符と連桁の音符を交互に置く。輪を重ねていたころは6つでは派手すぎて3つに減らしたが、輪を外したので一周に戻した。
@@ -103,7 +104,7 @@ export function FavoriteButton({
         toggle(song);
         setBeat((b) => b + 1);
       }}
-      className={`${shown} size-9 shrink-0 place-items-center rounded-full transition-[color,scale,opacity] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95 ${on ? 'text-accent' : 'text-muted hover:text-foreground'} ${className}`}
+      className={`${shown} ${ICON_SM} ${on ? 'text-accent' : 'text-muted hover:text-foreground'} ${className}`}
     >
       <Heart on={on} beat={beat} size="size-5" />
     </button>
@@ -126,7 +127,7 @@ export function FavoriteProducerButton({ producer }: { producer: FavoriteProduce
         toggle(producer);
         setBeat((b) => b + 1);
       }}
-      className={`grid size-10 shrink-0 place-items-center rounded-full transition-[color,scale] duration-150 ease-(--ease-out) hover:bg-foreground/8 active:scale-95 ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
+      className={`grid ${ICON} ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >
       <Heart on={on} beat={beat} size="size-6" />
     </button>

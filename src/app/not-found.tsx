@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Heading } from '@/components/heading';
+import { PRIMARY } from '@/components/button-styles';
+import { Icon } from '@/components/icon';
 
 export const metadata: Metadata = { title: 'ページが見つかりません' };
 
@@ -12,10 +14,8 @@ export default function NotFound() {
         ページが見つかりません
       </Heading>
       <p className="text-muted">お探しのページは存在しないか、掲載をやめた可能性があります。</p>
-      <Link
-        href="/"
-        className="rounded-full px-5 py-2 text-sm font-bold bg-miku text-on-miku shadow-lg shadow-miku/30 transition-[filter,scale] duration-150 ease-(--ease-out) hover:brightness-110 active:scale-95"
-      >
+      <Link href="/" className={PRIMARY}>
+        <Icon name="home" className="size-5" />
         ホームへ
       </Link>
     </div>

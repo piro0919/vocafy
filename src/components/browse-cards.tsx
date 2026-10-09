@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { voiceColor } from '@/lib/voice-color';
 import { FadeImage } from './fade-image';
 import { formatCount } from '@/lib/format';
+import { PILL } from './button-styles';
 
 type VoiceProps = { id: number; name: string; songCount: number };
 
@@ -64,10 +65,6 @@ export function YearCard({
     </Link>
   );
 }
-
-/** 小さな丸いボタンの形。「すべて表示」と右上のログインで同じ形を使う */
-export const PILL =
-  'shrink-0 rounded-full border border-accent/40 bg-glass px-3 py-1 text-xs font-bold text-accent transition-[background-color,scale] duration-150 ease-(--ease-out) hover:bg-accent/10 active:scale-95';
 
 /** 見出しの右に置く「すべて表示」 */
 export function MoreLink({ href }: { href: string }) {
