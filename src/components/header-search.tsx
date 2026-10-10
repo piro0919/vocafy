@@ -1,6 +1,7 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from '@bprogress/next/app';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { type Ref, useEffect, useRef, useState } from 'react';
 import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';
@@ -71,7 +72,7 @@ export function HeaderSearch({
       typed.current = false;
       const q = text.trim();
       const url = q ? `/search?q=${encodeURIComponent(q)}` : '/search';
-      if (onSearch) router.replace(url, { scroll: false });
+      if (onSearch) router.replace(url, { scroll: false, showProgress: false });
       else if (q) router.push(url);
     }, 300);
     return () => clearTimeout(id);

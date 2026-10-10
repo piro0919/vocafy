@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@bprogress/next/app';
 import { PILL } from '@/components/button-styles';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
 import { Heading, SECTION } from '@/components/heading';

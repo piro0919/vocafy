@@ -1,4 +1,4 @@
-import type { useRouter } from 'next/navigation';
+import type { useRouter } from '@bprogress/next/app';
 
 /**
  * 動画の画面（ボカロPの画面など）から前の画面に戻る。流している曲は右下の窓に縮む。
@@ -6,6 +6,6 @@ import type { useRouter } from 'next/navigation';
  * いきなりこの画面に来たときは戻る先が無いので、トップへ
  */
 export function leave(router: ReturnType<typeof useRouter>) {
-  if (window.history.length > 1) router.back();
+  if (window.history.length > 1) router.back({ showProgress: false });
   else router.push('/');
 }

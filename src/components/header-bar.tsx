@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from '@bprogress/next/app';
+import { usePathname } from 'next/navigation';
 import { Suspense, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { loadIndex } from '@/lib/search-index';
@@ -38,7 +39,7 @@ export function HeaderBar() {
           aria-label="戻る"
           className={ICON_BUTTON}
           onClick={() => {
-            if (openedFromSite) router.back();
+            if (openedFromSite) router.back({ showProgress: false });
             else router.push('/');
             openedFromSite = false;
           }}

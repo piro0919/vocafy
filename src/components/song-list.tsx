@@ -2,7 +2,7 @@
 
 import type { QueueItem } from '@/lib/catalog';
 import { type ReactNode, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@bprogress/next/app';
 import { toast } from 'sonner';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
