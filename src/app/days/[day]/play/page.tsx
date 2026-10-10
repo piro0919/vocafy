@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
-import { songsOfDay } from '@/lib/catalog';
+import { playlistOfDay } from '@/lib/catalog';
 import { dayLabel } from '@/lib/list-titles';
 
-// 一覧の画面と同じく、次の配備まで作ったページを使い回す。ビルドのときには作らず、最初に開かれたときに作る
-export const revalidate = false;
+// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
+// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return [];
@@ -21,14 +22,15 @@ export async function generateMetadata({
 /** その月日に投稿された曲の再生用の画面（list-player.tsx）。日付の画面の「すべて再生」から */
 export default async function DayPlayPage({ params }: PageProps<'/days/[day]/play'>) {
   const { day } = await params;
-  const { songs, total } = await songsOfDay(day, 1);
-  if (songs.length === 0) notFound();
+  const playlist = await playlistOfDay(day);
+  if (playlist.songs.length === 0) notFound();
   return (
     <div className="pt-4">
       <ListPlayer
         source={`days/${day}`}
-        songs={songs}
-        total={total}
+        songs={playlist.songs}
+        total={playlist.total}
+        pickup={playlist.pickup}
         eyebrow="On This Day"
         title={`${dayLabel(day)}に生まれた曲`}
       />

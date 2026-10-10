@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { playlistCount } from '@/lib/list-titles';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -10,9 +11,6 @@ import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
-
-/** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
-const PAGE_SIZE = 300;
 
 /** 住所は画面の中では変わらないので、見張らない */
 const noSubscribe = () => () => {};
@@ -36,6 +34,7 @@ export function ListPlayer({
   title,
   songs,
   total,
+  pickup = false,
 }: {
   /** 一覧の住所（years/2026 など） */
   source: string;
@@ -43,16 +42,20 @@ export function ListPlayer({
   /** 動画の下の題名（stage-heading.tsx） */
   eyebrow: string;
   title: string;
-  /** 1ページ目の曲 */
+  /** 流す曲（catalog.ts の Playlist。全曲か、全曲から選んだ PICKUP_SIZE 曲） */
   songs: QueueItem[];
+  /** 一覧の全曲の数 */
   total: number;
+  /** songs が全曲から選んだ曲か。代表曲やきょうの出会いのように、もともと少ない一覧は渡さない */
+  pickup?: boolean;
 }) {
   const { current, playing, listSource, playAll, toggle } = usePlayer();
   // この一覧を流しているときに、動画をここに大きく出す
   const here = current !== null && listSource === source;
   // 流している曲の動画の説明文（song-notes.tsx）
   const notes = useStageNotes(here ? current : null);
-  const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // 流すのは songs だけ（多くても PICKUP_SIZE 曲で、1ページに収まる）。続きのページは読み足さない
+  const last = 1;
   // 流している曲がこの一覧の1ページ目にあれば、開いたときに並びをこの一覧にする（use-take-over.ts。どの画面も同じ決まり）。
   // 続きのページも「再生」を押したときと同じく読み足す
   const owner = useMemo(
@@ -68,27 +71,8 @@ export function ListPlayer({
 
   const play = (page: { number: number; songs: QueueItem[] }, at: number) =>
     page.songs.length > 0 && playAll(page.songs, { source, start: page.number, last }, { at });
-  const start = () => {
-    if (!linked || linkedAt >= 0) {
-      play({ number: 1, songs }, Math.max(0, linkedAt));
-      return;
-    }
-    // 住所の曲が1ページ目に無い（301曲目より後の曲を流していて読み込み直した）。2ページ目から順に探し、見つかったページの
-    // その曲から流す。ページは CDN に作り置かれている（/api/list）ので、DB はほぼ起きない。見つからなければ先頭から
-    void (async () => {
-      for (let number = 2; number <= last; number++) {
-        const res = await fetch(`/api/list/${source}/${number}`).catch(() => null);
-        if (!res?.ok) break;
-        const page = (await res.json()) as QueueItem[];
-        const at = page.findIndex((s) => s.songId === linked);
-        if (at >= 0) {
-          play({ number, songs: page }, at);
-          return;
-        }
-      }
-      play({ number: 1, songs }, 0);
-    })();
-  };
+  // 住所の曲（共有されたり読み込み直したりしたとき）が一覧にあれば、そこから流す。無ければ先頭から
+  const start = () => play({ number: 1, songs }, Math.max(0, linkedAt));
 
   // この一覧を流しているあいだは、住所に流している曲を入れる。曲が変わるたびに履歴を増やさずに書き換える
   useEffect(() => {
@@ -119,6 +103,10 @@ export function ListPlayer({
         </SwipeToLeave>
         <StageControls extra={notes.button}>
           <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
+          {/* 流す曲の数（一覧の画面のボタンの横と同じ表記）。スマホは段にアイコンが並んで入らないので出さない */}
+          <p className="text-sm text-muted max-md:hidden [word-break:keep-all]">
+            {playlistCount({ songs, total, pickup })}
+          </p>
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />
@@ -132,7 +120,7 @@ export function ListPlayer({
           source={source}
           page={1}
           songs={songs}
-          total={total}
+          total={songs.length}
           columns={1}
           onOpen={play}
         />

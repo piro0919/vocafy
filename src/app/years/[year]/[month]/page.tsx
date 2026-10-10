@@ -3,12 +3,12 @@ import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { PlayAll } from '@/components/play-all';
 import { VirtualSongList } from '@/components/virtual-song-list';
-import { MONTH, PAGE_SIZE, songsOfMonth } from '@/lib/catalog';
-import { formatCount } from '@/lib/format';
+import { MONTH, playlistOfMonth, songsOfMonth } from '@/lib/catalog';
+import { playlistCount } from '@/lib/list-titles';
 
-// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
-// ビルドのときには作らず、最初に開かれたときに作って残す
-export const revalidate = false;
+// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
+// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return [];
@@ -31,6 +31,7 @@ export default async function MonthPage({ params }: PageProps<'/years/[year]/[mo
   const { songs, total } = await songsOfMonth(Number(year), month, 1);
   if (songs.length === 0) notFound();
   const source = `years/${year}/${month}`;
+  const playlist = await playlistOfMonth(Number(year), month);
   return (
     <>
       <div className="pt-4 pb-4 sm:pb-6">
@@ -38,9 +39,10 @@ export default async function MonthPage({ params }: PageProps<'/years/[year]/[mo
           {year}年{Number(month)}月の曲
         </Heading>
         <PlayAll
-          songs={songs}
-          count={`${formatCount(total)}曲`}
-          list={{ source, page: 1, last: Math.ceil(total / PAGE_SIZE) }}
+          songs={playlist.songs}
+          count={playlistCount(playlist)}
+          list={{ source, page: 1, last: 1 }}
+          pickup={playlist.pickup}
         />
       </div>
       <VirtualSongList source={source} page={1} songs={songs} total={total} />

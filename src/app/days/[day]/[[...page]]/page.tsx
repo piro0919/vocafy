@@ -4,13 +4,12 @@ import { Heading, YEAR_HEADING } from '@/components/heading';
 import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
-import { type DatedItem, PAGE_SIZE, songsOfDay } from '@/lib/catalog';
-import { dayLabel } from '@/lib/list-titles';
-import { formatCount } from '@/lib/format';
+import { type DatedItem, playlistOfDay, songsOfDay } from '@/lib/catalog';
+import { dayLabel, playlistCount } from '@/lib/list-titles';
 
-// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
-// 日付の画面はビルドのときには作らず、最初に開かれたときに作って残す
-export const revalidate = false;
+// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
+// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return [];
@@ -35,6 +34,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
   if (!page) notFound();
   const { songs, total } = await songsOfDay(day, page);
   if (songs.length === 0) notFound();
+  const playlist = await playlistOfDay(day);
   const byYear = Map.groupBy(songs, (s: DatedItem) => s.publishedOn.slice(0, 4));
   return (
     <>
@@ -43,9 +43,10 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
           {dayLabel(day)}に生まれた曲
         </Heading>
         <PlayAll
-          songs={songs}
-          count={`${formatCount(total)}曲`}
-          list={{ source: `days/${day}`, page, last: Math.ceil(total / PAGE_SIZE) }}
+          songs={playlist.songs}
+          count={playlistCount(playlist)}
+          list={{ source: `days/${day}`, page: 1, last: 1 }}
+          pickup={playlist.pickup}
         />
       </div>
       <div className="grid gap-6">

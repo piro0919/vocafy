@@ -6,16 +6,7 @@ import { PlayAllPill } from '@/components/play-all';
 import { Heading, SECTION } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
-import {
-  dailyMix,
-  MIX_SIZE,
-  onThisDay,
-  PAGE_SIZE,
-  songsOfDay,
-  today,
-  voices,
-  years,
-} from '@/lib/catalog';
+import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, today, voices, years } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
 
@@ -39,7 +30,7 @@ export default async function Home() {
   const date = today();
   const [day, dayList, mix, voiceList, yearList] = await Promise.all([
     onThisDay(date, 8),
-    songsOfDay(date.slice(5), 1),
+    playlistOfDay(date.slice(5)),
     dailyMix(date, MIX_SIZE),
     voices(),
     years(),
@@ -57,7 +48,8 @@ export default async function Home() {
           playlist={{
             songs: dayList.songs,
             source: `days/${date.slice(5)}`,
-            last: Math.ceil(dayList.total / PAGE_SIZE),
+            last: 1,
+            pickup: dayList.pickup,
           }}
           hero={hero}
           rest={rest}

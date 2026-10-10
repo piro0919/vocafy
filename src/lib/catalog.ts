@@ -362,6 +362,34 @@ async function paged(
   return { songs: rows.map(toItem), total: rows[0]?.total ?? 0 };
 }
 
+/** サイトが作る一覧（年・歌声・日付）で流す曲の上限。これより多い一覧は、全曲からこの数だけ選んで流す（ピックアップ） */
+const PICKUP_SIZE = 100;
+
+/**
+ * 一覧で流す曲。total は一覧の全曲の数、pickup はその中から PICKUP_SIZE 曲を選んだか。
+ * 1つの一覧を何百曲も続けて聴く人はまずいないので、流すのは PICKUP_SIZE 曲までにする（2026-10-11 に本人と決めた。
+ * 1曲4分として100曲で6時間半）。多い一覧は全曲から日付で決まる並べ替えで選び、同じ日は同じ曲にする（画面に並べた曲と
+ * 流れる並びが食い違わず、共有した相手にも同じ曲が出る）。選んだ曲は新しい順に並べる
+ */
+export type Playlist = { songs: DatedItem[]; total: number; pickup: boolean };
+
+async function playlist(where: string, params: unknown[], first: Paged): Promise<Playlist> {
+  if (first.total <= PICKUP_SIZE) return { songs: first.songs, total: first.total, pickup: false };
+  const n = params.length;
+  const { rows } = await db().query<QueueRow>(
+    `select * from (
+       select q.* from (${QUEUE_SELECT} ${where}) q
+       order by md5(q.id::text || $${n + 1}), q.id limit $${n + 2}
+     ) r
+     order by r.published_on desc, r.id`,
+    [...params, today(), PICKUP_SIZE],
+  );
+  return { songs: rows.map(toItem), total: first.total, pickup: true };
+}
+
+const MONTH_WHERE = "and to_char(s.published_on, 'YYYY-MM') = $1";
+const DAY_WHERE = "and to_char(s.published_on, 'MM-DD') = $1";
+
 /** 年の画面に、1か月あたり出す代表曲の数 */
 const PICKS_PER_MONTH = 5;
 
@@ -398,14 +426,15 @@ export const MONTH = /^(0[1-9]|1[0-2])$/;
 export const songsOfMonth = cache(
   async (year: number, month: string, page: number): Promise<Paged> => {
     if (!Number.isSafeInteger(year) || !MONTH.test(month)) return { songs: [], total: 0 };
-    return paged(
-      "and to_char(s.published_on, 'YYYY-MM') = $1",
-      'q.published_on desc, q.id',
-      [`${year}-${month}`],
-      page,
-    );
+    return paged(MONTH_WHERE, 'q.published_on desc, q.id', [`${year}-${month}`], page);
   },
 );
+
+/** その月に流す曲（Playlist）。月の画面と、その再生用の画面 */
+export const playlistOfMonth = cache(async (year: number, month: string): Promise<Playlist> => {
+  const first = await songsOfMonth(year, month, 1);
+  return playlist(MONTH_WHERE, [`${year}-${month}`], first);
+});
 
 /** 月日（MM-DD）。2月29日も含む。日付として無い月日（02-31 など）は通るが、曲が無いので空になる */
 const MONTH_DAY = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -413,12 +442,13 @@ const MONTH_DAY = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 /** その月日（MM-DD）に投稿された流せる曲。どの年の曲も含めて、新しい順 */
 export const songsOfDay = cache(async (monthDay: string, page: number): Promise<Paged> => {
   if (!MONTH_DAY.test(monthDay)) return { songs: [], total: 0 };
-  return paged(
-    "and to_char(s.published_on, 'MM-DD') = $1",
-    'q.published_on desc, q.id',
-    [monthDay],
-    page,
-  );
+  return paged(DAY_WHERE, 'q.published_on desc, q.id', [monthDay], page);
+});
+
+/** その月日に流す曲（Playlist）。日付の画面・その再生用の画面・トップのきょうの日付の曲の「再生」 */
+export const playlistOfDay = cache(async (monthDay: string): Promise<Playlist> => {
+  const first = await songsOfDay(monthDay, 1);
+  return playlist(DAY_WHERE, [monthDay], first);
 });
 
 export type Voice = { id: number; name: string; songCount: number };
@@ -446,6 +476,8 @@ export const voices = cache(async (): Promise<Voice[]> => {
 const SUNG_BY = `exists (
   select 1 from song_vocalist sv join vocalist v on v.id = sv.vocalist_id
   where sv.song_id = s.id and not sv.support and ${VOICE_OF} = $1)`;
+
+const VOICE_YEAR_WHERE = `and ${SUNG_BY} and extract(year from s.published_on) = $2`;
 
 /** 歌声の画面に、1年あたり出す代表曲の数 */
 const PICKS_PER_YEAR = 5;
@@ -482,14 +514,15 @@ export const findVoice = cache(
 export const songsOfVoiceYear = cache(
   async (id: number, year: number, page: number): Promise<Paged> => {
     if (!Number.isSafeInteger(id) || !Number.isSafeInteger(year)) return { songs: [], total: 0 };
-    return paged(
-      `and ${SUNG_BY} and extract(year from s.published_on) = $2`,
-      'q.published_on desc, q.id',
-      [id, year],
-      page,
-    );
+    return paged(VOICE_YEAR_WHERE, 'q.published_on desc, q.id', [id, year], page);
   },
 );
+
+/** その歌声のその年に流す曲（Playlist）。歌声の年の画面と、その再生用の画面 */
+export const playlistOfVoiceYear = cache(async (id: number, year: number): Promise<Playlist> => {
+  const first = await songsOfVoiceYear(id, year, 1);
+  return playlist(VOICE_YEAR_WHERE, [id, year], first);
+});
 
 /**
  * 検索の索引。2段に分けて配る。検索のたびに DB を読むと、無料プランの計算時間を食う（DB は最後に読まれてから5分動き続ける）ので、

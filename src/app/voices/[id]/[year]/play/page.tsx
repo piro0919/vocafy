@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
-import { songsOfVoiceYear, voices } from '@/lib/catalog';
+import { playlistOfVoiceYear, voices } from '@/lib/catalog';
 
-// 一覧の画面と同じく、次の配備まで作ったページを使い回す。ビルドのときには作らず、最初に開かれたときに作る
-export const revalidate = false;
+// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
+// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return [];
@@ -27,14 +28,15 @@ export default async function VoiceYearPlayPage({ params }: PageProps<'/voices/[
   const { id, year } = await params;
   const voice = await voiceOf(id);
   if (!voice || !/^\d{4}$/.test(year)) notFound();
-  const { songs, total } = await songsOfVoiceYear(voice.id, Number(year), 1);
-  if (songs.length === 0) notFound();
+  const playlist = await playlistOfVoiceYear(voice.id, Number(year));
+  if (playlist.songs.length === 0) notFound();
   return (
     <div className="pt-4">
       <ListPlayer
         source={`voices/${voice.id}/${year}`}
-        songs={songs}
-        total={total}
+        songs={playlist.songs}
+        total={playlist.total}
+        pickup={playlist.pickup}
         eyebrow={String(year)}
         title={`${voice.name}の${year}年の曲`}
       />

@@ -44,18 +44,21 @@ export function PlayAll({
   songs,
   count,
   list,
+  pickup = false,
 }: {
   songs: QueueItem[];
   count: string;
   /** 一覧の住所（years/2010 など）、このページ、最後のページ */
   list?: { source: string; page: number; last: number };
+  /** 全曲から選んだ曲を流すか（catalog.ts の Playlist）。ランダムの矢印と「ピックアップ」にして、ふつうの「再生」と分ける */
+  pickup?: boolean;
 }) {
   const { here, playing, start, toggle } = usePlayAll(songs, list);
   return (
     <div className="mt-3 flex items-center gap-3">
       <button type="button" onClick={() => (here ? toggle() : start())} className={PRIMARY}>
-        <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
-        {here && playing ? '一時停止' : '再生'}
+        <Icon name={here && playing ? 'pause' : pickup ? 'shuffle' : 'play'} className="size-5" />
+        {here && playing ? '一時停止' : pickup ? 'ピックアップ' : '再生'}
       </button>
       {/* 折り返すのは空きの位置だけ。字の間で折ると「（全11,002曲）」の「曲）」だけが次の行に落ちた */}
       <p className="text-sm text-muted [word-break:keep-all]">{count}</p>
@@ -70,9 +73,12 @@ export function PlayAll({
 export function PlayAllPill({
   songs,
   list,
+  pickup = false,
 }: {
   songs: QueueItem[];
   list: { source: string; page: number; last: number };
+  /** 全曲から選んだ曲を流すか（PlayAll と同じ） */
+  pickup?: boolean;
 }) {
   const { here, start, router } = usePlayAll(songs, list);
   return (
@@ -81,8 +87,8 @@ export function PlayAllPill({
       onClick={() => (here ? router.push(`/${list.source}/play`) : start())}
       className={`${PILL} flex items-center gap-1`}
     >
-      <Icon name="play" className="size-3.5" />
-      再生
+      <Icon name={pickup ? 'shuffle' : 'play'} className="size-3.5" />
+      {pickup ? 'ピックアップ' : '再生'}
     </button>
   );
 }

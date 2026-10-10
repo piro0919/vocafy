@@ -4,12 +4,12 @@ import { Heading } from '@/components/heading';
 import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { VirtualSongList } from '@/components/virtual-song-list';
-import { PAGE_SIZE, songsOfVoiceYear, voices } from '@/lib/catalog';
-import { formatCount } from '@/lib/format';
+import { playlistOfVoiceYear, songsOfVoiceYear, voices } from '@/lib/catalog';
+import { playlistCount } from '@/lib/list-titles';
 
-// 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
-// ビルドのときには作らず、最初に開かれたときに作って残す
-export const revalidate = false;
+// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
+// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return [];
@@ -40,6 +40,7 @@ export default async function VoiceYearPage({
   if (!page || !voice || !/^\d{4}$/.test(year)) notFound();
   const { songs, total } = await songsOfVoiceYear(voice.id, Number(year), page);
   if (songs.length === 0) notFound();
+  const playlist = await playlistOfVoiceYear(voice.id, Number(year));
   return (
     <>
       <div className="pt-4 pb-4 sm:pb-6">
@@ -47,13 +48,10 @@ export default async function VoiceYearPage({
           {voice.name}の{year}年の曲
         </Heading>
         <PlayAll
-          songs={songs}
-          count={`${formatCount(total)}曲`}
-          list={{
-            source: `voices/${voice.id}/${year}`,
-            page,
-            last: Math.ceil(total / PAGE_SIZE),
-          }}
+          songs={playlist.songs}
+          count={playlistCount(playlist)}
+          list={{ source: `voices/${voice.id}/${year}`, page: 1, last: 1 }}
+          pickup={playlist.pickup}
         />
       </div>
       <VirtualSongList

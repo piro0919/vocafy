@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
-import { MONTH, songsOfMonth } from '@/lib/catalog';
+import { MONTH, playlistOfMonth } from '@/lib/catalog';
 
-// 一覧の画面と同じく、次の配備まで作ったページを使い回す。ビルドのときには作らず、最初に開かれたときに作る
-export const revalidate = false;
+// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
+// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
+export const revalidate = 86400;
 
 export function generateStaticParams() {
   return [];
@@ -21,14 +22,15 @@ export async function generateMetadata({
 export default async function MonthPlayPage({ params }: PageProps<'/years/[year]/[month]/play'>) {
   const { year, month } = await params;
   if (!/^\d{4}$/.test(year) || !MONTH.test(month)) notFound();
-  const { songs, total } = await songsOfMonth(Number(year), month, 1);
-  if (songs.length === 0) notFound();
+  const playlist = await playlistOfMonth(Number(year), month);
+  if (playlist.songs.length === 0) notFound();
   return (
     <div className="pt-4">
       <ListPlayer
         source={`years/${year}/${month}`}
-        songs={songs}
-        total={total}
+        songs={playlist.songs}
+        total={playlist.total}
+        pickup={playlist.pickup}
         eyebrow={String(year)}
         title={`${year}年${Number(month)}月の曲`}
       />
