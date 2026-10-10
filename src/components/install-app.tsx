@@ -4,20 +4,12 @@ import dynamic from 'next/dynamic';
 import { type ReactNode, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { usePwa } from 'use-pwa';
+import { isAppleDevice } from '@/lib/apple-device';
 import { Icon } from './icon';
 import { ICON, PILL } from './button-styles';
 import { Heading, SECTION } from './heading';
 
 const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false });
-
-/** iOS / iPadOS か。iPad の Safari は Mac を名乗るので、触れる Mac は iPad とみなす */
-function isAppleDevice(): boolean {
-  const agent = window.navigator.userAgent.toLowerCase();
-  return (
-    /iphone|ipad|ipod/.test(agent) ||
-    (agent.includes('macintosh') && window.navigator.maxTouchPoints > 1)
-  );
-}
 
 /**
  * ホーム画面に追加する仕組み（koidamashii・spatto と同じ形）。

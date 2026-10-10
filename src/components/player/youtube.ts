@@ -21,7 +21,7 @@ type YTNamespace = {
   Player: new (
     el: HTMLElement,
     options: {
-      videoId: string;
+      videoId?: string;
       playerVars?: Record<string, number>;
       events?: {
         onReady?: (e: { target: YTPlayer }) => void;
@@ -71,8 +71,8 @@ export function createYouTubeEngine(
   // 準備のできたプレイヤー。準備を待つあいだは null
   let player: YTPlayer | null = null;
   let latest = videoId;
-  // 準備を待つあいだに一時停止を押されたら、準備ができても流さない
-  let wantPlay = true;
+  // 準備を待つあいだに一時停止を押されたら、準備ができても流さない。動画を入れずに作ったときも流さない
+  let wantPlay = videoId !== '';
   let destroyed = false;
 
   void loadYouTubeApi().then((YT) => {
@@ -81,7 +81,8 @@ export function createYouTubeEngine(
     container.replaceChildren(el);
     const first = latest;
     new YT.Player(el, {
-      videoId: first,
+      // 動画を入れずに作ると、空のプレイヤーになる（iPad・iPhone で、押す前に用意しておくとき）
+      ...(first ? { videoId: first } : {}),
       // 表示はなるべく減らす。操作は Vocafy の帯でするので、YouTube の操作バーは出さない。
       // 上部の題名と「YouTube で見る」のロゴは、パラメータでは消せない（消そうとして上に重ねるのは規約違反）
       playerVars: {
@@ -102,7 +103,7 @@ export function createYouTubeEngine(
           // 待つあいだに別の曲が選ばれていたら、その曲に替える（替えると流れ始める）
           if (latest !== first) player.loadVideoById(latest);
           else if (wantPlay) player.playVideo();
-          else player.pauseVideo();
+          else if (first) player.pauseVideo();
         },
         onStateChange: ({ data }) => {
           if (data === YT.PlayerState.PLAYING) {

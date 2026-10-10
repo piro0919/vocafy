@@ -10,9 +10,10 @@ import {
   useRef,
   useState,
 } from 'react';
+import { isAppleDevice } from '@/lib/apple-device';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
-import type { Engine, EngineEvents } from './engine';
+import type { Engine, EngineEvents, Sound } from './engine';
 import { createNiconicoEngine } from './niconico';
 import { createYouTubeEngine } from './youtube';
 import { PlayerKeys } from './player-keys';
@@ -141,6 +142,89 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const niconicoBlocked = useRef(false);
   const skipped = useRef(0);
 
+  /**
+   * プレイヤーを作り、枠の中に自分の入れ物（div）を足して置く。知らせは、いま流しているプレイヤー（player.current）のものだけ拾う
+   */
+  const spawn = useCallback(
+    (service: QueueItem['service'], videoId: string, sound: Sound): Engine | null => {
+      if (!frame.current) return null;
+      // 隠しているプレイヤーの知らせは拾わない（止めたときの一時停止が、流しているニコニコの曲の表示を変えないように）
+      let engine: Engine | null = null;
+      const live =
+        <A extends unknown[]>(f: (...args: A) => void) =>
+        (...args: A) => {
+          if (player.current === engine) f(...args);
+        };
+      const events: EngineEvents = {
+        onPlaying: () => {
+          sounding.current = true;
+          setPlaying(true);
+          setLoading(false);
+        },
+        // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
+        onPaused: () => {
+          sounding.current = false;
+          setPlaying(false);
+          setLoading(false);
+        },
+        onEnded: () => {
+          sounding.current = false;
+          onEnded.current();
+        },
+        // 自動で進んだ先のニコニコの曲なら飛ばして次へ。それ以外は一時停止として扱い、再生ボタンを出す
+        onBlocked: () => {
+          sounding.current = false;
+          setLoading(false);
+          const { queue: q, index: i } = state.current;
+          if (auto.current && q[i]?.service === 'niconico' && skipped.current < q.length) {
+            niconicoBlocked.current = true;
+            skipped.current += 1;
+            autoNext.current = true;
+            nextRef.current(1);
+            return;
+          }
+          setPlaying(false);
+        },
+        // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
+        onError: () => {
+          sounding.current = false;
+          setLoading(false);
+          onEnded.current();
+        },
+      };
+      const box = document.createElement('div');
+      box.className = 'size-full';
+      frame.current.append(box);
+      engine = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
+        box,
+        videoId,
+        sound,
+        {
+          onPlaying: live(events.onPlaying),
+          onPaused: live(events.onPaused),
+          onEnded: live(events.onEnded),
+          onBlocked: live(events.onBlocked),
+          onError: live(events.onError),
+        },
+      );
+      boxes.current.set(engine, box);
+      return engine;
+    },
+    [frame],
+  );
+
+  // iPad・iPhone では、YouTube のプレイヤーを曲を押す前に作っておく（動画は入れない）。押す前から用意できていれば、
+  // 押した操作の中で動画を頼めるので、Safari に1曲目を止められない。作るのを押してからにすると、仕組みの読み込みを
+  // 待つあいだに押した操作の続きとみなされなくなる。ほかの端末は止められないので、開いただけで YouTube を読み込ませない
+  useEffect(() => {
+    if (!isAppleDevice() || player.current || parked.current) return;
+    const engine = spawn('youtube', '', savedVolume());
+    if (!engine) return;
+    const box = boxes.current.get(engine);
+    if (box) box.hidden = true;
+    parked.current = engine;
+  }, [spawn]);
+
   const load = useCallback(
     (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
       auto.current = autoNext.current;
@@ -207,68 +291,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           kept.load(videoId);
           return;
         }
-        if (!frame.current) return;
-        // 隠しているプレイヤーの知らせは拾わない（止めたときの一時停止が、流しているニコニコの曲の表示を変えないように）
-        let engine: Engine | null = null;
-        const live =
-          <A extends unknown[]>(f: (...args: A) => void) =>
-          (...args: A) => {
-            if (player.current === engine) f(...args);
-          };
-        const events: EngineEvents = {
-          onPlaying: () => {
-            sounding.current = true;
-            setPlaying(true);
-            setLoading(false);
-          },
-          // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
-          onPaused: () => {
-            sounding.current = false;
-            setPlaying(false);
-            setLoading(false);
-          },
-          onEnded: () => {
-            sounding.current = false;
-            onEnded.current();
-          },
-          // 自動で進んだ先のニコニコの曲なら飛ばして次へ。それ以外は一時停止として扱い、再生ボタンを出す
-          onBlocked: () => {
-            sounding.current = false;
-            setLoading(false);
-            const { queue: q, index: i } = state.current;
-            if (auto.current && q[i]?.service === 'niconico' && skipped.current < q.length) {
-              niconicoBlocked.current = true;
-              skipped.current += 1;
-              autoNext.current = true;
-              nextRef.current(1);
-              return;
-            }
-            setPlaying(false);
-          },
-          // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
-          onError: () => {
-            sounding.current = false;
-            setLoading(false);
-            onEnded.current();
-          },
-        };
-        const box = document.createElement('div');
-        box.className = 'size-full';
-        frame.current.append(box);
-        engine = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
-          box,
-          videoId,
-          now,
-          {
-            onPlaying: live(events.onPlaying),
-            onPaused: live(events.onPaused),
-            onEnded: live(events.onEnded),
-            onBlocked: live(events.onBlocked),
-            onError: live(events.onError),
-          },
-        );
-        boxes.current.set(engine, box);
-        player.current = engine;
+        player.current = spawn(service, videoId, now);
       };
       // 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。音量を絞りきってから切り替える。
       // 絞っているあいだに別の曲が選ばれたら、絞り終わったときに最後の曲へ替える
@@ -298,7 +321,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
       tick();
     },
-    [frame, waitForSlot, drop],
+    [waitForSlot, drop, spawn],
   );
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
