@@ -10,8 +10,10 @@ export const IMAGE_SIZES = {
   barThumb: { width: 71, height: 40 },
   /** 左のメニューのロゴの影絵 */
   logo: { width: 43, height: 36 },
-  /** 右上の顔写真と、検索の結果のボカロPのアイコン（size-8） */
+  /** 検索の結果のボカロPのアイコン（size-8） */
   avatar: 32,
+  /** 右上の顔写真（size-9）。隣のサイコロ・ログインと同じ高さ */
+  account: 36,
   /** ボカロPの画面の題名のアイコン（sm:size-14） */
   producerIcon: 56,
   /** 表紙の札の顔の画像 */

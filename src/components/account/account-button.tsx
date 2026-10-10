@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useId, useSyncExternalStore } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
-import { ICON, PRIMARY_TEXT } from '@/components/button-styles';
+import { ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 function LoginButton() {
@@ -21,22 +21,27 @@ function SessionAccount() {
   const { data, isPending } = authClient.useSession();
   const id = useId();
   const user = data?.user;
-  if (isPending) return <span className="size-8 shrink-0" />;
+  if (isPending) return <span className="size-9 shrink-0" />;
   if (!user) return <LoginButton />;
   return (
     <>
-      <button type="button" popoverTarget={id} aria-label="アカウント" className={`grid ${ICON}`}>
+      <button
+        type="button"
+        popoverTarget={id}
+        aria-label="アカウント"
+        className={`grid ${ICON_SM}`}
+      >
         {user.image ? (
           <Image
             src={user.image}
             alt=""
-            width={IMAGE_SIZES.avatar}
-            height={IMAGE_SIZES.avatar}
+            width={IMAGE_SIZES.account}
+            height={IMAGE_SIZES.account}
             unoptimized
-            className="size-8 rounded-full"
+            className="size-9 rounded-full"
           />
         ) : (
-          <span className="grid size-8 place-items-center rounded-full bg-miku text-sm font-bold text-on-miku">
+          <span className="grid size-9 place-items-center rounded-full bg-miku text-sm font-bold text-on-miku">
             {user.name.slice(0, 1)}
           </span>
         )}
