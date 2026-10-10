@@ -74,6 +74,14 @@ export function createYouTubeEngine(
   // 準備を待つあいだに一時停止を押されたら、準備ができても流さない。動画を入れずに作ったときも流さない
   let wantPlay = videoId !== '';
   let destroyed = false;
+  // prime で音を消して流している途中か。一度でも流れたら primed（もう要らない）
+  let priming = false;
+  let primed = false;
+  /** prime をやめて、消していた音を戻す */
+  const endPrime = () => {
+    priming = false;
+    if (!sound.muted) player?.unMute();
+  };
 
   void loadYouTubeApi().then((YT) => {
     if (destroyed) return;
@@ -106,7 +114,15 @@ export function createYouTubeEngine(
           else if (first) player.pauseVideo();
         },
         onStateChange: ({ data }) => {
+          if (data === YT.PlayerState.PLAYING && priming) {
+            // 許しが付いたので、すぐ止める。知らせは出さない（このプレイヤーは隠れていて、流しているのはニコニコの曲）
+            primed = true;
+            player?.stopVideo();
+            endPrime();
+            return;
+          }
           if (data === YT.PlayerState.PLAYING) {
+            primed = true;
             // 字幕は出さない。止めるパラメータは無く（cc_load_policy は出す側の 1 しか無い）、資料に無い unloadModule で外す。
             // 字幕の仕組みは流し始めてから読み込まれ、onApiChange の時点で外しても出た。流れ始めるたびに外す
             player?.unloadModule('captions');
@@ -117,7 +133,10 @@ export function createYouTubeEngine(
         },
         // 押す操作の無い再生をブラウザに止められた（iPad の Safari で、プレイヤーを作って最初の曲など）。
         // 状態は未開始のまま何も届かない。ボタンから playVideo を送れば流れる
-        onAutoplayBlocked: () => events.onBlocked(),
+        onAutoplayBlocked: () => {
+          if (priming) endPrime();
+          else events.onBlocked();
+        },
         // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）。消えた・非公開（100）と
         // 埋め込み不可（101・150）は、台帳から外せるよう Vocafy に知らせる。ほかの番号は一時的な失敗のことがあるので知らせない
         onError: ({ data }) => {
@@ -131,6 +150,7 @@ export function createYouTubeEngine(
   return {
     service: 'youtube',
     load: (id) => {
+      if (priming) endPrime();
       latest = id;
       wantPlay = true;
       // 前の動画を止めてから次の動画を頼む。止めずに頼むと、次の動画が届くまで前の動画が鳴り続け、
@@ -160,6 +180,12 @@ export function createYouTubeEngine(
       current: player?.getCurrentTime() ?? 0,
       duration: player?.getDuration() ?? 0,
     }),
+    prime: (id) => {
+      if (primed || priming || !player) return;
+      priming = true;
+      player.mute();
+      player.loadVideoById(id);
+    },
     destroy: () => {
       destroyed = true;
       // 準備を待つあいだのプレイヤーは destroy も持たないので、枠ごと外すだけにする

@@ -213,6 +213,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [frame],
   );
 
+  /** 隠している YouTube のプレイヤーに、押した操作の中で許しを付けておく（engine.ts の prime）。並びに YouTube の曲が無ければ要らない */
+  const primeParked = useCallback((items: QueueItem[]) => {
+    const youtube = items.find((s) => s.service === 'youtube');
+    if (youtube) parked.current?.prime?.(youtube.videoId);
+  }, []);
+
   // iPad・iPhone では、YouTube のプレイヤーを曲を押す前に作っておく（動画は入れない）。押す前から用意できていれば、
   // 押した操作の中で動画を頼めるので、Safari に1曲目を止められない。作るのを押してからにすると、仕組みの読み込みを
   // 待つあいだに押した操作の続きとみなされなくなる。ほかの端末は止められないので、開いただけで YouTube を読み込ませない
@@ -253,6 +259,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setTime({ current: 0, duration: 0, at: performance.now() });
       const { service, videoId } = items[at];
+      // 自分で押したニコニコの曲なら、押した操作のうちに隠している YouTube のプレイヤーに許しを付け、あとに続く YouTube の曲が止められないようにする
+      if (!auto.current && service === 'niconico') primeParked(items);
       if (!auto.current || service !== 'niconico') skipped.current = 0;
       else if (niconicoBlocked.current && skipped.current < items.length) {
         skipped.current += 1;
@@ -321,7 +329,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
       tick();
     },
-    [waitForSlot, drop, spawn],
+    [waitForSlot, drop, spawn, primeParked],
   );
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
@@ -778,7 +786,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const { queue: q } = state.current;
         if (q[i]) load(q, i, contextRef.current);
       },
-      toggle: () => (playing ? player.current?.pause() : player.current?.play()),
+      toggle: () => {
+        if (playing) {
+          player.current?.pause();
+          return;
+        }
+        if (player.current?.service === 'niconico') primeParked(state.current.queue);
+        player.current?.play();
+      },
       step,
       close,
       seek: (seconds) => {
@@ -841,6 +856,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       holdingSlot,
       sleep,
       setSleep,
+      primeParked,
     ],
   );
 

@@ -17,6 +17,11 @@ export type Engine = {
   setMuted(muted: boolean): void;
   /** いまの再生位置と長さ（秒）。まだ分からなければ 0 */
   time(): { current: number; duration: number };
+  /**
+   * 押した操作の中で、音を消して一度だけ流してすぐ止める（YouTube だけ）。iPad の Safari は、一度押して流れたプレイヤーなら
+   * 押す操作なしでも流すので、ニコニコの曲を押したときに、隠している YouTube のプレイヤーにも許しを付けておく
+   */
+  prime?(videoId: string): void;
   destroy(): void;
 };
 
