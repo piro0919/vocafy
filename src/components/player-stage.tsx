@@ -195,7 +195,9 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
 
   return (
     <>
-      <div ref={row} className="flex items-center gap-2 max-lg:-mt-3 lg:mt-4">
+      {/* 段の高さはアイコンのボタン（40px）にそろえる。共有のボタンがある画面と無い画面で段の高さが変わり、
+          ボカロPの画面へ移ったときに再生ボタンが 2px ずれた */}
+      <div ref={row} className="flex min-h-10 items-center gap-2 max-lg:-mt-3 lg:mt-4">
         {children}
       </div>
       <div

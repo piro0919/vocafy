@@ -650,6 +650,20 @@ export async function songsByIds(ids: number[]): Promise<QueueItem[]> {
   });
 }
 
+/** id で引いたボカロPの名前・画像・本人の場所。動画の下に流している曲のボカロPを出すとき（/api/producer/[id]） */
+export async function producerCard(
+  id: number,
+): Promise<{ id: number; name: string; picture: string | null; links: ProducerLinks } | undefined> {
+  if (!Number.isSafeInteger(id)) return;
+  const { rows } = await db().query<{
+    id: number;
+    name: string;
+    picture: string | null;
+    links: ProducerLinks;
+  }>('select id, name, picture, links from producer where id = $1', [id]);
+  return rows[0];
+}
+
 /** id で引いたボカロPの名前と画像。並びは ids のとおり。もう台帳に無い人は落とす */
 export async function producersByIds(
   ids: number[],
