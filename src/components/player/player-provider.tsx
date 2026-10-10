@@ -830,7 +830,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setRadioHome(null);
     adopt([now], 0);
     setContext('pending');
-  }, [adopt, clearMore]);
+    // ボカロPの画面が開くまで、いまの画面の置き場所に動画を出し続ける。出し続けないと、この画面がもう持ち主でなくなり、
+    // 開くまでの一瞬だけ右下の窓になった
+    holdSlot();
+  }, [adopt, clearMore, holdSlot]);
 
   // ラジオで流す順の終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
   // いまの曲の関連曲がどれも並びに入っているとき（ラジオの画面で一覧の最後の曲を押したときなど）は、並びの後ろの曲から
