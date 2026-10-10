@@ -11,7 +11,7 @@ import {
   sourcesOf,
   vocalistsOf,
 } from './lib/pick';
-import { legendVideos } from './lib/niconico';
+import { deadNiconico, legendVideos } from './lib/niconico';
 import {
   artist,
   rootVoicebank,
@@ -141,6 +141,11 @@ async function youtubeSongs(after: string): Promise<VdbSong[]> {
  * 曲をまとめて外したりニコニコに切り替えたりしないため。2026-10-09 の時点で 103 本。本当に増えたときは線を上げる
  */
 const MAX_DEAD = 300;
+/**
+ * ニコニコで流せないとみなした動画がこれより多ければ、同じ理由で書かずに止める。2026-10-11 に、ニコニコだけの 5443 曲を
+ * 確かめて 52 本だった（その分は DB から外し、unplayable の表に記録してある）
+ */
+const MAX_DEAD_NICONICO = 300;
 
 /**
  * 自動の取り込みが新しいボカロPを探す範囲。この日数のうちに出た曲だけを、伝説入りと YouTube の再生数の線にかける。
@@ -346,14 +351,26 @@ async function main() {
       ];
     }),
   );
+  // YouTube で流せない曲は、ニコニコの埋め込みのページも確かめる。センシティブ扱いの動画と消えた動画は、
+  // VocaDB に残っていても流せない（--dry では確かめない）
+  const deadNico = await deadNiconico(
+    [...sources.values()].flatMap((s) => (!s.youtubeId && s.niconicoId ? [s.niconicoId] : [])),
+  );
+  for (const found of sources.values())
+    if (found.niconicoId && deadNico.has(found.niconicoId)) found.niconicoId = null;
   const dropped = all.filter((s) => {
     const found = sources.get(s.id)!;
     return !found.youtubeId && !found.niconicoId;
   });
   const kept = all.filter((s) => !dropped.includes(s));
   console.log(
-    `YouTube で流せない動画 ${dead.size} 本（ニコニコに切り替え ${dead.size - dropped.length} 曲・外す ${dropped.length} 曲）`,
+    `流せない動画: YouTube ${dead.size} 本・ニコニコ ${deadNico.size} 本（外す ${dropped.length} 曲。ほかは YouTube からニコニコに切り替え）`,
   );
+  if (deadNico.size > MAX_DEAD_NICONICO) {
+    throw new Error(
+      `ニコニコで流せない動画が ${MAX_DEAD_NICONICO} 本を超えたので書きません。data/raw/niconico/embed.json を確かめてください`,
+    );
+  }
   if (dead.size > MAX_DEAD) {
     throw new Error(
       `YouTube で流せない動画が ${MAX_DEAD} 本を超えたので書きません。data/raw/youtube/oembed.json を確かめてください`,

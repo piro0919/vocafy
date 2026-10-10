@@ -66,3 +66,53 @@ export async function legendVideos(since?: string): Promise<string[]> {
   await writeFile(CACHE, JSON.stringify(ids));
   return ids;
 }
+
+/**
+ * ニコニコの動画が、まだ埋め込んで流せるかを確かめる。埋め込みのページ（https://embed.nicovideo.jp/watch/sm…）が
+ * 200 なら流せる、403・404 なら流せないとみなす。2026-10-11 に、再生中に流せないと分かった 52 本で、センシティブ扱いの
+ * 動画（ニコニコ動画でのみ視聴できる）が 403、消えた動画が 404 を返し、生きている動画が 200 を返すのを確かめた。
+ * 動画の情報の窓口（getthumbinfo）はセンシティブ扱いの動画でも embeddable が 1 のままなので使わない。
+ * ほかの返事は分からないとして流せる側に置き、次の取り込みで確かめ直す。
+ *
+ * 結果は data/raw/niconico/embed.json に残し、CHECK_AGAIN_DAYS 日たったものだけ確かめ直す。相手に負荷をかけないよう、
+ * 1 秒に 1 回までにする
+ */
+const EMBED_CACHE = new URL('../../data/raw/niconico/embed.json', import.meta.url);
+const CHECK_AGAIN_DAYS = 30;
+const EMBED_DEAD = new Set([403, 404]);
+const PROGRESS_EVERY = 500;
+
+type Checked = { ok: boolean; at: string };
+
+/** 流せないニコニコの動画の ID */
+export async function deadNiconico(ids: string[]): Promise<Set<string>> {
+  let cache: Record<string, Checked> = {};
+  try {
+    cache = JSON.parse(await readFile(EMBED_CACHE, 'utf8')) as Record<string, Checked>;
+  } catch {
+    // まだ確かめていない
+  }
+  const fresh = Date.now() - CHECK_AGAIN_DAYS * 24 * 60 * 60 * 1000;
+  const todo = [...new Set(ids)].filter((id) => {
+    const hit = cache[id];
+    return !hit || Date.parse(hit.at) < fresh;
+  });
+  if (todo.length > 0)
+    console.log(`ニコニコの埋め込みを確かめます: ${todo.length} 本（1 秒に 1 本）`);
+  for (const [i, id] of todo.entries()) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 1000));
+    try {
+      const res = await fetch(`https://embed.nicovideo.jp/watch/${id}`, {
+        headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' },
+      });
+      if (res.ok || EMBED_DEAD.has(res.status))
+        cache[id] = { ok: res.ok, at: new Date().toISOString() };
+    } catch {
+      // 分からない。次の取り込みで確かめ直す
+    }
+    if ((i + 1) % PROGRESS_EVERY === 0) console.log(`  ${i + 1}/${todo.length}`);
+  }
+  await mkdir(new URL('.', EMBED_CACHE), { recursive: true });
+  await writeFile(EMBED_CACHE, JSON.stringify(cache));
+  return new Set(ids.filter((id) => cache[id]?.ok === false));
+}
