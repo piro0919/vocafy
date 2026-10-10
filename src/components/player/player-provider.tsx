@@ -23,6 +23,10 @@ import { createYouTubeEngine } from './youtube';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
 import { DOCK, DockStrip, FADE, HIDDEN } from './dock-strip';
+import { clearResume, readResume, saveResume } from './player-resume';
+import { FadeImage } from '../fade-image';
+import { Icon } from '../icon';
+import { COVER_PLAY } from '../button-styles';
 import { buildOrder } from './play-order';
 import { savedPlayback, savedVolume, savePlayback, saveVolume } from './player-storage';
 import type {
@@ -55,6 +59,9 @@ const UPCOMING_LIMIT = 10;
 
 /** ラジオで足せる関連曲を探すときに、関連曲を聞く曲の数の上限 */
 const RADIO_TRIES = 6;
+
+/** 流しているあいだ、どこまで聴いたかを残す間隔（ミリ秒） */
+const SAVE_EVERY_MS = 5000;
 
 /** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
 const FADE_OUT_MS = 150;
@@ -107,6 +114,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     contextRef.current = context;
   }, [context]);
   const [time, setTime] = useState<PlaybackTime>({ current: 0, duration: 0, at: 0 });
+  // 開き直したときに戻した、まだ流していない前の曲（player-resume.ts）。プレイヤーはまだ作っておらず、再生を押すと続きから流す。
+  // resumeAt は続きの位置（秒）で、鳴り始めたところでそこへ飛ぶ
+  const [resumable, setResumable] = useState(false);
+  const resumeAt = useRef<number | null>(null);
   const { slot, setSlot, holdingSlot, holdSlot, waitingForSlot, waitForSlot } = useSlot();
   const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
   // いまの形。置き場所を待つか決めるときに読む。右下の窓がもう出ているなら待たない（waits）
@@ -238,6 +249,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           sounding.current = true;
           if (pausing.current === engine) pausing.current = null;
           if (quiet.current && quiet.current === engine) rise(engine);
+          // 戻した前の曲を流し始めたら、聴いていた位置へ飛ぶ
+          if (resumeAt.current !== null && engine) {
+            engine.seek(resumeAt.current);
+            resumeAt.current = null;
+          }
           setPlaying(true);
           setLoading(false);
         },
@@ -347,6 +363,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const load = useCallback(
     (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
       keepAwake();
+      setResumable(false);
       // 一時停止の前に絞っている途中なら、やめる。同じプレイヤーで次の曲を流すので、そのままだと次の曲が止まる
       if (pauseFade.current) clearTimeout(pauseFade.current);
       pauseFade.current = null;
@@ -890,6 +907,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [context, index, position, queue, extend]);
 
   const close = useCallback(() => {
+    clearResume();
+    setResumable(false);
+    resumeAt.current = null;
     sleepRef.current = null;
     setSleepState(null);
     setRadioHome(null);
@@ -924,6 +944,79 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, 500);
     return () => clearInterval(id);
   }, [playing]);
+
+  // 開いたときに、12時間以内に流していた前の曲があれば、止まった状態で戻す（player-resume.ts）。プレイヤーは作らない
+  useEffect(() => {
+    const saved = readResume();
+    if (!saved) return;
+    soundRef.current = savedVolume();
+    setSound(soundRef.current);
+    playbackRef.current = savedPlayback();
+    setPlayback(playbackRef.current);
+    order.current = saved.order;
+    positionRef.current = Math.max(0, saved.order.indexOf(saved.index));
+    setPosition(positionRef.current);
+    state.current = { queue: saved.queue, index: saved.index };
+    setQueue(saved.queue);
+    setIndex(saved.index);
+    setContext(saved.context);
+    setListSource(saved.listSource);
+    setRadioHome(saved.radioHome);
+    resumeAt.current = saved.position;
+    setTime({ current: saved.position, duration: saved.duration, at: performance.now() });
+    setResumable(true);
+  }, []);
+
+  /** 戻した前の曲を、聴いていた位置から流す（再生を押したとき） */
+  const resume = useCallback(() => {
+    const { queue: q, index: i } = state.current;
+    if (!q[i]) return;
+    const at = resumeAt.current;
+    load(q, i, contextRef.current === 'pending' ? 'list' : contextRef.current);
+    // load は位置を 0 に戻すので、続きの位置を戻す（鳴り始めたところでそこへ飛ぶ）
+    resumeAt.current = at;
+  }, [load]);
+
+  // 流しているあいだ、並びとどこまで聴いたかを残す。曲や並びが替わったときと、数秒ごと（時刻を拾うたび。SAVE_EVERY_MS で間引く）、
+  // ページを離れるとき。戻したまま流していないあいだは、残したものをそのまま使う
+  const listSourceRef = useRef(listSource);
+  const radioHomeRef = useRef(radioHome);
+  useEffect(() => {
+    listSourceRef.current = listSource;
+    radioHomeRef.current = radioHome;
+  }, [listSource, radioHome]);
+  const lastSaved = useRef(0);
+  const writeResume = useCallback(() => {
+    const { queue: q, index: i } = state.current;
+    if (q.length === 0) return;
+    const t = player.current?.time();
+    saveResume({
+      queue: q,
+      index: i,
+      order: order.current,
+      position: t?.current ?? 0,
+      duration: t?.duration ?? 0,
+      context: contextRef.current === 'pending' ? 'list' : contextRef.current,
+      listSource: listSourceRef.current,
+      radioHome: radioHomeRef.current,
+    });
+    lastSaved.current = performance.now();
+  }, []);
+  useEffect(() => {
+    if (resumable || queue.length === 0) return;
+    writeResume();
+  }, [resumable, queue, index, context, listSource, radioHome, writeResume]);
+  useEffect(() => {
+    if (resumable || !playing) return;
+    if (performance.now() - lastSaved.current > SAVE_EVERY_MS) writeResume();
+  }, [time, resumable, playing, writeResume]);
+  useEffect(() => {
+    const onHide = () => {
+      if (!resumable && state.current.queue.length > 0) writeResume();
+    };
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [resumable, writeResume]);
 
   const current = queue[index] ?? null;
   useWakeLock(playing);
@@ -976,7 +1069,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const { queue: q } = state.current;
         if (q[i]) load(q, i, contextRef.current);
       },
+      resumable,
+      resume,
       toggle: () => {
+        if (resumable) {
+          resume();
+          return;
+        }
         const p = player.current;
         // 絞っている途中にもう一度押されたら、止めるのをやめて音量を戻す
         if (pauseFade.current) {
@@ -1022,6 +1121,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       step,
       close,
       seek: (seconds) => {
+        if (resumable) resumeAt.current = seconds;
         player.current?.seek(seconds);
         setTime((t) => ({ ...t, current: seconds, at: performance.now() }));
       },
@@ -1058,6 +1158,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }),
     [
       rise,
+      resumable,
+      resume,
       waitForSlot,
       waits,
       queue,
@@ -1112,12 +1214,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         ref={frame}
         // E2E テストや確かめのときに、プレイヤーの枠を見つける目印
         data-player-frame
-        className={
+        className={`${
           mode === 'slot'
             ? 'fixed z-10 overflow-hidden bg-black md:rounded-2xl [&_iframe]:size-full'
             : `chrome-bottom ${DOCK} ${FADE} z-30 overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60 [&_iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
-        }
+        } ${resumable ? 'invisible' : ''}`}
       />
+      {/* 戻した前の曲をまだ流していないあいだ、右下の窓の場所に、その曲の表紙と再生ボタンを出す（動画の枠は隠している）。
+          持ち主の画面では、その画面の大きな動画の場所に出す（player-stage.tsx） */}
+      {resumable && mode === 'dock' && current && (
+        <button
+          type="button"
+          onClick={resume}
+          aria-label={`「${current.title}」の続きを再生`}
+          className={`chrome-bottom ${DOCK} group z-30 overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60`}
+        >
+          <FadeImage src={current.thumb} alt="" fill sizes="356px" className="object-cover" />
+          <span className={`absolute top-1/2 left-1/2 size-14 -translate-1/2 ${COVER_PLAY}`}>
+            <Icon name="play" className="size-8" />
+          </span>
+        </button>
+      )}
       {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
       <PlayerBar item={shown} open={queue.length > 0} />
       <PlayerKeys />

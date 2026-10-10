@@ -40,7 +40,7 @@ export function PlayerStage({
   label: string;
   onPlay: () => void;
 }) {
-  const { setSlot, holdingSlot } = usePlayer();
+  const { setSlot, holdingSlot, resumable, resume, current } = usePlayer();
   const slot = useRef<HTMLDivElement>(null);
   // 画面を移るあいだ（holdSlot）は、動画を出していた置き場所は、この画面の持ち主でなくなっても出し続ける
   const [wasOn, setWasOn] = useState(active);
@@ -71,7 +71,33 @@ export function PlayerStage({
       </div>
       <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-40 max-md:bg-background">
         {on ? (
-          <div ref={slot} className="aspect-video w-full bg-black md:rounded-2xl" />
+          <div
+            ref={slot}
+            className="relative aspect-video w-full overflow-hidden bg-black md:rounded-2xl"
+          >
+            {/* 開き直したときに戻した前の曲をまだ流していないあいだは、動画の枠を隠し、その曲の表紙と再生ボタンを出す
+                （player-resume.ts）。押すと聴いていた位置から流れる */}
+            {resumable && current && (
+              <button
+                type="button"
+                onClick={resume}
+                aria-label={`「${current.title}」の続きを再生`}
+                className="group absolute inset-0 block"
+              >
+                <FadeImage
+                  src={current.thumb}
+                  alt=""
+                  fill
+                  loading="eager"
+                  sizes="(min-width: 1024px) 60vw, 100vw"
+                  className="object-cover"
+                />
+                <span className={`absolute top-1/2 left-1/2 size-16 -translate-1/2 ${COVER_PLAY}`}>
+                  <Icon name="play" className="size-9" />
+                </span>
+              </button>
+            )}
+          </div>
         ) : (
           <button
             type="button"

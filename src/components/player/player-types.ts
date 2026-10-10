@@ -104,6 +104,13 @@ export type PlayerContext = {
   upcoming: () => { item: QueueItem; index: number }[];
   /** 並びの index 番目の曲へ飛ぶ。並びと流す順はそのまま */
   jumpTo: (index: number) => void;
+  /**
+   * 開き直したときに戻した、まだ流していない前の曲があるか（player-resume.ts）。あいだは動画の枠を隠し、
+   * 持ち主の画面なら大きな動画の場所に、それ以外なら右下の窓の場所に、その曲の表紙と再生ボタンを出す
+   */
+  resumable: boolean;
+  /** 戻した前の曲を、聴いていた位置から流す */
+  resume: () => void;
   toggle: () => void;
   step: (dir: 1 | -1) => void;
   /** 再生をやめ、プレイヤーを消す */
