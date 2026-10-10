@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import { frameOf } from '@/lib/thumb';
+import { publishAmbientColors } from './ambient-colors';
 import { usePlayer } from './player/player-provider';
 
 /**
@@ -98,6 +99,13 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
   }
   const progress = videoId && time.duration > 0 ? Math.min(1, time.current / time.duration) : 0;
   const colors = images.length === 0 ? BRAND_COLORS : blend(stops, progress);
+
+  // 流している曲の色を、Vocafy Visualizer にも渡す（ambient-colors.ts）。まだ読めていないあいだは前の色のまま
+  const songColors = videoId && colors ? colors.join('|') : null;
+  useEffect(() => {
+    if (!videoId) publishAmbientColors(null);
+    else if (songColors) publishAmbientColors(songColors.split('|') as Colors);
+  }, [videoId, songColors]);
 
   // 曲や画面が変わったとき、シークで大きく飛んだときは層を重ねてふわっと入れ替える。
   // 再生が進むだけのときは、いまの層の色をそのまま書き換える（0.5 秒ごとの小さな差なので段は見えない）。

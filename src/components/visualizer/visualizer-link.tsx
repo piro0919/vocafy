@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
+import { readAmbientColors, subscribeAmbientColors } from '../ambient-colors';
 import { usePlayer } from '../player/player-provider';
 import { readVisualizer, subscribeVisualizer } from './visualizer-store';
 
@@ -23,30 +24,73 @@ function artworkOf(item: QueueItem): string[] {
 }
 
 /**
- * 連携がオンのとき、流している曲の情報を Vocafy Visualizer に送る。曲が変わったときと、再生・一時停止が
- * 変わったときに送り、つなぎ直したときも送り直す。音には触れない。画面には何も出さない
+ * CSS の色（hsl()・color-mix()・var() を含んでよい）を #rrggbb にする。ブラウザに計算させ、
+ * 1画素のキャンバスに塗って読む。アプリは CSS を読めないので、送る前に直す
+ */
+function toHex(css: string): string {
+  const probe = document.createElement('span');
+  probe.style.color = css;
+  document.body.append(probe);
+  const computed = getComputedStyle(probe).color;
+  probe.remove();
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return '#39c5bb';
+  ctx.fillStyle = computed;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * いま画面に当たっているキャラの色（`<html data-voice>`）。歌っているキャラの色に変える設定が ON なら曲ごとに変わり、
+ * 切り替えは View Transitions のあとに当たるので、保存したサイトカラーではなく属性そのものを見張る
+ */
+function readHtmlVoice(): string {
+  return document.documentElement.dataset.voice ?? 'miku';
+}
+
+function subscribeHtmlVoice(callback: () => void) {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-voice'] });
+  return () => observer.disconnect();
+}
+
+/**
+ * 連携がオンのとき、流している曲の情報と、棒に塗る2色を Vocafy Visualizer に送る。
+ * 色は画面の上部の背景と同じ、サムネから取った2色（再生位置に合わせて移る）。何も流していないときはサイトカラー。
+ * 変わるたびに送り、つなぎ直したときも送り直す。音には触れない。画面には何も出さない
  */
 export function VisualizerLink() {
   const on = useSyncExternalStore(subscribeVisualizer, readVisualizer, () => false);
+  const ambient = useSyncExternalStore(subscribeAmbientColors, readAmbientColors, () => null);
+  const voice = useSyncExternalStore(subscribeHtmlVoice, readHtmlVoice, () => 'miku');
   const { current, playing } = usePlayer();
   const socket = useRef<WebSocket | null>(null);
-  const message = current
-    ? JSON.stringify({
+  /** つないだ直後に送る、いちばん新しい情報 */
+  const latest = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!on) return;
+    // 曲の色が無いときはサイトカラー。--miku は明るい画面でも暗い画面でも明るい差し色
+    const colors = (ambient?.split('|') ?? ['var(--miku)', 'var(--miku)']).map(toHex);
+    const message = JSON.stringify({
+      song: current && {
         title: current.title,
         producer: current.producerName,
         vocalists: current.vocalists,
         artwork: artworkOf(current),
         playing,
-      })
-    : null;
-  /** つないだ直後に送る、いちばん新しい情報 */
-  const latest = useRef<string | null>(null);
-
-  useEffect(() => {
+      },
+      colors,
+      voice,
+    });
     latest.current = message;
     const ws = socket.current;
-    if (message && ws?.readyState === WebSocket.OPEN) ws.send(message);
-  }, [message]);
+    if (ws?.readyState === WebSocket.OPEN) ws.send(message);
+  }, [on, current, playing, ambient, voice]);
 
   useEffect(() => {
     if (!on) return;
