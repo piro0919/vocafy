@@ -89,7 +89,9 @@ export function ProducerPlayer({
     if (!here || !current || context !== 'pending') return;
     const at = queue.findIndex((q) => q.songId === current.songId);
     if (at < 0) return;
-    adoptQueue(queue, at);
+    // 並びの種類も「移る途中（pending）」から「この人の曲の並び（list）」に改める。pending のまま残すと、ほかの画面
+    // （お気に入りの曲の画面など）が「移る途中」と見分けられず、並びを横取りしたり、戻ったときに取り戻せなかったりした
+    adoptQueue(queue, at, 'list');
     document.getElementById(`song-${current.songId}`)?.scrollIntoView({ block: 'center' });
   }, [here, current, context, queue, adoptQueue]);
 

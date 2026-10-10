@@ -43,9 +43,10 @@ export type PlayerContext = {
   playQueue: (items: QueueItem[], start: number, context?: PlayContext) => void;
   /**
    * 流している曲は止めずに、順番待ちだけを差し替える。曲の一覧から押したときは、まずその1曲を
-   * 流し始め、ボカロPの画面に着いたところでその人の曲に差し替える（producer-player.tsx）
+   * 流し始め、ボカロPの画面に着いたところでその人の曲に差し替える（producer-player.tsx）。
+   * context を渡すと、並びの種類もそれにする（お気に入りの曲の画面に来たときに、お気に入りの並びにする。favorite-songs.tsx）
    */
-  adoptQueue: (items: QueueItem[], index: number) => void;
+  adoptQueue: (items: QueueItem[], index: number, context?: PlayContext) => void;
   /**
    * 一覧の1ページの曲を流し、並びの終わりが近づいたら、一覧の残りのページの曲を後ろに足していく（play-all.tsx）。
    * ページ数が多い一覧（初音ミクの年など）を、押した時点で全部送らないため

@@ -930,9 +930,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         clearMore();
         load(items, start, ctx);
       },
-      adoptQueue: (items, at) => {
+      adoptQueue: (items, at, ctx) => {
         clearMore();
         adopt(items, at);
+        if (ctx) {
+          beforeRadio.current = null;
+          setRadioHome(null);
+          setContext(ctx);
+        }
       },
       playAll,
       listSource,
