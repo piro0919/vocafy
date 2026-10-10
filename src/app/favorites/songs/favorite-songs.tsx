@@ -13,6 +13,7 @@ import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { SortableSongList } from './sortable-song-list';
+import { useStageNotes } from '@/components/song-notes';
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
@@ -25,6 +26,8 @@ export function FavoriteSongs() {
   const { current, playing, context, playQueue, toggle } = usePlayer();
   // お気に入りの並びのときに、動画をここに大きく出す
   const here = !!current && context === 'favorites';
+  // 流している曲の動画の説明文（song-notes.tsx）
+  const notes = useStageNotes(here ? current : null);
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
   return (
@@ -42,7 +45,7 @@ export function FavoriteSongs() {
           </Heading>
         </SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <StageControls>
+        <StageControls extra={notes.button}>
           <StagePlayButton
             playing={here && playing}
             disabled={songs.length === 0}
@@ -51,8 +54,10 @@ export function FavoriteSongs() {
             onClick={() => (here ? toggle() : play())}
           />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
+          {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
+        {notes.view}
       </div>
 
       {songs.length === 0 ? (

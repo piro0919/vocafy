@@ -16,7 +16,7 @@ import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { ICON } from './button-styles';
-import { SongNotes } from './song-notes';
+import { useStageNotes } from './song-notes';
 
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
@@ -99,25 +99,8 @@ export function ProducerPlayer({
         : 0,
     );
 
-  // 説明文の全文の板（パソコンより狭い幅）。「再生」の段と、動画の下の帯のボタンから開く。パソコンは動画の下に枠で出すので、ボタンは要らない
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [hasNotes, setHasNotes] = useState(false);
-  // 板を開いたボタン（「再生」の段か、動画の下の帯）。閉じたらそこにフォーカスを戻す
-  const notesTrigger = useRef<HTMLButtonElement | null>(null);
-  const notesButton = hasNotes && (
-    <button
-      type="button"
-      onClick={(e) => {
-        notesTrigger.current = e.currentTarget;
-        setNotesOpen((o) => !o);
-      }}
-      aria-label="説明文"
-      title="説明文"
-      className={`grid ${ICON} text-muted hover:text-foreground lg:hidden`}
-    >
-      <Icon name="notes" className="size-5" />
-    </button>
-  );
+  // 流している曲の動画の説明文（ボタンと、動画の下の枠・全文の板）
+  const notes = useStageNotes(here ? current : null);
 
   const share = (
     <ShareButton producerId={producerId} songId={here ? current?.songId : linkedItem?.songId} />
@@ -141,7 +124,7 @@ export function ProducerPlayer({
           extra={
             <>
               {share}
-              {notesButton}
+              {notes.button}
             </>
           }
         >
@@ -150,17 +133,11 @@ export function ProducerPlayer({
             onClick={() => (here ? toggle() : start(linkedItem?.songId))}
           />
           {share}
-          {notesButton}
+          {notes.button}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
-        <SongNotes
-          song={here ? current : null}
-          open={notesOpen}
-          setOpen={setNotesOpen}
-          trigger={notesTrigger}
-          onAvailable={setHasNotes}
-        />
+        {notes.view}
       </div>
 
       <div className="min-w-0">

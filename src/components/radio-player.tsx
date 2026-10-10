@@ -6,6 +6,7 @@ import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './pla
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
+import { useStageNotes } from './song-notes';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -26,6 +27,8 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
     skipsNiconico,
   } = usePlayer();
   const here = current !== null && radioHome === `/radio/${seed.songId}`;
+  // 流している曲の動画の説明文（song-notes.tsx）
+  const notes = useStageNotes(here ? current : null);
   // 届くまでは null。取れなかったときは空にして、元の曲だけのラジオにする
   const [related, setRelated] = useState<QueueItem[] | null>(null);
   useEffect(() => {
@@ -61,14 +64,16 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
           onPlay={() => playRadio(songs, 0)}
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
-        <StageControls>
+        <StageControls extra={notes.button}>
           <StagePlayButton
             playing={here && playing}
             onClick={() => (here ? toggle() : playRadio(songs, 0))}
           />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
+          {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
+        {notes.view}
       </div>
 
       <div className="-mx-1.5 flex flex-col gap-1">

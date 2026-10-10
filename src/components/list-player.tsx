@@ -6,6 +6,7 @@ import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './pla
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
+import { useStageNotes } from './song-notes';
 
 /** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -43,6 +44,8 @@ export function ListPlayer({
   const { current, playing, listSource, playAll, toggle } = usePlayer();
   // この一覧を流しているときに、動画をここに大きく出す
   const here = current !== null && listSource === source;
+  // 流している曲の動画の説明文（song-notes.tsx）
+  const notes = useStageNotes(here ? current : null);
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
@@ -99,11 +102,13 @@ export function ListPlayer({
           onPlay={start}
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
-        <StageControls>
+        <StageControls extra={notes.button}>
           <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
+          {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
+        {notes.view}
       </div>
 
       <div className="-mx-1.5">

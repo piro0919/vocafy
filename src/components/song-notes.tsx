@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom';
 import type { QueueItem } from '@/lib/catalog';
 import { FADE, HIDDEN } from './player/dock-strip';
 import { FloatingPanel } from './player/floating-panel';
+import { Icon } from './icon';
+import { ICON } from './button-styles';
 
 /**
  * 流している曲の動画の説明文。パソコンのボカロPの画面の、動画の列の下に出す。
@@ -14,7 +16,7 @@ import { FloatingPanel } from './player/floating-panel';
  * パソコンより狭い幅では、動画の下に枠を置かず、「再生」の段と動画の下の帯の説明文のボタン（producer-player.tsx）から、動画の下に全文の板を開く。
  * 段の下に頭の2行を出す形（YouTube のアプリと同じ）も試したが、「再生」の段のすぐ下に出るのがいまひとつだった
  */
-export function SongNotes({
+function SongNotes({
   song,
   open,
   setOpen,
@@ -210,4 +212,40 @@ function linkify(text: string) {
       part
     ),
   );
+}
+
+/**
+ * 詳細画面（ボカロPの画面・一覧の再生用の画面・ラジオの画面・お気に入りの曲の画面）に置く説明文。
+ * button は「再生」の段と動画の下の帯に並べる説明文のボタン（パソコンより狭い幅だけ。説明文が無いあいだは null）、
+ * view は動画の下の枠と全文の板。song はその画面で動画を大きく出しているときの曲（出していなければ null）
+ */
+export function useStageNotes(song: QueueItem | null) {
+  const [open, setOpen] = useState(false);
+  const [available, setAvailable] = useState(false);
+  // 板を開いたボタン（「再生」の段か、動画の下の帯）。閉じたらそこにフォーカスを戻す
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const button = available ? (
+    <button
+      type="button"
+      onClick={(e) => {
+        trigger.current = e.currentTarget;
+        setOpen((o) => !o);
+      }}
+      aria-label="説明文"
+      title="説明文"
+      className={`grid ${ICON} text-muted hover:text-foreground lg:hidden`}
+    >
+      <Icon name="notes" className="size-5" />
+    </button>
+  ) : null;
+  const view = (
+    <SongNotes
+      song={song}
+      open={open}
+      setOpen={setOpen}
+      trigger={trigger}
+      onAvailable={setAvailable}
+    />
+  );
+  return { button, view };
 }
