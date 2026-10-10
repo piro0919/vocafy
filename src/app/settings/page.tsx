@@ -7,6 +7,7 @@ import { ThemeSetting } from '@/components/theme/theme-setting';
 import { VoiceSetting } from '@/components/theme/voice-setting';
 import { Heading } from '@/components/heading';
 import { SupportLink } from '@/components/support-link';
+import { VisualizerSetting } from '@/components/visualizer/visualizer-setting';
 
 export const metadata: Metadata = { title: '設定', robots: { index: false } };
 
@@ -21,6 +22,7 @@ export default function SettingsPage() {
       <ThemeSetting />
       <VoiceSetting />
       <DockSetting />
+      <VisualizerSetting />
       <InstallApp />
       <SwipeBackSetting />
       <KeyboardHelp />
