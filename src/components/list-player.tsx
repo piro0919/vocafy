@@ -7,6 +7,7 @@ import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
 import { useStageNotes } from './song-notes';
+import { SingerSilhouette } from './singer-silhouette';
 
 /** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -109,6 +110,7 @@ export function ListPlayer({
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
         {notes.view}
+        <SingerSilhouette song={here ? current : null} />
       </div>
 
       <div className="-mx-1.5">

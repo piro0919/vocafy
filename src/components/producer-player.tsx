@@ -17,6 +17,7 @@ import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { ICON } from './button-styles';
 import { useStageNotes } from './song-notes';
+import { SingerSilhouette } from './singer-silhouette';
 
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
@@ -138,6 +139,7 @@ export function ProducerPlayer({
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
         {notes.view}
+        <SingerSilhouette song={here ? current : null} />
       </div>
 
       <div className="min-w-0">

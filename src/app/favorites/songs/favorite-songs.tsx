@@ -14,6 +14,7 @@ import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { SortableSongList } from './sortable-song-list';
 import { useStageNotes } from '@/components/song-notes';
+import { SingerSilhouette } from '@/components/singer-silhouette';
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
@@ -58,6 +59,7 @@ export function FavoriteSongs() {
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
         {notes.view}
+        <SingerSilhouette song={here ? current : null} />
       </div>
 
       {songs.length === 0 ? (

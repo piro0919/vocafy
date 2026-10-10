@@ -7,6 +7,7 @@ import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
 import { useStageNotes } from './song-notes';
+import { SingerSilhouette } from './singer-silhouette';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -74,6 +75,7 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
         {notes.view}
+        <SingerSilhouette song={here ? current : null} />
       </div>
 
       <div className="-mx-1.5 flex flex-col gap-1">
