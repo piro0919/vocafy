@@ -25,16 +25,17 @@ import { StageHeading } from '@/components/stage-heading';
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
   useRefreshFavorites();
-  const { current, playing, context, playQueue, adoptQueue, toggle } = usePlayer();
+  const { current, playing, context, holdingSlot, playQueue, adoptQueue, toggle } = usePlayer();
   // この画面に来たときに、流している曲がお気に入りに入っていれば、並びをお気に入りにしてその曲から続ける（曲は止めない）。
   // 並びがボカロPの曲などのままだと、この画面は持ち主でなく、動画が右下の窓になった（2026-10-11 に本人と試すと決めた）。
-  // ラジオを聴いているときは切り替えない（確かめに来ただけでラジオが終わらないように）。描く前に切り替え、右下の窓を一瞬も出さない
+  // ラジオでも切り替える（ボカロPの画面と同じ決まり。ラジオはそこで終わる）。描く前に切り替え、右下の窓を一瞬も出さない
   useLayoutEffect(() => {
     // ボカロPの画面へ移る途中（pending）も切り替えない。ボカロPの名前を押して移るあいだ、この画面が並びを取り戻してしまう
-    if (!current || context === 'favorites' || context === 'radio' || context === 'pending') return;
+    // 画面を移っている途中（holdingSlot）も切り替えない（ボカロPの画面と同じ）
+    if (!current || context === 'favorites' || context === 'pending' || holdingSlot) return;
     const at = songs.findIndex((s) => s.songId === current.songId);
     if (at >= 0) adoptQueue(songs, at, 'favorites');
-  }, [current, context, songs, adoptQueue]);
+  }, [current, context, holdingSlot, songs, adoptQueue]);
   // お気に入りの並びのときに、動画をここに大きく出す
   const here = !!current && context === 'favorites';
   // 流している曲の動画の説明文（song-notes.tsx）

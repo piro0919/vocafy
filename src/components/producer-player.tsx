@@ -1,6 +1,13 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
@@ -41,11 +48,20 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, context, listSource, playQueue, adoptQueue, toggle, skipsNiconico } =
-    usePlayer();
-  // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並び・
-  // ラジオの曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
-  // この画面にいるまま動画が右下の窓へ飛んだ
+  const {
+    current,
+    playing,
+    context,
+    listSource,
+    holdingSlot,
+    playQueue,
+    adoptQueue,
+    toggle,
+    skipsNiconico,
+  } = usePlayer();
+  // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
+  // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の曲なら、
+  // 開いたときに並びをこの人の曲に切り替える（下の useLayoutEffect）
   const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
   const here = ownQueue && current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
@@ -94,6 +110,18 @@ export function ProducerPlayer({
     adoptQueue(queue, at, 'list');
     document.getElementById(`song-${current.songId}`)?.scrollIntoView({ block: 'center' });
   }, [here, current, context, queue, adoptQueue]);
+
+  // この画面を開いたときに、流している曲がこの人の一覧に載っていれば、並びをこの人の曲にしてその曲から続ける（曲は止めない）。
+  // お気に入りなどの並びのままだと、この画面は持ち主でなく、動画が右下の窓になった（ブラウザの「進む」で戻って来たときなど。
+  // 2026-10-11 に本人と決めた。お気に入りの曲の画面と同じ決まり）。ラジオでも切り替える（ラジオの画面から「戻る」で戻ったときに
+  // 右下の窓になった。ラジオはそこで終わる）。移る途中（pending。上で差し替える）は切り替えない。描く前に切り替え、右下の窓を一瞬も出さない
+  useLayoutEffect(() => {
+    // 画面を移っている途中（holdingSlot。この画面でラジオのボタンを押してラジオの画面へ移るときなど）も切り替えない。
+    // 切り替えると、始めたばかりのラジオをこの画面が取り戻して終わらせた
+    if (!current || here || context === 'pending' || holdingSlot) return;
+    const at = queue.findIndex((q) => q.songId === current.songId);
+    if (at >= 0) adoptQueue(queue, at, 'list');
+  }, [current, here, context, holdingSlot, queue, adoptQueue]);
 
   const start = (songId?: number) =>
     playQueue(
