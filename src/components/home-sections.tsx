@@ -131,18 +131,24 @@ export function OnThisDay({
  * 日替わりの無作為の並び。表紙をすき間なく敷き詰めた壁で、押すとその曲を流す。
  * 曲名は、マウスを載せたときと、流している曲にだけ重ねる。どの幅でも3〜4行に収める。
  * 4行の壁は、絵ばかりが続いて見る気が薄れ、下の区画も押し下げた（2026-10-09）。
- * どの幅でも3段までにする。パソコンは 6 列で 18 曲、タブレットは 4 列で 12 曲、スマホは 3 列で 9 曲（2026-10-11。スマホの4段も多く見えた）。
- * 出さない曲も、見出しの右の「再生」で開く画面では流れる
+ * どの幅でも3段までにする。パソコンは 6 列×3 段で 18 曲。それより狭い幅は、3段のまま列を横に送って 18 曲を出す
+ * （2026-10-11。スマホの4段は多く見え、一度は 9 曲に減らしたが、ほかの棚と同じく横に送る形にした）
  */
 export function MixWall({ songs }: { songs: DatedItem[] }) {
   const { current, playing } = usePlayer();
   const open = useOpenSong();
   // ニコニコの曲の表紙が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
-  const wall = useRef<HTMLDivElement>(null);
+  const { track: wall, edge, update } = useShelfScroll<HTMLDivElement>();
   usePreload(wall, songs);
   return (
-    <div ref={wall} className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6">
-      {songs.map((song, i) => {
+    // パソコンより狭い幅は、3段のまま列を横に送る（ほかの棚と同じ）。一度に見えるのは3〜4列と、次の列の端
+    <div
+      ref={wall}
+      onScroll={update}
+      style={{ maskImage: edgeMask(edge) }}
+      className="-mx-4 grid auto-cols-[30%] grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-[23%] sm:gap-2 sm:px-8 sm:scroll-pl-8 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
+    >
+      {songs.map((song) => {
         const active = current?.songId === song.songId;
         return (
           <button
@@ -152,7 +158,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             title={song.title}
             data-preload={song.service === 'niconico' ? song.videoId : undefined}
             onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : i >= 9 ? 'max-sm:hidden' : ''}`}
+            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} snap-start`}
           >
             <FadeImage
               src={song.thumb}
