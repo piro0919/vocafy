@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
 import { playlistOfDay } from '@/lib/catalog';
-import { dayLabel } from '@/lib/list-titles';
+import { dayLabel, withPickup } from '@/lib/list-titles';
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
 // 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
@@ -29,7 +29,8 @@ export default async function DayPlayPage({ params }: PageProps<'/days/[day]/pla
       <ListPlayer
         source={`days/${day}`}
         songs={playlist.songs}
-        eyebrow="On This Day"
+        // 全曲から選んだ100曲を流すときは、小さな英字に PICKUP を添える（「2026 PICKUP」。2026-10-11 に本人と決めた）
+        eyebrow={withPickup('On This Day', playlist.pickup)}
         title={`${dayLabel(day)}に生まれた曲`}
       />
     </div>

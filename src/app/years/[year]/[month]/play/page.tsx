@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
+import { withPickup } from '@/lib/list-titles';
 import { MONTH, playlistOfMonth } from '@/lib/catalog';
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
@@ -29,7 +30,8 @@ export default async function MonthPlayPage({ params }: PageProps<'/years/[year]
       <ListPlayer
         source={`years/${year}/${month}`}
         songs={playlist.songs}
-        eyebrow={String(year)}
+        // 全曲から選んだ100曲を流すときは、小さな英字に PICKUP を添える（「2026 PICKUP」。2026-10-11 に本人と決めた）
+        eyebrow={withPickup(String(year), playlist.pickup)}
         title={`${year}年${Number(month)}月の曲`}
       />
     </div>

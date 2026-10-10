@@ -368,21 +368,38 @@ const PICKUP_SIZE = 100;
 /**
  * 一覧で流す曲。total は一覧の全曲の数、pickup はその中から PICKUP_SIZE 曲を選んだか。
  * 1つの一覧を何百曲も続けて聴く人はまずいないので、流すのは PICKUP_SIZE 曲までにする（2026-10-11 に本人と決めた。
- * 1曲4分として100曲で6時間半）。多い一覧は全曲から日付で決まる並べ替えで選び、同じ日は同じ曲にする（画面に並べた曲と
+ * 1曲4分として100曲で6時間半）。多い一覧は全曲から日付で決まる並べ替えで選び（評価点の上位からも少し混ぜる）、同じ日は同じ曲にする（画面に並べた曲と
  * 流れる並びが食い違わず、共有した相手にも同じ曲が出る）。選んだ曲は新しい順に並べる
  */
 export type Playlist = { songs: DatedItem[]; total: number; pickup: boolean };
+
+/**
+ * 全曲から選ぶときに、評価点の上位から選ぶ曲の数と、その上位の範囲。残りは全曲から無作為に選ぶ。
+ * 全曲から完全に無作為だと、知らない曲ばかり続く日があった。きょうの出会い（MIX_POPULAR）と同じく、知っている曲にも出会えるようにする。
+ * 混ぜすぎると、毎日同じ有名曲が出る
+ */
+const PICKUP_POPULAR = 30;
+const PICKUP_POPULAR_POOL = 100;
 
 async function playlist(where: string, params: unknown[], first: Paged): Promise<Playlist> {
   if (first.total <= PICKUP_SIZE) return { songs: first.songs, total: first.total, pickup: false };
   const n = params.length;
   const { rows } = await db().query<QueueRow>(
-    `select * from (
-       select q.* from (${QUEUE_SELECT} ${where}) q
-       order by md5(q.id::text || $${n + 1}), q.id limit $${n + 2}
-     ) r
+    `with base as (
+       select q.*, row_number() over (order by q.rating_score desc, q.id) as rank
+       from (${QUEUE_SELECT} ${where}) q
+     ),
+     popular as (
+       select * from base where rank <= $${n + 4}
+       order by md5(id::text || $${n + 1} || 'popular'), id limit $${n + 3}
+     ),
+     rest as (
+       select * from base where id not in (select id from popular)
+       order by md5(id::text || $${n + 1}), id limit $${n + 2} - (select count(*) from popular)
+     )
+     select * from (select * from popular union all select * from rest) r
      order by r.published_on desc, r.id`,
-    [...params, today(), PICKUP_SIZE],
+    [...params, today(), PICKUP_SIZE, PICKUP_POPULAR, PICKUP_POPULAR_POOL],
   );
   return { songs: rows.map(toItem), total: first.total, pickup: true };
 }

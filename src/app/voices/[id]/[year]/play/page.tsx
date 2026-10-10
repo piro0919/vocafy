@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
+import { withPickup } from '@/lib/list-titles';
 import { playlistOfVoiceYear, voices } from '@/lib/catalog';
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
@@ -35,7 +36,8 @@ export default async function VoiceYearPlayPage({ params }: PageProps<'/voices/[
       <ListPlayer
         source={`voices/${voice.id}/${year}`}
         songs={playlist.songs}
-        eyebrow={String(year)}
+        // 全曲から選んだ100曲を流すときは、小さな英字に PICKUP を添える（「2026 PICKUP」。2026-10-11 に本人と決めた）
+        eyebrow={withPickup(String(year), playlist.pickup)}
         title={`${voice.name}の${year}年の曲`}
       />
     </div>
