@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import type { DatedItem } from '@/lib/catalog';
 import { useFavoriteProducers } from '@/lib/favorites';
 import { Heading, SECTION } from './heading';
-import { SongList } from './song-list';
+import { SongItem, useOpenSong } from './song-list';
+import { edgeMask, useShelfScroll } from './shelf';
 
 /** 新しい曲を読むボカロPの数（お気に入りに足した新しい順） */
 const PRODUCERS = 12;
@@ -12,6 +13,9 @@ const PRODUCERS = 12;
 const SONGS = 12;
 /** 1人のボカロPから読む曲の数（/api/latest/[producer] が返す数） */
 const PER_PRODUCER = 6;
+/** 棚の並べ方。スマホは列を横に送る（行の数は使う側で足す）、パソコンは格子 */
+const SHELF =
+  '-mx-4 grid auto-cols-[88%] grid-flow-col content-start gap-x-3 gap-y-1 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-[min(22rem,80%)] sm:scroll-pl-8 sm:px-8 md:mx-0 md:grid-flow-row md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3 [&::-webkit-scrollbar]:hidden';
 
 /**
  * トップの「お気に入りのボカロPの新曲」。お気に入りに入れたボカロPの新しい曲を、投稿の新しい順に混ぜて並べる。
@@ -21,6 +25,8 @@ const PER_PRODUCER = 6;
  */
 export function FavoriteNewSongs() {
   const { items: producers } = useFavoriteProducers();
+  const { track, edge, update } = useShelfScroll<HTMLUListElement>();
+  const open = useOpenSong();
   const ids = producers.slice(0, PRODUCERS).map((p) => p.id);
   const key = ids.join(',');
   const [loaded, setLoaded] = useState<{ key: string; songs: DatedItem[] } | null>(null);
@@ -58,10 +64,23 @@ export function FavoriteNewSongs() {
         <Heading eyebrow="From Your Favorites">お気に入りのボカロPの新曲</Heading>
       </div>
       {songs ? (
-        <SongList songs={songs} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
+        // スマホは3曲ずつの列にして横に送る（きょうの日付の曲と同じ形）。12曲を縦に並べると棚だけで画面1枚半になり、
+        // 下のきょうの出会いがずっと下に押し出された（2026-10-11）。パソコンは2〜3列の格子のまま
+        <ul
+          ref={track}
+          onScroll={update}
+          style={{ maskImage: edgeMask(edge) }}
+          className={`${SHELF} max-md:grid-rows-3`}
+        >
+          {songs.map((song, i) => (
+            <li key={song.songId} className="min-w-0">
+              <SongItem song={song} eager={i < 6} onOpen={() => open(song)} />
+            </li>
+          ))}
+        </ul>
       ) : (
         // 読み込むあいだは、曲の行の形だけを並べて場所を取っておく。読み終えたときに下の区画が押し下がらないように
-        <div aria-hidden className="grid gap-1 md:grid-cols-2 xl:grid-cols-3">
+        <div aria-hidden className={`${SHELF} max-md:grid-rows-3`}>
           {/* 読み終えたときと同じ数（多くて SONGS 曲）を並べ、高さを合わせる */}
           {Array.from({ length: Math.min(SONGS, ids.length * PER_PRODUCER) }, (_, i) => (
             <div key={i} className="flex items-center gap-3 p-1.5">

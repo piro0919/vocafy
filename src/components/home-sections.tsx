@@ -102,7 +102,7 @@ export function OnThisDay({
             ref={track}
             onScroll={update}
             style={{ maskImage: edgeMask(edge) }}
-            className="-mx-4 grid auto-cols-[88%] grid-flow-col grid-rows-6 content-start gap-x-3 gap-y-1 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-6 sm:-mx-8 sm:auto-cols-[min(22rem,80%)] sm:scroll-pl-8 sm:px-8 lg:mx-0 lg:auto-cols-[90%] lg:grid-rows-7 lg:scroll-pl-6 lg:px-0 [&::-webkit-scrollbar]:hidden"
+            className="-mx-4 grid auto-cols-[88%] grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-6 sm:-mx-8 sm:auto-cols-[min(22rem,80%)] sm:scroll-pl-8 sm:px-8 lg:mx-0 lg:auto-cols-[90%] lg:grid-rows-7 lg:scroll-pl-6 lg:px-0 [&::-webkit-scrollbar]:hidden"
           >
             {rest.map((song) => (
               // 行は曲の一覧と同じ部品。同じ日の曲は年だけ、前後の日から補った曲は月日も添える
@@ -131,7 +131,8 @@ export function OnThisDay({
  * 日替わりの無作為の並び。表紙をすき間なく敷き詰めた壁で、押すとその曲を流す。
  * 曲名は、マウスを載せたときと、流している曲にだけ重ねる。どの幅でも3〜4行に収める。
  * 4行の壁は、絵ばかりが続いて見る気が薄れ、下の区画も押し下げた（2026-10-09）。
- * パソコンは 6 列で 18 曲、それより狭い幅は 12 曲だけ出す
+ * どの幅でも3段までにする。パソコンは 6 列で 18 曲、タブレットは 4 列で 12 曲、スマホは 3 列で 9 曲（2026-10-11。スマホの4段も多く見えた）。
+ * 出さない曲も、見出しの右の「再生」で開く画面では流れる
  */
 export function MixWall({ songs }: { songs: DatedItem[] }) {
   const { current, playing } = usePlayer();
@@ -151,7 +152,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             title={song.title}
             data-preload={song.service === 'niconico' ? song.videoId : undefined}
             onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : ''}`}
+            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : i >= 9 ? 'max-sm:hidden' : ''}`}
           >
             <FadeImage
               src={song.thumb}
