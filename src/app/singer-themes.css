@@ -1,0 +1,660 @@
+/*
+ * 歌っているキャラの差し色とボタンの地。scripts/voice-themes.ts が書き出す（手で直さない）。
+ * html を前に付けるのは、globals.css の :root[data-voice][data-theme] より強くするため
+ */
+html:root[data-singer='初音ミク'][data-theme='dark'] {
+  --accent: #39c5bb;
+  --miku: #39c5bb;
+}
+html:root[data-singer='初音ミク'][data-theme='light'] {
+  --accent: #0b7770;
+  --miku: #39c5bb;
+}
+html:root[data-singer='鏡音リン'][data-theme='dark'] {
+  --accent: #f29b00;
+  --miku: #f29b00;
+}
+html:root[data-singer='鏡音リン'][data-theme='light'] {
+  --accent: #8f5b00;
+  --miku: #f29b00;
+}
+html:root[data-singer='鏡音レン'][data-theme='dark'] {
+  --accent: #f5c400;
+  --miku: #f5c400;
+}
+html:root[data-singer='鏡音レン'][data-theme='light'] {
+  --accent: #7f6600;
+  --miku: #f5c400;
+}
+html:root[data-singer='巡音ルカ'][data-theme='dark'] {
+  --accent: #f37fa6;
+  --miku: #f37fa6;
+}
+html:root[data-singer='巡音ルカ'][data-theme='light'] {
+  --accent: #995069;
+  --miku: #f37fa6;
+}
+html:root[data-singer='KAITO'][data-theme='dark'] {
+  --accent: #6189df;
+  --miku: #799ce4;
+}
+html:root[data-singer='KAITO'][data-theme='light'] {
+  --accent: #3662be;
+  --miku: #799ce4;
+}
+html:root[data-singer='MEIKO'][data-theme='dark'] {
+  --accent: #e15e65;
+  --miku: #e77e83;
+}
+html:root[data-singer='MEIKO'][data-theme='light'] {
+  --accent: #bb2e35;
+  --miku: #e77e83;
+}
+html:root[data-singer='GUMI'][data-theme='dark'] {
+  --accent: #78c13f;
+  --miku: #78c13f;
+}
+html:root[data-singer='GUMI'][data-theme='light'] {
+  --accent: #477225;
+  --miku: #78c13f;
+}
+html:root[data-singer='神威がくぽ'][data-theme='dark'] {
+  --accent: #9879d3;
+  --miku: #ab91db;
+}
+html:root[data-singer='神威がくぽ'][data-theme='light'] {
+  --accent: #7650bb;
+  --miku: #ab91db;
+}
+html:root[data-singer='重音テト'][data-theme='dark'] {
+  --accent: #e45b71;
+  --miku: #ea7b8d;
+}
+html:root[data-singer='重音テト'][data-theme='light'] {
+  --accent: #b8344a;
+  --miku: #ea7b8d;
+}
+html:root[data-singer='IA'][data-theme='dark'] {
+  --accent: #e8b4cf;
+  --miku: #e8b4cf;
+}
+html:root[data-singer='IA'][data-theme='light'] {
+  --accent: #7d6170;
+  --miku: #e8b4cf;
+}
+html:root[data-singer='可不'][data-theme='dark'] {
+  --accent: #7fb7ec;
+  --miku: #7fb7ec;
+}
+html:root[data-singer='可不'][data-theme='light'] {
+  --accent: #4a6a89;
+  --miku: #7fb7ec;
+}
+html:root[data-singer='結月ゆかり'][data-theme='dark'] {
+  --accent: #a679d8;
+  --miku: #b28cdd;
+}
+html:root[data-singer='結月ゆかり'][data-theme='light'] {
+  --accent: #79589e;
+  --miku: #b28cdd;
+}
+html:root[data-singer='歌愛ユキ'][data-theme='dark'] {
+  --accent: #e45d58;
+  --miku: #e97d79;
+}
+html:root[data-singer='歌愛ユキ'][data-theme='light'] {
+  --accent: #b53833;
+  --miku: #e97d79;
+}
+html:root[data-singer='v flower'][data-theme='dark'] {
+  --accent: #a476cd;
+  --miku: #b38dd5;
+}
+html:root[data-singer='v flower'][data-theme='light'] {
+  --accent: #834bb5;
+  --miku: #b38dd5;
+}
+html:root[data-singer='音街ウナ'][data-theme='dark'] {
+  --accent: #f08a3c;
+  --miku: #f08a3c;
+}
+html:root[data-singer='音街ウナ'][data-theme='light'] {
+  --accent: #975726;
+  --miku: #f08a3c;
+}
+html:root[data-singer='ずんだもん'][data-theme='dark'] {
+  --accent: #7cc46b;
+  --miku: #7cc46b;
+}
+html:root[data-singer='ずんだもん'][data-theme='light'] {
+  --accent: #48723e;
+  --miku: #7cc46b;
+}
+html:root[data-singer='小春六花'][data-theme='dark'] {
+  --accent: #b79ad9;
+  --miku: #b79ad9;
+}
+html:root[data-singer='小春六花'][data-theme='light'] {
+  --accent: #715f87;
+  --miku: #b79ad9;
+}
+html:root[data-singer='MAYU'][data-theme='dark'] {
+  --accent: #d9a0dc;
+  --miku: #d9a0dc;
+}
+html:root[data-singer='MAYU'][data-theme='light'] {
+  --accent: #7e5d80;
+  --miku: #d9a0dc;
+}
+html:root[data-singer='Lily'][data-theme='dark'] {
+  --accent: #e3c13b;
+  --miku: #e3c13b;
+}
+html:root[data-singer='Lily'][data-theme='light'] {
+  --accent: #78661f;
+  --miku: #e3c13b;
+}
+html:root[data-singer='SF-A2 開発コード miki'][data-theme='dark'] {
+  --accent: #e45f55;
+  --miku: #e97e75;
+}
+html:root[data-singer='SF-A2 開発コード miki'][data-theme='light'] {
+  --accent: #ae4139;
+  --miku: #e97e75;
+}
+html:root[data-singer='猫村いろは'][data-theme='dark'] {
+  --accent: #e15e65;
+  --miku: #e77f85;
+}
+html:root[data-singer='猫村いろは'][data-theme='light'] {
+  --accent: #be2a33;
+  --miku: #e77f85;
+}
+html:root[data-singer='蒼姫ラピス'][data-theme='dark'] {
+  --accent: #498ce2;
+  --miku: #679fe7;
+}
+html:root[data-singer='蒼姫ラピス'][data-theme='light'] {
+  --accent: #3167ac;
+  --miku: #679fe7;
+}
+html:root[data-singer='星界'][data-theme='dark'] {
+  --accent: #8f7fd9;
+  --miku: #a092df;
+}
+html:root[data-singer='星界'][data-theme='light'] {
+  --accent: #685d9e;
+  --miku: #a092df;
+}
+html:root[data-singer='花隈千冬'][data-theme='dark'] {
+  --accent: #6f9a4a;
+  --miku: #82a762;
+}
+html:root[data-singer='花隈千冬'][data-theme='light'] {
+  --accent: #506f35;
+  --miku: #82a762;
+}
+html:root[data-singer='裏命'][data-theme='dark'] {
+  --accent: #6b84dc;
+  --miku: #8599e2;
+}
+html:root[data-singer='裏命'][data-theme='light'] {
+  --accent: #3a5bd0;
+  --miku: #8599e2;
+}
+html:root[data-singer='知声'][data-theme='dark'] {
+  --accent: #f0a35a;
+  --miku: #f0a35a;
+}
+html:root[data-singer='知声'][data-theme='light'] {
+  --accent: #8b5f34;
+  --miku: #f0a35a;
+}
+html:root[data-singer='足立レイ'][data-theme='dark'] {
+  --accent: #f07a2a;
+  --miku: #f07d2e;
+}
+html:root[data-singer='足立レイ'][data-theme='light'] {
+  --accent: #9e511c;
+  --miku: #f07d2e;
+}
+html:root[data-singer='ナースロボ＿タイプＴ'][data-theme='dark'] {
+  --accent: #eb8fae;
+  --miku: #eb8fae;
+}
+html:root[data-singer='ナースロボ＿タイプＴ'][data-theme='light'] {
+  --accent: #8f576a;
+  --miku: #eb8fae;
+}
+html:root[data-singer='夏色花梨'][data-theme='dark'] {
+  --accent: #b9778b;
+  --miku: #c58d9e;
+}
+html:root[data-singer='夏色花梨'][data-theme='light'] {
+  --accent: #994d64;
+  --miku: #c58d9e;
+}
+html:root[data-singer='宮舞モカ (VOICEPEAK)'][data-theme='dark'] {
+  --accent: #4fb3c9;
+  --miku: #4fb3c9;
+}
+html:root[data-singer='宮舞モカ (VOICEPEAK)'][data-theme='light'] {
+  --accent: #316f7d;
+  --miku: #4fb3c9;
+}
+html:root[data-singer='東北きりたん'][data-theme='dark'] {
+  --accent: #c76f79;
+  --miku: #d18991;
+}
+html:root[data-singer='東北きりたん'][data-theme='light'] {
+  --accent: #b23a48;
+  --miku: #d18991;
+}
+html:root[data-singer='Oliver'][data-theme='dark'] {
+  --accent: #738ab7;
+  --miku: #8b9ec3;
+}
+html:root[data-singer='Oliver'][data-theme='light'] {
+  --accent: #3a5a9a;
+  --miku: #8b9ec3;
+}
+html:root[data-singer='OИE'][data-theme='dark'] {
+  --accent: #f0823a;
+  --miku: #f0823a;
+}
+html:root[data-singer='OИE'][data-theme='light'] {
+  --accent: #9c5426;
+  --miku: #f0823a;
+}
+html:root[data-singer='琴葉茜 & 琴葉葵'][data-theme='dark'] {
+  --accent: #e88bbd;
+  --miku: #e88bbd;
+}
+html:root[data-singer='琴葉茜 & 琴葉葵'][data-theme='light'] {
+  --accent: #8e5573;
+  --miku: #e88bbd;
+}
+html:root[data-singer='SOLARIA'][data-theme='dark'] {
+  --accent: #e2752e;
+  --miku: #e58343;
+}
+html:root[data-singer='SOLARIA'][data-theme='light'] {
+  --accent: #9e5220;
+  --miku: #e58343;
+}
+html:root[data-singer='カゼヒキ'][data-theme='dark'] {
+  --accent: #a2856b;
+  --miku: #b19983;
+}
+html:root[data-singer='カゼヒキ'][data-theme='light'] {
+  --accent: #7a604a;
+  --miku: #b19983;
+}
+html:root[data-singer='狐子'][data-theme='dark'] {
+  --accent: #7fbfe8;
+  --miku: #7fbfe8;
+}
+html:root[data-singer='狐子'][data-theme='light'] {
+  --accent: #486d84;
+  --miku: #7fbfe8;
+}
+html:root[data-singer='心華'][data-theme='dark'] {
+  --accent: #e1589c;
+  --miku: #e779af;
+}
+html:root[data-singer='心華'][data-theme='light'] {
+  --accent: #a84074;
+  --miku: #e779af;
+}
+html:root[data-singer='羽累'][data-theme='dark'] {
+  --accent: #3cc2d0;
+  --miku: #3cc2d0;
+}
+html:root[data-singer='羽累'][data-theme='light'] {
+  --accent: #23727b;
+  --miku: #3cc2d0;
+}
+html:root[data-singer='ゲキヤク'][data-theme='dark'] {
+  --accent: #cc6e75;
+  --miku: #d5888e;
+}
+html:root[data-singer='ゲキヤク'][data-theme='light'] {
+  --accent: #b6353e;
+  --miku: #d5888e;
+}
+html:root[data-singer='桃音モモ'][data-theme='dark'] {
+  --accent: #f08aa0;
+  --miku: #f08aa0;
+}
+html:root[data-singer='桃音モモ'][data-theme='light'] {
+  --accent: #925462;
+  --miku: #f08aa0;
+}
+html:root[data-singer='鳴花ヒメ'][data-theme='dark'] {
+  --accent: #e8628a;
+  --miku: #eb789a;
+}
+html:root[data-singer='鳴花ヒメ'][data-theme='light'] {
+  --accent: #a54662;
+  --miku: #eb789a;
+}
+html:root[data-singer='AVANNA'][data-theme='dark'] {
+  --accent: #d9a83a;
+  --miku: #d9a83a;
+}
+html:root[data-singer='AVANNA'][data-theme='light'] {
+  --accent: #806322;
+  --miku: #d9a83a;
+}
+html:root[data-singer='紲星あかり'][data-theme='dark'] {
+  --accent: #f29a2e;
+  --miku: #f29a2e;
+}
+html:root[data-singer='紲星あかり'][data-theme='light'] {
+  --accent: #915c1c;
+  --miku: #f29a2e;
+}
+html:root[data-singer='波音リツ'][data-theme='dark'] {
+  --accent: #d6676d;
+  --miku: #dd8388;
+}
+html:root[data-singer='波音リツ'][data-theme='light'] {
+  --accent: #ba3038;
+  --miku: #dd8388;
+}
+html:root[data-singer='氷山キヨテル'][data-theme='dark'] {
+  --accent: #7288c0;
+  --miku: #899ccb;
+}
+html:root[data-singer='氷山キヨテル'][data-theme='light'] {
+  --accent: #3b5aa8;
+  --miku: #899ccb;
+}
+html:root[data-singer='さとうささら'][data-theme='dark'] {
+  --accent: #c9a27e;
+  --miku: #c9a27e;
+}
+html:root[data-singer='さとうささら'][data-theme='light'] {
+  --accent: #7b634d;
+  --miku: #c9a27e;
+}
+html:root[data-singer='Eleanor Forte'][data-theme='dark'] {
+  --accent: #d26877;
+  --miku: #da8490;
+}
+html:root[data-singer='Eleanor Forte'][data-theme='light'] {
+  --accent: #b63749;
+  --miku: #da8490;
+}
+html:root[data-singer='闇音レンリ'][data-theme='dark'] {
+  --accent: #e59acb;
+  --miku: #e59acb;
+}
+html:root[data-singer='闇音レンリ'][data-theme='light'] {
+  --accent: #855976;
+  --miku: #e59acb;
+}
+html:root[data-singer='CUL'][data-theme='dark'] {
+  --accent: #e65958;
+  --miku: #eb7b79;
+}
+html:root[data-singer='CUL'][data-theme='light'] {
+  --accent: #c12928;
+  --miku: #eb7b79;
+}
+html:root[data-singer='春日部つむぎ'][data-theme='dark'] {
+  --accent: #e8b830;
+  --miku: #e8b830;
+}
+html:root[data-singer='春日部つむぎ'][data-theme='light'] {
+  --accent: #80651a;
+  --miku: #e8b830;
+}
+html:root[data-singer='洛天依'][data-theme='dark'] {
+  --accent: #4aa3e0;
+  --miku: #4ca4e0;
+}
+html:root[data-singer='洛天依'][data-theme='light'] {
+  --accent: #316c94;
+  --miku: #4ca4e0;
+}
+html:root[data-singer='DEX'][data-theme='dark'] {
+  --accent: #e0b42e;
+  --miku: #e0b42e;
+}
+html:root[data-singer='DEX'][data-theme='light'] {
+  --accent: #7d651a;
+  --miku: #e0b42e;
+}
+html:root[data-singer='鳴花ミコト'][data-theme='dark'] {
+  --accent: #8a86e0;
+  --miku: #9895e4;
+}
+html:root[data-singer='鳴花ミコト'][data-theme='light'] {
+  --accent: #6360a1;
+  --miku: #9895e4;
+}
+html:root[data-singer='マクネナナ'][data-theme='dark'] {
+  --accent: #a8d66a;
+  --miku: #a8d66a;
+}
+html:root[data-singer='マクネナナ'][data-theme='light'] {
+  --accent: #576f37;
+  --miku: #a8d66a;
+}
+html:root[data-singer='DAINA'][data-theme='dark'] {
+  --accent: #5a8bd0;
+  --miku: #779fd8;
+}
+html:root[data-singer='DAINA'][data-theme='light'] {
+  --accent: #3666aa;
+  --miku: #779fd8;
+}
+html:root[data-singer='ギャラ子'][data-theme='dark'] {
+  --accent: #e8c04a;
+  --miku: #e8c04a;
+}
+html:root[data-singer='ギャラ子'][data-theme='light'] {
+  --accent: #7b6627;
+  --miku: #e8c04a;
+}
+html:root[data-singer='健音テイ'][data-theme='dark'] {
+  --accent: #de616e;
+  --miku: #e47f89;
+}
+html:root[data-singer='健音テイ'][data-theme='light'] {
+  --accent: #ba3240;
+  --miku: #e47f89;
+}
+html:root[data-singer='ROSE'][data-theme='dark'] {
+  --accent: #8080d9;
+  --miku: #9696df;
+}
+html:root[data-singer='ROSE'][data-theme='light'] {
+  --accent: #4a4ac8;
+  --miku: #9696df;
+}
+html:root[data-singer='正岡小豆'][data-theme='dark'] {
+  --accent: #be757b;
+  --miku: #c98d92;
+}
+html:root[data-singer='正岡小豆'][data-theme='light'] {
+  --accent: #a6464e;
+  --miku: #c98d92;
+}
+html:root[data-singer='小林抹茶'][data-theme='dark'] {
+  --accent: #77954c;
+  --miku: #8ca567;
+}
+html:root[data-singer='小林抹茶'][data-theme='light'] {
+  --accent: #556e2e;
+  --miku: #8ca567;
+}
+html:root[data-singer='MAIKA'][data-theme='dark'] {
+  --accent: #f06aa0;
+  --miku: #f171a5;
+}
+html:root[data-singer='MAIKA'][data-theme='light'] {
+  --accent: #a3486d;
+  --miku: #f171a5;
+}
+html:root[data-singer='雨衣'][data-theme='dark'] {
+  --accent: #7787be;
+  --miku: #8f9cc9;
+}
+html:root[data-singer='雨衣'][data-theme='light'] {
+  --accent: #4a5fa8;
+  --miku: #8f9cc9;
+}
+html:root[data-singer='KYO'][data-theme='dark'] {
+  --accent: #728bb0;
+  --miku: #899ebd;
+}
+html:root[data-singer='KYO'][data-theme='light'] {
+  --accent: #476694;
+  --miku: #899ebd;
+}
+html:root[data-singer='弦巻マキ'][data-theme='dark'] {
+  --accent: #f0c43a;
+  --miku: #f0c43a;
+}
+html:root[data-singer='弦巻マキ'][data-theme='light'] {
+  --accent: #7d661e;
+  --miku: #f0c43a;
+}
+html:root[data-singer='UNI'][data-theme='dark'] {
+  --accent: #ef6fa8;
+  --miku: #ef72aa;
+}
+html:root[data-singer='UNI'][data-theme='light'] {
+  --accent: #a04a71;
+  --miku: #ef72aa;
+}
+html:root[data-singer='SeeU'][data-theme='dark'] {
+  --accent: #f0a830;
+  --miku: #f0a830;
+}
+html:root[data-singer='SeeU'][data-theme='light'] {
+  --accent: #89601b;
+  --miku: #f0a830;
+}
+html:root[data-singer='りむる'][data-theme='dark'] {
+  --accent: #9b7bbe;
+  --miku: #ad92c9;
+}
+html:root[data-singer='りむる'][data-theme='light'] {
+  --accent: #7a4fa8;
+  --miku: #ad92c9;
+}
+html:root[data-singer='逆音セシル'][data-theme='dark'] {
+  --accent: #e85a8a;
+  --miku: #ec769e;
+}
+html:root[data-singer='逆音セシル'][data-theme='light'] {
+  --accent: #a94265;
+  --miku: #ec769e;
+}
+html:root[data-singer='東北ずん子'][data-theme='dark'] {
+  --accent: #8cc96a;
+  --miku: #8cc96a;
+}
+html:root[data-singer='東北ずん子'][data-theme='light'] {
+  --accent: #4e713b;
+  --miku: #8cc96a;
+}
+html:root[data-singer='雪歌ユフ'][data-theme='dark'] {
+  --accent: #8a8f96;
+  --miku: #999ea4;
+}
+html:root[data-singer='雪歌ユフ'][data-theme='light'] {
+  --accent: #63676c;
+  --miku: #999ea4;
+}
+html:root[data-singer='めろう'][data-theme='dark'] {
+  --accent: #4f9ac4;
+  --miku: #61a4ca;
+}
+html:root[data-singer='めろう'][data-theme='light'] {
+  --accent: #376c89;
+  --miku: #61a4ca;
+}
+html:root[data-singer='ついなちゃん'][data-theme='dark'] {
+  --accent: #e45d54;
+  --miku: #e97d75;
+}
+html:root[data-singer='ついなちゃん'][data-theme='light'] {
+  --accent: #b5382f;
+  --miku: #e97d75;
+}
+html:root[data-singer='無來'][data-theme='dark'] {
+  --accent: #868b95;
+  --miku: #999ca5;
+}
+html:root[data-singer='無來'][data-theme='light'] {
+  --accent: #62666e;
+  --miku: #999ca5;
+}
+html:root[data-singer='四国めたん'][data-theme='dark'] {
+  --accent: #e85aa6;
+  --miku: #ec74b4;
+}
+html:root[data-singer='四国めたん'][data-theme='light'] {
+  --accent: #a74178;
+  --miku: #ec74b4;
+}
+html:root[data-singer='星尘'][data-theme='dark'] {
+  --accent: #7d82d6;
+  --miku: #9497dd;
+}
+html:root[data-singer='星尘'][data-theme='light'] {
+  --accent: #5a5eb1;
+  --miku: #9497dd;
+}
+html:root[data-singer='暗鳴ニュイ'][data-theme='dark'] {
+  --accent: #3cb8c8;
+  --miku: #3cb8c8;
+}
+html:root[data-singer='暗鳴ニュイ'][data-theme='light'] {
+  --accent: #25707a;
+  --miku: #3cb8c8;
+}
+html:root[data-singer='東北イタコ'][data-theme='dark'] {
+  --accent: #7fb8e0;
+  --miku: #7fb8e0;
+}
+html:root[data-singer='東北イタコ'][data-theme='light'] {
+  --accent: #4a6b82;
+  --miku: #7fb8e0;
+}
+html:root[data-singer='ナクモ'][data-theme='dark'] {
+  --accent: #7889a9;
+  --miku: #8f9db7;
+}
+html:root[data-singer='ナクモ'][data-theme='light'] {
+  --accent: #2f4a7a;
+  --miku: #8f9db7;
+}
+html:root[data-singer='Rana'][data-theme='dark'] {
+  --accent: #f29ab8;
+  --miku: #f29ab8;
+}
+html:root[data-singer='Rana'][data-theme='light'] {
+  --accent: #8c596b;
+  --miku: #f29ab8;
+}
+html:root[data-singer='SONiKA'][data-theme='dark'] {
+  --accent: #6f9a3a;
+  --miku: #83a856;
+}
+html:root[data-singer='SONiKA'][data-theme='light'] {
+  --accent: #51702a;
+  --miku: #83a856;
+}
+html:root[data-singer='#kzn'][data-theme='dark'] {
+  --accent: #e24fb6;
+  --miku: #e872c5;
+}
+html:root[data-singer='#kzn'][data-theme='light'] {
+  --accent: #af3289;
+  --miku: #e872c5;
+}

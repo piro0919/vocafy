@@ -16,6 +16,7 @@
     "test": "vitest run",
     "knip": "knip",
     "test:e2e": "playwright test",
+    "voice-themes": "tsx scripts/voice-themes.ts",
     "lighthouse": "pnpm build && lhci autorun",
     "db:up": "docker compose up -d --wait",
     "migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",

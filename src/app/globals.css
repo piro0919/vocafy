@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './singer-themes.css';
 
 /*
  * 色。差し色は初音ミクの髪の青緑（#39c5bb）、暗い地はそれに合わせて青緑を帯びた黒にする。

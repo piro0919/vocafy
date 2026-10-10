@@ -1,5 +1,6 @@
 'use client';
 
+import { COLORS } from '@/lib/voice-color';
 import { VOICE_KEY } from './theme-script';
 
 /**
@@ -69,8 +70,9 @@ export function setVoice(voice: Voice) {
 }
 
 /**
- * 流している曲の歌声の色にする設定（2026-10-10）。ON のあいだは、流している曲の歌声に9人のキャラがいれば、その色にする。
- * 選んだサイトカラー（setVoice）はそのまま残り、9人のいない曲と、何も流していないときはその色に戻る。
+ * 流している曲の歌声の色にする設定（2026-10-10）。ON のあいだは、流している曲の歌声に色のあるキャラ（絵のある82人）がいれば、
+ * 差し色とボタンの地をその色にする（applySinger）。地の色味は選んだサイトカラー（setVoice）のまま。
+ * そのキャラのいない曲と、何も流していないときは、全部が選んだサイトカラーに戻る。
  * はじめは ON（2026-10-10 に本人が決めた）。切ったときだけ 'off' を残す
  */
 const FOLLOW_KEY = 'vocafy-voice-follow';
@@ -93,23 +95,23 @@ export function setFollowVoice(on: boolean) {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
-/** 曲の歌声（「初音ミク・鏡音リン」の形）のうち、先に名前の出てくる9人のキャラ。いなければ null */
-export function voiceOfVocalists(vocalists: string): Voice | null {
+/** 曲の歌声（「初音ミク・鏡音リン」の形）のうち、先に名前の出てくる、色のあるキャラ（voice-color.ts）。いなければ null */
+export function singerOfVocalists(vocalists: string): string | null {
   for (const name of vocalists.split('・')) {
-    const found = VOICES.find((o) => o.label === name.trim());
-    if (found) return found.value;
+    if (Object.hasOwn(COLORS, name.trim())) return name.trim();
   }
   return null;
 }
 
 /**
- * 画面の色だけを変える（保存しない）。歌声に合わせて曲ごとに変えるときに使う。
- * setVoice と違ってフェード（View Transitions）させない。フェードのあいだは画面を写真にして重ねるので、
+ * 歌っているキャラの差し色とボタンの地にする（<html data-singer>。色の中身は singer-themes.css）。null で外す。
+ * 地・札・線の色味はサイトカラー（data-voice）のまま残し、選んだ色を少し残す（2026-10-11 に本人と決めた）。
+ * 保存しない。setVoice と違ってフェード（View Transitions）させない。フェードのあいだは画面を写真にして重ねるので、
  * 曲が変わるたびに動画の絵が止まって見える
  */
-export function applyVoice(voice: Voice) {
-  const now = document.documentElement.dataset.voice ?? 'miku';
-  if (now === voice) return;
-  if (voice === 'miku') delete document.documentElement.dataset.voice;
-  else document.documentElement.dataset.voice = voice;
+export function applySinger(name: string | null) {
+  const root = document.documentElement;
+  if ((root.dataset.singer ?? null) === name) return;
+  if (name === null) delete root.dataset.singer;
+  else root.dataset.singer = name;
 }

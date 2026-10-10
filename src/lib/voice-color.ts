@@ -4,7 +4,7 @@
  * （https://piapro.net/pages/character。色名だけで、色の値は公式に無い。リンはオレンジ、レンはイエロー）。
  * 文字の地には使わない（字は札の地の上に、いつもの字の色で載せる）。表に無い歌声は差し色の青緑
  */
-const COLORS: Record<string, string> = {
+export const COLORS: Record<string, string> = {
   初音ミク: '#39c5bb',
   鏡音リン: '#f29b00',
   鏡音レン: '#f5c400',
