@@ -108,6 +108,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [time, setTime] = useState<PlaybackTime>({ current: 0, duration: 0, at: 0 });
   const { slot, setSlot, holdingSlot, holdSlot, waitingForSlot, waitForSlot } = useSlot();
   const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
+  // いまの形。置き場所を待つか決めるときに読む。右下の窓がもう出ているなら待たない（waits）
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  // 置き場所を待つのは、右下の窓がまだ出ていないときだけ。出ているのに待つと、窓が下へずれて消えてから
+  // 大きな置き場所にふわっと出た。出たまま待てば、置き場所ができたときに右下から大きく移る（use-frame-layout.ts）
+  const waits = useCallback(() => modeRef.current !== 'dock', []);
   // プレイヤーの枠。置き場所か右下の窓に合わせ続ける（use-frame-layout.ts）
   const frame = useFrameLayout(mode, slot);
   // 残しておいた音量は、最初に曲を流したときに読む（サーバーでは localStorage を読めず、帯も曲を流すまで出ない）
@@ -346,7 +354,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setContext(ctx);
       // ラジオの続き（曲送り）でなければ、ラジオを始めた画面は忘れる
       if (ctx !== 'radio') setRadioHome(null);
-      waitForSlot(ctx === 'pending');
+      waitForSlot(ctx === 'pending' && waits());
       if (!soundRef.current) {
         soundRef.current = savedVolume();
         setSound(soundRef.current);
@@ -457,7 +465,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
       tick();
     },
-    [waitForSlot, drop, spawn, primeParked, noteSkip],
+    [waitForSlot, waits, drop, spawn, primeParked, noteSkip],
   );
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
@@ -682,13 +690,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       load(items, at, 'list');
       if (moving) {
         // 一覧の再生用の画面へ移る途中。曲の一覧から押してボカロPの画面へ移るとき（pending）と同じく、置き場所を待つ
-        waitForSlot();
+        waitForSlot(waits());
       }
       const next = (source.start % source.last) + 1;
       more.current = next === source.start ? null : { ...source, next };
       setListSource(source.source);
     },
-    [load, waitForSlot],
+    [load, waitForSlot, waits],
   );
 
   // ラジオを始める前に流していた並び。ラジオをやめたら、ここへ戻す
@@ -718,7 +726,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');
         setRadioHome(home);
-        waitForSlot();
+        waitForSlot(waits());
         return;
       }
       // 関連曲を足すときに、待っているあいだに並びが替わっていないかを同じ配列かどうかで見るので、1つの配列を使い回す
@@ -731,9 +739,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIndex(0);
       setContext('radio');
       setRadioHome(home);
-      waitForSlot();
+      waitForSlot(waits());
     },
-    [load, clearMore, listSource, waitForSlot],
+    [load, clearMore, listSource, waitForSlot, waits],
   );
 
   const playRadio = useCallback(
