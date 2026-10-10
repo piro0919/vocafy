@@ -40,6 +40,7 @@ pnpm dev -p 3100
 
 - `.env.local` は `DATABASE_URL=postgres://vocafy:vocafy@localhost:5434/vocafy` のほか、YOUTUBE_API_KEY とログインの鍵（BETTER_AUTH_SECRET・BETTER_AUTH_URL・GOOGLE_CLIENT_ID・GOOGLE_CLIENT_SECRET）。サイトを動かすだけなら DATABASE_URL だけでよい
 - 手元のサーバーは 3100 番で立てる（`pnpm dev -p 3100`）。Google のログインの戻り先が localhost:3100 のため
+- 住所に `?mock-niconico-blocked` を付けると、iPad の Safari でニコニコの曲が止められたあとの状態で開く（開発用のサーバーだけ。`player-provider.tsx` の mockNiconicoBlocked）。連続再生で飛ばす曲の印、ラジオ画面と次に流れる曲の板から外す見た目を、パソコンで確かめるためのもの。画面を移ると住所から外れるので付け直す
 - VocaDB の返事は `data/raw/vocadb/` に残り、次からはそれを読む（git には入れない）。30日たつと取り直す（`scripts/lib/vocadb.ts` の MAX_AGE_DAYS）。ニコニコの伝説入りの一覧も30日。問い合わせは1秒に1回まで
 - 取り込みは、YouTube の動画が流せるかを oEmbed で確かめる（`scripts/lib/youtube.ts`）。流せない動画の曲はニコニコに切り替え、ニコニコにも無ければ DB から消す。結果は `data/raw/youtube/oembed.json` に残し、30日たったものだけ確かめ直す。初回は 1万4千本で数分かかった。流せないのは、1万4千本を確かめた初回で 25 本、2万 929 本に増えた 2026-10-09 で 103 本（ニコニコに切り替え 50 曲・外す 53 曲）
   - 埋め込みを止めている動画（動画は生きているが、ほかのサイトでは流せない）にも oEmbed が 200 以外を返すかは未確認
