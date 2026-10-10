@@ -8,6 +8,7 @@ import { HeaderBar } from '@/components/header-bar';
 import { HeaderSearch, HeaderSearchFallback } from '@/components/header-search';
 import { MobileTabs, Sidebar } from '@/components/nav';
 import { AccountButton } from '@/components/account/account-button';
+import { MixButton } from '@/components/mix-button';
 import { AccountSync } from '@/components/account/account-sync';
 import { HistoryRecorder } from '@/components/player/history-recorder';
 import { SongTitle } from '@/components/player/song-title';
@@ -94,7 +95,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     <HeaderBar />
                   </Header>
                   {/*
-                    パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。
+                    パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。ログインの左に、きょうの出会いを流すサイコロ。
                     左のメニューと同じく、画面の端から離した角丸の板として画面の上に留める
                   */}
                   <div className="sticky top-0 z-20 hidden px-3 pt-3 md:block">
@@ -102,7 +103,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                       <Suspense fallback={<HeaderSearchFallback />}>
                         <HeaderSearch />
                       </Suspense>
-                      <AccountButton />
+                      <div className="flex items-center gap-2">
+                        <MixButton />
+                        <AccountButton />
+                      </div>
                     </div>
                   </div>
                   <main className="flex-1 px-4 sm:px-8 md:pt-4">{children}</main>
