@@ -417,6 +417,26 @@ body {
   }
 }
 
+/*
+ * 差し色とボタンの地は、歌っているキャラの色（voice-follower.tsx）で曲ごとに変わるので、0.6秒かけて移す。
+ * 色として登録しないと値が文字のまま一瞬で切り替わる。html で移せば、使っている所はすべて受け継いで一緒に移る
+ */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #39c5bb;
+}
+@property --miku {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #39c5bb;
+}
+:root {
+  transition:
+    --accent 600ms var(--ease-out),
+    --miku 600ms var(--ease-out);
+}
+
 /* サイトカラーを変えたときのフェード（voice.ts の setVoice）。ほかの所では View Transitions を使っていない */
 ::view-transition-old(root),
 ::view-transition-new(root) {
