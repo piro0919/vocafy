@@ -5,10 +5,11 @@
  * （帯の ▶ と同じ）。押されたら take で受け取り、プレイヤー（niconico.ts）がそのまま使う。
  *
  * 埋め込みは1つ目が 0.7MB ほど、2つ目からはスクリプトを使い回して 0.2MB ほど（2026-10-10 に測った）。動画は押すまで読み込まない。
- * 抱えるのは MAX まで。見えなくなった曲から古い順に外す
+ * 数の上限は置かず、行が画面から外れたら捨てる。抱える数は、画面に見えているニコニコの曲の数になる。
+ * 初めは 6 つまでにしていたが、ニコニコの曲が多く並ぶ画面で7つ目からの行が1回で流れなかった（2026-10-10 に本人と外した）。
+ * 一番多くなるのは、iPad で昔の年の月の全曲（2段組み）を開いたときで、20〜30 になりうる。iPad のメモリがどこまで耐えるかは測っていない
  */
 const ORIGIN = 'https://embed.nicovideo.jp';
-const MAX = 6;
 
 export type Preloaded = {
   videoId: string;
@@ -22,7 +23,6 @@ type Entry = Preloaded & {
   ready: boolean;
   /** いま見えている曲の行の数 */
   wanted: number;
-  at: number;
 };
 
 let serial = 0;
@@ -47,15 +47,6 @@ export function createNiconicoPool(
     entry.box.remove();
   };
 
-  /** 見えなくなった曲から古い順に外して、空きを作る。空かなければ false */
-  const makeRoom = () => {
-    if (entries.size < MAX) return true;
-    const idle = [...entries.values()].filter((e) => e.wanted === 0).sort((a, b) => a.at - b.at)[0];
-    if (!idle) return false;
-    remove(idle);
-    return true;
-  };
-
   return {
     /** 曲の行が見えた。読み込んでいなければ読み込み始める。返す関数は見えなくなったときに呼ぶ */
     want(videoId: string): () => void {
@@ -63,7 +54,7 @@ export function createNiconicoPool(
       let entry = entries.get(videoId);
       if (!entry) {
         const container = frame();
-        if (!container || !makeRoom()) return () => {};
+        if (!container) return () => {};
         const playerId = `vocafy-pre-${++serial}`;
         const box = document.createElement('div');
         box.className = 'size-full';
@@ -74,14 +65,15 @@ export function createNiconicoPool(
         iframe.src = `${ORIGIN}/watch/${encodeURIComponent(videoId)}?jsapi=1&playerId=${playerId}`;
         box.append(iframe);
         container.append(box);
-        entry = { videoId, playerId, iframe, box, ready: false, wanted: 0, at: 0 };
+        entry = { videoId, playerId, iframe, box, ready: false, wanted: 0 };
         entries.set(videoId, entry);
       }
       const e = entry;
       e.wanted += 1;
-      e.at = performance.now();
       return () => {
         e.wanted = Math.max(0, e.wanted - 1);
+        // 見ている行が無くなったら捨てる。押されて受け取られたあと（take）の埋め込みは、流しているので触らない
+        if (e.wanted === 0 && entries.get(e.videoId) === e) remove(e);
       };
     },
     /** 読み込み済みの埋め込みを受け取る（抱えるのをやめる）。読み込み途中か、無ければ null */
