@@ -69,7 +69,7 @@ export function OnThisDay({
           onClick={() => open(hero)}
           className="group flex min-w-0 flex-col gap-3 text-left sm:flex-row sm:items-end lg:flex-col lg:items-stretch"
         >
-          <span className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-surface shadow-lg shadow-black/10 sm:w-1/2 lg:w-full">
+          <span className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-surface shadow-lift sm:w-1/2 lg:w-full">
             <FadeImage
               src={hero.thumb}
               alt=""
@@ -105,7 +105,7 @@ export function OnThisDay({
             ref={track}
             onScroll={update}
             style={{ maskImage: edgeMask(edge) }}
-            className="-mx-4 grid auto-cols-day grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto px-4 no-scrollbar snap-x scroll-pl-6 sm:-mx-8 sm:auto-cols-day-sm sm:scroll-pl-8 sm:px-8 lg:mx-0 lg:auto-cols-day-lg lg:grid-rows-7 lg:scroll-pl-6 lg:px-0"
+            className="bleed-x grid auto-cols-day grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm lg:mx-0 lg:auto-cols-day-lg lg:grid-rows-7 lg:scroll-px-fade lg:px-0"
           >
             {rest.map((song) => (
               // 行は曲の一覧と同じ部品。同じ日の曲は年だけ、前後の日から補った曲は月日も添える
@@ -149,7 +149,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
       ref={wall}
       onScroll={update}
       style={{ maskImage: edgeMask(edge) }}
-      className="-mx-4 grid auto-cols-mix grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto px-4 no-scrollbar snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-mix-sm sm:gap-2 sm:px-8 sm:scroll-pl-8 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0"
+      className="bleed-x grid auto-cols-mix grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto no-scrollbar snap-x sm:auto-cols-mix-sm sm:gap-2 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0"
     >
       {songs.map((song) => {
         const active = current?.songId === song.songId;

@@ -106,7 +106,7 @@ export function ShelfArrows({
 
 /** 帯の端のぼかし。続きのある側だけ */
 export function edgeMask(edge: { start: boolean; end: boolean }) {
-  return `linear-gradient(to right, transparent, black ${edge.start ? 0 : FADE}px, black calc(100% - ${edge.end ? 0 : FADE}px), transparent)`;
+  return `linear-gradient(to right, transparent, black ${edge.start ? '0px' : FADE}, black calc(100% - ${edge.end ? '0px' : FADE}), transparent)`;
 }
 
 /**
@@ -137,7 +137,7 @@ export function Shelf({
       <div
         ref={track}
         onScroll={update}
-        className="-mx-4 flex snap-x scroll-px-6 gap-2 overflow-x-auto px-4 py-2 no-scrollbar sm:-mx-8 sm:scroll-px-8 sm:px-8 md:mx-0 md:scroll-px-6 md:px-0"
+        className="bleed-x flex snap-x gap-2 overflow-x-auto py-2 no-scrollbar md:mx-0 md:scroll-px-fade md:px-0"
         style={{ maskImage: edgeMask(edge) }}
       >
         {children}

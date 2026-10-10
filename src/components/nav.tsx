@@ -57,7 +57,7 @@ export function Sidebar() {
   const active = useActive();
   return (
     <nav className="fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
-      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-glass px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-glass px-3 pt-4 shadow-float backdrop-blur-lg backdrop-saturate-150">
         <div className="mb-5 px-3">
           <Logo />
         </div>
@@ -103,7 +103,7 @@ export function Sidebar() {
 export function MobileTabs() {
   const active = useActive();
   return (
-    <nav className="chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
+    <nav className="chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 rounded-2xl border border-line/60 bg-glass shadow-float backdrop-blur-lg backdrop-saturate-150 md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}

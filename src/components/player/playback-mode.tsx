@@ -131,7 +131,7 @@ function SleepButton({ className }: { className: string }) {
     setOpen(false);
   };
   const row =
-    'flex w-full items-center rounded-md px-3 py-2.5 text-left text-sm transition-colors duration-react hover:bg-foreground/8';
+    'flex w-full items-center rounded-md px-3 py-2.5 text-left text-sm transition-colors duration-react hover:bg-hover';
   return (
     <>
       <button

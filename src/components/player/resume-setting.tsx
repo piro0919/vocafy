@@ -16,7 +16,7 @@ export function ResumeSetting() {
         <Heading eyebrow="Resume">開き直したとき</Heading>
       </div>
       {/* 行の形は、歌っているキャラの色に変えるの切り替えと同じ */}
-      <label className="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-foreground/8 sm:max-w-sm">
+      <label className="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-hover sm:max-w-sm">
         <input
           type="checkbox"
           checked={on}

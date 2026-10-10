@@ -1217,7 +1217,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         className={`${
           mode === 'slot'
             ? 'fixed z-raised overflow-hidden bg-black md:rounded-2xl [&_iframe]:size-full'
-            : `chrome-bottom ${DOCK} ${FADE} z-chrome overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60 [&_iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
+            : `chrome-bottom ${DOCK} ${FADE} z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark [&_iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
         } ${resumable ? 'invisible' : ''}`}
       />
       {/* 戻した前の曲をまだ流していないあいだ、右下の窓の場所に、その曲の表紙と再生ボタンを出す（動画の枠は隠している）。
@@ -1227,7 +1227,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           type="button"
           onClick={resume}
           aria-label={`「${current.title}」の続きを再生`}
-          className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-2xl ring-1 ring-line/60 shadow-black/20 dark:shadow-black/60`}
+          className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
         >
           <FadeImage src={current.thumb} alt="" fill sizes="356px" className="object-cover" />
           <span className={`absolute top-1/2 left-1/2 size-14 -translate-1/2 ${COVER_PLAY}`}>

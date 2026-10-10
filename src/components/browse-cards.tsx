@@ -81,7 +81,7 @@ export function YearCard({
   return (
     <Link
       href={`/years/${year}`}
-      className={`flex flex-col items-start rounded-2xl border border-line/60 bg-glass px-4 py-3 transition duration-react hover:border-accent/50 hover:bg-accent/10 active:scale-95 ${className}`}
+      className={`flex flex-col items-start rounded-2xl border border-line/60 bg-glass px-4 py-3 transition duration-react hover:border-accent-line hover:bg-hover-accent active:scale-95 ${className}`}
     >
       <span className="font-tech text-2xl font-black text-accent sm:text-3xl">{year}</span>
       <span className="mt-1 text-xs text-muted">{formatCount(count)}曲</span>

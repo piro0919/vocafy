@@ -15,7 +15,7 @@ const SONGS = 12;
 const PER_PRODUCER = 6;
 /** 棚の並べ方。スマホは列を横に送る（行の数は使う側で足す）、パソコンは格子 */
 const SHELF =
-  '-mx-4 grid auto-cols-day grid-flow-col content-start gap-x-3 gap-y-1 overflow-x-auto px-4 no-scrollbar snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-day-sm sm:scroll-pl-8 sm:px-8 md:mx-0 md:grid-flow-row md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3';
+  'bleed-x grid auto-cols-day grid-flow-col content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm md:mx-0 md:grid-flow-row md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3';
 
 /**
  * トップの「お気に入りのボカロPの新曲」。お気に入りに入れたボカロPの新しい曲を、投稿の新しい順に混ぜて並べる。

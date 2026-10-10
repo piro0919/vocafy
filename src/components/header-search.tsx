@@ -7,7 +7,7 @@ import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';
 
 const BOX =
-  'flex h-10 w-full items-center gap-2 rounded-full border border-line/60 bg-glass px-4 focus-within:border-accent/60';
+  'flex h-10 w-full items-center gap-2 rounded-full border border-line/60 bg-glass px-4 focus-within:border-accent-line';
 
 type FieldProps = {
   value: string;

@@ -55,7 +55,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
     },
   ];
   const row =
-    'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-bold text-muted transition-colors hover:bg-foreground/8 hover:text-foreground';
+    'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-bold text-muted transition-colors hover:bg-hover hover:text-foreground';
 
   return (
     <div ref={box} className="relative">
@@ -73,7 +73,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
         // 形は右上のアカウントのメニューと同じ（すりガラスの角丸の板）
         <div
           role="menu"
-          className="absolute top-full left-0 z-overlay mt-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150"
+          className="absolute top-full left-0 z-overlay mt-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-float backdrop-blur-lg backdrop-saturate-150"
         >
           {targets.map((t) => (
             <a

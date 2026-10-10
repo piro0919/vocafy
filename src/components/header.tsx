@@ -9,7 +9,7 @@ import type { ReactNode } from 'react';
 export function Header({ children }: { children: ReactNode }) {
   return (
     <header className="chrome-header sticky top-0 z-header px-gutter pt-gutter md:hidden">
-      <div className="flex h-header items-center rounded-2xl border border-line/60 bg-glass px-2 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+      <div className="flex h-header items-center rounded-2xl border border-line/60 bg-glass px-2 shadow-float backdrop-blur-lg backdrop-saturate-150">
         {children}
       </div>
     </header>

@@ -100,7 +100,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     左のメニューと同じく、画面の端から離した角丸の板として画面の上に留める
                   */}
                   <div className="sticky top-0 z-header hidden px-gutter pt-gutter md:block">
-                    <div className="flex h-header items-center justify-between gap-4 rounded-2xl border border-line/60 bg-glass px-3 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+                    <div className="flex h-header items-center justify-between gap-4 rounded-2xl border border-line/60 bg-glass px-3 shadow-float backdrop-blur-lg backdrop-saturate-150">
                       <Suspense fallback={<HeaderSearchFallback />}>
                         <HeaderSearch />
                       </Suspense>
@@ -110,7 +110,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                       </div>
                     </div>
                   </div>
-                  <main className="flex-1 px-4 sm:px-8 md:pt-content-top">{children}</main>
+                  <main className="page-x flex-1 md:pt-content-top">{children}</main>
                   <SiteFooter />
                 </div>
               </AmbientProvider>

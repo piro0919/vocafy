@@ -43,7 +43,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     <div
       aria-hidden={!open}
       inert={!open}
-      className={`chrome-bottom chrome-bar fixed inset-x-gutter bottom-(--bar-bottom) z-chrome h-bar rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 transition duration-move md:rounded-2xl md:border-b md:shadow-lg md:shadow-black/5 ${
+      className={`chrome-bottom chrome-bar fixed inset-x-gutter bottom-(--bar-bottom) z-chrome h-bar rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 transition duration-move md:rounded-2xl md:border-b md:shadow-float ${
         open ? '' : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >
@@ -275,7 +275,7 @@ function Progress({
         ref={bubble}
         aria-hidden
         data-shown="false"
-        className="pointer-events-none absolute bottom-5 -translate-x-1/2 rounded-md bg-foreground px-2 py-0.5 text-xs font-bold tabular-nums text-background opacity-0 shadow transition-opacity duration-react data-[shown=true]:opacity-100"
+        className="pointer-events-none absolute bottom-5 -translate-x-1/2 rounded-md bg-foreground px-2 py-0.5 text-xs font-bold tabular-nums text-background opacity-0 shadow-mark transition-opacity duration-react data-[shown=true]:opacity-100"
       />
       {/* 見た目の線とつまみは、当たり判定の下の端に置く（スマホで当たり判定を上へ広げても、線の位置は変わらない） */}
       <span className="absolute inset-x-0 bottom-0 h-4">
@@ -287,7 +287,7 @@ function Progress({
         <span
           ref={knob}
           // マウスの無い端末では、どこを狙えばよいか分かるよう、つまみを常に出す
-          className="absolute top-2 size-3 -translate-1/2 scale-0 rounded-full bg-accent shadow transition duration-react group-hover:scale-100 group-focus-visible:scale-100 group-active:scale-100 [@media(hover:none)]:scale-100"
+          className="absolute top-2 size-3 -translate-1/2 scale-0 rounded-full bg-accent shadow-mark transition duration-react group-hover:scale-100 group-focus-visible:scale-100 group-active:scale-100 [@media(hover:none)]:scale-100"
         />
       </span>
     </div>
@@ -330,9 +330,9 @@ function BarButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className={`grid shrink-0 place-items-center rounded-full transition duration-react active:scale-95 disabled:opacity-30 ${className} ${
+      className={`grid shrink-0 place-items-center rounded-full transition duration-react active:scale-95 disabled:opacity-disabled ${className} ${
         large
-          ? 'size-11 bg-miku text-on-miku shadow-md shadow-miku/30 hover:brightness-110 disabled:opacity-100 [&_svg]:size-6'
+          ? 'size-11 bg-miku text-on-miku shadow-press hover:brightness-110 disabled:opacity-100 [&_svg]:size-6'
           : 'size-10 text-muted hover:text-foreground'
       }`}
     >

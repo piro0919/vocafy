@@ -14,7 +14,7 @@ export function SiteFooter() {
 
   return (
     // 375px の幅でも、リンク3つと © が1行に収まるよう、スマホでは字を小さく、間を詰める
-    <footer className="page-bottom flex items-center gap-x-3 px-4 pt-6 text-footer whitespace-nowrap text-muted sm:gap-x-6 sm:px-8 sm:text-sm">
+    <footer className="page-bottom page-x flex items-center gap-x-3 pt-6 text-footer whitespace-nowrap text-muted sm:gap-x-6 sm:text-sm">
       <Link href="/terms" className="hover:text-foreground">
         利用規約
       </Link>

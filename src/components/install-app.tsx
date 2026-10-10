@@ -98,7 +98,7 @@ export function InstallButton({ className = '', menu }: { className?: string; me
         type="button"
         aria-label="アプリをホーム画面に追加"
         onClick={start}
-        className={`grid ${ICON} text-muted hover:text-foreground md:flex md:size-auto md:gap-1.5 md:border md:border-line/60 md:bg-glass md:px-3.5 md:py-2 md:text-sm md:font-bold md:text-foreground md:hover:bg-foreground/8 ${className}`}
+        className={`grid ${ICON} text-muted hover:text-foreground md:flex md:size-auto md:gap-1.5 md:border md:border-line/60 md:bg-glass md:px-3.5 md:py-2 md:text-sm md:font-bold md:text-foreground md:hover:bg-hover ${className}`}
       >
         <Icon name="install" className="size-5" />
         <span className="hidden whitespace-nowrap md:inline">アプリ</span>

@@ -51,7 +51,7 @@ export function ProducerHeading({
       {name}
     </Heading>
   );
-  const hover = 'transition-opacity duration-react hover:opacity-80';
+  const hover = 'transition-opacity duration-react hover:opacity-hover';
   return (
     <div className="flex items-center gap-3">
       {icon &&

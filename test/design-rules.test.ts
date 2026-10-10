@@ -195,4 +195,31 @@ describe('見た目の決まり', () => {
     }
     expect(dupes).toEqual([]);
   });
+
+  // 影・縁・指を乗せたときの地・薄さ・ページの左右の余白も、Tailwind の目盛りから選ばず名前で使う（2026-10-11）
+  it('影は shadow-float・lift・mark・press・dock の名前だけ', () => {
+    expect(
+      offenders(
+        (l) =>
+          /(?<![\w-])shadow(-(sm|md|lg|xl|2xl))?(?=[\s'"`])/.test(l) ||
+          /(?<![\w-])shadow-(black|white|miku|accent)\b/.test(l),
+      ),
+    ).toEqual([]);
+  });
+
+  it('指を乗せたときの地は bg-hover・bg-hover-accent、青緑の縁は border-accent-line', () => {
+    expect(offenders((l) => /hover:bg-[a-z-]+\/\d/.test(l) || /border-accent\/\d/.test(l))).toEqual(
+      [],
+    );
+  });
+
+  it('押せないときと指を乗せたときの薄さは opacity-disabled・opacity-hover（出し入れの 0・100 は除く）', () => {
+    expect(offenders((l) => /(?<![\w-])(disabled|hover):opacity-(?!0\b|100\b)\d/.test(l))).toEqual(
+      [],
+    );
+  });
+
+  it('ページの左右の余白は page-x・bleed-x（px-4 sm:px-8 を書かない）', () => {
+    expect(offenders((l) => /\bsm:-?(px|mx)-8\b/.test(l))).toEqual([]);
+  });
 });

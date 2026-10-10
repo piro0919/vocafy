@@ -156,7 +156,7 @@ export function SwipeBack() {
       data-armed="false"
       style={{ left: 0, transform: `translateX(-${HIDDEN}px)`, opacity: 0 }}
       // 離したら元へ戻る動きだけ付ける（引いているあいだは指に付いてくる）
-      className="pointer-events-none fixed z-overlay grid size-12 place-items-center rounded-full border border-line/60 bg-surface text-foreground shadow-md transition duration-move data-[armed=true]:border-accent data-[armed=true]:bg-accent data-[armed=true]:text-background"
+      className="pointer-events-none fixed z-overlay grid size-12 place-items-center rounded-full border border-line/60 bg-surface text-foreground shadow-float transition duration-move data-[armed=true]:border-accent data-[armed=true]:bg-accent data-[armed=true]:text-background"
     >
       <Icon name={side === 'right' && right === 'forward' ? 'right' : 'left'} className="size-6" />
     </div>

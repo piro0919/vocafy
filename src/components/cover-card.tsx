@@ -33,7 +33,7 @@ export function CoverCard({
     <div
       // マウスを載せたら、人気曲の行と同じく、サムネイルと題名を含むカード全体の地を変える。
       // 地の余白（p-2）の分だけ外へ広げ（-m-2）、並びの位置は変えない
-      className={`group relative -m-2 rounded-lg p-2 transition-colors duration-react hover:bg-foreground/8 ${className}`}
+      className={`group relative -m-2 rounded-lg p-2 transition-colors duration-react hover:bg-hover ${className}`}
     >
       <Link href={href} className="block">
         {round ? (

@@ -184,7 +184,7 @@ export function ProducerPlayer({
                   active || linkedItem?.songId === song.id
                     ? 'border-line/60 bg-glass'
                     : item
-                      ? 'border-transparent hover:bg-foreground/8'
+                      ? 'border-transparent hover:bg-hover'
                       : 'border-transparent'
                 }`}
               >
@@ -318,7 +318,7 @@ function YearJump({ songs }: { songs: Song[] }) {
     // 地は、ほかの浮いた板（左のメニュー・再生の帯）と同じすりガラス。単色で塗ると上部の表紙の色の背景と合わなかった
     <div
       ref={bar}
-      className="sticky top-(--below-stage-controls) z-raised mb-3 rounded-full border border-line/60 bg-glass p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-(--below-header) lg:top-(--content-top)"
+      className="sticky top-(--below-stage-controls) z-raised mb-3 rounded-full border border-line/60 bg-glass p-1 shadow-float backdrop-blur-lg backdrop-saturate-150 md:top-(--below-header) lg:top-(--content-top)"
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
       <ScrollRow label="年ごとに移動" className="gap-1">
@@ -343,7 +343,7 @@ function YearJump({ songs }: { songs: Song[] }) {
             className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition duration-react active:scale-95 ${
               active === year
                 ? 'bg-miku text-on-miku'
-                : 'text-muted hover:bg-foreground/8 hover:text-foreground'
+                : 'text-muted hover:bg-hover hover:text-foreground'
             }`}
           >
             {year}

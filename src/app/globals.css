@@ -218,6 +218,8 @@
   --spacing-sidebar: 15.75rem;
   /* スマホの詳細画面で、動画の下に出す操作の帯の高さ */
   --spacing-stage-controls: 2.5rem;
+  /* 横に送る棚の、続きがある側の端のぼかしの幅。送ったときに止まる位置も、ぼかしにかからないようこの内側にする */
+  --spacing-fade: 24px;
   /* 一覧の小さな表紙の幅 */
   --spacing-thumb: 85px;
   /* 本文の最後の下の余白 */
@@ -244,6 +246,20 @@
   --z-index-chrome: 30;
   --z-index-tabs: 40;
   --z-index-overlay: 50;
+
+  /*
+   * 影（2026-10-11 に本人と決めた）。浮いた板（float）・持ち上げた行と大きな表紙（lift）・小さな印（つまみ・吹き出し）（mark）・
+   * 右下の窓（dock。暗い画面では濃くする）。青緑で塗った押すボタンの影（press）は、キャラの色で変わるので @theme inline にある
+   */
+  --shadow-float: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-lift: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-mark: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-dock: 0 25px 50px -12px rgb(0 0 0 / 0.2);
+  --shadow-dock-dark: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+
+  /* 押せないときの薄さと、画像と字のリンク（ボカロPの名前）に指を乗せたときの薄さ */
+  --opacity-disabled: 40%;
+  --opacity-hover: 80%;
 
   /* 字の大きさと字間（上の小さな英字・スマホの下のタブの字・下の段の字） */
   --text-eyebrow: 0.65rem;
@@ -281,6 +297,27 @@
   --animate-pulse: pulse calc(var(--transition-duration-slow) * 2) ease-in-out infinite;
 }
 
+/*
+ * ページの左右の余白（スマホ 1rem・sm から 2rem）。本文（page-x）と、本文の幅を越えて画面の端まで流す棚（bleed-x。
+ * 余白の分だけ外へ広げて、同じ分だけ中に余白を取り、送ったときに止まる位置も余白の内側にする）で使う
+ */
+:root {
+  --page-x: 1rem;
+}
+@variant sm {
+  :root {
+    --page-x: 2rem;
+  }
+}
+@utility page-x {
+  padding-inline: var(--page-x);
+}
+@utility bleed-x {
+  margin-inline: calc(var(--page-x) * -1);
+  padding-inline: var(--page-x);
+  scroll-padding-inline: max(var(--page-x), var(--spacing-fade));
+}
+
 /* 横に送る棚などの、スクロールバーを見せない入れ物。続きは端のぼかしと矢印で見せる */
 @utility no-scrollbar {
   scrollbar-width: none;
@@ -305,6 +342,14 @@
   --color-art-stand-dark-hover: color-mix(in oklab, var(--c) 60%, var(--sidebar));
   --drop-shadow-art: 3px 4px 0 color-mix(in oklab, var(--c) 55%, black);
   --shadow-art-shine: inset 0 1px 0 rgb(255 255 255 / 0.35);
+  /* 青緑で塗った押すボタンの影 */
+  --shadow-press:
+    0 10px 15px -3px color-mix(in oklab, var(--miku) 30%, transparent),
+    0 4px 6px -4px color-mix(in oklab, var(--miku) 30%, transparent);
+  /* 指を乗せたときの地。行やアイコンは灰色（hover）、青緑の縁の札は青緑（hover-accent）。青緑の縁（accent-line） */
+  --color-hover: color-mix(in oklab, var(--foreground) 8%, transparent);
+  --color-hover-accent: color-mix(in oklab, var(--accent) 10%, transparent);
+  --color-accent-line: color-mix(in oklab, var(--accent) 50%, transparent);
   --color-background: var(--background);
   --color-sidebar: var(--sidebar);
   /* 浮いた板（すりガラス）と、ページの中の札・ボタン・流している曲の行の地。濃さはどれも同じにそろえる */

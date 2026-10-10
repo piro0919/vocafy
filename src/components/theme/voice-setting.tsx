@@ -53,7 +53,7 @@ export function VoiceSetting() {
         ))}
       </div>
       {/* 行の形は、スワイプで戻るの「使う」と同じ */}
-      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-foreground/8 sm:max-w-sm">
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-hover sm:max-w-sm">
         <input
           type="checkbox"
           checked={follow}

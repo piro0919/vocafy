@@ -2,8 +2,8 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-/** 端のぼかしの幅（px）。棚（shelf.tsx）も同じ幅でぼかす */
-export const FADE = 24;
+/** 端のぼかしの幅。棚（shelf.tsx）も同じ幅でぼかす（globals.css の --spacing-fade） */
+export const FADE = 'var(--spacing-fade)';
 
 /**
  * 1行で横にスクロールする並び。スクロールバーは見せず、続きがある側の端だけをぼかす
@@ -48,8 +48,8 @@ export function ScrollRow({
       className={`flex overflow-x-auto no-scrollbar ${className}`}
       style={
         {
-          '--fade-l': edges.left ? `${FADE}px` : '0px',
-          '--fade-r': edges.right ? `${FADE}px` : '0px',
+          '--fade-l': edges.left ? FADE : '0px',
+          '--fade-r': edges.right ? FADE : '0px',
           maskImage:
             'linear-gradient(to right, transparent, black var(--fade-l), black calc(100% - var(--fade-r)), transparent)',
         } as React.CSSProperties
