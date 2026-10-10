@@ -3,14 +3,16 @@ const AGENT = { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' };
 /**
  * 動画の説明文。YouTube は Data API の snippet（1本で1単位）、ニコニコは getthumbinfo の description。
  * DB には残さず、流すたびにその場で聞く（YouTube の API のデータを長く持たないため）。
- * 取れなければ空の文字列を返す。鍵（YOUTUBE_API_KEY）が無い環境でも空を返し、画面には何も出ない。CDN に1日置く
+ * 取れなければ空の文字列を返す。鍵（YOUTUBE_API_KEY）が無い環境でも空を返し、画面には何も出ない。
+ * CDN に14日置き、古くなってからも裏で取り直すあいだ14日まで古い方を返す（説明文はめったに変わらないため。2026-10-11）。
+ * 合わせて28日にしているのは、YouTube の開発者向けポリシーが API のデータを持つのを30日までとしているため
  */
 export async function GET(_req: Request, ctx: RouteContext<'/api/description/[service]/[id]'>) {
   const { service, id } = await ctx.params;
   const text = service === 'youtube' ? await youtube(id) : await niconico(id);
   return Response.json(
     { text },
-    { headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' } },
+    { headers: { 'Cache-Control': 'public, s-maxage=1209600, stale-while-revalidate=1209600' } },
   );
 }
 
