@@ -72,6 +72,9 @@ importers:
       '@lhci/cli':
         specifier: ^0.15.1
         version: 0.15.1
+      '@piro0919/eslint-config':
+        specifier: github:piro0919/eslint-config#v1.0.0
+        version: https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -102,9 +105,6 @@ importers:
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.5(jiti@2.7.0))
-      eslint-plugin-tailwindcss:
-        specifier: 4.4.0
-        version: 4.4.0(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)
       knip:
         specifier: ^6.39.0
         version: 6.39.0
@@ -1187,6 +1187,16 @@ packages:
 
   '@paulirish/trace_engine@0.0.53':
     resolution: {integrity: sha512-PUl/vlfo08Oj804VI5nDPeSk9vyslnBlVzDDwFt8SUVxY8+KdGMkra/vrXjEEHe8gb7+RqVTfOIlGw0nyrEelA==}
+
+  '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543':
+    resolution: {gitHosted: true, integrity: sha512-Jy9gxrIkBtJF8ZL/L5L0grG6Ht+1oNM8HCPvyUwR8TMJlcnZW90+1GVdIglAY/v+PW7tZJh8TwhinIFVY0Hz2g==, tarball: https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543}
+    version: 1.0.0
+    peerDependencies:
+      eslint: ^9.0.0 || ^10.0.0
+      tailwindcss: ^4.0.0
+    peerDependenciesMeta:
+      tailwindcss:
+        optional: true
 
   '@pkgr/core@0.3.6':
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
@@ -3257,8 +3267,8 @@ packages:
     resolution: {integrity: sha512-U69YGDNsZ7R+umeSzdLzORNCHQFz/w4LKyNTjJQcGrQRQCr8hlCJfJwwm9sqq9Uc5N6dImS58ywURA0FkqoHlg==}
     hasBin: true
 
-  legacy-javascript@0.0.1:
-    resolution: {integrity: sha512-lPyntS4/aS7jpuvOlitZDFifBCb4W8L/3QU0PLbUTUj+zYah8rfVjYic88yG7ZKTxhS5h9iz7duT8oUXKszLhg==}
+  legacy-javascript@0.0.2:
+    resolution: {integrity: sha512-6cMw8OPPX9VOgnWwL6Y7vbNCpd45/RmGMrcSJGaOF4FZfTdEbtlSDUs2ZvHleTUsqSDuKthzHvD6C//jW8ETBA==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -5728,8 +5738,18 @@ snapshots:
 
   '@paulirish/trace_engine@0.0.53':
     dependencies:
-      legacy-javascript: 0.0.1
+      legacy-javascript: 0.0.2
       third-party-web: 0.30.0
+
+  '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)':
+    dependencies:
+      eslint: 9.39.5(jiti@2.7.0)
+      eslint-plugin-tailwindcss: 4.4.0(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)
+    optionalDependencies:
+      tailwindcss: 4.3.3
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   '@pkgr/core@0.3.6': {}
 
@@ -7890,7 +7910,7 @@ snapshots:
       lefthook-windows-arm64: 2.1.16
       lefthook-windows-x64: 2.1.16
 
-  legacy-javascript@0.0.1: {}
+  legacy-javascript@0.0.2: {}
 
   levn@0.4.1:
     dependencies:
