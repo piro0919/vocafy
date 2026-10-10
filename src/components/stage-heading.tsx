@@ -57,12 +57,12 @@ export function StageHeading({
             <Image
               src={producer.picture}
               alt=""
-              width={56}
-              height={56}
-              className="size-12 rounded-full bg-surface object-cover sm:size-14"
+              width={48}
+              height={48}
+              className="size-10 rounded-full bg-surface object-cover sm:size-12"
             />
           ) : (
-            <span className="block size-12 rounded-full bg-surface sm:size-14" />
+            <span className="block size-10 rounded-full bg-surface sm:size-12" />
           )}
         </Link>
         {/* 名前の大きさはボカロPの画面の名前と同じ */}
