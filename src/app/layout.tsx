@@ -11,6 +11,7 @@ import { AccountButton } from '@/components/account/account-button';
 import { AccountSync } from '@/components/account/account-sync';
 import { HistoryRecorder } from '@/components/player/history-recorder';
 import { SongTitle } from '@/components/player/song-title';
+import { PageRestore } from '@/components/page-restore';
 import { VoiceFollower } from '@/components/theme/voice-follower';
 import { PlayerProvider } from '@/components/player/player-provider';
 import { VisualizerLink } from '@/components/visualizer/visualizer-link';
@@ -112,6 +113,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             <MobileTabs />
             <HistoryRecorder />
             <SongTitle />
+            {/* 住所の ?以降を読むので、Suspense で包む（作り置きのページを壊さないため） */}
+            <Suspense fallback={null}>
+              <PageRestore />
+            </Suspense>
             <VoiceFollower />
             <VisualizerLink />
           </PlayerProvider>

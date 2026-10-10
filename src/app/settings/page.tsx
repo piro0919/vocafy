@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { InstallApp } from '@/components/install-app';
 import { DockSetting } from '@/components/player/dock-setting';
 import { KeyboardHelp } from '@/components/player/keyboard-help';
+import { ResumeSetting } from '@/components/player/resume-setting';
 import { SwipeBackSetting } from '@/components/swipe-back/swipe-back-setting';
 import { ThemeSetting } from '@/components/theme/theme-setting';
 import { VoiceSetting } from '@/components/theme/voice-setting';
@@ -22,6 +23,7 @@ export default function SettingsPage() {
       <ThemeSetting />
       <VoiceSetting />
       <DockSetting />
+      <ResumeSetting />
       <VisualizerSetting />
       <InstallApp />
       <SwipeBackSetting />
