@@ -14,6 +14,10 @@ import { PlaybackMode } from './playback-mode';
 import { type PlaybackTime, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
+import { SEEK_STEP } from '@/lib/input';
+
+/** 音量のアイコンを、小さい音の形にする境目（0〜100） */
+const VOLUME_LOW = 50;
 
 /**
  * 画面の下に出したままにする操作の帯。曲を選ぶと下からせり上がり、閉じると下へ消える。
@@ -129,7 +133,9 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
         <div className="hidden items-center gap-1 md:flex">
           <BarButton label={muted ? '消音を解除' : '消音'} onClick={toggleMute}>
             <Icon
-              name={muted || volume === 0 ? 'volumeOff' : volume < 50 ? 'volumeLow' : 'volume'}
+              name={
+                muted || volume === 0 ? 'volumeOff' : volume < VOLUME_LOW ? 'volumeLow' : 'volume'
+              }
             />
           </BarButton>
           <input
@@ -264,8 +270,8 @@ function Progress({
         showBubble(null);
       }}
       onKeyDown={(e) => {
-        if (e.key === 'ArrowRight') onSeek(Math.min(time.duration, current + 5));
-        if (e.key === 'ArrowLeft') onSeek(Math.max(0, current - 5));
+        if (e.key === 'ArrowRight') onSeek(Math.min(time.duration, current + SEEK_STEP));
+        if (e.key === 'ArrowLeft') onSeek(Math.max(0, current - SEEK_STEP));
       }}
       // 当たり判定は見た目の線より広くとる。線は帯の上の縁に重ねる。
       // スマホは指で狙うので、上へ広げる（下へ広げると曲名や再生ボタンに重なる）。

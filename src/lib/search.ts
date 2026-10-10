@@ -1,3 +1,5 @@
+/** カタカナとひらがなの文字の番号の差 */
+const KATAKANA_TO_HIRAGANA = 0x60;
 /**
  * 検索の文字の正規化。全角と半角、大文字と小文字、カタカナとひらがなを区別しない。
  * 空白と、区切りに使われがちな記号（・、。など）は無視する。長音（ー）は区別に使うので残す。
@@ -7,7 +9,7 @@ export function normalize(text: string): string {
   return text
     .normalize('NFKC')
     .toLowerCase()
-    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - KATAKANA_TO_HIRAGANA))
     .replace(/[\s・、。,.!?！？'"「」『』()（）［］[\]~〜♪☆★*＊/／-]/g, '');
 }
 

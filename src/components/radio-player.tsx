@@ -10,6 +10,7 @@ import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
+import { EAGER_IMAGES } from '@/lib/image-sizes';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -111,12 +112,12 @@ export function RadioPlayer({
             <SongItem
               key={`${i}-${song.songId}`}
               song={song}
-              eager={i < 12}
+              eager={i < EAGER_IMAGES}
               onOpen={() => (here ? jumpTo(i) : playRadio(songs, i))}
             />
           ),
         )}
-        {waiting && <SkeletonRows count={11} />}
+        {waiting && <SkeletonRows count={PLACEHOLDER_ROWS - 1} />}
       </div>
     </div>
   );
@@ -145,7 +146,7 @@ export function RadioLoading() {
           </div>
         </div>
         <div className="-mx-1.5 flex flex-col gap-1">
-          <SkeletonRows count={12} />
+          <SkeletonRows count={PLACEHOLDER_ROWS} />
         </div>
       </div>
     </div>
@@ -153,6 +154,9 @@ export function RadioLoading() {
 }
 
 /** 曲の一覧の仮の行。画面を作っているあいだと、関連曲が届くまでのあいだに出す */
+/** 関連曲が届くまでに出す仮の行の数（元の曲を出しているときは、その1行を引く） */
+const PLACEHOLDER_ROWS = 12;
+
 function SkeletonRows({ count }: { count: number }) {
   return Array.from({ length: count }, (_, i) => (
     <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">

@@ -10,8 +10,11 @@
  */
 export const MOTION = { react: 150, move: 300, slow: 1200, drift: 40000 } as const;
 
-/** 速く動き出して、ゆっくり止まる曲線。globals.css の --ease-out と同じ値 */
-export const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+/** 速く動き出して、ゆっくり止まる曲線の制御点。globals.css の --ease-out と同じ値 */
+const BEZIER = { x1: 0.23, y1: 1, x2: 0.32, y2: 1 };
+export const EASE_OUT = `cubic-bezier(${BEZIER.x1}, ${BEZIER.y1}, ${BEZIER.x2}, ${BEZIER.y2})`;
+/** easeOut で、曲線の x から t を求める二分法の回数 */
+const BISECT_STEPS = 20;
 
 /** 同じ速さのまま動く。流れる曲名（marquee.tsx）だけが使う。長さは時間でなく、曲名を読める速さから決める */
 export const LINEAR = 'linear';
@@ -26,12 +29,14 @@ export function prefersReducedMotion(): boolean {
  * 0〜1 の時間の割合から、0〜1 の進み具合を返す（3次ベジェの x から t を二分法で求めて y を返す）
  */
 export function easeOut(x: number): number {
-  const [x1, y1, x2, y2] = [0.23, 1, 0.32, 1];
+  const { x1, y1, x2, y2 } = BEZIER;
+  // 3次ベジェの式（係数の 3 と次数の 3 は式そのもの）
   const at = (t: number, a: number, b: number) =>
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     3 * a * t * (1 - t) ** 2 + 3 * b * t ** 2 * (1 - t) + t ** 3;
   let lo = 0;
   let hi = 1;
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < BISECT_STEPS; i++) {
     const mid = (lo + hi) / 2;
     if (at(mid, x1, x2) < x) lo = mid;
     else hi = mid;

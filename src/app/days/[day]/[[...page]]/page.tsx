@@ -7,6 +7,7 @@ import { SongList } from '@/components/song-list';
 import { type DatedItem, playlistOfDay, songsOfDay } from '@/lib/catalog';
 import { dayLabel } from '@/lib/list-titles';
 import { formatCount } from '@/lib/format';
+import { yearOf } from '@/lib/iso-date';
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
 // 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
@@ -36,7 +37,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
   const { songs, total } = await songsOfDay(day, page);
   if (songs.length === 0) notFound();
   const playlist = await playlistOfDay(day);
-  const byYear = Map.groupBy(songs, (s: DatedItem) => s.publishedOn.slice(0, 4));
+  const byYear = Map.groupBy(songs, (s: DatedItem) => yearOf(s.publishedOn));
   return (
     <>
       <div className="pt-4 pb-4 sm:pb-6">

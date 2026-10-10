@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { isPlayable, markUnplayable } from '@/lib/unplayable';
 import { isVideoId, type Service } from '@/lib/video-id';
+import { MINUTE_MS } from '@/lib/timing';
 
 /**
  * 再生中に「流せない」と分かった動画の知らせを受ける（src/components/player/report.ts から送る）。
@@ -11,7 +12,8 @@ import { isVideoId, type Service } from '@/lib/video-id';
 
 /** 同じ動画の知らせが続いても、確かめに行くのは1回にする（この関数の実体が動いているあいだだけ覚える） */
 const seen = new Map<string, number>();
-const REMEMBER_MS = 10 * 60 * 1000;
+const REMEMBER_MINUTES = 10;
+const REMEMBER_MS = REMEMBER_MINUTES * MINUTE_MS;
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {

@@ -8,6 +8,7 @@ import { Icon } from '../icon';
 import type { FrameMode } from './use-frame-layout';
 import { type DockSide, savedDockSide, saveDockSide } from './player-storage';
 import type { PlayContext } from './player-types';
+import { DRAG_SLOP } from '@/lib/input';
 
 export /**
  * 右下の窓の位置と大きさ。スマホでは下のタブと帯の上、パソコンでは帯の上。
@@ -24,8 +25,6 @@ const DOCK =
  */
 const DOCK_STRIP =
   'fixed right-gutter bottom-(--dock-strip-bottom) h-dock-strip w-dock md:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
-/** 帯をこれだけ横に動かしたら、引いている扱いにする（押しただけの揺れと分ける） */
-const DRAG_START = 8;
 /** 離したとき、これだけ引いていれば、引いた向きの側へ寄せる */
 const DRAG_SWITCH = 48;
 /** 出入りの動き。閉じたあとは少し下へずらして消す */
@@ -79,7 +78,7 @@ export function DockStrip({
       if (ev.pointerId !== pointerId) return;
       dx = ev.clientX - startX;
       if (!moving) {
-        if (Math.abs(dx) < DRAG_START) return;
+        if (Math.abs(dx) < DRAG_SLOP) return;
         moving = true;
         dragged.current = true;
         el.setPointerCapture(pointerId);

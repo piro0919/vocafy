@@ -5,6 +5,7 @@ import { SongList } from '@/components/song-list';
 import { formatCount } from '@/lib/format';
 import { toast } from 'sonner';
 import { clearHistory, restoreHistory, useHistory } from '@/lib/history';
+import { TIMING } from '@/lib/timing';
 
 /**
  * 最近聴いた曲を新しい順に全部（残すのは100曲まで）。押すと、ほかの一覧と同じくその曲のボカロPの画面へ移って流す。
@@ -28,7 +29,7 @@ export function HistoryView() {
             clearHistory();
             // 押せる知らせなので、ほかの知らせ（2秒）より長く出す
             toast('履歴を削除しました', {
-              duration: 5000,
+              duration: TIMING.undoToast,
               action: { label: '元に戻す', onClick: () => restoreHistory(removed) },
             });
           }}

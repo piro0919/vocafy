@@ -10,6 +10,7 @@ import {
   subscribeSwipeBack,
   swipeBackEnabled,
 } from './swipe-back-store';
+import { DRAG_SLOP } from '@/lib/input';
 
 /** 端のこの幅から始めたときだけ受ける */
 const EDGE = 24;
@@ -71,7 +72,7 @@ export function SwipeBack() {
       const el = dot.current;
       if (el === null) return;
       el.style.transition = 'none';
-      el.style.top = `${y - 24}px`;
+      el.style.top = `${y - el.offsetHeight / 2}px`;
       place(el, from, Math.min(distance, MAX) - HIDDEN);
       el.style.opacity = String(Math.min(distance / THRESHOLD, 1));
       el.dataset.armed = String(armed);
@@ -112,8 +113,8 @@ export function SwipeBack() {
       const dy = t.clientY - start.y;
       if (!pulling) {
         // 縦に動いたらスクロール。こちらは降りる
-        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) return reset();
-        if (pull < 10) return;
+        if (Math.abs(dy) > DRAG_SLOP && Math.abs(dy) > Math.abs(dx)) return reset();
+        if (pull < DRAG_SLOP) return;
         pulling = true;
       }
       // 引いているあいだは画面を横に動かさない

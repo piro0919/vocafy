@@ -9,6 +9,9 @@ import { Icon } from './icon';
 import { ICON, PILL } from './button-styles';
 import { Heading, SECTION } from './heading';
 
+/** 案内の板を出すまで待つ時間（ミリ秒）。押してすぐ出すと、押した操作の続きで閉じることがある */
+const PROMPT_DELAY_MS = 100;
+
 const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false });
 
 /**
@@ -45,7 +48,7 @@ function useInstall(): {
               copyDescription="ホーム画面から Vocafy をすばやく開けます。"
               copyShareStep="共有ボタンをタップ"
               copyAddToHomeScreenStep="「ホーム画面に追加」をタップ"
-              delay={100}
+              delay={PROMPT_DELAY_MS}
             />,
             document.body,
           )

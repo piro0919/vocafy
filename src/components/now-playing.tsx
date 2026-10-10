@@ -22,7 +22,7 @@ export function Bars({ playing }: { playing: boolean }) {
           className="w-0.5 origin-bottom animate-eq rounded-full bg-accent"
           style={{
             height: '100%',
-            animationDelay: `${i * -0.3}s`,
+            animationDelay: `calc(var(--transition-duration-move) * ${-i})`,
             animationPlayState: playing ? 'running' : 'paused',
           }}
         />

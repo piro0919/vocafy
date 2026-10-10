@@ -6,11 +6,15 @@ import type { QueueItem } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
 import { SongItem, useOpenSong } from './song-list';
 import { atLeast } from '@/lib/breakpoints';
+import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
+import { PAGE_SIZE } from '@/lib/page-size';
 
-/** /api/list が1回に返す曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
-const PAGE_SIZE = 300;
-/** 1行の高さ（px）。サムネイル 48px ＋上下の余白 12px ＋行のあいだ 4px */
-const ROW = 64;
+/** サーバーで描くときに見えているとみなす高さ（最初の数段だけ描く）。ボカロPの一覧（virtual-producer-grid.tsx）も同じ */
+export const SERVER_HEIGHT = 1200;
+/** 行の上下の余白（SongItem の p-1.5 で 12px）と行のあいだ（gap-1 で 4px） */
+const ROW_SPACE = { padding: 12, gap: 4 };
+/** 1行の高さ（px） */
+const ROW = IMAGE_SIZES.thumb.height + ROW_SPACE.padding + ROW_SPACE.gap;
 
 /** 段の数。曲の一覧（SongList）の md:grid-cols-2 xl:grid-cols-3 と同じ幅で切り替える */
 const COLUMNS = [
@@ -73,7 +77,7 @@ export function VirtualSongList({
     overscan: 8,
     scrollMargin: margin,
     // サーバーでも最初の数十行は描く（スクロールの位置が分からないので、上から）
-    initialRect: { width: 0, height: 1200 },
+    initialRect: { width: 0, height: SERVER_HEIGHT },
     // 付けたときに覚えている位置へ戻すスクロール（behavior の無いもの）は通さない。
     // 別の画面から移ってきた直後は前の画面の位置を覚えていて、Next.js が先頭へ戻したあとにそこへ書き戻していた。
     // 開発のときは effect が2回走るので必ず起き、本番でも順序しだいで起きうる。scrollToIndex は behavior を付けて呼ぶので通る
@@ -130,7 +134,7 @@ export function VirtualSongList({
               <SongItem
                 key={i}
                 song={song}
-                eager={i < 8}
+                eager={i < EAGER_IMAGES}
                 onOpen={() => {
                   const number = Math.floor(i / PAGE_SIZE) + 1;
                   if (onOpen) onOpen({ number, songs: pages.get(number) ?? [] }, i % PAGE_SIZE);

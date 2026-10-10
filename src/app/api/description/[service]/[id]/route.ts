@@ -1,3 +1,8 @@
+import { cdnCache } from '@/lib/cache-control';
+
+/** 説明文を CDN に置く日数。書き換えられることがまれなので長めにする */
+const CACHE_DAYS = 14;
+
 const AGENT = { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' };
 
 /**
@@ -12,7 +17,7 @@ export async function GET(_req: Request, ctx: RouteContext<'/api/description/[se
   const text = service === 'youtube' ? await youtube(id) : await niconico(id);
   return Response.json(
     { text },
-    { headers: { 'Cache-Control': 'public, s-maxage=1209600, stale-while-revalidate=1209600' } },
+    { headers: { 'Cache-Control': cdnCache(CACHE_DAYS, CACHE_DAYS) } },
   );
 }
 

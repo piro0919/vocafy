@@ -6,6 +6,7 @@ import { useFavoriteProducers } from '@/lib/favorites';
 import { Heading, SECTION } from './heading';
 import { SongItem, useOpenSong } from './song-list';
 import { edgeMask, useShelfScroll } from './shelf';
+import { EAGER_IMAGES } from '@/lib/image-sizes';
 
 /** 新しい曲を読むボカロPの数（お気に入りに足した新しい順） */
 const PRODUCERS = 12;
@@ -74,7 +75,7 @@ export function FavoriteNewSongs() {
         >
           {songs.map((song, i) => (
             <li key={song.songId} className="min-w-0">
-              <SongItem song={song} eager={i < 6} onOpen={() => open(song)} />
+              <SongItem song={song} eager={i < EAGER_IMAGES} onOpen={() => open(song)} />
             </li>
           ))}
         </ul>

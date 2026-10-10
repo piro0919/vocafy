@@ -3,6 +3,9 @@ import { betterAuth } from 'better-auth';
 import pg from 'pg';
 import { env } from '@/env';
 
+/** セッションを Cookie に控えておく秒数（そのあいだは DB に聞かない） */
+const SESSION_CACHE_SECONDS = 300;
+
 /**
  * ログインの土台。Better Auth を自前で持つ（comic-time と同じ作り）。手段は Google だけ。
  * ユーザーとセッションは、曲の台帳と同じ Postgres の表に入る（db/migrations/0006_accounts.sql）。
@@ -25,7 +28,7 @@ function createAuth() {
       google: { clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET },
     },
     // セッションは署名付きのクッキーに5分持たせ、そのあいだは DB を読みに行かない
-    session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
+    session: { cookieCache: { enabled: true, maxAge: SESSION_CACHE_SECONDS } },
   });
 }
 

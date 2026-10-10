@@ -6,6 +6,7 @@ import {
   setFavorite,
 } from '@/lib/account-favorites';
 import { userIdOf } from '@/lib/auth';
+import { MAX_FAVORITES } from '@/lib/favorites-limit';
 
 /**
  * アカウントのお気に入り。ログインしていなければ 401。
@@ -41,7 +42,7 @@ export async function PUT(request: Request) {
   const userId = await userIdOf(request);
   if (!userId) return unauthorized();
   const body = z
-    .object({ songs: z.array(id).max(5000), producers: z.array(id).max(5000) })
+    .object({ songs: z.array(id).max(MAX_FAVORITES), producers: z.array(id).max(MAX_FAVORITES) })
     .safeParse(await request.json());
   if (!body.success) return new Response(null, { status: 400, headers: NO_STORE });
   await mergeFavorites(userId, 'song', body.data.songs);
@@ -52,7 +53,7 @@ export async function PUT(request: Request) {
 export async function PATCH(request: Request) {
   const userId = await userIdOf(request);
   if (!userId) return unauthorized();
-  const body = z.object({ songs: z.array(id).max(5000) }).safeParse(await request.json());
+  const body = z.object({ songs: z.array(id).max(MAX_FAVORITES) }).safeParse(await request.json());
   if (!body.success) return new Response(null, { status: 400, headers: NO_STORE });
   await reorderFavoriteSongs(userId, body.data.songs);
   return new Response(null, { status: 204, headers: NO_STORE });

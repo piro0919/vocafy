@@ -3,10 +3,7 @@
 import { useEffect } from 'react';
 import { now } from './player-bar';
 import { usePlayer } from './player-provider';
-
-/** 音量を1回で変える幅と、矢印で飛ぶ秒数 */
-const VOLUME_STEP = 10;
-const SEEK_STEP = 5;
+import { SEEK_STEP, VOLUME_STEP } from '@/lib/input';
 
 /**
  * キーボードでプレイヤーを操作する。何か流しているとき（順番待ちがあるとき）だけ受ける。

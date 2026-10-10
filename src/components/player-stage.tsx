@@ -16,6 +16,7 @@ import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
 import { COVER_PLAY, PRIMARY } from './button-styles';
 import { atLeast, below } from '@/lib/breakpoints';
+import { DRAG_SLOP } from '@/lib/input';
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -159,7 +160,7 @@ export function SwipeToLeave({
       if (!start) return;
       const dx = e.touches[0].clientX - start.x;
       const dy = e.touches[0].clientY - start.y;
-      if (!kind && Math.abs(dy) > 6)
+      if (!kind && Math.abs(dy) > DRAG_SLOP)
         kind = dy > 0 && Math.abs(dy) > Math.abs(dx) ? 'pull' : 'scroll';
       // スクロールを止められるのは、動き始めの知らせを止めたときだけ
       if (kind === 'pull') e.preventDefault();
@@ -204,8 +205,10 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
     let observer: IntersectionObserver | null = null;
     const watch = () => {
       observer?.disconnect();
-      // 動画（幅いっぱいの 16:9）の下の縁より上へ出たら、隠れたとみなす
-      const top = Math.round((window.innerWidth * 9) / 16);
+      // 動画（幅いっぱいの 16:9。高さは globals.css の --video-full）の下の縁より上へ出たら、隠れたとみなす
+      const top = Math.round(
+        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--video-full')),
+      );
       observer = new IntersectionObserver(
         ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < top),
         { rootMargin: `-${top}px 0px 0px 0px` },

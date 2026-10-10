@@ -41,6 +41,7 @@ import type {
 import { useFrameLayout } from './use-frame-layout';
 import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
+import { MINUTE_MS, TIMING } from '@/lib/timing';
 
 export type { ListSource, PlaybackTime, PlayContext, Repeat, Sleep } from './player-types';
 
@@ -585,7 +586,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         ? null
         : value === 'end'
           ? { kind: 'end' }
-          : { kind: 'at', at: Date.now() + value * 60_000 };
+          : { kind: 'at', at: Date.now() + value * MINUTE_MS };
     sleepRef.current = next;
     setSleepState(next);
   }, []);
@@ -942,7 +943,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const id = setInterval(() => {
       const p = player.current;
       if (p) setTime({ ...p.time(), at: performance.now() });
-    }, 500);
+    }, TIMING.positionPoll);
     return () => clearInterval(id);
   }, [playing]);
 

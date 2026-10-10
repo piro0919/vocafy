@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { type Ref, useEffect, useRef, useState } from 'react';
 import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';
+import { TIMING } from '@/lib/timing';
 
 const BOX =
   'flex h-10 w-full items-center gap-2 rounded-full border border-line/60 bg-glass px-4 focus-within:border-accent-line';
@@ -74,7 +75,7 @@ export function HeaderSearch({
       const url = q ? `/search?q=${encodeURIComponent(q)}` : '/search';
       if (onSearch) router.replace(url, { scroll: false, showProgress: false });
       else if (q) router.push(url);
-    }, 300);
+    }, TIMING.searchDebounce);
     return () => clearTimeout(id);
   }, [text, onSearch, router]);
 

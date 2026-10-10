@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     // 変換した画像の作り置きの期限。既定の4時間だと、期限が切れた画像が見られるたびに変換し直し、そのたびに料金がかかる。
     // 変換しているのはボカロPの画像（VocaDB。差し替わると住所の ?v= が変わる）と、背景の色を取るためのニコニコの表紙だけで、
     // 中身は変わらないので、Vercel が作り置きを残す上限の31日にする。動画の表紙は変換していない（fade-image.tsx）
-    minimumCacheTTL: 2678400,
+    minimumCacheTTL: 31 * 24 * 60 * 60,
     remotePatterns: [
       { protocol: 'https', hostname: 'i.ytimg.com', pathname: '/vi/**' },
       // ニコニコの表紙。YouTube に本家が無い曲だけ使う

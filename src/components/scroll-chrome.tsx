@@ -3,6 +3,11 @@
 import { useEffect } from 'react';
 import { below } from '@/lib/breakpoints';
 
+/** これより小さいスクロールは、指の揺れとして見ない（px） */
+const JITTER = 6;
+/** ページの上のほうにいるあいだは、下へスクロールしても帯を隠さない（px） */
+const TOP_ZONE = 80;
+
 /**
  * スマホで、下へスクロールしているあいだは上の帯と下のタブを隠し、上へスクロールしたら戻す（YouTube のアプリと同じ）。
  * 画面全体に印（html[data-chrome="hidden"]）を付けるだけで、隠す動きは各部品の側で印を見て付ける。
@@ -19,10 +24,10 @@ export function ScrollChrome() {
       const y = window.scrollY;
       const delta = y - last;
       // 指の小さな揺れで出たり引っ込んだりしないよう、少し動いてから切り替える
-      if (Math.abs(delta) < 6) return;
+      if (Math.abs(delta) < JITTER) return;
       last = y;
       const typing = document.activeElement?.getAttribute('type') === 'search';
-      const hide = mobile.matches && !typing && delta > 0 && y > 80;
+      const hide = mobile.matches && !typing && delta > 0 && y > TOP_ZONE;
       if (hide) root.dataset.chrome = 'hidden';
       else delete root.dataset.chrome;
     };

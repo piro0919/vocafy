@@ -636,6 +636,11 @@ body {
   inherits: true;
   initial-value: 0px;
 }
+@property --video-full {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
 @property --bar-top {
   syntax: '<length>';
   inherits: true;

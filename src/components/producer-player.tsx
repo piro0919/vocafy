@@ -18,6 +18,13 @@ import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { ShareMenu } from './share-menu';
 
+/** 年の札の行のすぐ下に、どこまで来た曲をその年とみなすか（px） */
+const YEAR_LINE_GAP = 8;
+/** ページの一番下とみなす余り（px。小数の丸めで届かないことがある） */
+const BOTTOM_SLACK = 2;
+/** 一番下まで来たときに、見えている年とみなす画面の下の端からの位置（px） */
+const BOTTOM_LINE = 40;
+
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
  * このボカロPの曲を流している間は、共通のプレイヤーが置き場所に重なって大きく出る。
@@ -262,15 +269,16 @@ function YearJump({ songs }: { songs: Song[] }) {
     const update = () => {
       frame = 0;
       if (chosen.current !== null) return;
-      const line = (bar.current?.getBoundingClientRect().bottom ?? 0) + 8;
+      const line = (bar.current?.getBoundingClientRect().bottom ?? 0) + YEAR_LINE_GAP;
       // ページの一番下まで来ているときは、最後のほうの年の最初の曲を札の行のすぐ下まで送れない。そのときは、
       // 画面に見えている年のうち一番古い年にする（一覧の最後の年を押したのに、一つ前の年が目立つのを避ける）
       const bottom =
-        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - BOTTOM_SLACK;
       let year = firsts[0][0];
       for (const [y, id] of firsts) {
         const top = document.getElementById(`song-${id}`)?.getBoundingClientRect().top;
-        if (top !== undefined && top <= (bottom ? window.innerHeight - 40 : line)) year = y;
+        if (top !== undefined && top <= (bottom ? window.innerHeight - BOTTOM_LINE : line))
+          year = y;
       }
       setActive(year);
     };
@@ -336,7 +344,9 @@ function YearJump({ songs }: { songs: Song[] }) {
               const row = document.getElementById(`song-${id}`);
               // 札の行は、送ったあとには貼り付いている。押した時点の位置ではなく、貼り付く位置（CSS の top）で計る
               const el = bar.current;
-              const below = el ? parseFloat(getComputedStyle(el).top) + el.offsetHeight + 4 : 0;
+              const below = el
+                ? parseFloat(getComputedStyle(el).top) + el.offsetHeight + YEAR_LINE_GAP
+                : 0;
               // ブラウザの smooth は Firefox で一気に飛んだので、自前で送る（motion.ts）
               if (row) glideWindowTo(window.scrollY + row.getBoundingClientRect().top - below);
             }}

@@ -1,5 +1,6 @@
 import type { QueueItem } from '@/lib/catalog';
 import type { PlayContext } from './player-types';
+import { HOUR_MS } from '@/lib/timing';
 
 /**
  * 読み込み直したり開き直したりしたときに、前に流していた曲を止まった状態で戻すための控え（2026-10-11 に本人と決めた）。
@@ -46,7 +47,7 @@ export function readResume(): Resume | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const r = JSON.parse(raw) as Resume;
-    if (Date.now() - r.at > RESUME_HOURS * 3600_000) return null;
+    if (Date.now() - r.at > RESUME_HOURS * HOUR_MS) return null;
     if (!Array.isArray(r.queue) || !r.queue[r.index]) return null;
     if (!Array.isArray(r.order) || r.order.length !== r.queue.length) return null;
     return r;
@@ -106,7 +107,7 @@ export function readLastPage(): string | null {
     const raw = localStorage.getItem(PAGE_KEY);
     if (!raw) return null;
     const { path, at } = JSON.parse(raw) as { path: string; at: number };
-    if (Date.now() - at > RESUME_HOURS * 3600_000) return null;
+    if (Date.now() - at > RESUME_HOURS * HOUR_MS) return null;
     return typeof path === 'string' && path.startsWith('/') ? path : null;
   } catch {
     return null;

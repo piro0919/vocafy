@@ -10,6 +10,7 @@ import { usePlayer } from '@/components/player/player-provider';
 import { SongList } from '@/components/song-list';
 import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { formatCount } from '@/lib/format';
+import { EAGER_IMAGES } from '@/lib/image-sizes';
 
 /** お気に入りの画面に出す曲の数。全部はお気に入りの曲の画面（/favorites/songs）で見る（「再生」か曲を押して移る） */
 const SONG_PREVIEW = 12;
@@ -81,7 +82,7 @@ export function FavoritesView() {
                 cover={p.picture}
                 round
                 title={p.name}
-                eager={i < 10}
+                eager={i < EAGER_IMAGES}
               />
             ))}
           </div>

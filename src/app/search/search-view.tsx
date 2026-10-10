@@ -21,6 +21,7 @@ import { thumbOf } from '@/lib/thumb';
 import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
+import { TIMING } from '@/lib/timing';
 
 /** 一度に出す曲の数。それより多く当たったときは、言葉を足して絞ってもらう */
 const SONG_LIMIT = 100;
@@ -68,7 +69,7 @@ export function SearchView() {
     const id = setTimeout(() => {
       const q = text.trim();
       router.replace(q ? `${pathname}?q=${encodeURIComponent(q)}` : pathname, { scroll: false });
-    }, 300);
+    }, TIMING.searchDebounce);
     return () => clearTimeout(id);
   }, [text, pathname, router]);
 
@@ -163,7 +164,7 @@ export function SearchView() {
                 const removed = recent;
                 clearRecentSearches();
                 toast('検索履歴を削除しました', {
-                  duration: 5000,
+                  duration: TIMING.undoToast,
                   action: { label: '元に戻す', onClick: () => restoreRecentSearches(removed) },
                 });
               }}

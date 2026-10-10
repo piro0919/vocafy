@@ -1,9 +1,11 @@
 // DB を読むのはサーバーだけ。ブラウザ側の部品から値として読み込むとビルドで止まるよう、サーバー専用にする（型だけの読み込みは構わない）
 import 'server-only';
+import { PAGE_SIZE } from './page-size';
 import pg from 'pg';
 import { cache } from 'react';
 import { env } from '@/env';
 import { thumbOf } from './thumb';
+import { monthOf, yearOf } from './iso-date';
 
 // 正本は VocaDB。DB の中身は scripts/ingest.ts が取り込んだもので、手で直さない
 
@@ -247,12 +249,20 @@ export function today(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
 }
 
+/** hash の掛ける数（文字列の hash でよく使う素数） */
+const HASH_PRIME = 31;
+
 /** 文字列から決まる 0 以上の整数。日ごとに決まった選び方をするのに使う */
 function hash(text: string): number {
   let h = 0;
-  for (const c of text) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  for (const c of text) h = (h * HASH_PRIME + c.charCodeAt(0)) >>> 0;
   return h;
 }
+
+/** きょうの日付の曲が少ない日に、前後に広げる日数の上限 */
+const DAY_REACH = 3;
+/** きょうの日付の大きな1曲を選ぶ、その日の評価点の上位の曲数 */
+const HERO_POOL = 3;
 
 /**
  * きょうと同じ月日に投稿された曲。曲の少ない日は、前後の日へ1日ずつ広げて min 曲に届くまで補う（3日まで）。
@@ -274,16 +284,19 @@ export const onThisDay = cache(
          select extract(doy from make_date(2000, extract(month from $1::date)::int, extract(day from $1::date)::int))::int as doy
        ) t
      ) x
-     where distance <= 3
+     where distance <= ${DAY_REACH}
      order by distance, published_on desc, id`,
       [date],
     );
-    const reach = [0, 1, 2, 3].find((d) => rows.filter((r) => r.distance <= d).length >= min) ?? 3;
+    const reach =
+      Array.from({ length: DAY_REACH + 1 }, (_, d) => d).find(
+        (d) => rows.filter((r) => r.distance <= d).length >= min,
+      ) ?? DAY_REACH;
     const within = rows.filter((r) => r.distance <= reach);
     const exact = within.filter((r) => r.distance === 0);
     const candidates = (exact.length > 0 ? exact : within)
       .toSorted((a, b) => b.rating_score - a.rating_score || a.id - b.id)
-      .slice(0, 3);
+      .slice(0, HERO_POOL);
     const hero = candidates[hash(date) % Math.max(1, candidates.length)];
     return {
       hero: hero && toItem(hero),
@@ -336,8 +349,7 @@ export const years = cache(async (): Promise<{ year: number; count: number }[]> 
   return rows;
 });
 
-/** 一覧の1ページの曲数。数千曲を1枚に並べると、ページが数 MB になって重い */
-export const PAGE_SIZE = 300;
+export { PAGE_SIZE };
 
 /** 一覧の1ページと、全体の曲数。ページが範囲の外なら songs は空で total は 0 */
 export type Paged = { songs: DatedItem[]; total: number };
@@ -383,19 +395,25 @@ const PICKUP_POPULAR_POOL = 100;
 
 async function playlist(where: string, params: unknown[], first: Paged): Promise<Playlist> {
   if (first.total <= PICKUP_SIZE) return { songs: first.songs, total: first.total, pickup: false };
-  const n = params.length;
+  // 後ろに足す値の番号（$n）。足す順は下の配列と同じ
+  const [day, size, popularCount, pool] = [
+    today(),
+    PICKUP_SIZE,
+    PICKUP_POPULAR,
+    PICKUP_POPULAR_POOL,
+  ].map((_, i) => `$${params.length + i + 1}`);
   const { rows } = await db().query<QueueRow>(
     `with base as (
        select q.*, row_number() over (order by q.rating_score desc, q.id) as rank
        from (${QUEUE_SELECT} ${where}) q
      ),
      popular as (
-       select * from base where rank <= $${n + 4}
-       order by md5(id::text || $${n + 1} || 'popular'), id limit $${n + 3}
+       select * from base where rank <= ${pool}
+       order by md5(id::text || ${day} || 'popular'), id limit ${popularCount}
      ),
      rest as (
        select * from base where id not in (select id from popular)
-       order by md5(id::text || $${n + 1}), id limit $${n + 2} - (select count(*) from popular)
+       order by md5(id::text || ${day}), id limit ${size} - (select count(*) from popular)
      )
      select * from (select * from popular union all select * from rest) r
      order by r.published_on desc, r.id`,
@@ -429,9 +447,7 @@ export const picksOfYear = cache(
        order by published_on desc, id`,
       [year, PICKS_PER_MONTH],
     );
-    const monthTotals = new Map(
-      rows.map((r) => [r.published_on?.slice(5, 7) ?? '', r.month_total]),
-    );
+    const monthTotals = new Map(rows.map((r) => [monthOf(r.published_on ?? ''), r.month_total]));
     return { songs: rows.map(toItem), monthTotals };
   },
 );
@@ -522,7 +538,7 @@ export const findVoice = cache(
        order by left(published_on, 4) desc nulls last, rank`,
       [id, PICKS_PER_YEAR],
     );
-    const yearTotals = new Map(rows.map((r) => [r.published_on?.slice(0, 4) ?? '', r.year_total]));
+    const yearTotals = new Map(rows.map((r) => [yearOf(r.published_on ?? ''), r.year_total]));
     return { voice, songs: rows.map(toItem), yearTotals };
   },
 );
@@ -653,7 +669,8 @@ export const searchDetails = cache(async (producerId: number): Promise<SearchDet
 type VdbRelated = Record<'artistMatches' | 'likeMatches' | 'tagMatches', { id: number }[]>;
 
 /** VocaDB に聞いた関連曲を作り置きする長さ（秒）。関連曲は投票やタグで少しずつしか変わらない */
-const RELATED_TTL = 60 * 60 * 24 * 7;
+const RELATED_TTL_DAYS = 7;
+const RELATED_TTL = 60 * 60 * 24 * RELATED_TTL_DAYS;
 
 /**
  * その曲の関連曲のうち、このサイトで流せるもの。ラジオ（押した曲から関連曲を流し続ける再生）に使う。

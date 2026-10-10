@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { DOCK_SIDE_EVENT } from './player-storage';
 
+/** 右下の窓の形になってからこれより早く別の形に替わったら、一瞬だけだったとみなす（ミリ秒） */
+const FLASH_MS = 100;
+
 /** プレイヤーの形。none は何も流していない（か置き場所を待っている）、slot は画面の置き場所、dock は右下の窓 */
 export type FrameMode = 'none' | 'slot' | 'dock';
 
@@ -88,7 +91,7 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
     // ボカロPの画面からお気に入りの曲の画面へ戻ったとき（戻った画面が並びを取り戻すまで）。その一瞬は無かったものとして、
     // その前の形から移ったとみなす。一瞬のあいだに始めた移る動きも取り消す。取り消さないと、右下の窓へ向けたずれを大きな
     // 置き場所の位置に当てたまま動き、画面の左上の外から入ってくるように見えた（2026-10-11）
-    const flash = lastMode.current === 'dock' && performance.now() - lastModeAt.current < 100;
+    const flash = lastMode.current === 'dock' && performance.now() - lastModeAt.current < FLASH_MS;
     if (flash && mode !== 'dock') for (const animation of el.getAnimations()) animation.cancel();
     const previous = flash ? beforeLast.current : lastMode.current;
     const moved = previous !== mode && previous !== 'none' && mode !== 'none';

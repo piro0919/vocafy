@@ -13,6 +13,7 @@ import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
 import { atLeast } from '@/lib/breakpoints';
+import { dateOf, monthDayOf, yearOf } from '@/lib/iso-date';
 
 /**
  * きょうの日付の曲。1曲を大きく見せ、残りを横に小さく並べる。
@@ -45,7 +46,7 @@ export function OnThisDay({
   // 大きな1曲がニコニコの曲なら、埋め込みを先に読み込んでおく（iPad・iPhone だけ。右の一覧の行は SongItem が読む）
   const heroButton = useRef<HTMLButtonElement>(null);
   usePreload(heroButton, hero.videoId);
-  const sameDay = (iso: string) => iso.slice(5) === today.slice(5);
+  const sameDay = (iso: string) => monthDayOf(iso) === monthDayOf(today);
   const heroActive = current?.songId === hero.songId;
 
   return (
@@ -86,8 +87,8 @@ export function OnThisDay({
             <span className="block font-tech text-xs font-black tracking-label text-accent">
               {/* 右の一覧と同じ形。同じ日の曲は年だけ、前後の日から補った曲は月日も（今のデータでは0曲の日は無い） */}
               {sameDay(hero.publishedOn)
-                ? hero.publishedOn.slice(0, 4)
-                : hero.publishedOn.slice(0, 10).replaceAll('-', '.')}
+                ? yearOf(hero.publishedOn)
+                : dateOf(hero.publishedOn).replaceAll('-', '.')}
             </span>
             <span className="mt-1 flex items-center gap-2 font-display text-2xl leading-tight sm:text-3xl">
               <span className="min-w-0 truncate">{hero.title}</span>
@@ -116,8 +117,8 @@ export function OnThisDay({
                   meta={
                     <span className="shrink-0 font-tech text-xs font-black text-accent">
                       {sameDay(song.publishedOn)
-                        ? song.publishedOn.slice(0, 4)
-                        : song.publishedOn.slice(0, 10).replaceAll('-', '.')}
+                        ? yearOf(song.publishedOn)
+                        : dateOf(song.publishedOn).replaceAll('-', '.')}
                     </span>
                   }
                 />

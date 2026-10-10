@@ -7,6 +7,9 @@ import { usePlayer } from '../player/player-provider';
 import { readVisualizer, subscribeVisualizer } from './visualizer-store';
 import { COLORS } from '@/lib/colors';
 
+/** 16進数 */
+const HEX = 16;
+
 /** Vocafy Visualizer が待っている口。アプリの LinkServer.swift と docs/protocol.md に合わせる */
 const LINK_URL = 'ws://127.0.0.1:47823';
 /** アプリが起動していないあいだ、つなぎ直す間隔 */
@@ -42,7 +45,7 @@ function toHex(css: string): string {
   ctx.fillStyle = computed;
   ctx.fillRect(0, 0, 1, 1);
   const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  return `#${[r, g, b].map((v) => v.toString(HEX).padStart(2, '0')).join('')}`;
 }
 
 /**

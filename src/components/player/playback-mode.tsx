@@ -11,6 +11,7 @@ import { FloatingPanel } from './floating-panel';
 import { type Sleep, usePlayer } from './player-provider';
 import { QueuePanel } from './queue-panel';
 import { ICON } from '../button-styles';
+import { MINUTE_MS } from '@/lib/timing';
 
 /**
  * ランダム再生とループの切り替え。入っているあいだは差し色にする。
@@ -91,22 +92,26 @@ export function PlaybackMode({
 }
 
 /** スリープタイマーで選べる長さ（分） */
-const SLEEP_MINUTES = [15, 30, 45, 60];
+const SLEEP = { step: 15, count: 4 };
+const SLEEP_MINUTES = Array.from({ length: SLEEP.count }, (_, i) => (i + 1) * SLEEP.step);
 
-/** 残りの分（切り上げ）。15 秒ごとに数え直す。タイマーが無ければ null */
+/** 残りの分を数え直す間隔 */
+const RECOUNT_MS = 15_000;
+
+/** 残りの分（切り上げ）。RECOUNT_MS ごとに数え直す。タイマーが無ければ null */
 function useMinutesLeft(sleep: Sleep | null): number | null {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (sleep?.kind !== 'at') return;
     // 入れた直後の残りも、入れた時刻から数える（前に数えた時刻のままだと、残りが長く出る）
     const first = setTimeout(() => setNow(Date.now()), 0);
-    const id = setInterval(() => setNow(Date.now()), 15_000);
+    const id = setInterval(() => setNow(Date.now()), RECOUNT_MS);
     return () => {
       clearTimeout(first);
       clearInterval(id);
     };
   }, [sleep]);
-  return sleep?.kind === 'at' ? Math.max(1, Math.ceil((sleep.at - now) / 60_000)) : null;
+  return sleep?.kind === 'at' ? Math.max(1, Math.ceil((sleep.at - now) / MINUTE_MS)) : null;
 }
 
 /**

@@ -9,6 +9,7 @@ import { type DatedItem, findVoice } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
 import { formatCount } from '@/lib/format';
+import { yearOf } from '@/lib/iso-date';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 歌声の画面はビルドのときには作らず、最初に開かれたときに作って残す
@@ -33,7 +34,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
   const found = await findVoice(Number(id));
   if (!found || found.songs.length === 0) notFound();
   const { voice, songs, yearTotals } = found;
-  const byYear = Map.groupBy(songs, (s: DatedItem) => s.publishedOn.slice(0, 4));
+  const byYear = Map.groupBy(songs, (s: DatedItem) => yearOf(s.publishedOn));
   const art = voiceArt(voice.id);
   return (
     <>

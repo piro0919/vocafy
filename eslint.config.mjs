@@ -38,6 +38,34 @@ const eslintConfig = defineConfig([
     files: ['scripts/**'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },
+  // 数字に名前を付ける（2026-10-11 に本人と決めた）。名前の無い数字は、同じ値をあちこちに書き写して少しずつずれた。
+  // 0・1・2・-1 と、単位の換算（100・1000・60・24・255・360）と HTTP の状態だけは数字のまま書いてよい。
+  // VocaDB の番号の表と、CSS を使わずに描く共有の絵は除く
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [
+      'src/lib/voice-art.ts',
+      'src/app/opengraph-image.tsx',
+      'src/app/producers/\\[id\\]/og.tsx',
+    ],
+    rules: {
+      'no-magic-numbers': 'off',
+      '@typescript-eslint/no-magic-numbers': [
+        'error',
+        {
+          ignore: [-1, 0, 1, 2, 100, 1000, 60, 24, 255, 360, 200, 204, 400, 401, 403, 404],
+          ignoreArrayIndexes: true,
+          ignoreDefaultValues: true,
+          ignoreEnums: true,
+          ignoreNumericLiteralTypes: true,
+          ignoreReadonlyClassProperties: true,
+          ignoreTypeIndexes: true,
+          ignoreClassFieldInitialValues: true,
+          detectObjects: false,
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

@@ -7,8 +7,12 @@ import type { Producer } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
 import { formatCount } from '@/lib/format';
 import { atLeast } from '@/lib/breakpoints';
+import { EAGER_IMAGES } from '@/lib/image-sizes';
+import { SERVER_HEIGHT } from '@/components/virtual-song-list';
 
 /** 段の数。cover-card.tsx の ARTIST_GRID（grid-cols-3 sm:4 lg:5 xl:6）と同じ幅で切り替える */
+/** 段の数を決められないとき（サーバーで描くとき）の段の数 */
+const COLUMNS_BASE = 3;
 const COLUMNS = [
   { query: atLeast('xl'), columns: 6 },
   { query: atLeast('lg'), columns: 5 },
@@ -30,7 +34,7 @@ export function VirtualProducerGrid({
   /** 開いたときに先頭に出す人の番号（0 から） */
   start?: number;
 }) {
-  const columns = useColumns(COLUMNS, 3);
+  const columns = useColumns(COLUMNS, COLUMNS_BASE);
 
   const list = useRef<HTMLDivElement>(null);
   const [margin, setMargin] = useState(0);
@@ -50,7 +54,7 @@ export function VirtualProducerGrid({
     overscan: 3,
     scrollMargin: margin,
     // サーバーでも最初の数段は描く
-    initialRect: { width: 0, height: 1200 },
+    initialRect: { width: 0, height: SERVER_HEIGHT },
   });
 
   const jumped = useRef(false);
@@ -83,7 +87,7 @@ export function VirtualProducerGrid({
               round
               title={p.name}
               sub={`${formatCount(p.songCount)}曲`}
-              eager={row.index * columns + c < 10}
+              eager={row.index * columns + c < EAGER_IMAGES}
             />
           ))}
         </div>

@@ -6,6 +6,7 @@ import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, picksOfYear } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
+import { monthOf } from '@/lib/iso-date';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 年の画面はビルドのときには作らず、最初に開かれたときに作って残す
@@ -29,7 +30,7 @@ export default async function YearPage({ params }: PageProps<'/years/[year]'>) {
   if (!/^\d{4}$/.test(year)) notFound();
   const { songs, monthTotals } = await picksOfYear(Number(year));
   if (songs.length === 0) notFound();
-  const byMonth = Map.groupBy(songs, (s: DatedItem) => s.publishedOn.slice(5, 7));
+  const byMonth = Map.groupBy(songs, (s: DatedItem) => monthOf(s.publishedOn));
   const total = [...monthTotals.values()].reduce((a, b) => a + b, 0);
   return (
     <>

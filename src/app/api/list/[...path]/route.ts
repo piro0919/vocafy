@@ -9,6 +9,9 @@ import {
   songsOfVoiceYear,
 } from '@/lib/catalog';
 
+/** 一覧の住所の区切りの数（years/2010 は list、years/2010/03 は detail） */
+const PARTS = { list: 2, detail: 3 };
+
 // 台帳は取り込みのときにしか変わらないので、ボカロPの新曲（api/latest）と同じく、一覧とページごとに最初に読まれたときに作って
 // 次の配備まで使い回す（DB を起こすのは1回目だけ）。前は CDN に1日置く指定で、1日たつたびに DB を起こしていた。
 // 再生中に流せないと分かった曲は、次の配備までここに残る（api/unplayable が作り直すのはボカロPの画面だけ）
@@ -29,18 +32,19 @@ const onePage = (songs: Paged['songs'], page: number): Paged => ({
 /** 一覧の住所（/years/2010 の years/2010 の部分）とページから、その一覧のそのページを読む。知らない住所は null */
 function read(source: string[], page: number): Promise<Paged> | null {
   const [kind, a, b] = source;
-  if (kind === 'years' && source.length === 3) return songsOfMonth(Number(a), b, page);
-  if (kind === 'days' && source.length === 2) return songsOfDay(a, page);
-  if (kind === 'voices' && source.length === 3) return songsOfVoiceYear(Number(a), Number(b), page);
+  if (kind === 'years' && source.length === PARTS.detail) return songsOfMonth(Number(a), b, page);
+  if (kind === 'days' && source.length === PARTS.list) return songsOfDay(a, page);
+  if (kind === 'voices' && source.length === PARTS.detail)
+    return songsOfVoiceYear(Number(a), Number(b), page);
   // 歌声の画面の代表曲（年ごとに数曲）と、年の画面の代表曲（月ごとに数曲）。1ページに収まるので、2ページ目からは空
-  if (kind === 'voices' && source.length === 2) {
+  if (kind === 'voices' && source.length === PARTS.list) {
     return findVoice(Number(a)).then((found) => onePage(found?.songs ?? [], page));
   }
-  if (kind === 'years' && source.length === 2) {
+  if (kind === 'years' && source.length === PARTS.list) {
     return picksOfYear(Number(a)).then(({ songs }) => onePage(songs, page));
   }
   // トップの日替わりの並び（mix/2026-10-10）。1ページに収まる
-  if (kind === 'mix' && source.length === 2 && DATE.test(a)) {
+  if (kind === 'mix' && source.length === PARTS.list && DATE.test(a)) {
     return dailyMix(a, MIX_SIZE).then((songs) => onePage(songs, page));
   }
   return null;

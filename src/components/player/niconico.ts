@@ -2,6 +2,9 @@ import type { Engine, EngineEvents, Sound } from './engine';
 import type { Preloaded } from './niconico-pool';
 import { reportUnplayable } from './report';
 
+/** 埋め込みが statusChange で知らせる再生の状態の番号 */
+const STATUS = { playing: 2, paused: 3, ended: 4 } as const;
+
 /**
  * ニコニコの埋め込みプレイヤー（embed.nicovideo.jp）を、postMessage で動かす。
  * 公式の資料は無く、非公式の解説（https://zenn.dev/xpadev/articles/8f742c8f8ce3d0 、2022年時点）と、
@@ -71,9 +74,9 @@ export function createNiconicoEngine(
     const { eventName, data } = e.data;
     if (eventName === 'loadComplete') start();
     if (eventName === 'statusChange') {
-      if (data?.playerStatus === 2) events.onPlaying();
-      if (data?.playerStatus === 3) events.onPaused();
-      if (data?.playerStatus === 4) events.onEnded();
+      if (data?.playerStatus === STATUS.playing) events.onPlaying();
+      if (data?.playerStatus === STATUS.paused) events.onPaused();
+      if (data?.playerStatus === STATUS.ended) events.onEnded();
     }
     if (eventName === 'playerMetadataChange') {
       current = (data?.currentTime ?? 0) / 1000;

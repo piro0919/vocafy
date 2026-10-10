@@ -19,3 +19,6 @@ export const IMAGE_SIZES = {
   /** パソコンの右下の窓の幅。globals.css の --spacing-dock-wide */
   dockWide: 356,
 } as const;
+
+/** 一覧で、先に読み込む（lazy にしない）表紙の数。最初の画面に見えている分 */
+export const EAGER_IMAGES = 8;

@@ -13,7 +13,10 @@ import { usePreload } from './player/use-preload';
 import { Marquee } from './marquee';
 import { Icon } from './icon';
 import { ICON_SM } from './button-styles';
-import { IMAGE_SIZES } from '@/lib/image-sizes';
+import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
+
+/** 棚で縦に詰める行の数 */
+const SHELF_ROWS = 4;
 
 /**
  * 小さなサムネイルと曲名を詰めて並べる一覧。押すとその曲のボカロPの画面へ移り、その曲から流す
@@ -41,7 +44,9 @@ export function SongList({
       }
       // 棚では4行ずつ縦に詰めて横へ流す。曲が少ないときは、その数だけの行にして隙間を作らない
       style={
-        columns ? { gridTemplateRows: `repeat(${Math.min(4, songs.length)}, auto)` } : undefined
+        columns
+          ? { gridTemplateRows: `repeat(${Math.min(SHELF_ROWS, songs.length)}, auto)` }
+          : undefined
       }
     >
       {songs.map((song, i) => (
@@ -49,7 +54,7 @@ export function SongList({
           key={song.songId}
           song={song}
           // 最初の列は画面に入った時点で見えるので、遅延読み込みにしない
-          eager={i < 8}
+          eager={i < EAGER_IMAGES}
           onOpen={() => (onOpen ? onOpen(i) : open(song))}
         />
       ))}

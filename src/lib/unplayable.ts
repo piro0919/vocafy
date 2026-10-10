@@ -4,6 +4,11 @@ import pg from 'pg';
 import { env } from '@/env';
 import type { Service } from './video-id';
 
+/** oEmbed が、動画が流せないときに返す状態（非公開・埋め込み不可・削除） */
+const GONE = [401, 403, 404];
+/** ニコニコの埋め込みのページが、ニコニコでしか見られない動画に返す状態 */
+const FORBIDDEN = 403;
+
 /**
  * 再生中に「流せない」と知らされた動画を、サーバーから確かめ直し、本当に流せなければ台帳から外す。
  * プレイヤーの知らせ（src/components/player/report.ts）を受ける API（src/app/api/unplayable/route.ts）から使う。
@@ -26,7 +31,7 @@ export async function isPlayable(service: Service, id: string): Promise<boolean 
       const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`;
       const res = await fetch(url, { headers: AGENT, cache: 'no-store' });
       if (res.ok) return true;
-      return [401, 403, 404].includes(res.status) ? false : null;
+      return GONE.includes(res.status) ? false : null;
     }
     const res = await fetch(`https://ext.nicovideo.jp/api/getthumbinfo/${id}`, {
       headers: AGENT,
@@ -41,7 +46,7 @@ export async function isPlayable(service: Service, id: string): Promise<boolean 
       cache: 'no-store',
     });
     if (embed.ok) return true;
-    return embed.status === 403 ? false : null;
+    return embed.status === FORBIDDEN ? false : null;
   } catch {
     return null;
   }

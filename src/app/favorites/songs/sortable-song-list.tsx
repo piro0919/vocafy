@@ -26,6 +26,7 @@ import { SongItem } from '@/components/song-list';
 import type { QueueItem } from '@/lib/catalog';
 import { moveFavoriteSong } from '@/lib/favorites';
 import { ICON_SM } from '@/components/button-styles';
+import { EAGER_IMAGES } from '@/lib/image-sizes';
 
 /**
  * お気に入りの曲の一覧。好きな順に並べ替えられる。
@@ -83,7 +84,12 @@ export function SortableSongList({
       <SortableContext items={songs.map((s) => s.songId)} strategy={verticalListSortingStrategy}>
         <div className="grid gap-1">
           {songs.map((song, i) => (
-            <SortableSong key={song.songId} song={song} eager={i < 8} onOpen={() => onOpen(i)} />
+            <SortableSong
+              key={song.songId}
+              song={song}
+              eager={i < EAGER_IMAGES}
+              onOpen={() => onOpen(i)}
+            />
           ))}
         </div>
       </SortableContext>

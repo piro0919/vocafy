@@ -1,6 +1,10 @@
 import type { Engine, EngineEvents, Sound } from './engine';
 import { reportUnplayable } from './report';
 
+/** YouTube のプレイヤーのエラーの番号のうち、動画そのものが流せないもの（消えた・非公開 100、埋め込み不可 101・150） */
+const ERRORS = { gone: 100, notEmbeddable: 101, notEmbeddableToo: 150 };
+const UNPLAYABLE_ERRORS: number[] = Object.values(ERRORS);
+
 // YouTube の IFrame API のうち、使う分だけの型と読み込み
 type YTPlayer = {
   loadVideoById(id: string): void;
@@ -140,7 +144,7 @@ export function createYouTubeEngine(
         // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）。消えた・非公開（100）と
         // 埋め込み不可（101・150）は、台帳から外せるよう Vocafy に知らせる。ほかの番号は一時的な失敗のことがあるので知らせない
         onError: ({ data }) => {
-          if ([100, 101, 150].includes(data)) reportUnplayable('youtube', latest);
+          if (UNPLAYABLE_ERRORS.includes(data)) reportUnplayable('youtube', latest);
           events.onError();
         },
       },

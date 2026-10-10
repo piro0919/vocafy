@@ -6,6 +6,9 @@ import { ProducerPlayer } from '@/components/producer-player';
 import { type findProducer, queueOf } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 
+/** 検索エンジン向けの情報（JSON-LD）に載せる曲の数 */
+const JSON_LD_TRACKS = 20;
+
 /**
  * ボカロPの画面の中身。ボカロPの画面（page.tsx）と、曲を共有したときの住所の画面（songs/[songId]/page.tsx）で使う。
  * linkedSongId は共有された曲。その曲が一覧で目立ち、大きな再生ボタンがその曲からになる
@@ -27,7 +30,9 @@ export function ProducerView({
     name: producer.name,
     url: `${SITE_URL}/producers/${producer.id}`,
     ...(producer.picture && { image: producer.picture }),
-    track: songs.slice(0, 20).map((s) => ({ '@type': 'MusicRecording', name: s.title })),
+    track: songs
+      .slice(0, JSON_LD_TRACKS)
+      .map((s) => ({ '@type': 'MusicRecording', name: s.title })),
   };
 
   return (

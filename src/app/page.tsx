@@ -9,6 +9,7 @@ import { Shelf } from '@/components/shelf';
 import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, today, voices, years } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
+import { monthDayOf } from '@/lib/iso-date';
 
 /** サイトそのものの情報 */
 const jsonLd: WithContext<WebSite> = {
@@ -22,6 +23,11 @@ const jsonLd: WithContext<WebSite> = {
 // DB を読むのは1日24回まで。ほかのページは時間では作り直さない
 export const revalidate = 3600;
 
+/** トップの歌声の区画に出すキャラの数。列の数（3・4・6）の3段・4段・3段で、最後の段が欠けないようにする */
+const VOICE_CARDS = { base: 9, sm: 16, lg: 18 };
+/** きょうの日付の曲がこれより少ない日は、前後の日に広げる */
+const ON_THIS_DAY_MIN = 8;
+
 /**
  * トップ。人気で並べず、どの曲も同じ扱いで出会えるようにする（2026-10-08 に本人と決めた）。
  * 上から、お気に入りの棚（あれば）、きょうの日付の曲、日替わりの無作為の並び、歌声、年代。毎日変わるものを上に、探しに行く入口を下に置く
@@ -29,14 +35,14 @@ export const revalidate = 3600;
 export default async function Home() {
   const date = today();
   const [day, dayList, mix, voiceList, yearList] = await Promise.all([
-    onThisDay(date, 8),
-    playlistOfDay(date.slice(5)),
+    onThisDay(date, ON_THIS_DAY_MIN),
+    playlistOfDay(monthDayOf(date)),
     dailyMix(date, MIX_SIZE),
     voices(),
     years(),
   ]);
   const { hero, rest } = day;
-  const [month, dayOfMonth] = date.slice(5).split('-').map(Number);
+  const [month, dayOfMonth] = monthDayOf(date).split('-').map(Number);
 
   return (
     <>
@@ -47,7 +53,7 @@ export default async function Home() {
           title={`${month}月${dayOfMonth}日に生まれた曲`}
           playlist={{
             songs: dayList.songs,
-            source: `days/${date.slice(5)}`,
+            source: `days/${monthDayOf(date)}`,
             last: 1,
             pickup: dayList.pickup,
           }}
@@ -86,11 +92,17 @@ export default async function Home() {
               const art = voiceArt(v.id);
               return art ? [{ ...v, art }] : [];
             })
-            .slice(0, 18)
+            .slice(0, VOICE_CARDS.lg)
             .map((v, i) => (
               <li
                 key={v.id}
-                className={i >= 16 ? 'hidden lg:block' : i >= 9 ? 'max-sm:hidden' : undefined}
+                className={
+                  i >= VOICE_CARDS.sm
+                    ? 'hidden lg:block'
+                    : i >= VOICE_CARDS.base
+                      ? 'max-sm:hidden'
+                      : undefined
+                }
               >
                 <CharacterCard {...v} />
               </li>

@@ -13,6 +13,7 @@ import { MOTION } from '@/lib/motion';
 import { frameOf } from '@/lib/thumb';
 import { publishAmbientColors } from './ambient-colors';
 import { usePlayer } from './player/player-provider';
+import { FRAME_NUMBERS } from '@/lib/thumb';
 
 /**
  * 画面の上部に敷く、サムネイルの色のグラデーション（YouTube Music のアルバムの画面に近い形）。
@@ -37,11 +38,16 @@ const GRID_MAJOR = 'color-mix(in oklab, var(--foreground) 6%, transparent)';
 
 /** 一度計算した色。同じ画面に戻ったときは計算し直さず、すぐ出す。null は「色が取れなかった」 */
 const cache = new Map<string, Colors | null>();
+/** 再生位置がこれだけ（曲の長さに対する割合）進んだら、色を移す層を新しく作る。それより小さい進みは、いまの層の色を書き換える */
+const NEW_LAYER_STEP = 0.05;
+
 /** 読み込み中の絵。同じ絵を二重に取りに行かない */
 const loading = new Set<string>();
 
-/** 曲の中で色を取る位置。表紙と、YouTube が自動で選ぶ途中の3コマ（frameOf） */
-const STOPS = [0, 0.25, 0.5, 0.75];
+/** 色を取る絵の数。表紙と、YouTube が自動で選ぶ途中の3コマ（frameOf） */
+const FRAMES = 4;
+/** 曲の中で色を取る位置 */
+const STOPS = Array.from({ length: FRAMES }, (_, i) => i / FRAMES);
 
 /** この画面の背景の色をどの絵から取るか。null は「流している曲の色、無ければ差し色」 */
 const SourceContext = createContext<(image: string | null) => void>(() => {});
@@ -65,7 +71,7 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
   const images = useMemo(() => {
     if (!videoId || !thumb) return source ? [source] : [];
     return service === 'youtube'
-      ? [thumb, frameOf(videoId, 1), frameOf(videoId, 2), frameOf(videoId, 3)]
+      ? [thumb, ...FRAME_NUMBERS.map((n) => frameOf(videoId, n))]
       : [thumb];
   }, [videoId, service, thumb, source]);
 
@@ -83,8 +89,7 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
         img.src = image;
       } else {
         // ニコニコの表紙やボカロPの画像は直接は色を読めないので、画像変換で同じドメインにして読む。
-        // 画像変換が受け付ける幅（imageSizes）と画質（75）に合わせる
-        img.src = `/_next/image?url=${encodeURIComponent(image)}&w=64&q=75`;
+        img.src = `/_next/image?url=${encodeURIComponent(image)}&w=${SAMPLE_IMAGE.width}&q=${SAMPLE_IMAGE.quality}`;
       }
       const done = (found: Colors | null) => {
         loading.delete(image);
@@ -130,7 +135,8 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!from || !to) return;
     const fresh =
-      images[0] !== scene.current.image || Math.abs(progress - scene.current.progress) > 0.05;
+      images[0] !== scene.current.image ||
+      Math.abs(progress - scene.current.progress) > NEW_LAYER_STEP;
     scene.current = { image: images[0], progress };
     const next: Colors = [from, to];
     setLayers((prev) => {
@@ -227,6 +233,25 @@ export function AmbientSource({ image }: { image: string | null }) {
   return null;
 }
 
+/** 色を読むために画像変換に頼む幅と画質。画像変換が受け付ける幅（Next.js の既定の imageSizes）と画質（75）に合わせる */
+const SAMPLE_IMAGE = { width: 64, quality: 75 };
+/** 1つの点の値の数（赤・緑・青・透け） */
+const RGBA = 4;
+/** 色を粗く分ける細かさ。各色 8 ビットを上の bits ビットだけで分ける */
+const BUCKET = { bits: 3, shift: 5 };
+/** 色を数えるために縮める大きさ（16:9） */
+const SAMPLE = { width: 32, height: 18 };
+/** これより暗い色・明るい色（左右の黒い帯や白い余白）は数えない（0〜255） */
+const NEAR_BLACK = 24;
+const NEAR_WHITE = 235;
+/** 鮮やかな色ほど重く数える度合い */
+const VIVID_WEIGHT = 4;
+/** 2つ目の色は、1つ目とこれだけ離れた色から選ぶ（RGB の距離） */
+const SECOND_APART = 80;
+/** 背景に敷いても文字が読めるよう、鮮やかさと明るさをこの幅に収める（0〜1） */
+const MAX_SATURATION = 0.65;
+const LIGHTNESS = { min: 0.3, max: 0.45 };
+
 /**
  * 主な色を2つ選ぶ。色を粗く分けて数え、鮮やかな色ほど重く数える。
  * ほぼ黒・ほぼ白（左右の帯や余白）は数えない。2つ目は1つ目と十分に離れた色から選ぶ。
@@ -234,23 +259,26 @@ export function AmbientSource({ image }: { image: string | null }) {
  */
 function pickColors(img: HTMLImageElement): [string, string] | null {
   const canvas = document.createElement('canvas');
-  canvas.width = 32;
-  canvas.height = 18;
+  canvas.width = SAMPLE.width;
+  canvas.height = SAMPLE.height;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return null;
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   const buckets = new Map<number, { r: number; g: number; b: number; weight: number }>();
-  for (let i = 0; i < data.length; i += 4) {
+  for (let i = 0; i < data.length; i += RGBA) {
     const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    if (max < 24 || min > 235) continue;
+    if (max < NEAR_BLACK || min > NEAR_WHITE) continue;
     const saturation = max === 0 ? 0 : (max - min) / max;
-    const key = ((r >> 5) << 6) | ((g >> 5) << 3) | (b >> 5);
+    const key =
+      ((r >> BUCKET.shift) << (BUCKET.bits * 2)) |
+      ((g >> BUCKET.shift) << BUCKET.bits) |
+      (b >> BUCKET.shift);
     const bucket = buckets.get(key) ?? { r: 0, g: 0, b: 0, weight: 0 };
-    const weight = 1 + saturation * 4;
+    const weight = 1 + saturation * VIVID_WEIGHT;
     bucket.r += r * weight;
     bucket.g += g * weight;
     bucket.b += b * weight;
@@ -264,7 +292,7 @@ function pickColors(img: HTMLImageElement): [string, string] | null {
   if (!first) return null;
   const distance = (a: typeof first, b: typeof first) =>
     Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
-  const second = ranked.find((c) => distance(c, first) > 80) ?? first;
+  const second = ranked.find((c) => distance(c, first) > SECOND_APART) ?? first;
   return [tone(first), tone(second)];
 }
 
@@ -277,13 +305,16 @@ function tone({ r, g, b }: { r: number; g: number; b: number }): string {
   const d = max - min;
   let h = 0;
   if (d > 0) {
+    // 色相の計算の式（6つの区間に分けて、緑・青の区間は 2・4 ずらす）
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     if (max === rn) h = ((gn - bn) / d) % 6;
     else if (max === gn) h = (bn - rn) / d + 2;
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     else h = (rn - gn) / d + 4;
   }
   const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
   const hue = Math.round((h * 60 + 360) % 360);
-  const sat = Math.round(Math.min(0.65, s) * 100);
-  const light = Math.round(Math.min(0.45, Math.max(0.3, l)) * 100);
+  const sat = Math.round(Math.min(MAX_SATURATION, s) * 100);
+  const light = Math.round(Math.min(LIGHTNESS.max, Math.max(LIGHTNESS.min, l)) * 100);
   return `hsl(${hue} ${sat}% ${light}%)`;
 }

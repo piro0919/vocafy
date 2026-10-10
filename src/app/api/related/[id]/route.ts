@@ -1,4 +1,8 @@
 import { relatedSongs } from '@/lib/catalog';
+import { cdnCache } from '@/lib/cache-control';
+
+/** 関連曲を CDN に置く日数と、古いものを返しながら取り直す日数 */
+const CACHE = { days: 1, stale: 7 };
 
 /**
  * その曲の関連曲（流せるものだけ、順番待ちの形）。ラジオが並びの終わりに近づいたときに、ブラウザから取りに来る。
@@ -8,6 +12,6 @@ export async function GET(_req: Request, ctx: RouteContext<'/api/related/[id]'>)
   const { id } = await ctx.params;
   const songs = await relatedSongs(Number(id));
   return Response.json(songs, {
-    headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' },
+    headers: { 'Cache-Control': cdnCache(CACHE.days, CACHE.stale) },
   });
 }
