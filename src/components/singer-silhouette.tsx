@@ -6,7 +6,7 @@ import { voiceArtByName } from '@/lib/voice-art';
 import { singerOfVocalists } from './theme/voice';
 
 /**
- * 動画を大きく出す画面の、右の一覧の右下に置く、歌っているキャラの影絵（パソコンだけ）。
+ * 動画を大きく出す画面の、一覧の右下に置く、歌っているキャラの影絵。スマホは小さめにして、再生の帯の上に置く。
  * キャラの絵（public/characters）の形で切り抜き、差し色で薄く塗る。ロゴの影絵と同じ扱いにする。
  * 色のある絵のままだと、一覧の字の後ろで目立って読みにくくなり、AI で作った絵が画面の主役に近くなるので影絵にした（2026-10-11）。
  * 画面に固定し、字の後ろに回す（押せない）。曲が替わったら、いまの影絵を消してから次を出す。
@@ -42,7 +42,7 @@ export function SingerSilhouette({ song }: { song: QueueItem | null }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed right-8 bottom-[calc(4rem+12px+24px)] -z-10 size-64 bg-accent transition-opacity duration-700 ease-(--ease-out) max-lg:hidden ${on ? 'opacity-10 dark:opacity-12' : 'opacity-0'}`}
+      className={`pointer-events-none fixed right-4 bottom-[calc(4rem+12px+16px)] -z-10 size-40 bg-accent transition-opacity duration-700 ease-(--ease-out) lg:right-8 lg:bottom-[calc(4rem+12px+24px)] lg:size-64 ${on ? 'opacity-10 dark:opacity-12' : 'opacity-0'}`}
       style={{
         maskImage: `url(${shown})`,
         maskSize: 'contain',
