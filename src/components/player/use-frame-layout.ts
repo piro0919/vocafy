@@ -15,8 +15,9 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
   // 動かすのは見た目の transform だけで、iframe そのものは動かさない
   const lastBox = useRef<DOMRect | null>(null);
   const lastMode = useRef(mode);
-  // 前の形になった時刻。一瞬（1フレームほど）しか続かなかった形からは、移る動きを見せない
+  // 前の形になった時刻と、その前の形。一瞬（1フレームほど）しか続かなかった形は、無かったものとして扱う
   const lastModeAt = useRef(0);
+  const beforeLast = useRef<FrameMode>(mode);
 
   // ボカロPの画面では、プレイヤーを画面に固定し、置き場所の位置と大きさに合わせ続ける。
   // 置き場所は曲目をスクロールしても上に貼り付く（sticky）ので、ページの中ではなく画面の座標で合わせる。
@@ -83,12 +84,13 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
     }
 
     const to = el.getBoundingClientRect();
-    // 最初の1曲を流し始めたときは、置き場所が知らされるまでの一瞬だけ右下の窓の形になる。
-    // それを「右下から移ってきた」と取り違えないよう、すぐ切り替わった形は、無かったものとして扱う
-    const previous =
-      lastMode.current === 'dock' && performance.now() - lastModeAt.current < 100
-        ? 'none'
-        : lastMode.current;
+    // 一瞬だけ右下の窓の形になって、すぐ別の形に替わることがある。最初の1曲を流し始めたとき（置き場所が知らされるまで）と、
+    // ボカロPの画面からお気に入りの曲の画面へ戻ったとき（戻った画面が並びを取り戻すまで）。その一瞬は無かったものとして、
+    // その前の形から移ったとみなす。一瞬のあいだに始めた移る動きも取り消す。取り消さないと、右下の窓へ向けたずれを大きな
+    // 置き場所の位置に当てたまま動き、画面の左上の外から入ってくるように見えた（2026-10-11）
+    const flash = lastMode.current === 'dock' && performance.now() - lastModeAt.current < 100;
+    if (flash && mode !== 'dock') for (const animation of el.getAnimations()) animation.cancel();
+    const previous = flash ? beforeLast.current : lastMode.current;
     const moved = previous !== mode && previous !== 'none' && mode !== 'none';
     if (previous === 'none' && mode === 'slot' && !prefersReducedMotion()) {
       // 何も流していなかったところから大きな置き場所に出るときは、その場でふわっと出す
@@ -106,7 +108,10 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
         { duration: 400, easing: EASE_OUT },
       );
     }
-    if (lastMode.current !== mode) lastModeAt.current = performance.now();
+    if (lastMode.current !== mode) {
+      lastModeAt.current = performance.now();
+      beforeLast.current = previous;
+    }
     lastMode.current = mode;
     lastBox.current = to;
 
