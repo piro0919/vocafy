@@ -34,7 +34,7 @@ export function VoiceSetting() {
           <label
             key={o.value}
             style={{ '--c': o.color } as React.CSSProperties}
-            className="group relative flex cursor-pointer flex-col rounded-2xl transition-[scale] duration-150 ease-(--ease-out) active:scale-95 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-accent"
+            className="group relative flex cursor-pointer flex-col rounded-2xl transition-[scale] duration-react active:scale-95 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-accent"
           >
             <input
               type="radio"
@@ -53,7 +53,7 @@ export function VoiceSetting() {
         ))}
       </div>
       {/* 行の形は、スワイプで戻るの「使う」と同じ */}
-      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-foreground/8 sm:max-w-sm">
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-foreground/8 sm:max-w-sm">
         <input
           type="checkbox"
           checked={follow}

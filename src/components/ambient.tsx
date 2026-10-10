@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { MOTION } from '@/lib/motion';
 import { frameOf } from '@/lib/thumb';
 import { publishAmbientColors } from './ambient-colors';
 import { usePlayer } from './player/player-provider';
@@ -33,9 +34,6 @@ type Colors = [string, string];
 /** 方眼の線の色。字の色をごく薄く混ぜる（明るい画面でも暗い画面でも、地より少しだけ字の側に寄る） */
 const GRID_MINOR = 'color-mix(in oklab, var(--foreground) 3%, transparent)';
 const GRID_MAJOR = 'color-mix(in oklab, var(--foreground) 6%, transparent)';
-
-/** 右上のにじみが漂う片道の長さ（秒。globals.css の ambient-drift を 40s で動かす） */
-const DRIFT_SECONDS = 40;
 
 /** 一度計算した色。同じ画面に戻ったときは計算し直さず、すぐ出す。null は「色が取れなかった」 */
 const cache = new Map<string, Colors | null>();
@@ -155,8 +153,8 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
             key={layer.id}
             className={
               layer.leaving
-                ? 'absolute inset-0 animate-[fade-out_2s_ease-in-out_both]'
-                : 'absolute inset-0 animate-[fade-in_2s_ease-in-out_both]'
+                ? 'absolute inset-0 animate-fade-out'
+                : 'absolute inset-0 animate-fade-in'
             }
             onAnimationEnd={() =>
               setLayers((prev) =>
@@ -173,9 +171,9 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
                 色の残っているところで層の端が切れ、右の方に四角い境目が見えた。にじみの位置と大きさは、大きくした分だけ割合を直して
                 元と同じにする（上部の幅の 85%・上端を中心に、幅の 60%・高さの 80%） */}
             <div
-              className="absolute -inset-1/4 animate-[ambient-drift_40s_ease-in-out_infinite_alternate] motion-reduce:animate-none"
+              className="absolute -inset-1/4 animate-ambient-drift motion-reduce:animate-none"
               style={{
-                animationDelay: `-${layer.born % (DRIFT_SECONDS * 2000)}ms`,
+                animationDelay: `-${layer.born % (MOTION.drift * 2)}ms`,
                 transformOrigin: '73.3% 16.7%',
                 background: `radial-gradient(40% 53.3% at 73.3% 16.7%, ${layer.colors[1]}, transparent 70%)`,
               }}

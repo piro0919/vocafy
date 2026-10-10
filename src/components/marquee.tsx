@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef } from 'react';
-import { prefersReducedMotion } from '@/lib/motion';
+import { LINEAR, prefersReducedMotion } from '@/lib/motion';
 
 /** 流す速さ（1秒あたりの px）と、両端で止まっている時間（ミリ秒） */
 const SPEED = 30;
@@ -53,7 +53,7 @@ export function Marquee({
           { transform: `translateX(-${distance}px)`, offset: (PAUSE + move) / total },
           { transform: `translateX(-${distance}px)`, offset: 1 },
         ],
-        { duration: total, iterations: Infinity, easing: 'linear' },
+        { duration: total, iterations: Infinity, easing: LINEAR },
       );
     };
 

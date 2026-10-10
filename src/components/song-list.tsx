@@ -88,12 +88,12 @@ export function SongItem({
     <div
       ref={row}
       data-preload={song.service === 'niconico' ? song.videoId : undefined}
-      className={`group flex min-w-0 snap-start items-center rounded-md border pr-1 transition-colors duration-150 ${active ? 'border-line/60 bg-glass' : 'border-transparent hover:bg-foreground/8'}`}
+      className={`group flex min-w-0 snap-start items-center rounded-md border pr-1 transition-colors duration-react ${active ? 'border-line/60 bg-glass' : 'border-transparent hover:bg-foreground/8'}`}
     >
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-150 ease-(--ease-out) active:scale-[0.98]"
+        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-react active:scale-[0.98]"
       >
         <FadeImage
           src={smallThumbOf(song)}

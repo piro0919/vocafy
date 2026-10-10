@@ -20,6 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SyntheticEvent } from 'react';
+import { EASE_OUT, MOTION } from '@/lib/motion';
 import { Icon } from '@/components/icon';
 import { SongItem } from '@/components/song-list';
 import type { QueueItem } from '@/lib/catalog';
@@ -107,7 +108,11 @@ function SortableSong({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: song.songId });
+  } = useSortable({
+    id: song.songId,
+    // 並びが動く速さと曲線をほかの動きにそろえる（dnd-kit の既定は 250ms の ease）
+    transition: { duration: MOTION.move, easing: EASE_OUT },
+  });
   // dnd-kit は受け口を Function の表で返すので、置き場所ごとに1つずつ取り出す
   const on = (name: 'onMouseDown' | 'onTouchStart' | 'onKeyDown') =>
     listeners?.[name] as ((event: SyntheticEvent) => void) | undefined;

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { EASE_OUT, prefersReducedMotion } from '@/lib/motion';
+import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { DOCK_SIDE_EVENT } from './player-storage';
 
 /** プレイヤーの形。none は何も流していない（か置き場所を待っている）、slot は画面の置き場所、dock は右下の窓 */
@@ -94,7 +94,7 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
     const moved = previous !== mode && previous !== 'none' && mode !== 'none';
     if (previous === 'none' && mode === 'slot' && !prefersReducedMotion()) {
       // 何も流していなかったところから大きな置き場所に出るときは、その場でふわっと出す
-      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: EASE_OUT });
+      el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MOTION.move, easing: EASE_OUT });
     }
     if (moved && from && to.width > 0 && !prefersReducedMotion()) {
       el.animate(
@@ -105,7 +105,7 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
           },
           { transformOrigin: 'top left', transform: 'none' },
         ],
-        { duration: 400, easing: EASE_OUT },
+        { duration: MOTION.move, easing: EASE_OUT },
       );
     }
     if (lastMode.current !== mode) {

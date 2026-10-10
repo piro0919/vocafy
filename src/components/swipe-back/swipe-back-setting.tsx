@@ -47,7 +47,7 @@ export function SwipeBackSetting() {
         {OPTIONS.map((o) => (
           <label
             key={o.value}
-            className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-foreground/8"
+            className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-foreground/8"
           >
             <input
               type="radio"

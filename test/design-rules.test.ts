@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { EASE_OUT, MOTION } from '../src/lib/motion';
 
 /**
  * 見た目の決まり（CLAUDE.md の「見た目」）から外れた書き方を見つける。ボタンや部品をその場で書き起こすと、
@@ -24,10 +25,55 @@ function offenders(test: (line: string) => boolean, allow: string[] = []): strin
 }
 
 describe('見た目の決まり', () => {
-  it('動きの曲線は自前の --ease-out だけ（Tailwind の ease-out などは使わない）', () => {
-    expect(offenders((l) => /(?<![\w(_[-])ease-(out|in|in-out|linear)(?![\w)-])/.test(l))).toEqual(
-      [],
+  // 動きの長さと曲線は globals.css の @theme と src/lib/motion.ts にだけ書く（2026-10-11 に本人と決めた。例外は置かない）
+  it('動きの長さは duration-react・move・slow の名前だけ（数字を書かない）', () => {
+    expect(offenders((l) => /(?<![\w-])duration-(\d|\[|\()/.test(l))).toEqual([]);
+  });
+
+  it('動きの曲線を部品で書かない（既定の ease-out にまかせる）', () => {
+    expect(offenders((l) => /(?<![\w(_[-])ease-[\w([]/.test(l))).toEqual([]);
+  });
+
+  it('動き（animate-*）をその場で組み立てない（globals.css の @theme に名前を付けて置く）', () => {
+    expect(offenders((l) => /animate-\[/.test(l))).toEqual([]);
+  });
+
+  it('JavaScript の動きも MOTION と EASE_OUT から取る', () => {
+    expect(
+      offenders(
+        (l) => /\bduration:\s*[1-9]/.test(l) || /\beasing:\s*['"`]/.test(l),
+        // 知らせ（toast）を出しておく時間。動きの長さではない
+        ['app/history/history-view.tsx', 'app/search/search-view.tsx'],
+      ),
+    ).toEqual([]);
+  });
+
+  it('globals.css の動きは @theme の長さを使い、数字を書かない', () => {
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8').split('\n');
+    const raw = css.flatMap((line, i) =>
+      /^\s*(--|\*|\/\*)/.test(line) ||
+      !/\b\d+(\.\d+)?m?s\b/.test(line) ||
+      /\b0s !important/.test(line)
+        ? []
+        : [`app/globals.css:${i + 1}`],
     );
+    expect(raw).toEqual([]);
+  });
+
+  it('globals.css の長さと曲線は src/lib/motion.ts と同じ値', () => {
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+    const ms = (name: string) => {
+      const m = css.match(new RegExp(`--transition-duration-${name}:\\s*([\\d.]+)(m?s);`));
+      if (!m) return null;
+      return Number(m[1]) * (m[2] === 's' ? 1000 : 1);
+    };
+    expect({
+      react: ms('react'),
+      move: ms('move'),
+      slow: ms('slow'),
+      drift: ms('drift'),
+    }).toEqual(MOTION);
+    expect(css).toContain(`--ease-out: ${EASE_OUT};`);
   });
 
   it('押したときの縮みは 95%。幅いっぱいの曲の行だけ 98%', () => {

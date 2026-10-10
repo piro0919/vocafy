@@ -32,7 +32,7 @@ export function FadeImage({ className = '', alt, unoptimized, ...props }: ImageP
       ref={ref}
       alt={alt}
       onLoad={() => setLoaded(true)}
-      className={`transition-[opacity,scale] duration-300 ease-(--ease-out) ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+      className={`transition-[opacity,scale] duration-move ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
       unoptimized={unoptimized ?? isVideoThumb(props.src)}
       {...props}
     />

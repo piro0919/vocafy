@@ -1,6 +1,7 @@
 'use client';
 
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { MOTION } from '@/lib/motion';
 import { createPortal } from 'react-dom';
 import type { QueueItem } from '@/lib/catalog';
 import { FADE, HIDDEN } from './player/dock-strip';
@@ -97,7 +98,7 @@ function SongNotes({
           setCurrent(targetRef.current);
           text.current?.scrollTo({ top: 0 });
           sheetBody.current?.scrollTo({ top: 0 });
-        }, FADE_MS);
+        }, MOTION.move);
       else if (loaded) {
         // 流すのをやめたとき（song が null）は、少し待ってから消す。ラジオのボタンなどで別の画面へ移るときは、移る前に
         // この画面が持ち主でなくなり、移るまでの一瞬だけ消えかけた。移り終えればこの部品ごと外れるので、待つあいだは出したまま
@@ -106,7 +107,7 @@ function SongNotes({
         later(() => {
           setCurrent(null);
           setOpen(false);
-        }, wait + FADE_MS);
+        }, wait + MOTION.move);
       }
     }
     return () => timers.forEach(clearTimeout);
@@ -164,9 +165,7 @@ function SongNotes({
   if (!current) return null;
 
   const body = (
-    <div
-      className={`transition-opacity duration-300 ease-(--ease-out) ${textOn ? '' : 'opacity-0'}`}
-    >
+    <div className={`transition-opacity duration-move ${textOn ? '' : 'opacity-0'}`}>
       {linkify(current.text)}
     </div>
   );
@@ -205,8 +204,6 @@ function SongNotes({
 
 /** 下の再生の帯（下から 12px・高さ 64px）と、その上の余白 24px */
 const BOTTOM = 100;
-/** フェードの長さ（FADE の duration-300 と同じ） */
-const FADE_MS = 300;
 /** 枠の上の間（mt-6） */
 const GAP = 24;
 /** 枠に取れる高さがこれより低い画面では出さない（px） */

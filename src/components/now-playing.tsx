@@ -19,7 +19,7 @@ export function Bars({ playing }: { playing: boolean }) {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-0.5 origin-bottom animate-[eq_0.9s_ease-in-out_infinite] rounded-full bg-accent"
+          className="w-0.5 origin-bottom animate-eq rounded-full bg-accent"
           style={{
             height: '100%',
             animationDelay: `${i * -0.3}s`,

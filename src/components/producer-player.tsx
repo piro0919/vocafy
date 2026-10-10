@@ -180,7 +180,7 @@ export function ProducerPlayer({
                 key={song.id}
                 id={`song-${song.id}`}
                 data-preload={item?.service === 'niconico' ? item.videoId : undefined}
-                className={`group flex items-center rounded-md border pr-1 transition-colors duration-150 ${
+                className={`group flex items-center rounded-md border pr-1 transition-colors duration-react ${
                   active || linkedItem?.songId === song.id
                     ? 'border-line/60 bg-glass'
                     : item
@@ -340,7 +340,7 @@ function YearJump({ songs }: { songs: Song[] }) {
               // ブラウザの smooth は Firefox で一気に飛んだので、自前で送る（motion.ts）
               if (row) glideWindowTo(window.scrollY + row.getBoundingClientRect().top - below);
             }}
-            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-150 ease-(--ease-out) active:scale-95 ${
+            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-react active:scale-95 ${
               active === year
                 ? 'bg-miku text-on-miku'
                 : 'text-muted hover:bg-foreground/8 hover:text-foreground'

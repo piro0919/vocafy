@@ -56,7 +56,7 @@ export function Logo({ compact }: { compact?: boolean }) {
 export function Sidebar() {
   const active = useActive();
   return (
-    <nav className="fixed inset-y-0 left-0 z-30 hidden w-63 py-3 pl-3 transition-[padding] duration-300 md:flex [html[data-player=dock]_&]:pb-[5.5rem] [html[data-player=slot]_&]:pb-[5.5rem]">
+    <nav className="fixed inset-y-0 left-0 z-30 hidden w-63 py-3 pl-3 transition-[padding] duration-move md:flex [html[data-player=dock]_&]:pb-[5.5rem] [html[data-player=slot]_&]:pb-[5.5rem]">
       <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-glass px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
         <div className="mb-5 px-3">
           <Logo />
@@ -65,7 +65,7 @@ export function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-150 ${
+            className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-react ${
               active(item.href)
                 ? 'bg-foreground/10 text-foreground'
                 : 'text-muted hover:text-foreground'
@@ -81,7 +81,7 @@ export function Sidebar() {
           <InstallButton menu />
           <Link
             href="/settings"
-            className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-150 ${
+            className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-react ${
               active('/settings')
                 ? 'bg-foreground/10 text-foreground'
                 : 'text-muted hover:text-foreground'

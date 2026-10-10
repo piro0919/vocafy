@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { EASE_OUT, prefersReducedMotion } from '@/lib/motion';
+import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { Icon } from '../icon';
 import type { FrameMode } from './use-frame-layout';
 import { type DockSide, savedDockSide, saveDockSide } from './player-storage';
@@ -29,7 +29,7 @@ const DRAG_START = 8;
 /** 離したとき、これだけ引いていれば、引いた向きの側へ寄せる */
 const DRAG_SWITCH = 48;
 /** 出入りの動き。閉じたあとは少し下へずらして消す */
-export const FADE = 'transition-[opacity,translate,visibility] duration-300 ease-(--ease-out)';
+export const FADE = 'transition-[opacity,translate,visibility] duration-move';
 export const HIDDEN = 'pointer-events-none invisible translate-y-4 opacity-0';
 
 /**
@@ -107,7 +107,7 @@ export function DockStrip({
       if (offset !== 0 && !prefersReducedMotion()) {
         for (const node of [el, frame]) {
           node.animate([{ transform: `translateX(${offset}px)` }, { transform: 'none' }], {
-            duration: 300,
+            duration: MOTION.move,
             easing: EASE_OUT,
           });
         }
@@ -168,7 +168,7 @@ export function DockStrip({
           type="button"
           aria-label="プレイヤーを閉じる"
           onClick={onClose}
-          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-150 ease-(--ease-out) hover:text-foreground active:scale-95"
+          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-react hover:text-foreground active:scale-95"
         >
           <Icon name="close" className="size-4" />
         </button>

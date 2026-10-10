@@ -160,7 +160,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             title={song.title}
             data-preload={song.service === 'niconico' ? song.videoId : undefined}
             onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} snap-start`}
+            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-react active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} snap-start`}
           >
             <FadeImage
               src={song.thumb}
@@ -170,7 +170,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
               className="object-cover group-hover:scale-105"
             />
             <span
-              className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+              className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-react ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
             >
               <span className="min-w-0 truncate">{song.title}</span>
               {active && <Bars playing={playing} />}

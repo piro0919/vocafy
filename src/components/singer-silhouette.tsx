@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MOTION } from '@/lib/motion';
 import type { QueueItem } from '@/lib/catalog';
 import { voiceArtByName } from '@/lib/voice-art';
 
@@ -38,7 +39,7 @@ export function SingerSilhouette({ song }: { song: QueueItem | null }) {
     const timers: ReturnType<typeof setTimeout>[] = [];
     if (shown) {
       timers.push(setTimeout(() => setOn(false), 0));
-      timers.push(setTimeout(() => setShown(art), FADE_MS));
+      timers.push(setTimeout(() => setShown(art), MOTION.slow));
     } else {
       timers.push(setTimeout(() => setShown(art), 0));
     }
@@ -56,7 +57,7 @@ export function SingerSilhouette({ song }: { song: QueueItem | null }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed right-4 bottom-[calc(4rem+12px+16px)] -z-10 size-40 bg-accent transition-opacity duration-700 ease-(--ease-out) lg:right-8 lg:bottom-[calc(4rem+12px+24px)] lg:size-64 ${on ? 'opacity-10 dark:opacity-12' : 'opacity-0'}`}
+      className={`pointer-events-none fixed right-4 bottom-[calc(4rem+12px+16px)] -z-10 size-40 bg-accent transition-opacity duration-slow lg:right-8 lg:bottom-[calc(4rem+12px+24px)] lg:size-64 ${on ? 'opacity-10 dark:opacity-12' : 'opacity-0'}`}
       style={{
         maskImage: `url(${shown})`,
         maskSize: 'contain',
@@ -66,9 +67,6 @@ export function SingerSilhouette({ song }: { song: QueueItem | null }) {
     />
   );
 }
-
-/** 消えるのにかかる長さ（duration-700 と同じ） */
-const FADE_MS = 700;
 
 /** 何人も歌っている曲で、次のキャラに替えるまでの長さ */
 const CYCLE_MS = 16000;

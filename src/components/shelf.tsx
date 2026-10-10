@@ -1,15 +1,12 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { easeInOut, prefersReducedMotion } from '@/lib/motion';
+import { easeOut, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { Icon } from './icon';
 import { Heading, SECTION } from './heading';
 import { FADE } from './scroll-row';
 import { ARROW } from './button-styles';
-
-/** 矢印で送るときの時間（ミリ秒） */
-const GLIDE_MS = 500;
 
 /**
  * 横に流す帯の送り方（年代の棚と、トップのきょうの日付の曲の列で使う）。帯の要素に track を付け、onScroll で update を呼ぶ。
@@ -34,8 +31,8 @@ export function useShelfScroll<T extends HTMLElement = HTMLDivElement>() {
     const started = performance.now();
     el.style.scrollSnapType = 'none';
     const step = (now: number) => {
-      const t = Math.min(1, (now - started) / GLIDE_MS);
-      el.scrollLeft = from + (to - from) * easeInOut(t);
+      const t = Math.min(1, (now - started) / MOTION.move);
+      el.scrollLeft = from + (to - from) * easeOut(t);
       if (t < 1) frame.current = requestAnimationFrame(step);
       else el.style.scrollSnapType = '';
     };

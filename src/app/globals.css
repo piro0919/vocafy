@@ -184,9 +184,32 @@
   --miku: #7fb7ec;
 }
 
-:root {
-  /* 動きの曲線。src/lib/motion.ts の EASE_OUT と同じ値 */
+/*
+ * 動きの長さと曲線（2026-10-11 に本人と決めた。src/lib/motion.ts の MOTION・EASE_OUT と同じ値）。
+ * 部品からは duration-react・duration-move・duration-slow と ease-out の名前だけで使い、数字を書かない（test/design-rules.test.ts が見る）。
+ * ease-out は Tailwind の既定を上書きする。長さを書かない transition は react と ease-out になる。
+ * 動き（animate-*）も、ここの長さから組み立てる
+ */
+@theme static {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --transition-duration-react: 150ms;
+  --transition-duration-move: 300ms;
+  --transition-duration-slow: 1200ms;
+  --transition-duration-drift: 40s;
+  --default-transition-duration: var(--transition-duration-react);
+  --default-transition-timing-function: var(--ease-out);
+
+  --animate-fade-in: fade-in var(--transition-duration-slow) var(--ease-out) both;
+  --animate-fade-out: fade-out var(--transition-duration-slow) var(--ease-out) both;
+  --animate-ambient-drift: ambient-drift var(--transition-duration-drift) ease-in-out infinite
+    alternate;
+  --animate-heart-pop: heart-pop var(--transition-duration-move) var(--ease-out);
+  --animate-heart-unpop: heart-unpop var(--transition-duration-move) var(--ease-out);
+  --animate-heart-note: heart-note var(--transition-duration-move) var(--ease-out) forwards;
+  /* 繰り返す動きは片道をどれかの長さにする（漂いも片道が drift）。一周は行きと帰りで2倍。行って戻るので、漂いと同じく ease-in-out。
+     再生中の印の棒は move（slow では一周 2.4秒になり、だらけて音に合って見えなかった）、読み込み中の札の明滅は slow */
+  --animate-eq: eq calc(var(--transition-duration-move) * 2) ease-in-out infinite;
+  --animate-pulse: pulse calc(var(--transition-duration-slow) * 2) ease-in-out infinite;
 }
 
 /* dark: は暗い画面のときに効く。端末の設定ではなく data-theme を見る */
@@ -228,19 +251,19 @@ body {
 @media (max-width: 47.99rem) {
   /* 出入りの動きは、ここでまとめて指定する（クラスの指定より、こちらが勝つため） */
   .chrome-header {
-    transition: translate 300ms var(--ease-out);
+    transition: translate var(--transition-duration-move) var(--ease-out);
   }
   .chrome-tabs {
     transition:
-      translate 300ms var(--ease-out),
-      border-radius 300ms var(--ease-out);
+      translate var(--transition-duration-move) var(--ease-out),
+      border-radius var(--transition-duration-move) var(--ease-out);
   }
   .chrome-bottom {
     transition:
-      translate 300ms var(--ease-out),
-      opacity 300ms var(--ease-out),
-      visibility 300ms,
-      margin-bottom 300ms var(--ease-out);
+      translate var(--transition-duration-move) var(--ease-out),
+      opacity var(--transition-duration-move) var(--ease-out),
+      visibility var(--transition-duration-move),
+      margin-bottom var(--transition-duration-move) var(--ease-out);
   }
   html[data-chrome='hidden'] .chrome-header {
     translate: 0 -100%;
@@ -318,7 +341,8 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: logo-shine 1.4s var(--ease-out) 0.3s both;
+  animation: logo-shine var(--transition-duration-slow) var(--ease-out)
+    var(--transition-duration-move) both;
 }
 .logo > span.text-accent {
   --c: var(--accent);
@@ -418,7 +442,7 @@ body {
 }
 
 /*
- * 差し色とボタンの地は、歌っているキャラの色（voice-follower.tsx）で曲ごとに変わるので、0.6秒かけて移す。
+ * 差し色とボタンの地は、歌っているキャラの色（voice-follower.tsx）で曲ごとに変わるので、slow の長さで移す。
  * 色として登録しないと値が文字のまま一瞬で切り替わる。html で移せば、使っている所はすべて受け継いで一緒に移る
  */
 @property --accent {
@@ -433,15 +457,26 @@ body {
 }
 :root {
   transition:
-    --accent 600ms var(--ease-out),
-    --miku 600ms var(--ease-out);
+    --accent var(--transition-duration-slow) var(--ease-out),
+    --miku var(--transition-duration-slow) var(--ease-out);
 }
 
 /* サイトカラーを変えたときのフェード（voice.ts の setVoice）。ほかの所では View Transitions を使っていない */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 300ms;
+  animation-duration: var(--transition-duration-move);
   animation-timing-function: var(--ease-out);
+}
+
+/*
+ * 知らせ（sonner）の出入りも move にそろえる。sonner は自前の CSS で 200〜500ms の ease を持っている。
+ * :where で詳細度を 0 にして、下の動きを減らす設定（同じ !important）が後から勝つようにする
+ */
+:where([data-sonner-toast], [data-sonner-toast] > *) {
+  transition-duration: var(--transition-duration-move) !important;
+  transition-timing-function: var(--ease-out) !important;
+  animation-duration: var(--transition-duration-move) !important;
+  animation-timing-function: var(--ease-out) !important;
 }
 
 /* 動きを減らす設定の人には、出入りや移動の動きを見せない */
