@@ -11,7 +11,7 @@ import { FadeImage } from '../fade-image';
 import { FavoriteButton } from '../favorite-button';
 import { Icon } from '../icon';
 import { PlaybackMode } from './playback-mode';
-import { type PlaybackTime, usePlayer } from './player-provider';
+import { type PlaybackTime, type Sleep, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { SEEK_STEP } from '@/lib/input';
@@ -37,6 +37,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     close,
     seek,
     time,
+    sleep,
     volume,
     muted,
     setVolume,
@@ -52,9 +53,10 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
         open ? '' : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >
+      <SleepFill sleep={sleep} />
       <Progress time={time} playing={playing} onSeek={seek} />
 
-      <div className="flex h-full items-center gap-3 px-3 sm:gap-4 sm:px-4">
+      <div className="relative flex h-full items-center gap-3 px-3 sm:gap-4 sm:px-4">
         <div className="flex items-center sm:gap-1">
           <BarButton label="前の曲" disabled={!hasPrev} onClick={() => step(-1)}>
             <Icon name="prev" />
@@ -170,6 +172,35 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
         </BarButton>
       </div>
     </div>
+  );
+}
+
+/**
+ * スリープタイマーの残り。帯の地を薄い差し色で塗り、入れてからの時間につれて左の端から右へ削っていく。
+ * 「この曲が終わったら」では出さない（上の再生位置の線と同じ動きを繰り返すだけになる）。
+ * 描き直しは再生位置の線と同じく、React を通さず毎フレーム要素の大きさを変える
+ */
+function SleepFill({ sleep }: { sleep: Sleep | null }) {
+  const fill = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (sleep?.kind !== 'at') return;
+    let id = 0;
+    const draw = () => {
+      const left = (sleep.at - Date.now()) / (sleep.at - sleep.from);
+      if (fill.current) fill.current.style.scale = `${Math.min(1, Math.max(0, left))} 1`;
+      id = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(id);
+  }, [sleep]);
+  if (sleep?.kind !== 'at') return null;
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden rounded-t-2xl md:rounded-2xl"
+    >
+      <span ref={fill} className="absolute inset-0 origin-right bg-accent/10" />
+    </span>
   );
 }
 

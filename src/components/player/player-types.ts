@@ -26,8 +26,11 @@ export type QueueOwner =
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
 
-/** スリープタイマー。at はその時刻（Date.now() の値）に止める、end はいまの曲が終わったら止める */
-export type Sleep = { kind: 'at'; at: number } | { kind: 'end' };
+/**
+ * スリープタイマー。at はその時刻（Date.now() の値）に止める、end はいまの曲が終わったら止める。
+ * from は入れた時刻で、再生の帯の地に残りの割合を出すのに使う
+ */
+export type Sleep = { kind: 'at'; at: number; from: number } | { kind: 'end' };
 
 export type PlayerContext = {
   queue: QueueItem[];

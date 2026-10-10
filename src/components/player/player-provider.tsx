@@ -581,12 +581,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [sleep, setSleepState] = useState<Sleep | null>(null);
   const sleepRef = useRef<Sleep | null>(null);
   const setSleep = useCallback((value: number | 'end' | null) => {
+    const from = Date.now();
     const next: Sleep | null =
       value === null
         ? null
         : value === 'end'
           ? { kind: 'end' }
-          : { kind: 'at', at: Date.now() + value * MINUTE_MS };
+          : { kind: 'at', at: from + value * MINUTE_MS, from };
     sleepRef.current = next;
     setSleepState(next);
   }, []);
