@@ -103,7 +103,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                       <AccountButton />
                     </div>
                   </div>
-                  <main className="flex-1 px-4 pb-12 sm:px-8 md:pt-4">{children}</main>
+                  <main className="flex-1 px-4 sm:px-8 md:pt-4">{children}</main>
                   <SiteFooter />
                 </div>
               </AmbientProvider>
