@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  type ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
@@ -23,6 +16,7 @@ import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { ICON } from './button-styles';
+import { useTakeOver } from './player/use-take-over';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 
@@ -48,20 +42,11 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const {
-    current,
-    playing,
-    context,
-    listSource,
-    holdingSlot,
-    playQueue,
-    adoptQueue,
-    toggle,
-    skipsNiconico,
-  } = usePlayer();
+  const { current, playing, context, listSource, playQueue, takeOver, toggle, skipsNiconico } =
+    usePlayer();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
   // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の曲なら、
-  // 開いたときに並びをこの人の曲に切り替える（下の useLayoutEffect）
+  // 開いたときに並びをこの人の曲に切り替える（useTakeOver）
   const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
   const here = ownQueue && current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
@@ -107,21 +92,12 @@ export function ProducerPlayer({
     if (at < 0) return;
     // 並びの種類も「移る途中（pending）」から「この人の曲の並び（list）」に改める。pending のまま残すと、ほかの画面
     // （お気に入りの曲の画面など）が「移る途中」と見分けられず、並びを横取りしたり、戻ったときに取り戻せなかったりした
-    adoptQueue(queue, at, 'list');
+    takeOver(queue, at, PRODUCER);
     document.getElementById(`song-${current.songId}`)?.scrollIntoView({ block: 'center' });
-  }, [here, current, context, queue, adoptQueue]);
+  }, [here, current, context, queue, takeOver]);
 
-  // この画面を開いたときに、流している曲がこの人の一覧に載っていれば、並びをこの人の曲にしてその曲から続ける（曲は止めない）。
-  // お気に入りなどの並びのままだと、この画面は持ち主でなく、動画が右下の窓になった（ブラウザの「進む」で戻って来たときなど。
-  // 2026-10-11 に本人と決めた。お気に入りの曲の画面と同じ決まり）。ラジオでも切り替える（ラジオの画面から「戻る」で戻ったときに
-  // 右下の窓になった。ラジオはそこで終わる）。移る途中（pending。上で差し替える）は切り替えない。描く前に切り替え、右下の窓を一瞬も出さない
-  useLayoutEffect(() => {
-    // 画面を移っている途中（holdingSlot。この画面でラジオのボタンを押してラジオの画面へ移るときなど）も切り替えない。
-    // 切り替えると、始めたばかりのラジオをこの画面が取り戻して終わらせた
-    if (!current || here || context === 'pending' || holdingSlot) return;
-    const at = queue.findIndex((q) => q.songId === current.songId);
-    if (at >= 0) adoptQueue(queue, at, 'list');
-  }, [current, here, context, holdingSlot, queue, adoptQueue]);
+  // 流している曲がこの人の一覧にあれば、開いたときに並びをこの人の曲にする（use-take-over.ts。どの画面も同じ決まり）
+  useTakeOver(here, queue, PRODUCER);
 
   const start = (songId?: number) =>
     playQueue(
@@ -282,6 +258,9 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
     </button>
   );
 }
+
+/** この画面が並びの持ち主になるときの種類（takeOver） */
+const PRODUCER = { kind: 'producer' } as const;
 
 /** これより曲の多い人だけ、一覧の上に年の札を出す */
 const YEAR_JUMP_MIN = 100;

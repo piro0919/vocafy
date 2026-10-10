@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -9,6 +9,7 @@ import { VirtualSongList } from './virtual-song-list';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { StageHeading } from './stage-heading';
+import { useTakeOver } from './player/use-take-over';
 
 /** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -52,6 +53,13 @@ export function ListPlayer({
   // 流している曲の動画の説明文（song-notes.tsx）
   const notes = useStageNotes(here ? current : null);
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // 流している曲がこの一覧の1ページ目にあれば、開いたときに並びをこの一覧にする（use-take-over.ts。どの画面も同じ決まり）。
+  // 続きのページも「再生」を押したときと同じく読み足す
+  const owner = useMemo(
+    () => ({ kind: 'list' as const, source: { source, start: 1, last } }),
+    [source, last],
+  );
+  useTakeOver(here, songs, owner);
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
   const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);

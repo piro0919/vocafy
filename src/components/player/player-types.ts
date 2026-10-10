@@ -16,6 +16,13 @@ export type PlayContext = 'list' | 'pending' | 'radio' | 'favorites';
  */
 export type ListSource = { source: string; start: number; next: number; last: number };
 
+/** 並びの持ち主の画面（takeOver） */
+export type QueueOwner =
+  | { kind: 'producer' }
+  | { kind: 'favorites' }
+  | { kind: 'list'; source: Omit<ListSource, 'next'> }
+  | { kind: 'radio'; home: string };
+
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
 
@@ -39,14 +46,16 @@ export type PlayerContext = {
   shuffle: boolean;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
-  /** 曲の一覧を順番待ちに積み、start 番目から再生する */
-  playQueue: (items: QueueItem[], start: number, context?: PlayContext) => void;
   /**
-   * 流している曲は止めずに、順番待ちだけを差し替える。曲の一覧から押したときは、まずその1曲を
-   * 流し始め、ボカロPの画面に着いたところでその人の曲に差し替える（producer-player.tsx）。
-   * context を渡すと、並びの種類もそれにする（お気に入りの曲の画面に来たときに、お気に入りの並びにする。favorite-songs.tsx）
+   * 曲の一覧を順番待ちに積み、start 番目から再生する。moving は、流し始めてから並びの持ち主の画面へ移るとき
+   * （/favorites からお気に入りの曲の画面へ移るときなど）。置き場所が見つかるまで右下の窓を出さずに待つ
    */
-  adoptQueue: (items: QueueItem[], index: number, context?: PlayContext) => void;
+  playQueue: (items: QueueItem[], start: number, context?: PlayContext, moving?: boolean) => void;
+  /**
+   * 流している曲は止めずに、並びをその画面の一覧に差し替え、その画面を並びの持ち主にする（use-take-over.ts）。
+   * owner は画面の種類。ボカロPの画面・お気に入りの曲の画面・一覧の再生用の画面（続きを読み足す元）・ラジオの画面（その住所）
+   */
+  takeOver: (items: QueueItem[], index: number, owner: QueueOwner) => void;
   /**
    * 一覧の1ページの曲を流し、並びの終わりが近づいたら、一覧の残りのページの曲を後ろに足していく（play-all.tsx）。
    * ページ数が多い一覧（初音ミクの年など）を、押した時点で全部送らないため

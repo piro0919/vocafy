@@ -30,6 +30,7 @@ import type {
   PlaybackTime,
   PlayContext,
   PlayerContext,
+  QueueOwner,
   Repeat,
   Sleep,
 } from './player-types';
@@ -821,6 +822,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [adopt],
   );
 
+  const takeOver = useCallback(
+    (items: QueueItem[], at: number, owner: QueueOwner) => {
+      clearMore();
+      beforeRadio.current = null;
+      adopt(items, at);
+      if (owner.kind === 'favorites') setContext('favorites');
+      if (owner.kind === 'list') {
+        const next = (owner.source.start % owner.source.last) + 1;
+        more.current = next === owner.source.start ? null : { ...owner.source, next };
+        setListSource(owner.source.source);
+      }
+      if (owner.kind === 'radio') {
+        setContext('radio');
+        setRadioHome(owner.home);
+      }
+    },
+    [adopt, clearMore],
+  );
+
   const followProducer = useCallback(() => {
     const { queue: q, index: i } = state.current;
     const now = q[i];
@@ -926,19 +946,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       shuffle: playback.shuffle,
       toggleRepeat,
       toggleShuffle,
-      playQueue: (items, start, ctx) => {
+      playQueue: (items, start, ctx, moving) => {
         clearMore();
         load(items, start, ctx);
+        // 移る先の画面の置き場所ができるまで待つ（playAll の moving と同じ）。待たないと、移るまでの一瞬だけ右下の窓に出て、
+        // 着いてから大きな置き場所へ移る動きが見えた
+        if (moving) waitForSlot(waits());
       },
-      adoptQueue: (items, at, ctx) => {
-        clearMore();
-        adopt(items, at);
-        if (ctx) {
-          beforeRadio.current = null;
-          setRadioHome(null);
-          setContext(ctx);
-        }
-      },
+      takeOver,
       playAll,
       listSource,
       radioHome,
@@ -1043,6 +1058,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }),
     [
       rise,
+      waitForSlot,
+      waits,
       queue,
       index,
       current,
@@ -1054,7 +1071,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleRepeat,
       toggleShuffle,
       load,
-      adopt,
       playAll,
       listSource,
       radioHome,
@@ -1064,6 +1080,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       fillRadio,
       stopRadio,
       followProducer,
+      takeOver,
       step,
       close,
       time,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -9,6 +9,7 @@ import { SongItem } from './song-list';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { StageHeading } from './stage-heading';
+import { useTakeOver } from './player/use-take-over';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -54,7 +55,14 @@ export function RadioPlayer({
       alive = false;
     };
   }, [seed.songId]);
-  const songs = related ? [seed, ...related] : [seed];
+  const songs = useMemo(() => (related ? [seed, ...related] : [seed]), [seed, related]);
+  // 流している曲がこのラジオの一覧にあれば、開いたときに並びをこのラジオにする（use-take-over.ts。どの画面も同じ決まり）。
+  // 関連曲は届いてから見るので、元の曲以外は少し遅れて切り替わる
+  const owner = useMemo(
+    () => ({ kind: 'radio' as const, home: `/radio/${seed.songId}` }),
+    [seed.songId],
+  );
+  useTakeOver(here, songs, owner);
   const list = here ? queue : songs;
   // 流している並びがまだ元の曲だけで、関連曲も届いていないあいだ
   const waiting = related === null && list.length === 1;

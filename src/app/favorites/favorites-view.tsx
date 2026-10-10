@@ -50,7 +50,7 @@ export function FavoritesView() {
             <button
               type="button"
               onClick={() => {
-                if (!(context === 'favorites' && current)) playQueue(songs, 0, 'favorites');
+                if (!(context === 'favorites' && current)) playQueue(songs, 0, 'favorites', true);
                 router.push('/favorites/songs');
               }}
               className={`${PILL} flex items-center gap-1`}
@@ -63,7 +63,7 @@ export function FavoritesView() {
           <SongList
             songs={songs.slice(0, SONG_PREVIEW)}
             onOpen={(i) => {
-              playQueue(songs, i, 'favorites');
+              playQueue(songs, i, 'favorites', true);
               router.push('/favorites/songs');
             }}
             className="grid gap-1 md:grid-cols-2 xl:grid-cols-3"
