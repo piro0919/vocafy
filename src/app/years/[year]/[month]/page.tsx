@@ -4,7 +4,7 @@ import { Heading } from '@/components/heading';
 import { PlayAll } from '@/components/play-all';
 import { VirtualSongList } from '@/components/virtual-song-list';
 import { MONTH, playlistOfMonth, songsOfMonth } from '@/lib/catalog';
-import { playlistCount } from '@/lib/list-titles';
+import { formatCount } from '@/lib/format';
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
 // 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
@@ -40,7 +40,8 @@ export default async function MonthPage({ params }: PageProps<'/years/[year]/[mo
         </Heading>
         <PlayAll
           songs={playlist.songs}
-          count={playlistCount(playlist)}
+          // 一覧の画面には全曲が並ぶので、曲数は全曲の数だけ（「100曲（全313曲）」だと100曲しか並んでいないように読めた）
+          count={`${formatCount(playlist.total)}曲`}
           list={{ source, page: 1, last: 1 }}
           pickup={playlist.pickup}
         />
