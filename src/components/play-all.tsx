@@ -4,7 +4,7 @@ import { useRouter } from '@bprogress/next/app';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
-import { PILL, PRIMARY } from './button-styles';
+import { PRIMARY } from './button-styles';
 
 /**
  * 曲の一覧（年・歌声・日付）を、その画面の曲の順に通して流すボタン。曲の数を添える。
@@ -67,7 +67,7 @@ export function PlayAll({
 }
 
 /**
- * トップの区画の見出しの右に置く、小さな「再生」（形は「すべて表示」と同じ PILL）。押すと一覧を流し始めて、
+ * トップの区画の見出しの右に置く「再生」（形は題名の下の「再生」と同じ PRIMARY。2026-10-11 に本人と決めた）。押すと一覧を流し始めて、
  * 一覧の再生用の画面へ移る。もうその一覧を流しているときは、止めずに移るだけ（お気に入りの「再生」と同じ）
  */
 export function PlayAllPill({
@@ -85,9 +85,9 @@ export function PlayAllPill({
     <button
       type="button"
       onClick={() => (here ? router.push(`/${list.source}/play`) : start())}
-      className={`${PILL} flex items-center gap-1`}
+      className={PRIMARY}
     >
-      <Icon name={pickup ? 'shuffle' : 'play'} className="size-3.5" />
+      <Icon name={pickup ? 'shuffle' : 'play'} className="size-5" />
       {pickup ? 'ピックアップ' : '再生'}
     </button>
   );

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from '@bprogress/next/app';
-import { PILL } from '@/components/button-styles';
+import { PRIMARY } from '@/components/button-styles';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
 import { Heading, SECTION } from '@/components/heading';
 import { Icon } from '@/components/icon';
@@ -53,9 +53,9 @@ export function FavoritesView() {
                 if (!(context === 'favorites' && current)) playQueue(songs, 0, 'favorites', true);
                 router.push('/favorites/songs');
               }}
-              className={`${PILL} flex items-center gap-1`}
+              className={PRIMARY}
             >
-              <Icon name="play" className="size-3.5" />
+              <Icon name="play" className="size-5" />
               再生
             </button>
           }
