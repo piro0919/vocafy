@@ -189,7 +189,7 @@ export function ProducerPlayer({
                   </span>
                 </button>
                 {skipsNiconico && item?.service === 'niconico' && <NoAutoplay />}
-                {item && <FavoriteButton song={item} />}
+                {item && <FavoriteButton song={item} quiet />}
               </li>
             );
           })}
