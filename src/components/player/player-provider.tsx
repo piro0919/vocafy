@@ -707,40 +707,53 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [extend],
   );
 
-  const stopRadio = useCallback(() => {
-    const { queue: q, index: i } = state.current;
-    const now = q[i];
-    const before = beforeRadio.current;
-    beforeRadio.current = null;
-    setRadioHome(null);
-    if (!before || !now || before.queue.length === 0) {
-      // 戻す並びが無ければ（ラジオの画面を直に開いて流した）、いまの曲だけのふつうの並びにする。持ち主はその曲のボカロPの画面
-      adopt(now ? [now] : [], 0);
-      return now ? `/producers/${now.producerId}` : '/';
-    }
-    // 始めた曲のまま（ラジオでまだ次へ進んでいない）なら、元の並びのその位置に戻す。ラジオの曲を流しているなら、
-    // 始めた曲のすぐ後ろに挟み、いまの曲が終わったら元の並びの続きへ進む
-    const same = before.queue[before.index]?.songId === now.songId;
-    const items = same
-      ? before.queue
-      : [...before.queue.slice(0, before.index + 1), now, ...before.queue.slice(before.index + 1)];
-    adopt(items, same ? before.index : before.index + 1);
-    setContext(
-      before.context === 'pending' || before.context === 'radio' ? 'list' : before.context,
-    );
-    more.current = before.more;
-    setListSource(before.listSource);
-    const home =
-      before.context === 'favorites'
-        ? '/favorites/songs'
-        : before.listSource
-          ? `/${before.listSource}/play`
-          : `/producers/${before.queue[before.index]?.producerId ?? now.producerId}`;
-    // いま流しているラジオの曲（ほかの人の曲のこともある）が終わるまでは、戻した並びの持ち主の画面で大きく出したままにする。
-    // 次の曲を読み込むと忘れる（load）
-    if (!same) setRadioHome(home);
-    return home;
-  }, [adopt]);
+  const stopRadio = useCallback(
+    (moving: boolean) => {
+      const { queue: q, index: i } = state.current;
+      const now = q[i];
+      const before = beforeRadio.current;
+      beforeRadio.current = null;
+      setRadioHome(null);
+      if (!now) {
+        adopt([], 0);
+        return '/';
+      }
+      // 始めた曲のまま（ラジオでまだ次へ進んでいない）なら、元の並びのその位置に戻す
+      if (before && before.queue[before.index]?.songId === now.songId) {
+        adopt(before.queue, before.index);
+        setContext(
+          before.context === 'pending' || before.context === 'radio' ? 'list' : before.context,
+        );
+        more.current = before.more;
+        setListSource(before.listSource);
+        return before.context === 'favorites'
+          ? '/favorites/songs'
+          : before.listSource
+            ? `/${before.listSource}/play`
+            : `/producers/${now.producerId}`;
+      }
+      // ラジオで次へ進んでいたら（戻す並びが無いときも）、いまの曲のボカロPの曲の並びにして、その曲から続ける。
+      // 元の並びに戻すと、いまの曲が終わるまで、その曲の載っていない元の持ち主の画面に動画を大きく出すことになった（2026-10-10 に本人と決めた）。
+      // 曲の一覧から押したときと同じく、その1曲だけの並びにしておき、ボカロPの画面に着いたところでその人の曲に差し替える
+      // （producer-player.tsx）。画面を移らないときは、その人の曲をここで取って差し替える
+      const items = [now];
+      adopt(items, 0);
+      setContext('pending');
+      if (!moving) {
+        void fetch(`/api/producer-queue/${now.producerId}`)
+          .then((res) => (res.ok ? (res.json() as Promise<QueueItem[]>) : []))
+          .catch(() => [])
+          .then((songs) => {
+            // 待っているあいだに別の並びに替わっていたら、差し替えない
+            if (state.current.queue !== items) return;
+            const at = songs.findIndex((s) => s.songId === now.songId);
+            if (at >= 0) adopt(songs, at);
+          });
+      }
+      return `/producers/${now.producerId}`;
+    },
+    [adopt],
+  );
 
   // ラジオで流す順の終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
   // いまの曲の関連曲がどれも並びに入っているとき（ラジオの画面で一覧の最後の曲を押したときなど）は、並びの後ろの曲から

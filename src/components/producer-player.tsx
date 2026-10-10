@@ -36,25 +36,13 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const {
-    current,
-    playing,
-    context,
-    listSource,
-    radioHome,
-    playQueue,
-    adoptQueue,
-    toggle,
-    skipsNiconico,
-  } = usePlayer();
+  const { current, playing, context, listSource, playQueue, adoptQueue, toggle, skipsNiconico } =
+    usePlayer();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並び・
   // ラジオの曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
   // この画面にいるまま動画が右下の窓へ飛んだ
   const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
-  // ラジオをやめてこの人の並びに戻した直後は、流していたラジオの曲（ほかの人の曲のこともある）が終わるまでここで大きく出す
-  const radioHere = radioHome === `/producers/${producerId}`;
-  const ownHere = ownQueue && current?.producerId === producerId;
-  const here = radioHere || ownHere;
+  const here = ownQueue && current?.producerId === producerId;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
   // ニコニコの曲の行が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
@@ -68,7 +56,7 @@ export function ProducerPlayer({
   // 住所をそのまま写して送ったときに、共有のリンクと同じくその曲から流せる。曲が変わるたびに履歴を増やさずに書き換える
   useEffect(() => {
     // ラジオで別の人の曲を流しているときは入れない（この人の画面の住所に、ほかの人の曲を指させない）
-    if (!ownHere || !current) return;
+    if (!here || !current) return;
     const url = new URL(window.location.href);
     // ほかの画面へ移る途中（住所がもうこの画面のものでない）は書き換えない
     if (url.pathname !== `/producers/${producerId}`) return;
@@ -77,7 +65,7 @@ export function ProducerPlayer({
     // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
     // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
     window.history.replaceState(null, '', url);
-  }, [ownHere, current, producerId]);
+  }, [here, current, producerId]);
 
   const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
   // その曲の行までスクロールするのは、開いたときの1回だけ。流しているあいだは住所の曲が曲ごとに変わるが、そのたびには動かさない

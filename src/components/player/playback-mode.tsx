@@ -172,7 +172,8 @@ function SleepButton({ className }: { className: string }) {
 
 /**
  * ラジオ。押すと、いまの曲から関連曲を流し続け、ラジオの画面（/radio/123）へ移る。ラジオで流しているあいだは差し色にする。
- * もう一度押すとやめて、ラジオを始める前の並びに戻す。ラジオの画面にいたら、戻した並びの持ち主の画面へ移る
+ * もう一度押すとやめる。ラジオで次へ進んでいたら、いまの曲のボカロPの曲の並びにし、まだなら始める前の並びに戻す。
+ * ラジオの画面にいたら、その並びの持ち主の画面へ移る
  */
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
   const { context, radioHome, startRadio, stopRadio, holdSlot } = usePlayer();
@@ -189,7 +190,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
     }
     const onRadioPage = decodeURIComponent(pathname) === radioHome;
     if (onRadioPage) holdSlot();
-    const home = stopRadio();
+    const home = stopRadio(onRadioPage);
     if (onRadioPage) router.push(home);
   };
   return (

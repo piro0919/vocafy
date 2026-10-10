@@ -42,9 +42,9 @@ export function ListPlayer({
   songs: QueueItem[];
   total: number;
 }) {
-  const { current, playing, listSource, radioHome, playAll, toggle } = usePlayer();
-  // この一覧を流しているときと、ラジオをやめてこの一覧に戻した直後（流していたラジオの曲が終わるまで）に、動画をここに大きく出す
-  const here = current !== null && (listSource === source || radioHome === `/${source}/play`);
+  const { current, playing, listSource, playAll, toggle } = usePlayer();
+  // この一覧を流しているときに、動画をここに大きく出す
+  const here = current !== null && listSource === source;
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す

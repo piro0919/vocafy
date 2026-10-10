@@ -18,9 +18,9 @@ import { PRIMARY } from '@/components/button-styles';
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
   useRefreshFavorites();
-  const { current, playing, context, radioHome, playQueue, toggle } = usePlayer();
-  // お気に入りの並びのときと、ラジオをやめてお気に入りの並びに戻した直後（流していたラジオの曲が終わるまで）に、動画をここに大きく出す
-  const here = !!current && (context === 'favorites' || radioHome === '/favorites/songs');
+  const { current, playing, context, playQueue, toggle } = usePlayer();
+  // お気に入りの並びのときに、動画をここに大きく出す
+  const here = !!current && context === 'favorites';
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
   return (
