@@ -29,6 +29,12 @@ export function StageHeading({
   title: string;
   song: QueueItem | null;
 }) {
+  // 画面を移るあいだ（holdSlot。ボカロPの名前を押してその人の画面へ移るときなど）は、この画面がもう並びの持ち主でなくても、
+  // 直前まで出していたボカロPを出し続ける。出し続けないと、移り終えるまでの一瞬だけ、この画面の題名に戻った
+  const { holdingSlot } = usePlayer();
+  const [last, setLast] = useState(song);
+  if (song && song !== last) setLast(song);
+  song = song ?? (holdingSlot ? last : null);
   const producer = useProducer(song?.producerId ?? null);
   // 次に流れる曲のボカロPを先に取っておき、曲が替わったときにすぐ出せるようにする
   const { upcoming, followProducer } = usePlayer();
