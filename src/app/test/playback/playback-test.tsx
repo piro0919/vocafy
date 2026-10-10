@@ -48,7 +48,16 @@ const now = () => performance.now();
 const label = (s: QueueItem) => `${s.title}（${s.service === 'youtube' ? 'YouTube' : 'ニコニコ'}）`;
 
 export function PlaybackTest() {
-  const { current, playing, loading, time, playQueue, seek } = usePlayer();
+  const { current, playing, loading, time, playQueue, seek, preload } = usePlayer();
+  // 曲の行と同じく、ニコニコから始まる並びの1曲目を先に読み込んでおく（iPad・iPhone だけ）
+  useEffect(() => {
+    const releases = PATTERNS.map((p) => p.songs[0]).flatMap((s) =>
+      s?.service === 'niconico' ? [preload(s.videoId)] : [],
+    );
+    return () => {
+      for (const release of releases) release();
+    };
+  }, [preload]);
   const [log, setLog] = useState<string[]>([]);
   const started = useRef(0);
 

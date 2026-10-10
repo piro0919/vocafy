@@ -115,4 +115,9 @@ export type PlayerContext = {
   sleep: Sleep | null;
   /** スリープタイマーを入れる（分か、いまの曲の終わり）。null で切る。このタブの中だけで持ち、保存しない */
   setSleep: (value: number | 'end' | null) => void;
+  /**
+   * ニコニコの曲の行が見えたときに呼ぶ。iPad・iPhone では埋め込みを先に読み込んでおき、押した1回で流せるようにする
+   * （niconico-pool.ts）。返す関数は見えなくなったときに呼ぶ。ほかの端末では何もしない
+   */
+  preload: (videoId: string) => () => void;
 };

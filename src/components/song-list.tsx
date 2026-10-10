@@ -1,13 +1,14 @@
 'use client';
 
 import type { QueueItem } from '@/lib/catalog';
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
 import { FavoriteButton } from './favorite-button';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
+import { usePreload } from './player/use-preload';
 import { Marquee } from './marquee';
 
 /**
@@ -77,8 +78,13 @@ export function SongItem({
 }) {
   const { current, playing } = usePlayer();
   const active = current?.songId === song.songId;
+  const row = useRef<HTMLDivElement>(null);
+  // ニコニコの曲は、行が見えているあいだ埋め込みを先に読み込んでおく（iPad・iPhone だけ）
+  usePreload(row, song.videoId);
   return (
     <div
+      ref={row}
+      data-preload={song.service === 'niconico' ? song.videoId : undefined}
       className={`group flex min-w-0 snap-start items-center rounded-md pr-1 transition-colors duration-150 ${active ? 'bg-glass' : 'hover:bg-foreground/8'}`}
     >
       <button

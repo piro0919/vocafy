@@ -11,6 +11,7 @@ import { Bars } from './now-playing';
 import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
 import { usePlayer } from './player/player-provider';
 import { PlaybackMode } from './player/playback-mode';
+import { usePreload } from './player/use-preload';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { ICON, PRIMARY } from './button-styles';
@@ -46,6 +47,9 @@ export function ProducerPlayer({
   const here = radioHere || ownHere;
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
+  // ニコニコの曲の行が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
+  const list = useRef<HTMLOListElement>(null);
+  usePreload(list, songs);
 
   // 共有されたリンク（?song=曲の id）で来たときの曲。ページは作り置きなので、住所の ?song= はサーバーでは読まずブラウザで読む
   // （サーバーで読むと開くたびに作り直しになり、DB を起こす）。開いただけでは流さない（ブラウザが押す操作の無い再生を止めるため）。
@@ -135,7 +139,7 @@ export function ProducerPlayer({
           行の地の色は字の手前まで広げたいので、行の内側に余白（px-3）を取る。そのぶん並び全体を外へ出し（-mx-3）、
           番号の頭が題名の頭とそろうようにする
         */}
-        <ol className="-mx-3">
+        <ol ref={list} className="-mx-3">
           {songs.map((song, i) => {
             const active = here && current?.songId === song.id;
             const item = playable.get(song.id);
@@ -143,6 +147,7 @@ export function ProducerPlayer({
               <li
                 key={song.id}
                 id={`song-${song.id}`}
+                data-preload={item?.service === 'niconico' ? item.videoId : undefined}
                 className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
                   active || linkedItem?.songId === song.id
                     ? 'bg-glass'

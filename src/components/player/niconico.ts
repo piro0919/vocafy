@@ -1,4 +1,5 @@
 import type { Engine, EngineEvents, Sound } from './engine';
+import type { Preloaded } from './niconico-pool';
 import { reportUnplayable } from './report';
 
 /**
@@ -38,6 +39,8 @@ export function createNiconicoEngine(
   firstVideoId: string,
   sound: Sound,
   events: EngineEvents,
+  /** 先に読み込んでおいた埋め込み（niconico-pool.ts）。あればそれを使い、押した操作の中ですぐ流し始める */
+  preloaded?: Preloaded,
 ): Engine {
   let iframe: HTMLIFrameElement | null = null;
 
@@ -55,16 +58,18 @@ export function createNiconicoEngine(
       ORIGIN,
     );
 
+  // コメントを隠し、残しておいた音量にしてから流し始める
+  const start = () => {
+    send('commentVisibilityChange', { commentVisibility: false });
+    send('volumeChange', { volume: volume / 100 });
+    send('mute', { mute: muted });
+    send('play');
+  };
+
   const onMessage = (e: MessageEvent<Message>) => {
     if (e.origin !== ORIGIN || e.data?.playerId !== playerId) return;
     const { eventName, data } = e.data;
-    if (eventName === 'loadComplete') {
-      // コメントを隠し、残しておいた音量にしてから流し始める
-      send('commentVisibilityChange', { commentVisibility: false });
-      send('volumeChange', { volume: volume / 100 });
-      send('mute', { mute: muted });
-      send('play');
-    }
+    if (eventName === 'loadComplete') start();
     if (eventName === 'statusChange') {
       if (data?.playerStatus === 2) events.onPlaying();
       if (data?.playerStatus === 3) events.onPaused();
@@ -102,7 +107,11 @@ export function createNiconicoEngine(
     container.replaceChildren(next);
     iframe = next;
   };
-  load(videoId);
+  if (preloaded) {
+    iframe = preloaded.iframe;
+    playerId = preloaded.playerId;
+    start();
+  } else load(videoId);
 
   return {
     service: 'niconico',

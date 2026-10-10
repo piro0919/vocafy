@@ -15,6 +15,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
 import type { Engine, EngineEvents, Sound } from './engine';
 import { createNiconicoEngine } from './niconico';
+import { createNiconicoPool, type NiconicoPool, type Preloaded } from './niconico-pool';
 import { createYouTubeEngine } from './youtube';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
@@ -146,7 +147,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
    * プレイヤーを作り、枠の中に自分の入れ物（div）を足して置く。知らせは、いま流しているプレイヤー（player.current）のものだけ拾う
    */
   const spawn = useCallback(
-    (service: QueueItem['service'], videoId: string, sound: Sound): Engine | null => {
+    (
+      service: QueueItem['service'],
+      videoId: string,
+      sound: Sound,
+      preloaded?: Preloaded,
+    ): Engine | null => {
       if (!frame.current) return null;
       // 隠しているプレイヤーの知らせは拾わない（止めたときの一時停止が、流しているニコニコの曲の表示を変えないように）
       let engine: Engine | null = null;
@@ -192,23 +198,55 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           onEnded.current();
         },
       };
-      const box = document.createElement('div');
-      box.className = 'size-full';
-      frame.current.append(box);
-      engine = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
-        box,
-        videoId,
-        sound,
-        {
-          onPlaying: live(events.onPlaying),
-          onPaused: live(events.onPaused),
-          onEnded: live(events.onEnded),
-          onBlocked: live(events.onBlocked),
-          onError: live(events.onError),
-        },
-      );
+      const guarded: EngineEvents = {
+        onPlaying: live(events.onPlaying),
+        onPaused: live(events.onPaused),
+        onEnded: live(events.onEnded),
+        onBlocked: live(events.onBlocked),
+        onError: live(events.onError),
+      };
+      // 先に読み込んでおいた埋め込みは、その入れ物ごと表に出して使う
+      let box: HTMLElement;
+      if (preloaded) {
+        box = preloaded.box;
+        box.hidden = false;
+        engine = createNiconicoEngine(box, videoId, sound, guarded, preloaded);
+      } else {
+        box = document.createElement('div');
+        box.className = 'size-full';
+        frame.current.append(box);
+        engine = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
+          box,
+          videoId,
+          sound,
+          guarded,
+        );
+      }
       boxes.current.set(engine, box);
       return engine;
+    },
+    [frame],
+  );
+
+  // iPad・iPhone で、見えているニコニコの曲の埋め込みを先に読み込んでおく（niconico-pool.ts）。ほかの端末では作らない
+  // 曲の行の部品は先に作られて頼んでくるので、初めて頼まれたときに作る
+  const pool = useRef<NiconicoPool | null>(null);
+  useEffect(
+    () => () => {
+      pool.current?.destroy();
+      pool.current = null;
+    },
+    [],
+  );
+  /** 曲の行が見えたときに呼ぶ。返す関数は見えなくなったときに呼ぶ */
+  const preload = useCallback(
+    (videoId: string) => {
+      if (!pool.current && isAppleDevice())
+        pool.current = createNiconicoPool(
+          () => frame.current,
+          () => state.current.queue[state.current.index]?.videoId,
+        );
+      return pool.current?.want(videoId) ?? (() => {});
     },
     [frame],
   );
@@ -273,7 +311,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
         const now = soundRef.current ?? sound;
         // 同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える。絞った音量は、止めてから戻す
-        if (player.current?.service === service) {
+        // 先に読み込んでおいたニコニコの埋め込みがあれば、いまのプレイヤーを使い回さずにそれで流す
+        const preloaded =
+          service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined;
+        if (player.current?.service === service && !preloaded) {
           player.current.load(videoId);
           player.current.setVolume(now.volume);
           return;
@@ -299,14 +340,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           kept.load(videoId);
           return;
         }
-        player.current = spawn(service, videoId, now);
+        player.current = spawn(service, videoId, now, preloaded);
       };
       // 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。音量を絞りきってから切り替える。
       // 絞っているあいだに別の曲が選ばれたら、絞り終わったときに最後の曲へ替える
       pendingSwap.current = swap;
       if (fading.current) return;
       const current = player.current;
-      if (!current || !sounding.current || sound.muted || sound.volume === 0) {
+      // iPad・iPhone は絞らない。埋め込みの音量を Web から変えられないので効かず、切り替えが押した操作の外へずれて、
+      // 次の曲の再生を Safari に止められる
+      if (!current || !sounding.current || sound.muted || sound.volume === 0 || isAppleDevice()) {
         pendingSwap.current = null;
         swap();
         return;
@@ -824,6 +867,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       holdSlot,
       holdingSlot,
       sleep,
+      preload,
       setSleep,
     }),
     [
@@ -855,6 +899,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       holdSlot,
       holdingSlot,
       sleep,
+      preload,
       setSleep,
       primeParked,
     ],
