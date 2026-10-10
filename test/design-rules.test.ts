@@ -168,4 +168,31 @@ describe('見た目の決まり', () => {
       expect(theme).toContain(`--breakpoint-${name}: ${value};`);
     }
   });
+
+  it('@theme の同じ種類の中に、同じ値の名前を2つ作らない（同じ値で残すときは var() で片方を指す）', () => {
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+    const kinds = [
+      '--spacing-',
+      '--z-index-',
+      '--transition-duration-',
+      '--text-',
+      '--tracking-',
+      '--grid-template-columns-',
+      '--grid-auto-columns-',
+      '--max-height-',
+      '--color-',
+      '--animate-',
+    ];
+    const seen = new Map<string, string>();
+    const dupes: string[] = [];
+    for (const [, name, value] of css.matchAll(/^\s*(--[\w-]+):\s*([^;]+);/gm)) {
+      const kind = kinds.find((k) => name.startsWith(k));
+      if (!kind || value.trim().startsWith('var(')) continue;
+      const key = `${kind}${value.trim()}`;
+      const first = seen.get(key);
+      if (first && first !== name) dupes.push(`${first} と ${name}（${value.trim()}）`);
+      else seen.set(key, name);
+    }
+    expect(dupes).toEqual([]);
+  });
 });

@@ -209,7 +209,7 @@
   --spacing-bar: 4rem;
   /* スマホの下のタブと、上の段（スマホの上の帯・パソコンの検索欄の段）の高さ */
   --spacing-tabs: 3.5rem;
-  --spacing-header: 3.5rem;
+  --spacing-header: var(--spacing-tabs);
   /* 右下の窓の動画（スマホは正方形。YouTube の規約の下限 200×200）と、パソコンの幅（16:9）、上の帯の高さ */
   --spacing-dock: 200px;
   --spacing-dock-wide: 356px;
@@ -237,8 +237,9 @@
    * 重なりの順（下から）。本文の後ろ・本文の中で隣より手前・上の段・浮いた板（左のメニュー・再生の帯・右下の窓）・
    * スマホの下のタブと上に固定した動画・いちばん上に開くもの（次に流れる曲などの板・共有の板・スワイプの印）
    */
-  --z-index-behind: 10;
   --z-index-raised: 10;
+  /* 本文の後ろ（-z-behind）。手前に出す raised の裏返しなので同じ値 */
+  --z-index-behind: var(--z-index-raised);
   --z-index-header: 20;
   --z-index-chrome: 30;
   --z-index-tabs: 40;
