@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { isAppleDevice } from '@/lib/apple-device';
+import { keepAwake, letSleep } from './keep-awake';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
 import type { Engine, EngineEvents, Sound } from './engine';
@@ -57,6 +58,8 @@ const RADIO_TRIES = 6;
 /** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
 const FADE_OUT_MS = 150;
 const FADE_STEPS = 10;
+/** 絞りきって消音・一時停止してから、次の動画を頼むまで待つ長さ（ミリ秒）。止まりきる前に替えると、プツッと鳴った */
+const PAUSE_WAIT_MS = 100;
 
 /** スリープタイマーで止めるときに、音を絞りきるまでの長さ（ミリ秒）。眠りかけの耳に急に切れないよう、曲を替えるときより長く */
 const SLEEP_FADE_MS = 3000;
@@ -145,6 +148,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const fading = useRef(false);
   const pendingSwap = useRef<(() => void) | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // 絞りきって消音したまま次の曲を頼んだプレイヤー。次の曲が鳴り始めたら、消音を解いて音量を上げていく
+  const quiet = useRef<Engine | null>(null);
+  // 曲を替えるために一時停止したプレイヤー。その一時停止の知らせは拾わない（帯が一瞬 ▶ に戻らないように）
+  const pausing = useRef<Engine | null>(null);
+  const riseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   // 前後の曲へ進む（next）。load から呼ぶので、next より先に置く
   const nextRef = useRef<(dir: 1 | -1) => void>(() => {});
   // 曲が終わって自動で次へ進むところか。load が読んで下ろす。いま流している曲が自動で進んだ先か（auto）も持つ
@@ -169,6 +177,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     toast(`${item.title}をスキップしました`);
   }, []);
 
+  /** 絞りきったプレイヤーの消音を解き、音量を絞ったときと同じ速さで、いまの音量まで上げる。上げる先は一刻みごとに読み直す */
+  const rise = useCallback((engine: Engine) => {
+    quiet.current = null;
+    clearTimeout(riseTimer.current);
+    engine.setVolume(0);
+    engine.setMuted(soundRef.current?.muted ?? false);
+    let step = 0;
+    const tick = () => {
+      if (player.current !== engine || quiet.current) return;
+      step += 1;
+      const { volume } = soundRef.current ?? { volume: 100 };
+      engine.setVolume(Math.round((volume * step) / FADE_STEPS));
+      if (step < FADE_STEPS) riseTimer.current = setTimeout(tick, FADE_OUT_MS / FADE_STEPS);
+    };
+    tick();
+  }, []);
+
   /**
    * プレイヤーを作り、枠の中に自分の入れ物（div）を足して置く。知らせは、いま流しているプレイヤー（player.current）のものだけ拾う
    */
@@ -190,11 +215,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const events: EngineEvents = {
         onPlaying: () => {
           sounding.current = true;
+          if (pausing.current === engine) pausing.current = null;
+          if (quiet.current && quiet.current === engine) rise(engine);
           setPlaying(true);
           setLoading(false);
         },
         // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
         onPaused: () => {
+          if (pausing.current === engine) return;
           sounding.current = false;
           setPlaying(false);
           setLoading(false);
@@ -251,7 +279,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       boxes.current.set(engine, box);
       return engine;
     },
-    [frame, noteSkip],
+    [frame, noteSkip, rise],
   );
 
   // iPad・iPhone で、見えているニコニコの曲の埋め込みを先に読み込んでおく（niconico-pool.ts）。ほかの端末では作らない
@@ -297,6 +325,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback(
     (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
+      if (!isAppleDevice()) keepAwake();
       auto.current = autoNext.current;
       autoNext.current = false;
       setContext(ctx);
@@ -341,11 +370,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // 先に読み込んでおいたニコニコの埋め込みがあれば、いまのプレイヤーを使い回さずにそれで流す
         const preloaded =
           service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined;
+        // 絞って替えたときは、消音と音量を戻すのは次の曲が鳴り始めてから（onPlaying の rise）。頼んだ直後に戻すと、
+        // 止めた前の曲の残りか次の曲の出だしがいきなり元の音量で鳴り、プツッと聞こえた
         if (player.current?.service === service && !preloaded) {
           player.current.load(videoId);
-          player.current.setVolume(now.volume);
+          if (quiet.current !== player.current) player.current.setVolume(now.volume);
           return;
         }
+        quiet.current = null;
+        pausing.current = null;
         // YouTube からニコニコに替えるときは、YouTube のプレイヤーを壊さず、止めて隠しておく。
         // iPad の Safari は一度押して流れたプレイヤーなら自動で流すので、作り直すと次の YouTube の曲が止められる
         const leaving = player.current;
@@ -386,11 +419,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       let step = 0;
       const tick = () => {
         // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから一刻み待つ
+        // 絞りきったら、消音して一時停止し、止まりきるのを待ってから替える
         if (step === FADE_STEPS) {
-          fading.current = false;
-          const next = pendingSwap.current;
-          pendingSwap.current = null;
-          next?.();
+          current.setMuted(true);
+          pausing.current = current;
+          current.pause();
+          fadeTimer.current = setTimeout(() => {
+            fading.current = false;
+            quiet.current = current;
+            const next = pendingSwap.current;
+            pendingSwap.current = null;
+            next?.();
+          }, PAUSE_WAIT_MS);
           return;
         }
         step += 1;
@@ -795,6 +835,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setRadioHome(null);
     clearMore();
     clearTimeout(fadeTimer.current);
+    clearTimeout(riseTimer.current);
+    letSleep();
+    quiet.current = null;
+    pausing.current = null;
     fading.current = false;
     pendingSwap.current = null;
     sounding.current = false;
@@ -892,6 +936,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         soundRef.current = next;
         setSound(next);
         saveVolume(volume, false);
+        // 絞りきったまま次の曲を待っているあいだに動かされたら、鳴り始めてから上げ直さない
+        quiet.current = null;
+        clearTimeout(riseTimer.current);
         player.current?.setVolume(volume);
         player.current?.setMuted(false);
       },
