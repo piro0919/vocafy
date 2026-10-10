@@ -45,6 +45,7 @@ export function ProducerView({
           />
         }
         producerId={producer.id}
+        producerName={producer.name}
         linkedSongId={linkedSongId}
         songs={songs}
         queue={queue}

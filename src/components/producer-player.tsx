@@ -1,12 +1,10 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { toast } from 'sonner';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
-import { Icon } from './icon';
 import { Bars } from './now-playing';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { usePlayer } from './player/player-provider';
@@ -15,10 +13,10 @@ import { usePreload } from './player/use-preload';
 import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
-import { ICON } from './button-styles';
 import { useTakeOver } from './player/use-take-over';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
+import { ShareMenu } from './share-menu';
 
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
@@ -27,6 +25,7 @@ import { SingerSilhouette } from './singer-silhouette';
  */
 export function ProducerPlayer({
   producerId,
+  producerName,
   linkedSongId,
   heading,
   songs,
@@ -34,6 +33,8 @@ export function ProducerPlayer({
   cover,
 }: {
   producerId: number;
+  /** 共有の文に入れる名前 */
+  producerName: string;
   /** 共有の住所（/producers/[id]/songs/[songId]）で開いたときの曲。無ければ住所の ?song= を読む */
   linkedSongId?: number;
   /** 動画の下に出す名前。ページの側で作る */
@@ -113,8 +114,20 @@ export function ProducerPlayer({
   // 流している曲の動画の説明文（ボタンと、動画の下の枠・全文の板）
   const notes = useStageNotes(here ? current : null);
 
+  // 共有するのは、この人の曲を流しているときはその曲、それ以外はこの人。曲つきのリンクは、曲名を題名と共有の絵に入れた住所
+  // （songs/[songId]/page.tsx）。住所の元はブラウザの側で決める（作り置きのページにサーバーの住所を焼き込まない）
+  const sharedSong = here ? current : linkedItem;
+  const origin = useSyncExternalStore(
+    noSubscribe,
+    () => window.location.origin,
+    () => '',
+  );
   const share = (
-    <ShareButton producerId={producerId} songId={here ? current?.songId : linkedItem?.songId} />
+    <ShareMenu
+      url={`${origin}/producers/${producerId}${sharedSong ? `/songs/${sharedSong.songId}` : ''}`}
+      text={sharedSong ? `${sharedSong.title} - ${producerName}` : producerName}
+      label={sharedSong ? 'この曲を共有' : 'このボカロPを共有'}
+    />
   );
 
   return (
@@ -215,48 +228,6 @@ const noSubscribe = () => () => {};
 function linkedSong(): number | null {
   const id = Number(new URLSearchParams(window.location.search).get('song'));
   return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
-
-/**
- * 共有のボタン。この人の曲を流しているときは、その曲つきのリンク（/producers/[id]/songs/[songId]）を共有する。
- * 題名と共有の絵に曲名が入り、開いた人の画面ではその曲から流せる。
- * スマホなど共有の窓（Web Share API）が出せるブラウザでは窓を出し、出せなければリンクを写す
- */
-function ShareButton({ producerId, songId }: { producerId: number; songId?: number }) {
-  // 共有の窓が出せないブラウザ（パソコンの多く）では、押すとリンクを写す。字は出さずアイコンだけにし、写したことはトーストで知らせる
-  const canShare = useSyncExternalStore(
-    noSubscribe,
-    () => 'share' in navigator,
-    () => true,
-  );
-  const what = songId ? 'この曲' : 'このボカロP';
-  const label = canShare ? `${what}を共有` : `${what}のリンクをコピー`;
-  const share = async () => {
-    // 曲つきのリンクは、曲名を題名と共有の絵に入れた住所にする（songs/[songId]/page.tsx）
-    const url = new URL(
-      songId ? `/producers/${producerId}/songs/${songId}` : `/producers/${producerId}`,
-      window.location.origin,
-    );
-    const link = url.toString();
-    if (canShare) {
-      // 窓を閉じただけでも失敗が返るので、何もしない
-      await navigator.share({ url: link }).catch(() => {});
-      return;
-    }
-    await navigator.clipboard.writeText(link);
-    toast('リンクをコピーしました');
-  };
-  return (
-    <button
-      type="button"
-      onClick={share}
-      aria-label={label}
-      title={label}
-      className={`grid ${ICON} text-muted hover:text-foreground`}
-    >
-      <Icon name="share" className="size-5" />
-    </button>
-  );
 }
 
 /** この画面が並びの持ち主になるときの種類（takeOver） */
