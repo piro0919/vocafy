@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useId, useSyncExternalStore } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
-import { ICON, PILL } from '@/components/button-styles';
+import { ICON, PRIMARY_TEXT } from '@/components/button-styles';
 
 function LoginButton() {
   return (
-    <button type="button" onClick={() => signIn()} className={PILL}>
+    <button type="button" onClick={() => signIn()} className={PRIMARY_TEXT}>
       ログイン
     </button>
   );
