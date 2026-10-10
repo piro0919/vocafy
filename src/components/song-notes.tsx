@@ -34,15 +34,18 @@ function SongNotes({
 }) {
   const key = song ? `${song.service}/${song.videoId}` : null;
   const [notes, setNotes] = useState<{ key: string; text: string } | null>(null);
+  // 前に取った説明文（ほかの画面で取ったものも）。届くのを待たずに出す
+  const cached = key ? known.get(key) : undefined;
   const box = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number>();
 
   useEffect(() => {
-    if (!key) return;
+    if (!key || known.has(key)) return;
     let alive = true;
     fetch(`/api/description/${key}`)
       .then((res) => (res.ok ? res.json() : { text: '' }))
       .then((data: { text: string }) => {
+        known.set(key, data.text.trim());
         if (!alive) return;
         setNotes({ key, text: data.text.trim() });
       })
@@ -53,17 +56,21 @@ function SongNotes({
   }, [key]);
 
   // 届いている説明文のうち、いまの曲のもの。空なら出さない。loaded は、いまの曲の答えが届いたか（空でも）
-  const target = key && notes?.key === key && notes.text ? notes : null;
+  const got =
+    key && notes?.key === key ? notes : key && cached !== undefined ? { key, text: cached } : null;
+  const target = got?.text ? got : null;
   const targetKey = target?.key;
-  const loaded = !key || notes?.key === key;
+  const loaded = !key || !!got;
   const targetRef = useRef(target);
   useEffect(() => {
     targetRef.current = target;
   }, [target]);
   // 描いている説明文と、枠が見えているか・文字が見えているか
-  const [current, setCurrent] = useState<{ key: string; text: string } | null>(null);
-  const [boxOn, setBoxOn] = useState(false);
-  const [textOn, setTextOn] = useState(false);
+  // 前に取った説明文のある曲で画面を開いたら（ラジオのボタンで画面を移ったときなど）、浮かび上がらせずに最初から出す。
+  // 開いた画面ごとに作り直すので、そうしないと、移るたびに一瞬消えてからふわっと出た
+  const [current, setCurrent] = useState(() => target);
+  const [boxOn, setBoxOn] = useState(() => !!target);
+  const [textOn, setTextOn] = useState(() => !!target);
   const text = useRef<HTMLDivElement>(null);
   const sheetBody = useRef<HTMLDivElement>(null);
 
@@ -74,7 +81,15 @@ function SongNotes({
     const timers: ReturnType<typeof setTimeout>[] = [];
     const later = (f: () => void, ms = 0) => timers.push(setTimeout(f, ms));
     if (!current) {
-      later(() => setCurrent(targetRef.current));
+      // 前に取った説明文なら、浮かび上がらせずにそのまま出す
+      const instant = !!targetKey && known.has(targetKey);
+      later(() => {
+        setCurrent(targetRef.current);
+        if (instant) {
+          setBoxOn(true);
+          setTextOn(true);
+        }
+      });
     } else {
       later(() => setTextOn(false));
       if (targetKey)
@@ -84,15 +99,18 @@ function SongNotes({
           sheetBody.current?.scrollTo({ top: 0 });
         }, FADE_MS);
       else if (loaded) {
-        later(() => setBoxOn(false));
+        // 流すのをやめたとき（song が null）は、少し待ってから消す。ラジオのボタンなどで別の画面へ移るときは、移る前に
+        // この画面が持ち主でなくなり、移るまでの一瞬だけ消えかけた。移り終えればこの部品ごと外れるので、待つあいだは出したまま
+        const wait = key ? 0 : LEAVE_WAIT_MS;
+        later(() => setBoxOn(false), wait);
         later(() => {
           setCurrent(null);
           setOpen(false);
-        }, FADE_MS);
+        }, wait + FADE_MS);
       }
     }
     return () => timers.forEach(clearTimeout);
-  }, [current, targetKey, loaded, setOpen]);
+  }, [current, targetKey, loaded, key, setOpen]);
 
   // 描いたら、透明の状態を一度描いてから浮かび上がらせる
   useEffect(() => {
@@ -193,6 +211,12 @@ const FADE_MS = 300;
 const GAP = 24;
 /** 枠に取れる高さがこれより低い画面では出さない（px） */
 const MIN_HEIGHT = 120;
+
+/** 流すのをやめてから消し始めるまで待つ長さ（ミリ秒） */
+const LEAVE_WAIT_MS = 400;
+
+/** 取った説明文（動画ごと）。画面を移っても残し、同じ動画の説明文を取り直さない */
+const known = new Map<string, string>();
 
 const URL_RE = /(https?:\/\/[^\s<>「」（）()]+)/g;
 
