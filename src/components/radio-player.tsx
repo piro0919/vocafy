@@ -16,7 +16,17 @@ import { PRIMARY } from './button-styles';
  * 関連曲はこの画面を開いてから /api/related で取り、届くまでは元の曲の下に仮の行を出す（page.tsx の説明）
  */
 export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: ReactNode }) {
-  const { current, playing, queue, radioHome, playRadio, fillRadio, jumpTo, toggle } = usePlayer();
+  const {
+    current,
+    playing,
+    queue,
+    radioHome,
+    playRadio,
+    fillRadio,
+    jumpTo,
+    toggle,
+    skipsNiconico,
+  } = usePlayer();
   const here = current !== null && radioHome === `/radio/${seed.songId}`;
   // 届くまでは null。取れなかったときは空にして、元の曲だけのラジオにする
   const [related, setRelated] = useState<QueueItem[] | null>(null);
@@ -68,14 +78,23 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
       </div>
 
       <div className="-mx-1.5 flex flex-col gap-1">
-        {list.map((song, i) => (
-          <SongItem
-            key={`${i}-${song.songId}`}
-            song={song}
-            eager={i < 12}
-            onOpen={() => (here ? jumpTo(i) : playRadio(songs, i))}
-          />
-        ))}
+        {/*
+          自動で進むと飛ばす曲（iPad の Safari のニコニコの曲）は並べない。ラジオは流し続ける画面で、その曲は流れないため。
+          元の曲と流している曲は残す。押したときの何番目は、外す前の並びのまま
+        */}
+        {list.map((song, i) =>
+          skipsNiconico &&
+          song.service === 'niconico' &&
+          song.songId !== seed.songId &&
+          song.songId !== current?.songId ? null : (
+            <SongItem
+              key={`${i}-${song.songId}`}
+              song={song}
+              eager={i < 12}
+              onOpen={() => (here ? jumpTo(i) : playRadio(songs, i))}
+            />
+          ),
+        )}
         {waiting && <SkeletonRows count={11} />}
       </div>
     </div>

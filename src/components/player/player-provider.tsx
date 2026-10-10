@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { toast } from 'sonner';
 import { isAppleDevice } from '@/lib/apple-device';
@@ -70,6 +71,8 @@ const SLEEP_FADE_MS = 3000;
  * その人の曲を流している間だけ、画面内の置き場所（slot）に重ねて大きく出す。
  * iframe を DOM の中で動かすと読み込み直しになり再生が止まるので、要素は動かさず位置だけ合わせる
  */
+const noSubscribe = () => () => {};
+
 /** 開発用: ?mock-niconico-blocked で、ニコニコの曲が止められたあと（iPad の Safari）の状態から始める */
 function mockNiconicoBlocked(): boolean {
   return (
@@ -153,7 +156,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const niconicoBlocked = useRef(mockNiconicoBlocked());
   const skipped = useRef(0);
   // 自動で進む先のニコニコの曲を飛ばしているか（画面に出す。次に流れる曲の板で薄くする）。最初に飛ばしたときだけ知らせる
-  const [skipsNiconico, setSkipsNiconico] = useState(mockNiconicoBlocked);
+  const [skipping, setSkipsNiconico] = useState(false);
+  // 開発用の切り替えは、サーバーで描いた形と食い違わないよう、ページの準備ができてから効かせる
+  const mocked = useSyncExternalStore(noSubscribe, mockNiconicoBlocked, () => false);
+  const skipsNiconico = skipping || mocked;
   const skipNoticed = useRef(false);
   const noteSkip = useCallback((item: QueueItem | undefined) => {
     niconicoBlocked.current = true;
