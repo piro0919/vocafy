@@ -1,13 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { FadeImage } from './fade-image';
 import { Icon } from './icon';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
-import { COVER_PLAY } from './button-styles';
+import { COVER_PLAY, PRIMARY } from './button-styles';
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -210,3 +217,30 @@ const MOBILE = '(max-width: 47.99rem)';
 
 /** 下へこれだけ引いて離したら戻る（px） */
 const PULL = 60;
+
+/**
+ * 詳細画面の「再生」の段の先頭の、再生・一時停止のボタン。パソコンはアイコンと文言、スマホは文言を外した丸いアイコンだけにする。
+ * スマホは段にランダム・ループなどのアイコンも並ぶので、文言を付けると段が画面の幅からはみ出し、横に送らないと見えなかった
+ */
+export function StagePlayButton({
+  playing,
+  onClick,
+  ...rest
+}: {
+  playing: boolean;
+  onClick: () => void;
+} & Omit<ComponentProps<'button'>, 'onClick' | 'className' | 'type'>) {
+  const label = playing ? '一時停止' : '再生';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={`${PRIMARY} max-md:size-10 max-md:justify-center max-md:p-0`}
+      {...rest}
+    >
+      <Icon name={playing ? 'pause' : 'play'} className="size-5" />
+      <span className="max-md:sr-only">{label}</span>
+    </button>
+  );
+}

@@ -8,14 +8,14 @@ import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
-import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
+import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { usePlayer } from './player/player-provider';
 import { PlaybackMode } from './player/playback-mode';
 import { usePreload } from './player/use-preload';
 import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
-import { ICON, PRIMARY } from './button-styles';
+import { ICON } from './button-styles';
 import { SongNotes } from './song-notes';
 
 /**
@@ -99,6 +99,21 @@ export function ProducerPlayer({
         : 0,
     );
 
+  // 説明文の全文の板（パソコンより狭い幅）。「再生」の段と、動画の下の帯のボタンから開く。パソコンは動画の下に枠で出すので、ボタンは要らない
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [hasNotes, setHasNotes] = useState(false);
+  const notesButton = hasNotes && (
+    <button
+      type="button"
+      onClick={() => setNotesOpen(true)}
+      aria-label="説明文"
+      title="説明文"
+      className={`grid ${ICON} text-muted hover:text-foreground lg:hidden`}
+    >
+      <Icon name="notes" className="size-5" />
+    </button>
+  );
+
   const share = (
     <ShareButton producerId={producerId} songId={here ? current?.songId : linkedItem?.songId} />
   );
@@ -117,20 +132,29 @@ export function ProducerPlayer({
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <StageControls extra={share}>
-          <button
-            type="button"
+        <StageControls
+          extra={
+            <>
+              {share}
+              {notesButton}
+            </>
+          }
+        >
+          <StagePlayButton
+            playing={here && playing}
             onClick={() => (here ? toggle() : start(linkedItem?.songId))}
-            className={PRIMARY}
-          >
-            <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
-            {here && playing ? '一時停止' : '再生'}
-          </button>
+          />
           {share}
+          {notesButton}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
-        <SongNotes song={here ? current : null} />
+        <SongNotes
+          song={here ? current : null}
+          open={notesOpen}
+          setOpen={setNotesOpen}
+          onAvailable={setHasNotes}
+        />
       </div>
 
       <div className="min-w-0">

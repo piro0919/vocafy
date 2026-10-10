@@ -2,13 +2,17 @@
 
 import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';
-import { PlayerStage, StageControls, SwipeToLeave } from '@/components/player-stage';
+import {
+  PlayerStage,
+  StageControls,
+  StagePlayButton,
+  SwipeToLeave,
+} from '@/components/player-stage';
 import { PlaybackMode } from '@/components/player/playback-mode';
 import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { SortableSongList } from './sortable-song-list';
-import { PRIMARY } from '@/components/button-styles';
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
@@ -39,17 +43,13 @@ export function FavoriteSongs() {
         </SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
         <StageControls>
-          <button
-            type="button"
+          <StagePlayButton
+            playing={here && playing}
             disabled={songs.length === 0}
             // 読み込み直しや戻るで、ブラウザが押せる・押せないを前の状態に戻すと、サーバーの HTML と食い違う
             {...NO_RESTORE}
             onClick={() => (here ? toggle() : play())}
-            className={PRIMARY}
-          >
-            <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
-            {here && playing ? '一時停止' : '再生'}
-          </button>
+          />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>

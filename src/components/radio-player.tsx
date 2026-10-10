@@ -2,12 +2,10 @@
 
 import { type ReactNode, useEffect, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { Icon } from './icon';
-import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
+import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
-import { PRIMARY } from './button-styles';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -64,14 +62,10 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         <StageControls>
-          <button
-            type="button"
+          <StagePlayButton
+            playing={here && playing}
             onClick={() => (here ? toggle() : playRadio(songs, 0))}
-            className={PRIMARY}
-          >
-            <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
-            {here && playing ? '一時停止' : '再生'}
-          </button>
+          />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>

@@ -2,12 +2,10 @@
 
 import { type ReactNode, useEffect, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { Icon } from './icon';
-import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
+import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
-import { PRIMARY } from './button-styles';
 
 /** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -102,10 +100,7 @@ export function ListPlayer({
         />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         <StageControls>
-          <button type="button" onClick={() => (here ? toggle() : start())} className={PRIMARY}>
-            <Icon name={here && playing ? 'pause' : 'play'} className="size-5" />
-            {here && playing ? '一時停止' : '再生'}
-          </button>
+          <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
