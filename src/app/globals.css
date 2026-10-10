@@ -352,6 +352,18 @@ body {
     opacity: 1;
   }
 }
+/*
+ * 画面の上部の色の背景の、右上のにじみをゆっくり漂わせる動き（ambient.tsx）。少し左下へずれて膨らみ、また戻る。
+ * 気づくか気づかないかの遅さにする。速いと、一覧や説明文を読んでいるときに視界の端で動いて気が散る
+ */
+@keyframes ambient-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-5.3%, 4%) scale(1.15);
+  }
+}
 /* 入れ替わった下の層を、上の層が浮かび終わってから消す動き（ambient.tsx） */
 @keyframes fade-out {
   from {

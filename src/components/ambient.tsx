@@ -30,6 +30,9 @@ const BRAND_COLORS: Colors = [
 
 type Colors = [string, string];
 
+/** 右上のにじみが漂う片道の長さ（秒。globals.css の ambient-drift を 40s で動かす） */
+const DRIFT_SECONDS = 40;
+
 /** 一度計算した色。同じ画面に戻ったときは計算し直さず、すぐ出す。null は「色が取れなかった」 */
 const cache = new Map<string, Colors | null>();
 /** 読み込み中の絵。同じ絵を二重に取りに行かない */
@@ -113,7 +116,9 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
   // 前の曲の再生位置を拾ってから 0 に戻るので、入れ替えが続けて2回起きる。そこで前の層を外すと、浮かびかけの層しか
   // 残らず、一瞬地の色が見えた。浮かび終わった時点で一度に外すと、上の層の透けた部分から見えていた下の層の色が
   // 急に抜け、最後にガクッと変わって見えた
-  const [layers, setLayers] = useState<{ id: number; colors: Colors; leaving?: boolean }[]>([]);
+  const [layers, setLayers] = useState<
+    { id: number; colors: Colors; born: number; leaving?: boolean }[]
+  >([]);
   const nextId = useRef(0);
   const scene = useRef<{ image: string | undefined; progress: number }>({
     image: undefined,
@@ -128,7 +133,8 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     const next: Colors = [from, to];
     setLayers((prev) => {
       const last = prev.at(-1);
-      if (fresh || !last) return [...prev, { id: nextId.current++, colors: next }];
+      if (fresh || !last)
+        return [...prev, { id: nextId.current++, colors: next, born: performance.now() }];
       if (last.colors[0] === from && last.colors[1] === to) return prev;
       return [...prev.slice(0, -1), { ...last, colors: next }];
     });
@@ -155,13 +161,22 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
                   : prev.map((l) => (l.id < layer.id && !l.leaving ? { ...l, leaving: true } : l)),
               )
             }
-            style={{
-              background: [
-                `radial-gradient(60% 80% at 85% 0%, ${layer.colors[1]}, transparent 70%)`,
-                `linear-gradient(to bottom, ${layer.colors[0]}, transparent)`,
-              ].join(', '),
-            }}
-          />
+            style={{ background: `linear-gradient(to bottom, ${layer.colors[0]}, transparent)` }}
+          >
+            {/* 右上のにじみは別の層にして、層ごとゆっくり漂わせる（ambient-drift）。グラデーションを描き直さず、
+                位置と大きさだけを変えるので軽い。漂う位置はどの層も同じ時計に合わせ、入れ替わりで跳ばないようにする */}
+            {/* 層は上下左右に 1/4 ずつ大きく取り、ずらしても端が画面に入らないようにする。上部と同じ大きさの層をずらすと、
+                色の残っているところで層の端が切れ、右の方に四角い境目が見えた。にじみの位置と大きさは、大きくした分だけ割合を直して
+                元と同じにする（上部の幅の 85%・上端を中心に、幅の 60%・高さの 80%） */}
+            <div
+              className="absolute -inset-1/4 animate-[ambient-drift_40s_ease-in-out_infinite_alternate] motion-reduce:animate-none"
+              style={{
+                animationDelay: `-${layer.born % (DRIFT_SECONDS * 2000)}ms`,
+                transformOrigin: '73.3% 16.7%',
+                background: `radial-gradient(40% 53.3% at 73.3% 16.7%, ${layer.colors[1]}, transparent 70%)`,
+              }}
+            />
+          </div>
         ))}
       </div>
       {children}
