@@ -26,12 +26,15 @@ import { SingerSilhouette } from './singer-silhouette';
  */
 export function ProducerPlayer({
   producerId,
+  linkedSongId,
   heading,
   songs,
   queue,
   cover,
 }: {
   producerId: number;
+  /** 共有の住所（/producers/[id]/songs/[songId]）で開いたときの曲。無ければ住所の ?song= を読む */
+  linkedSongId?: number;
   /** 動画の下に出す名前。ページの側で作る */
   heading: ReactNode;
   songs: Song[];
@@ -69,7 +72,8 @@ export function ProducerPlayer({
     window.history.replaceState(null, '', url);
   }, [here, current, producerId]);
 
-  const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  const fromQuery = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  const linked = linkedSongId ?? fromQuery;
   // その曲の行までスクロールするのは、開いたときの1回だけ。流しているあいだは住所の曲が曲ごとに変わるが、そのたびには動かさない
   const scrolledToLinked = useRef(false);
   useEffect(() => {
@@ -208,7 +212,8 @@ function linkedSong(): number | null {
 }
 
 /**
- * 共有のボタン。この人の曲を流しているときは、その曲つきのリンク（?song=）を共有する。開いた人の画面ではその曲から流せる。
+ * 共有のボタン。この人の曲を流しているときは、その曲つきのリンク（/producers/[id]/songs/[songId]）を共有する。
+ * 題名と共有の絵に曲名が入り、開いた人の画面ではその曲から流せる。
  * スマホなど共有の窓（Web Share API）が出せるブラウザでは窓を出し、出せなければリンクを写す
  */
 function ShareButton({ producerId, songId }: { producerId: number; songId?: number }) {
@@ -221,8 +226,11 @@ function ShareButton({ producerId, songId }: { producerId: number; songId?: numb
   const what = songId ? 'この曲' : 'このボカロP';
   const label = canShare ? `${what}を共有` : `${what}のリンクをコピー`;
   const share = async () => {
-    const url = new URL(`/producers/${producerId}`, window.location.origin);
-    if (songId) url.searchParams.set('song', String(songId));
+    // 曲つきのリンクは、曲名を題名と共有の絵に入れた住所にする（songs/[songId]/page.tsx）
+    const url = new URL(
+      songId ? `/producers/${producerId}/songs/${songId}` : `/producers/${producerId}`,
+      window.location.origin,
+    );
     const link = url.toString();
     if (canShare) {
       // 窓を閉じただけでも失敗が返るので、何もしない

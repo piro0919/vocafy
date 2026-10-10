@@ -10,6 +10,7 @@ import { MobileTabs, Sidebar } from '@/components/nav';
 import { AccountButton } from '@/components/account/account-button';
 import { AccountSync } from '@/components/account/account-sync';
 import { HistoryRecorder } from '@/components/player/history-recorder';
+import { SongTitle } from '@/components/player/song-title';
 import { VoiceFollower } from '@/components/theme/voice-follower';
 import { PlayerProvider } from '@/components/player/player-provider';
 import { VisualizerLink } from '@/components/visualizer/visualizer-link';
@@ -110,6 +111,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             </div>
             <MobileTabs />
             <HistoryRecorder />
+            <SongTitle />
             <VoiceFollower />
             <VisualizerLink />
           </PlayerProvider>
