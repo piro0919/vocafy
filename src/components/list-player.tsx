@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import { playlistCount } from '@/lib/list-titles';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -33,8 +32,6 @@ export function ListPlayer({
   eyebrow,
   title,
   songs,
-  total,
-  pickup = false,
 }: {
   /** 一覧の住所（years/2026 など） */
   source: string;
@@ -44,10 +41,6 @@ export function ListPlayer({
   title: string;
   /** 流す曲（catalog.ts の Playlist。全曲か、全曲から選んだ PICKUP_SIZE 曲） */
   songs: QueueItem[];
-  /** 一覧の全曲の数 */
-  total: number;
-  /** songs が全曲から選んだ曲か。代表曲やきょうの出会いのように、もともと少ない一覧は渡さない */
-  pickup?: boolean;
 }) {
   const { current, playing, listSource, playAll, toggle } = usePlayer();
   // この一覧を流しているときに、動画をここに大きく出す
@@ -103,10 +96,6 @@ export function ListPlayer({
         </SwipeToLeave>
         <StageControls extra={notes.button}>
           <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
-          {/* 流す曲の数（一覧の画面のボタンの横と同じ表記）。スマホは段にアイコンが並んで入らないので出さない */}
-          <p className="text-sm text-muted max-md:hidden [word-break:keep-all]">
-            {playlistCount({ songs, total, pickup })}
-          </p>
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />

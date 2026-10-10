@@ -23,13 +23,7 @@ export default async function MixPlayPage({ params }: PageProps<'/mix/[date]/pla
   if (songs.length === 0) notFound();
   return (
     <div className="pt-4">
-      <ListPlayer
-        source={`mix/${date}`}
-        songs={songs}
-        total={songs.length}
-        eyebrow="Daily Mix"
-        title="きょうの出会い"
-      />
+      <ListPlayer source={`mix/${date}`} songs={songs} eyebrow="Daily Mix" title="きょうの出会い" />
     </div>
   );
 }

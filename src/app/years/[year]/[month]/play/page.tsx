@@ -29,8 +29,6 @@ export default async function MonthPlayPage({ params }: PageProps<'/years/[year]
       <ListPlayer
         source={`years/${year}/${month}`}
         songs={playlist.songs}
-        total={playlist.total}
-        pickup={playlist.pickup}
         eyebrow={String(year)}
         title={`${year}年${Number(month)}月の曲`}
       />

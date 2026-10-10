@@ -35,8 +35,6 @@ export default async function VoiceYearPlayPage({ params }: PageProps<'/voices/[
       <ListPlayer
         source={`voices/${voice.id}/${year}`}
         songs={playlist.songs}
-        total={playlist.total}
-        pickup={playlist.pickup}
         eyebrow={String(year)}
         title={`${voice.name}の${year}年の曲`}
       />

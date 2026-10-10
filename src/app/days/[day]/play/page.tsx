@@ -29,8 +29,6 @@ export default async function DayPlayPage({ params }: PageProps<'/days/[day]/pla
       <ListPlayer
         source={`days/${day}`}
         songs={playlist.songs}
-        total={playlist.total}
-        pickup={playlist.pickup}
         eyebrow="On This Day"
         title={`${dayLabel(day)}に生まれた曲`}
       />

@@ -30,7 +30,6 @@ export default async function VoicePlayPage({ params }: PageProps<'/voices/[id]/
       <ListPlayer
         source={`voices/${voice.id}`}
         songs={songs}
-        total={songs.length}
         eyebrow="Voice"
         title={`${voice.name}の代表曲`}
       />
