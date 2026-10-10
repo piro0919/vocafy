@@ -167,12 +167,12 @@ export function ProducerPlayer({
                 key={song.id}
                 id={`song-${song.id}`}
                 data-preload={item?.service === 'niconico' ? item.videoId : undefined}
-                className={`group flex items-center rounded-md pr-1 transition-colors duration-150 ${
+                className={`group flex items-center rounded-md border pr-1 transition-colors duration-150 ${
                   active || linkedItem?.songId === song.id
-                    ? 'bg-glass'
+                    ? 'border-line/60 bg-glass'
                     : item
-                      ? 'hover:bg-foreground/8'
-                      : ''
+                      ? 'border-transparent hover:bg-foreground/8'
+                      : 'border-transparent'
                 }`}
               >
                 <button

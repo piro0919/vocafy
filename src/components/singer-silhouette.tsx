@@ -71,7 +71,7 @@ export function SingerSilhouette({ song }: { song: QueueItem | null }) {
 const FADE_MS = 700;
 
 /** 何人も歌っている曲で、次のキャラに替えるまでの長さ */
-const CYCLE_MS = 8000;
+const CYCLE_MS = 16000;
 
 const SEP = '|';
 

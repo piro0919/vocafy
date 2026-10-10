@@ -88,7 +88,7 @@ export function SongItem({
     <div
       ref={row}
       data-preload={song.service === 'niconico' ? song.videoId : undefined}
-      className={`group flex min-w-0 snap-start items-center rounded-md pr-1 transition-colors duration-150 ${active ? 'bg-glass' : 'hover:bg-foreground/8'}`}
+      className={`group flex min-w-0 snap-start items-center rounded-md border pr-1 transition-colors duration-150 ${active ? 'border-line/60 bg-glass' : 'border-transparent hover:bg-foreground/8'}`}
     >
       <button
         type="button"
