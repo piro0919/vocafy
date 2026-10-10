@@ -16,7 +16,9 @@ const AGENT = { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' };
 /**
  * 流せるか。true は流せる、false は流せない、null は分からない（窓口の混み合いなど。外さない）。
  * YouTube は oEmbed が 401・403・404 なら流せない（取り込みの scripts/lib/youtube.ts と同じ見方）。
- * ニコニコは動画の情報の窓口（getthumbinfo）が失敗を返すか、埋め込めない（embeddable が 0）なら流せない
+ * ニコニコは動画の情報の窓口（getthumbinfo）が失敗を返すか、埋め込めない（embeddable が 0）か、埋め込みのページが
+ * 403 なら流せない。センシティブ扱いの動画は、getthumbinfo では embeddable が 1 のまま、埋め込みのページだけが 403 で
+ * 「この動画はニコニコ動画でのみ視聴できます」を出す（2026-10-11 に「ぱんつのうた」sm4217141 で確かめた）
  */
 export async function isPlayable(service: Service, id: string): Promise<boolean | null> {
   try {
@@ -33,7 +35,13 @@ export async function isPlayable(service: Service, id: string): Promise<boolean 
     if (!res.ok) return null;
     const xml = await res.text();
     if (xml.includes('status="fail"')) return false;
-    return !xml.includes('<embeddable>0</embeddable>');
+    if (xml.includes('<embeddable>0</embeddable>')) return false;
+    const embed = await fetch(`https://embed.nicovideo.jp/watch/${id}`, {
+      headers: AGENT,
+      cache: 'no-store',
+    });
+    if (embed.ok) return true;
+    return embed.status === 403 ? false : null;
   } catch {
     return null;
   }
