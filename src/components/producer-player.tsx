@@ -102,10 +102,15 @@ export function ProducerPlayer({
   // 説明文の全文の板（パソコンより狭い幅）。「再生」の段と、動画の下の帯のボタンから開く。パソコンは動画の下に枠で出すので、ボタンは要らない
   const [notesOpen, setNotesOpen] = useState(false);
   const [hasNotes, setHasNotes] = useState(false);
+  // 板を開いたボタン（「再生」の段か、動画の下の帯）。閉じたらそこにフォーカスを戻す
+  const notesTrigger = useRef<HTMLButtonElement | null>(null);
   const notesButton = hasNotes && (
     <button
       type="button"
-      onClick={() => setNotesOpen(true)}
+      onClick={(e) => {
+        notesTrigger.current = e.currentTarget;
+        setNotesOpen((o) => !o);
+      }}
       aria-label="説明文"
       title="説明文"
       className={`grid ${ICON} text-muted hover:text-foreground lg:hidden`}
@@ -153,6 +158,7 @@ export function ProducerPlayer({
           song={here ? current : null}
           open={notesOpen}
           setOpen={setNotesOpen}
+          trigger={notesTrigger}
           onAvailable={setHasNotes}
         />
       </div>

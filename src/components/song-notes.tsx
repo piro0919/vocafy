@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { QueueItem } from '@/lib/catalog';
 import { FADE, HIDDEN } from './player/dock-strip';
-import { Icon } from './icon';
-import { ICON } from './button-styles';
+import { FloatingPanel } from './player/floating-panel';
 
 /**
  * 流している曲の動画の説明文。パソコンのボカロPの画面の、動画の列の下に出す。
@@ -19,12 +18,15 @@ export function SongNotes({
   song,
   open,
   setOpen,
+  trigger,
   onAvailable,
 }: {
   song: QueueItem | null;
   /** 狭い幅で、全文の板を開いているか。動画の下の帯のボタンからも開くので、持ち主（producer-player.tsx）が持つ */
   open: boolean;
   setOpen: (open: boolean) => void;
+  /** 板を開いたボタン。閉じたらここにフォーカスを戻す */
+  trigger: RefObject<HTMLButtonElement | null>;
   /** 説明文を出しているかを知らせる。出していないあいだは、帯のボタンを出さない */
   onAvailable: (available: boolean) => void;
 }) {
@@ -137,15 +139,7 @@ export function SongNotes({
     onAvailable(!!current);
   }, [current, onAvailable]);
 
-  // 板を開いているあいだは Esc で閉じる
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, setOpen]);
+  const close = useCallback(() => setOpen(false), [setOpen]);
 
   if (!current) return null;
 
@@ -160,32 +154,16 @@ export function SongNotes({
   return (
     <>
       {createPortal(
-        // 動画の下（スマホは動画が上に固定され、高さは幅の 9/16）から画面の下までを、ほかの浮いた板と同じく端から 12px 離した角丸の板で覆う。
-        // 動画には重ねない（YouTube の規約）
-        <div
-          inert={!open}
-          role="dialog"
-          aria-label="説明文"
-          className={`fixed inset-x-3 bottom-3 z-40 flex flex-col rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,visibility] duration-300 ease-(--ease-out) max-md:top-[calc(56.25vw+12px)] md:top-[30dvh] lg:hidden ${open ? '' : 'invisible translate-y-[calc(100%+24px)]'}`}
-        >
-          <div className="flex items-center justify-between py-1 pr-1 pl-4">
-            <span className="font-bold">説明文</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="閉じる"
-              className={ICON}
-            >
-              <Icon name="close" />
-            </button>
-          </div>
+        // 外枠は次に流れる曲の板と同じ（floating-panel.tsx）。置き場所・見出し・出入りの動き・閉じ方をそろえる。
+        // 初めは動画の下から画面の下までを覆う板を書き起こしていて、ほかの板とばらばらだった
+        <FloatingPanel open={open} onClose={close} trigger={trigger} title="説明文">
           <div
             ref={sheetBody}
-            className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8 text-sm break-words whitespace-pre-line"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 text-sm break-words whitespace-pre-line"
           >
             {body}
           </div>
-        </div>,
+        </FloatingPanel>,
         document.body,
       )}
       {/* 枠の上の間が外へはみ出さないよう flow-root にする。はみ出すと、外側の位置に間が含まれ、二重に数えて枠が短くなった */}
