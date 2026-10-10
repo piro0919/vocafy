@@ -120,4 +120,6 @@ export type PlayerContext = {
    * （niconico-pool.ts）。返す関数は見えなくなったときに呼ぶ。ほかの端末では何もしない
    */
   preload: (videoId: string) => () => void;
+  /** 自動で進む先のニコニコの曲を飛ばしているか（iPad の Safari で、このタブでニコニコの曲が止められた） */
+  skipsNiconico: boolean;
 };

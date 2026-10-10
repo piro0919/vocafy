@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from 'sonner';
 import { isAppleDevice } from '@/lib/apple-device';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
@@ -69,6 +70,15 @@ const SLEEP_FADE_MS = 3000;
  * その人の曲を流している間だけ、画面内の置き場所（slot）に重ねて大きく出す。
  * iframe を DOM の中で動かすと読み込み直しになり再生が止まるので、要素は動かさず位置だけ合わせる
  */
+/** 開発用: ?mock-niconico-blocked で、ニコニコの曲が止められたあと（iPad の Safari）の状態から始める */
+function mockNiconicoBlocked(): boolean {
+  return (
+    process.env.NODE_ENV === 'development' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('mock-niconico-blocked')
+  );
+}
+
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [index, setIndex] = useState(0);
@@ -140,8 +150,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // ニコニコの曲は、iPad の Safari では自動で進んだ先だと必ず止められる（曲ごとに埋め込みを作り直すので、押した記録が残らない）。
   // 一度止められたら、このタブでは自動で進む先のニコニコの曲を読み込まずに飛ばす。自分で押した曲は ▶ で流せるので飛ばさない。
   // 並びがニコニコの曲だけのときに回り続けないよう、続けて飛ばした数（skipped）が並びの数に届いたら止まる
-  const niconicoBlocked = useRef(false);
+  const niconicoBlocked = useRef(mockNiconicoBlocked());
   const skipped = useRef(0);
+  // 自動で進む先のニコニコの曲を飛ばしているか（画面に出す。次に流れる曲の板で薄くする）。最初に飛ばしたときだけ知らせる
+  const [skipsNiconico, setSkipsNiconico] = useState(mockNiconicoBlocked);
+  const skipNoticed = useRef(false);
+  const noteSkip = useCallback((item: QueueItem | undefined) => {
+    niconicoBlocked.current = true;
+    setSkipsNiconico(true);
+    if (skipNoticed.current || !item) return;
+    skipNoticed.current = true;
+    toast(`${item.title}をスキップしました`);
+  }, []);
 
   /**
    * プレイヤーを作り、枠の中に自分の入れ物（div）を足して置く。知らせは、いま流しているプレイヤー（player.current）のものだけ拾う
@@ -183,7 +203,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           const { queue: q, index: i } = state.current;
           if (auto.current && q[i]?.service === 'niconico' && skipped.current < q.length) {
-            niconicoBlocked.current = true;
+            noteSkip(q[i]);
             skipped.current += 1;
             autoNext.current = true;
             nextRef.current(1);
@@ -225,7 +245,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       boxes.current.set(engine, box);
       return engine;
     },
-    [frame],
+    [frame, noteSkip],
   );
 
   // iPad・iPhone で、見えているニコニコの曲の埋め込みを先に読み込んでおく（niconico-pool.ts）。ほかの端末では作らない
@@ -301,6 +321,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (!auto.current && service === 'niconico') primeParked(items);
       if (!auto.current || service !== 'niconico') skipped.current = 0;
       else if (niconicoBlocked.current && skipped.current < items.length) {
+        noteSkip(items[at]);
         skipped.current += 1;
         autoNext.current = true;
         nextRef.current(1);
@@ -372,7 +393,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
       tick();
     },
-    [waitForSlot, drop, spawn, primeParked],
+    [waitForSlot, drop, spawn, primeParked, noteSkip],
   );
 
   /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
@@ -868,6 +889,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       holdingSlot,
       sleep,
       preload,
+      skipsNiconico,
       setSleep,
     }),
     [
@@ -900,6 +922,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       holdingSlot,
       sleep,
       preload,
+      skipsNiconico,
       setSleep,
       primeParked,
     ],

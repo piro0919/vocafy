@@ -18,7 +18,7 @@ export function QueuePanel({
   onClose: () => void;
   trigger: RefObject<HTMLButtonElement | null>;
 }) {
-  const { current, upcoming, jumpTo } = usePlayer();
+  const { current, upcoming, jumpTo, skipsNiconico } = usePlayer();
   // 閉じているあいだは並びを作らない（曲が変わるたびに組み直さない）
   const items = open ? upcoming() : [];
   const list = useRef<HTMLDivElement>(null);
@@ -38,14 +38,17 @@ export function QueuePanel({
         </div>
       )}
       <div ref={list} className="mt-2 min-h-0 flex-1 overscroll-contain overflow-y-auto px-2 pb-2">
-        {items.map(({ item, index }) => (
-          <SongItem
-            key={`${index}-${item.songId}`}
-            song={item}
-            favorite={false}
-            onOpen={() => jumpTo(index)}
-          />
-        ))}
+        {/* 自動で進むと飛ばす曲（iPad の Safari のニコニコの曲）は、流れる順番に入らないので並べない */}
+        {items
+          .filter(({ item }) => !(skipsNiconico && item.service === 'niconico'))
+          .map(({ item, index }) => (
+            <SongItem
+              key={`${index}-${item.songId}`}
+              song={item}
+              favorite={false}
+              onOpen={() => jumpTo(index)}
+            />
+          ))}
       </div>
     </FloatingPanel>
   );

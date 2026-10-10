@@ -12,6 +12,7 @@ import { PlayerStage, StageControls, SwipeToLeave } from './player-stage';
 import { usePlayer } from './player/player-provider';
 import { PlaybackMode } from './player/playback-mode';
 import { usePreload } from './player/use-preload';
+import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { ICON, PRIMARY } from './button-styles';
@@ -35,8 +36,17 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, context, listSource, radioHome, playQueue, adoptQueue, toggle } =
-    usePlayer();
+  const {
+    current,
+    playing,
+    context,
+    listSource,
+    radioHome,
+    playQueue,
+    adoptQueue,
+    toggle,
+    skipsNiconico,
+  } = usePlayer();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並び・
   // ラジオの曲は、この人の曲でもここには出さない（右下の窓のまま）。出すと、次の曲が別の人の曲になった途端に、
   // この画面にいるまま動画が右下の窓へ飛んだ
@@ -178,6 +188,7 @@ export function ProducerPlayer({
                     </span>
                   </span>
                 </button>
+                {skipsNiconico && item?.service === 'niconico' && <NoAutoplay />}
                 {item && <FavoriteButton song={item} />}
               </li>
             );

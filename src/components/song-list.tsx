@@ -3,6 +3,7 @@
 import type { QueueItem } from '@/lib/catalog';
 import { type ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
 import { FavoriteButton } from './favorite-button';
@@ -10,6 +11,8 @@ import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
 import { usePreload } from './player/use-preload';
 import { Marquee } from './marquee';
+import { Icon } from './icon';
+import { ICON_SM } from './button-styles';
 
 /**
  * 小さなサムネイルと曲名を詰めて並べる一覧。押すとその曲のボカロPの画面へ移り、その曲から流す
@@ -76,7 +79,7 @@ export function SongItem({
   /** お気に入りのハートを置くか。次に流れる曲の板では置かない（流している曲は再生の帯のハートで入れる） */
   favorite?: boolean;
 }) {
-  const { current, playing } = usePlayer();
+  const { current, playing, skipsNiconico } = usePlayer();
   const active = current?.songId === song.songId;
   const row = useRef<HTMLDivElement>(null);
   // ニコニコの曲は、行が見えているあいだ埋め込みを先に読み込んでおく（iPad・iPhone だけ）
@@ -112,6 +115,7 @@ export function SongItem({
         </span>
         {meta}
       </button>
+      {skipsNiconico && song.service === 'niconico' && <NoAutoplay />}
       {favorite && <FavoriteButton song={song} quiet />}
       {handle}
     </div>
@@ -126,4 +130,24 @@ export function useOpenSong() {
     playQueue([song], 0, 'pending');
     router.push(`/producers/${song.producerId}`);
   };
+}
+
+/**
+ * 連続再生では飛ばす曲の印（iPad の Safari で、このタブでニコニコの曲が止められたあとのニコニコの曲）。
+ * 押せば流れるので、行は薄くしない。薄い行は「再生できない曲」の見た目と同じになる。
+ * 印だけでは意味が読めないので、押すと一文で知らせる。飛ばさないブラウザ（iPad の Brave など）もあるので「Safari」とは書かない
+ */
+const NO_AUTOPLAY = 'このブラウザでは、この曲は連続再生されません';
+
+export function NoAutoplay() {
+  return (
+    <button
+      type="button"
+      onClick={() => toast(NO_AUTOPLAY)}
+      aria-label={NO_AUTOPLAY}
+      className={`${ICON_SM} grid text-muted`}
+    >
+      <Icon name="repeatOff" className="size-4" />
+    </button>
+  );
 }
