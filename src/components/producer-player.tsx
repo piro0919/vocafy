@@ -16,6 +16,7 @@ import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { ICON, PRIMARY } from './button-styles';
+import { SongNotes } from './song-notes';
 
 /**
  * ボカロPの画面。左に大きなプレイヤーの置き場所、右に曲の一覧（新しい順）。
@@ -129,6 +130,7 @@ export function ProducerPlayer({
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           <PlaybackMode className="md:hidden" radio scroll />
         </StageControls>
+        <SongNotes song={here ? current : null} />
       </div>
 
       <div className="min-w-0">
