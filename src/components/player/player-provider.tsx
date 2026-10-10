@@ -325,7 +325,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback(
     (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
-      if (!isAppleDevice()) keepAwake();
+      keepAwake();
       auto.current = autoNext.current;
       autoNext.current = false;
       setContext(ctx);
