@@ -40,6 +40,7 @@ import type {
 } from './player-types';
 import { useFrameLayout } from './use-frame-layout';
 import { useSlot } from './use-slot';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 export type { ListSource, PlaybackTime, PlayContext, Repeat, Sleep } from './player-types';
 
@@ -1229,7 +1230,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           aria-label={`「${current.title}」の続きを再生`}
           className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
         >
-          <FadeImage src={current.thumb} alt="" fill sizes="356px" className="object-cover" />
+          <FadeImage
+            src={current.thumb}
+            alt=""
+            fill
+            sizes={`${IMAGE_SIZES.dockWide}px`}
+            className="object-cover"
+          />
           <span className={`absolute top-1/2 left-1/2 size-14 -translate-1/2 ${COVER_PLAY}`}>
             <Icon name="play" className="size-8" />
           </span>

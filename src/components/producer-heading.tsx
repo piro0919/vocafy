@@ -4,6 +4,7 @@ import { FadeImage } from './fade-image';
 import { FavoriteProducerButton } from './favorite-button';
 import { Heading } from './heading';
 import { ProducerLinks } from './producer-links';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 /**
  * ボカロPの題名。アイコン・名前・お気に入りのハートと、名前の下の本人の場所（X など）。
@@ -40,8 +41,8 @@ export function ProducerHeading({
       <FadeImage
         src={picture}
         alt=""
-        width={56}
-        height={56}
+        width={IMAGE_SIZES.producerIcon}
+        height={IMAGE_SIZES.producerIcon}
         className="size-12 shrink-0 rounded-full bg-surface object-cover sm:size-14"
       />
     ) : null;

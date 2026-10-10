@@ -13,6 +13,7 @@ import { usePreload } from './player/use-preload';
 import { Marquee } from './marquee';
 import { Icon } from './icon';
 import { ICON_SM } from './button-styles';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 /**
  * 小さなサムネイルと曲名を詰めて並べる一覧。押すとその曲のボカロPの画面へ移り、その曲から流す
@@ -97,8 +98,8 @@ export function SongItem({
           src={smallThumbOf(song)}
           alt=""
           loading={eager ? 'eager' : 'lazy'}
-          width={85}
-          height={48}
+          width={IMAGE_SIZES.thumb.width}
+          height={IMAGE_SIZES.thumb.height}
           className="aspect-video shrink-0 rounded object-cover"
         />
         <span className="min-w-0 flex-1">

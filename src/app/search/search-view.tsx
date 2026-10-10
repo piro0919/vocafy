@@ -20,6 +20,7 @@ import { loadIndex, type Prepared } from '@/lib/search-index';
 import { thumbOf } from '@/lib/thumb';
 import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 /** 一度に出す曲の数。それより多く当たったときは、言葉を足して絞ってもらう */
 const SONG_LIMIT = 100;
@@ -216,8 +217,8 @@ export function SearchView() {
                     <FadeImage
                       src={p.picture}
                       alt=""
-                      width={32}
-                      height={32}
+                      width={IMAGE_SIZES.avatar}
+                      height={IMAGE_SIZES.avatar}
                       className="size-8 rounded-full bg-surface object-cover"
                     />
                   ) : (

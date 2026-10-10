@@ -6,6 +6,7 @@ import { useId, useSyncExternalStore } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
 import { ICON, PRIMARY_TEXT } from '@/components/button-styles';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 function LoginButton() {
   return (
@@ -29,8 +30,8 @@ function SessionAccount() {
           <Image
             src={user.image}
             alt=""
-            width={32}
-            height={32}
+            width={IMAGE_SIZES.avatar}
+            height={IMAGE_SIZES.avatar}
             unoptimized
             className="size-8 rounded-full"
           />

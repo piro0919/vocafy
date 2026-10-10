@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
 import { InstallButton } from './install-app';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'ホーム', icon: 'home' },
@@ -35,7 +36,13 @@ export function Logo({ compact }: { compact?: boolean }) {
         アプリのアイコンと同じ影絵を、地のタイル無しで添える。タイルに入れたままだと 28px では人物が潰れるので、
         人物だけを切り出した絵（src/assets/icon-source.png から切り出した public/logo-mark.png）を大きめに置く
       */}
-      <Image src="/logo-mark.png" alt="" width={43} height={36} priority />
+      <Image
+        src="/logo-mark.png"
+        alt=""
+        width={IMAGE_SIZES.logo.width}
+        height={IMAGE_SIZES.logo.height}
+        priority
+      />
       {/* スマホの上の帯では、検索の虫めがねと歯車を並べるので、アイコンだけにする */}
       {!compact && (
         <span className="logo text-2xl">

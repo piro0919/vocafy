@@ -13,6 +13,7 @@ import { Icon } from '../icon';
 import { PlaybackMode } from './playback-mode';
 import { type PlaybackTime, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 /**
  * 画面の下に出したままにする操作の帯。曲を選ぶと下からせり上がり、閉じると下へ消える。
@@ -78,8 +79,8 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
               key={item.videoId}
               src={smallThumbOf(item)}
               alt=""
-              width={71}
-              height={40}
+              width={IMAGE_SIZES.barThumb.width}
+              height={IMAGE_SIZES.barThumb.height}
               className="hidden aspect-video rounded object-cover sm:block"
             />
             <div className="min-w-0">

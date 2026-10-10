@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { FadeImage } from './fade-image';
 import { NowPlaying } from './now-playing';
 import { atLeast } from '@/lib/breakpoints';
+import { IMAGE_SIZES } from '@/lib/image-sizes';
 
 // YouTube のサムネイルは加工せずに出す（規約）。16:9 の mqdefault を 16:9 の枠に入れるので、端は切れない。
 // アーティストのカード（round）は、YouTube のチャンネルのアイコンを丸く出す。公式のチャンネルが無いアーティストは名前の頭の1字。
@@ -45,8 +46,8 @@ export function CoverCard({
               <FadeImage
                 src={cover}
                 alt=""
-                width={192}
-                height={192}
+                width={IMAGE_SIZES.coverCard}
+                height={IMAGE_SIZES.coverCard}
                 loading={eager ? 'eager' : 'lazy'}
                 className="size-full object-cover"
               />

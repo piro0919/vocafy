@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BREAKPOINTS } from '../src/lib/breakpoints';
 import { COLORS } from '../src/lib/colors';
+import { IMAGE_SIZES } from '../src/lib/image-sizes';
 import { EASE_OUT, MOTION } from '../src/lib/motion';
 
 /**
@@ -221,5 +222,20 @@ describe('見た目の決まり', () => {
 
   it('ページの左右の余白は page-x・bleed-x（px-4 sm:px-8 を書かない）', () => {
     expect(offenders((l) => /\bsm:-?(px|mx)-8\b/.test(l))).toEqual([]);
+  });
+
+  it('画像の大きさは image-sizes.ts から取る（共有の絵は CSS を使わないので除く）', () => {
+    expect(
+      offenders(
+        (l) => /\b(width|height)=\{\d/.test(l) || /\bsizes="[^"]*\d+px/.test(l),
+        ['app/opengraph-image.tsx', 'app/producers/[id]/og.tsx'],
+      ),
+    ).toEqual([]);
+  });
+
+  it('image-sizes.ts の値は globals.css の名前と同じ', () => {
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+    expect(css).toContain(`--spacing-thumb: ${IMAGE_SIZES.thumb.width}px;`);
+    expect(css).toContain(`--spacing-dock-wide: ${IMAGE_SIZES.dockWide}px;`);
   });
 });
