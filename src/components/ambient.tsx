@@ -30,6 +30,10 @@ const BRAND_COLORS: Colors = [
 
 type Colors = [string, string];
 
+/** 方眼の線の色。字の色をごく薄く混ぜる（明るい画面でも暗い画面でも、地より少しだけ字の側に寄る） */
+const GRID_MINOR = 'color-mix(in oklab, var(--foreground) 3%, transparent)';
+const GRID_MAJOR = 'color-mix(in oklab, var(--foreground) 6%, transparent)';
+
 /** 右上のにじみが漂う片道の長さ（秒。globals.css の ambient-drift を 40s で動かす） */
 const DRIFT_SECONDS = 40;
 
@@ -179,6 +183,21 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
           </div>
         ))}
       </div>
+      {/* 方眼（2026-10-11）。歌声合成ソフトのピアノロールのマス目に寄せた模様。画面全体に固定して敷き、左下を濃いめに、
+          右上へ向かってほぼ見えなくなるまで薄くする（本人の指定）。細い線は 24px ごと、4マスごとに少し濃い線 */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 [mask-image:linear-gradient(to_top_right,black,transparent_60%)]"
+        style={{
+          backgroundImage: [
+            `linear-gradient(to right, ${GRID_MAJOR} 1px, transparent 1px)`,
+            `linear-gradient(to bottom, ${GRID_MAJOR} 1px, transparent 1px)`,
+            `linear-gradient(to right, ${GRID_MINOR} 1px, transparent 1px)`,
+            `linear-gradient(to bottom, ${GRID_MINOR} 1px, transparent 1px)`,
+          ].join(', '),
+          backgroundSize: '96px 96px, 96px 96px, 24px 24px, 24px 24px',
+        }}
+      />
       {children}
     </SourceContext>
   );
