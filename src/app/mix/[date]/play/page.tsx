@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { ListPlayer } from '@/components/list-player';
 import { dailyMix, MIX_SIZE } from '@/lib/catalog';
 
@@ -28,11 +27,8 @@ export default async function MixPlayPage({ params }: PageProps<'/mix/[date]/pla
         source={`mix/${date}`}
         songs={songs}
         total={songs.length}
-        heading={
-          <Heading as="h1" size="page" eyebrow="Daily Mix">
-            きょうの出会い
-          </Heading>
-        }
+        eyebrow="Daily Mix"
+        title="きょうの出会い"
       />
     </div>
   );

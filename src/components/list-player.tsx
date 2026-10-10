@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -8,6 +8,7 @@ import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
+import { StageHeading } from './stage-heading';
 
 /** 1ページの曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -30,14 +31,17 @@ function linkedSong(): number | null {
  */
 export function ListPlayer({
   source,
-  heading,
+  eyebrow,
+  title,
   songs,
   total,
 }: {
   /** 一覧の住所（years/2026 など） */
   source: string;
   /** 動画の下に出す題名。ページの側で作る */
-  heading: ReactNode;
+  /** 動画の下の題名（stage-heading.tsx） */
+  eyebrow: string;
+  title: string;
   /** 1ページ目の曲 */
   songs: QueueItem[];
   total: number;
@@ -102,7 +106,9 @@ export function ListPlayer({
           label={linkedItem ? `「${linkedItem.title}」から再生` : 'この一覧を再生'}
           onPlay={start}
         />
-        <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
+        <SwipeToLeave className="lg:mt-4">
+          <StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />
+        </SwipeToLeave>
         <StageControls extra={notes.button}>
           <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}

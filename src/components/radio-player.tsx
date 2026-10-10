@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -8,6 +8,7 @@ import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
+import { StageHeading } from './stage-heading';
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -15,7 +16,16 @@ import { SingerSilhouette } from './singer-silhouette';
  * 並びは最後の曲に入ると後ろに伸びる（player-provider.tsx）ので、一覧も下に伸びていく。
  * 関連曲はこの画面を開いてから /api/related で取り、届くまでは元の曲の下に仮の行を出す（page.tsx の説明）
  */
-export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: ReactNode }) {
+export function RadioPlayer({
+  seed,
+  eyebrow,
+  title,
+}: {
+  seed: QueueItem;
+  /** 動画の下の題名（stage-heading.tsx） */
+  eyebrow: string;
+  title: string;
+}) {
   const {
     current,
     playing,
@@ -64,7 +74,9 @@ export function RadioPlayer({ seed, heading }: { seed: QueueItem; heading: React
           label="このラジオを再生"
           onPlay={() => playRadio(songs, 0)}
         />
-        <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
+        <SwipeToLeave className="lg:mt-4">
+          <StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />
+        </SwipeToLeave>
         <StageControls extra={notes.button}>
           <StagePlayButton
             playing={here && playing}

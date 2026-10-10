@@ -1,6 +1,5 @@
 'use client';
 
-import { Heading } from '@/components/heading';
 import { Icon } from '@/components/icon';
 import {
   PlayerStage,
@@ -15,6 +14,7 @@ import { NO_RESTORE } from '@/lib/no-restore';
 import { SortableSongList } from './sortable-song-list';
 import { useStageNotes } from '@/components/song-notes';
 import { SingerSilhouette } from '@/components/singer-silhouette';
+import { StageHeading } from '@/components/stage-heading';
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
@@ -41,9 +41,7 @@ export function FavoriteSongs() {
           onPlay={() => play()}
         />
         <SwipeToLeave className="lg:mt-4">
-          <Heading as="h1" size="page" eyebrow="Favorites">
-            お気に入りの曲
-          </Heading>
+          <StageHeading eyebrow="Favorites" title="お気に入りの曲" song={here ? current : null} />
         </SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
         <StageControls extra={notes.button}>

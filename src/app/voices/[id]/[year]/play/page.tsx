@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { ListPlayer } from '@/components/list-player';
 import { songsOfVoiceYear, voices } from '@/lib/catalog';
 
@@ -36,11 +35,8 @@ export default async function VoiceYearPlayPage({ params }: PageProps<'/voices/[
         source={`voices/${voice.id}/${year}`}
         songs={songs}
         total={total}
-        heading={
-          <Heading as="h1" size="page" eyebrow={year}>
-            {voice.name}の{year}年の曲
-          </Heading>
-        }
+        eyebrow={String(year)}
+        title={`${voice.name}の${year}年の曲`}
       />
     </div>
   );

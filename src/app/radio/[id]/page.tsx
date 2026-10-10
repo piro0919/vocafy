@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { RadioPlayer } from '@/components/radio-player';
 import { songsByIds } from '@/lib/catalog';
 
@@ -30,14 +29,7 @@ export default async function RadioPage({ params }: PageProps<'/radio/[id]'>) {
   if (!seed) notFound();
   return (
     <div className="pt-4">
-      <RadioPlayer
-        seed={seed}
-        heading={
-          <Heading as="h1" size="page" eyebrow="Radio">
-            {seed.title}のラジオ
-          </Heading>
-        }
-      />
+      <RadioPlayer seed={seed} eyebrow="Radio" title={`${seed.title}のラジオ`} />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { ListPlayer } from '@/components/list-player';
 import { songsOfDay } from '@/lib/catalog';
 import { dayLabel } from '@/lib/list-titles';
@@ -30,11 +29,8 @@ export default async function DayPlayPage({ params }: PageProps<'/days/[day]/pla
         source={`days/${day}`}
         songs={songs}
         total={total}
-        heading={
-          <Heading as="h1" size="page" eyebrow="On This Day">
-            {dayLabel(day)}に生まれた曲
-          </Heading>
-        }
+        eyebrow="On This Day"
+        title={`${dayLabel(day)}に生まれた曲`}
       />
     </div>
   );

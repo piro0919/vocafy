@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { ListPlayer } from '@/components/list-player';
 import { picksOfYear } from '@/lib/catalog';
 
@@ -29,11 +28,8 @@ export default async function YearPlayPage({ params }: PageProps<'/years/[year]/
         source={`years/${year}`}
         songs={songs}
         total={songs.length}
-        heading={
-          <Heading as="h1" size="page" eyebrow={year}>
-            {year}年の代表曲
-          </Heading>
-        }
+        eyebrow={String(year)}
+        title={`${year}年の代表曲`}
       />
     </div>
   );

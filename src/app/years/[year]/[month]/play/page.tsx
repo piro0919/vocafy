@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { ListPlayer } from '@/components/list-player';
 import { MONTH, songsOfMonth } from '@/lib/catalog';
 
@@ -30,11 +29,8 @@ export default async function MonthPlayPage({ params }: PageProps<'/years/[year]
         source={`years/${year}/${month}`}
         songs={songs}
         total={total}
-        heading={
-          <Heading as="h1" size="page" eyebrow={year}>
-            {year}年{Number(month)}月の曲
-          </Heading>
-        }
+        eyebrow={String(year)}
+        title={`${year}年${Number(month)}月の曲`}
       />
     </div>
   );

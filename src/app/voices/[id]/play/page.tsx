@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Heading } from '@/components/heading';
 import { ListPlayer } from '@/components/list-player';
 import { findVoice } from '@/lib/catalog';
 
@@ -32,11 +31,8 @@ export default async function VoicePlayPage({ params }: PageProps<'/voices/[id]/
         source={`voices/${voice.id}`}
         songs={songs}
         total={songs.length}
-        heading={
-          <Heading as="h1" size="page" eyebrow="Voice">
-            {voice.name}の代表曲
-          </Heading>
-        }
+        eyebrow="Voice"
+        title={`${voice.name}の代表曲`}
       />
     </div>
   );
