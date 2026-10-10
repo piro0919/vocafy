@@ -20,6 +20,7 @@ export function ProducerHeading({
   links,
   as = 'h1',
   link = false,
+  onFollow,
 }: {
   id: number;
   name: string;
@@ -29,6 +30,8 @@ export function ProducerHeading({
   links: Links | undefined;
   as?: 'h1' | 'h2';
   link?: boolean;
+  /** link のときに、押してボカロPの画面へ移る直前に呼ぶ（並びをそのボカロPの曲にする。stage-heading.tsx） */
+  onFollow?: () => void;
 }) {
   const icon =
     picture === undefined ? (
@@ -53,7 +56,12 @@ export function ProducerHeading({
     <div className="flex items-center gap-3">
       {icon &&
         (link ? (
-          <Link href={`/producers/${id}`} aria-label={name} className={`shrink-0 ${hover}`}>
+          <Link
+            href={`/producers/${id}`}
+            onClick={onFollow}
+            aria-label={name}
+            className={`shrink-0 ${hover}`}
+          >
             {icon}
           </Link>
         ) : (
@@ -62,7 +70,7 @@ export function ProducerHeading({
       <div className="min-w-0">
         <div className="flex items-center gap-3">
           {link ? (
-            <Link href={`/producers/${id}`} className={`min-w-0 ${hover}`}>
+            <Link href={`/producers/${id}`} onClick={onFollow} className={`min-w-0 ${hover}`}>
               {title}
             </Link>
           ) : (

@@ -821,6 +821,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [adopt],
   );
 
+  const followProducer = useCallback(() => {
+    const { queue: q, index: i } = state.current;
+    const now = q[i];
+    if (!now) return;
+    clearMore();
+    beforeRadio.current = null;
+    setRadioHome(null);
+    adopt([now], 0);
+    setContext('pending');
+  }, [adopt, clearMore]);
+
   // ラジオで流す順の終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
   // いまの曲の関連曲がどれも並びに入っているとき（ラジオの画面で一覧の最後の曲を押したときなど）は、並びの後ろの曲から
   // 順にさかのぼって、足せる曲が見つかるまで RADIO_TRIES 曲まで試す。足さないと次に流れる曲が空になり、最後の曲のあとは
@@ -927,6 +938,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playRadio,
       fillRadio,
       stopRadio,
+      followProducer,
       // ループ（全体）なら、並びの最後のあとは先頭に戻って続くので、先頭からいまの曲の手前までも続けて並べる
       upcoming: () =>
         [
@@ -1043,6 +1055,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playRadio,
       fillRadio,
       stopRadio,
+      followProducer,
       step,
       close,
       time,

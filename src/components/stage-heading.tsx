@@ -31,7 +31,7 @@ export function StageHeading({
 }) {
   const producer = useProducer(song?.producerId ?? null);
   // 次に流れる曲のボカロPを先に取っておき、曲が替わったときにすぐ出せるようにする
-  const { upcoming } = usePlayer();
+  const { upcoming, followProducer } = usePlayer();
   const next = song ? upcoming()[0]?.item.producerId : undefined;
   useEffect(() => {
     if (next !== undefined) void loadProducer(next);
@@ -59,6 +59,9 @@ export function StageHeading({
         links={producer?.links}
         as="h2"
         link
+        // 押したら、並びをそのボカロPの曲にしてから移る。お気に入りなどの並びのまま移ると、ボカロPの画面は並びの持ち主でないので
+        // 動画が右下の窓に縮んだ（2026-10-11 に本人と決めた。お気に入りなどの並びはそこで終わる）
+        onFollow={followProducer}
       />
     </div>
   );
