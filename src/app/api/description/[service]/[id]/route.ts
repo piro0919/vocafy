@@ -27,17 +27,40 @@ async function youtube(id: string) {
   return data.items?.[0]?.snippet.description ?? '';
 }
 
+/**
+ * ニコニコは埋め込みのページの data-props（HTML の文字参照で包んだ JSON）の description から取る。改行が <br> で入っている。
+ * getthumbinfo の description は改行が取り除かれた1行の文で、画面で読みにくかった（2026-10-11）。
+ * 埋め込みのページが取れないとき（センシティブ扱いの動画は 403）は、getthumbinfo の1行の文に戻る
+ */
 async function niconico(id: string) {
+  const fromEmbed = await embedDescription(id);
+  if (fromEmbed !== null) return fromEmbed;
   const res = await fetch(`https://ext.nicovideo.jp/api/getthumbinfo/${encodeURIComponent(id)}`, {
     headers: AGENT,
   });
   if (!res.ok) return '';
   const raw = (await res.text()).match(/<description>([\s\S]*?)<\/description>/)?.[1] ?? '';
-  // 中身は HTML を XML の文字参照で包んだもの。文字参照を戻してから、改行だけ残してタグを外す
-  return decode(decode(raw))
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .trim();
+  return fromHtml(decode(raw));
+}
+
+async function embedDescription(id: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://embed.nicovideo.jp/watch/${encodeURIComponent(id)}`, {
+      headers: AGENT,
+    });
+    if (!res.ok) return null;
+    const props = (await res.text()).match(/data-props="([^"]*)"/)?.[1];
+    if (!props) return null;
+    const { description } = JSON.parse(decode(props)) as { description?: unknown };
+    return typeof description === 'string' ? fromHtml(description) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 説明文の HTML を文にする。改行（<br>）だけ残してタグを外し、文字参照を戻す */
+function fromHtml(html: string) {
+  return decode(html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')).trim();
 }
 
 function decode(s: string) {
