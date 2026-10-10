@@ -37,6 +37,9 @@ export const EXTRA_PRODUCERS = [
   926, // 夏空P（VocaDB では成田旬）。本人が動画をすべて消しているので、下の YOUTUBE_STANDINS で補う
   317, // におP
   707, // tysP
+  105759, // hissno
+  332, // アヒル軍曹P
+  7614, // 背脂部
 ];
 
 /**
