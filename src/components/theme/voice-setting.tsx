@@ -34,7 +34,7 @@ export function VoiceSetting() {
           <label
             key={o.value}
             style={{ '--c': o.color } as React.CSSProperties}
-            className="group relative flex cursor-pointer flex-col rounded-2xl transition-[scale] duration-react active:scale-95 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-accent"
+            className="group relative flex cursor-pointer flex-col rounded-2xl transition duration-react active:scale-95 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-accent"
           >
             <input
               type="radio"

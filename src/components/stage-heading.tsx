@@ -46,7 +46,7 @@ export function StageHeading({
     return (
       // 流しているとき（とボカロPの画面）の題名と同じ高さを取る（スマホ 76px・パソコン 81px。名前の行とリンクの行）。
       // 取らないと、再生を始めたときと止めたときに、下の「再生」の段がずれた
-      <div className="min-h-19 sm:min-h-[81px]">
+      <div className="min-h-19 sm:min-h-20.25">
         <Heading as="h1" size="page" eyebrow={eyebrow}>
           {title}
         </Heading>

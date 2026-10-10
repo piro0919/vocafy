@@ -137,7 +137,7 @@ export function Shelf({
       <div
         ref={track}
         onScroll={update}
-        className="-mx-4 flex snap-x scroll-px-6 gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8 md:mx-0 md:scroll-px-6 md:px-0 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex snap-x scroll-px-6 gap-2 overflow-x-auto px-4 py-2 no-scrollbar sm:-mx-8 sm:scroll-px-8 sm:px-8 md:mx-0 md:scroll-px-6 md:px-0"
         style={{ maskImage: edgeMask(edge) }}
       >
         {children}

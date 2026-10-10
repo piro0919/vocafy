@@ -50,13 +50,13 @@ export function Logo({ compact }: { compact?: boolean }) {
 /**
  * パソコンの幅で左に置くメニュー。画面の端から上・左・下を離し、角を丸めた板として浮かせる。
  * 本文の上に重ねて置き、横に流す棚の画像が後ろを通るとき、すりガラス越しに透けて見えるようにする。
- * 本文は板の幅（w-63）だけ右から始める（layout.tsx）。棚だけは画面の左端まで伸ばす（shelf.tsx）。
+ * 本文は板の幅（w-sidebar）だけ右から始める（layout.tsx）。棚だけは画面の左端まで伸ばす（shelf.tsx）。
  * 下の帯が出ているあいだは、板の下端が帯に隠れないよう、帯の高さ（4rem）と帯の下の間（0.75rem）と板の間（0.75rem）の分だけ下を空ける
  */
 export function Sidebar() {
   const active = useActive();
   return (
-    <nav className="fixed inset-y-0 left-0 z-30 hidden w-63 py-3 pl-3 transition-[padding] duration-move md:flex [html[data-player=dock]_&]:pb-[5.5rem] [html[data-player=slot]_&]:pb-[5.5rem]">
+    <nav className="fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
       <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-glass px-3 pt-4 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
         <div className="mb-5 px-3">
           <Logo />
@@ -103,12 +103,12 @@ export function Sidebar() {
 export function MobileTabs() {
   const active = useActive();
   return (
-    <nav className="chrome-tabs fixed inset-x-3 bottom-3 z-40 grid h-14 grid-cols-5 rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
+    <nav className="chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:hidden">
       {ITEMS.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold ${
+          className={`flex flex-col items-center justify-center gap-0.5 text-tab font-bold ${
             active(item.href) ? 'text-foreground' : 'text-muted'
           }`}
         >

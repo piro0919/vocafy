@@ -17,7 +17,7 @@ export function KeyboardHelp() {
       <div className="mb-3">
         <Heading eyebrow="Keyboard">キーボード操作</Heading>
       </div>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 px-3 text-sm">
+      <dl className="grid grid-cols-keys gap-x-6 gap-y-2 px-3 text-sm">
         {KEYS.map(([key, label]) => (
           <div key={key} className="contents">
             <dt>

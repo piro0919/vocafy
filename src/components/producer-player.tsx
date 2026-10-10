@@ -134,8 +134,8 @@ export function ProducerPlayer({
     // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky）。
     // 貼り付く高さは、スクロールする前の位置（上の段 68px＋余白 32px）と同じにする。ずれていると、スクロールの最初の分だけ動いてから止まった
     // スマホは画面が狭く、貼り付けると一覧が見づらくなるので、貼り付けずに縦に並べる
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-25 lg:block">
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
+      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
         <PlayerStage
           active={here}
           cover={linkedItem?.thumb ?? cover}
@@ -314,11 +314,11 @@ function YearJump({ songs }: { songs: Song[] }) {
   if (!show) return null;
   return (
     // 一覧をスクロールしても、一覧の上に貼り付ける（パソコンは左の列と同じ高さ、スマホは固定した動画の下）。
-    // スマホは、スクロールすると動画の下に操作の帯（player-stage.tsx の StageControls。動画の下 12px・高さ 40px）が出るので、その下 8px に貼る
+    // スマホは、スクロールすると動画の下に操作の帯（player-stage.tsx の StageControls）が出るので、その下に gutter を空けて貼る
     // 地は、ほかの浮いた板（左のメニュー・再生の帯）と同じすりガラス。単色で塗ると上部の表紙の色の背景と合わなかった
     <div
       ref={bar}
-      className="sticky top-[calc(56.25vw+60px)] z-10 mb-3 rounded-full border border-line/60 bg-glass p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-20 lg:top-25"
+      className="sticky top-(--below-stage-controls) z-raised mb-3 rounded-full border border-line/60 bg-glass p-1 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 md:top-(--below-header) lg:top-(--content-top)"
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
       <ScrollRow label="年ごとに移動" className="gap-1">
@@ -340,7 +340,7 @@ function YearJump({ songs }: { songs: Song[] }) {
               // ブラウザの smooth は Firefox で一気に飛んだので、自前で送る（motion.ts）
               if (row) glideWindowTo(window.scrollY + row.getBoundingClientRect().top - below);
             }}
-            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition-[color,background-color,scale] duration-react active:scale-95 ${
+            className={`shrink-0 rounded-full px-3 py-1 font-tech text-xs font-black tracking-wider transition duration-react active:scale-95 ${
               active === year
                 ? 'bg-miku text-on-miku'
                 : 'text-muted hover:bg-foreground/8 hover:text-foreground'

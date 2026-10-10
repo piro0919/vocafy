@@ -56,7 +56,7 @@ export default async function VoicesPage() {
             <li key={v.id} className="min-w-0">
               <Link
                 href={`/voices/${v.id}`}
-                className="flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs transition-[background-color,scale] duration-react hover:bg-accent/10 active:scale-95"
+                className="flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs transition duration-react hover:bg-accent/10 active:scale-95"
               >
                 <span className="truncate font-bold">{v.name}</span>
                 <span className="shrink-0 text-xs text-muted">{formatCount(v.songCount)}曲</span>

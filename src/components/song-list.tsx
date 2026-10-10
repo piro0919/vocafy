@@ -36,9 +36,7 @@ export function SongList({
   return (
     <div
       className={
-        columns
-          ? 'grid snap-start auto-cols-[minmax(17rem,22rem)] grid-flow-col gap-x-6 gap-y-1'
-          : className
+        columns ? 'grid snap-start auto-cols-songs grid-flow-col gap-x-6 gap-y-1' : className
       }
       // 棚では4行ずつ縦に詰めて横へ流す。曲が少ないときは、その数だけの行にして隙間を作らない
       style={
@@ -93,7 +91,7 @@ export function SongItem({
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition-[scale] duration-react active:scale-[0.98]"
+        className="flex min-w-0 flex-1 items-center gap-3 p-1.5 text-left transition duration-react active:scale-98"
       >
         <FadeImage
           src={smallThumbOf(song)}

@@ -17,7 +17,7 @@ export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: 
     <Link
       href={`/voices/${id}`}
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
-      className="group relative flex h-full flex-col transition-[scale] duration-react active:scale-95"
+      className="group relative flex h-full flex-col transition duration-react active:scale-95"
     >
       <CharacterFace name={name} sub={`${formatCount(songCount)}曲`} art={art} />
     </Link>
@@ -44,19 +44,19 @@ export function CharacterFace({
     <>
       <span
         aria-hidden
-        className={`absolute inset-x-0 top-[42%] bottom-0 rounded-2xl bg-[color-mix(in_oklab,var(--c)_30%,var(--sidebar))] shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-[background-color] duration-react group-hover:bg-[color-mix(in_oklab,var(--c)_42%,var(--sidebar))] dark:bg-[color-mix(in_oklab,var(--c)_48%,var(--sidebar))] dark:group-hover:bg-[color-mix(in_oklab,var(--c)_60%,var(--sidebar))] ${selected ? 'outline-[3px] outline-offset-2 outline-(--c) outline-solid' : ''}`}
+        className={`absolute inset-x-0 top-art-stand bottom-0 rounded-2xl bg-art-stand shadow-art-shine transition duration-react group-hover:bg-art-stand-hover dark:bg-art-stand-dark dark:group-hover:bg-art-stand-dark-hover ${selected ? 'outline-3 outline-offset-2 outline-(--c) outline-solid' : ''}`}
       />
       <span className="relative block aspect-square">
         {/* 背丈をそろえるため、絵の枠を左右に広げる。横に広いキャラ（ミクのツインテールなど）が札の幅で縮まないように、
-            髪は隣との間へはみ出してよい。z-10 で隣の札より手前に出す。並べる側で、列と列の間を空ける */}
-        <span className="absolute inset-x-[-12%] top-0 bottom-0 z-10 origin-bottom transition-[scale,translate] duration-react group-hover:-translate-y-1 group-hover:scale-105">
+            髪は隣との間へはみ出してよい。z-raised で隣の札より手前に出す。並べる側で、列と列の間を空ける */}
+        <span className="absolute -inset-x-art-bleed top-0 bottom-0 z-raised origin-bottom transition duration-react group-hover:-translate-y-1 group-hover:scale-105">
           {/* ぼかさずにずらしただけの影で、ステッカーのように浮かせる。色はキャラの色を暗くしたもの */}
           <FadeImage
             src={art}
             alt=""
             fill
             unoptimized
-            className="object-contain object-bottom drop-shadow-[3px_4px_0_color-mix(in_oklab,var(--c)_55%,black)]"
+            className="object-contain object-bottom drop-shadow-art"
           />
         </span>
       </span>
@@ -81,7 +81,7 @@ export function YearCard({
   return (
     <Link
       href={`/years/${year}`}
-      className={`flex flex-col items-start rounded-2xl border border-line/60 bg-glass px-4 py-3 transition-[background-color,border-color,scale] duration-react hover:border-accent/50 hover:bg-accent/10 active:scale-95 ${className}`}
+      className={`flex flex-col items-start rounded-2xl border border-line/60 bg-glass px-4 py-3 transition duration-react hover:border-accent/50 hover:bg-accent/10 active:scale-95 ${className}`}
     >
       <span className="font-tech text-2xl font-black text-accent sm:text-3xl">{year}</span>
       <span className="mt-1 text-xs text-muted">{formatCount(count)}曲</span>

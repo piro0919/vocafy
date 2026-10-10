@@ -29,7 +29,7 @@ export function Heading({
       {eyebrow && (
         <p
           aria-hidden
-          className="mb-1 font-tech text-[0.65rem] font-black tracking-[0.3em] text-accent uppercase"
+          className="mb-1 font-tech text-eyebrow font-black tracking-eyebrow text-accent uppercase"
         >
           {eyebrow}
         </p>
@@ -53,4 +53,4 @@ export function Heading({
 export const SECTION = 'mt-10 sm:mt-14';
 
 /** 一覧の中の年ごとの区切りの見出し（日付の画面・歌声の画面の年） */
-export const YEAR_HEADING = 'font-tech text-sm font-black tracking-[0.2em] text-accent';
+export const YEAR_HEADING = 'font-tech text-sm font-black tracking-label text-accent';

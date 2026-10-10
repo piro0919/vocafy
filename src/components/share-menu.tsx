@@ -73,7 +73,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
         // 形は右上のアカウントのメニューと同じ（すりガラスの角丸の板）
         <div
           role="menu"
-          className="absolute top-full left-0 z-40 mt-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150"
+          className="absolute top-full left-0 z-overlay mt-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150"
         >
           {targets.map((t) => (
             <a

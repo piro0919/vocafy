@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { below } from '@/lib/breakpoints';
 
 /**
  * スマホで、下へスクロールしているあいだは上の帯と下のタブを隠し、上へスクロールしたら戻す（YouTube のアプリと同じ）。
@@ -10,7 +11,7 @@ import { useEffect } from 'react';
 export function ScrollChrome() {
   useEffect(() => {
     const root = document.documentElement;
-    const mobile = window.matchMedia('(max-width: 47.99rem)');
+    const mobile = window.matchMedia(below('md'));
     let last = window.scrollY;
     let pending = 0;
     const update = () => {

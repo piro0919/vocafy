@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import type { findProducer } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
+import { COLORS } from '@/lib/colors';
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -65,8 +66,8 @@ export async function producerImage(
         flexDirection: 'column',
         justifyContent: 'space-between',
         padding: '64px 80px',
-        background: '#ecf0f2',
-        color: '#10181a',
+        background: COLORS.iconBg,
+        color: COLORS.ink,
         fontFamily: 'Noto Sans JP',
       }}
     >
@@ -77,7 +78,7 @@ export async function producerImage(
             width={300}
             height={300}
             alt=""
-            style={{ borderRadius: 9999, objectFit: 'cover', border: '8px solid #39c5bb' }}
+            style={{ borderRadius: 9999, objectFit: 'cover', border: `8px solid ${COLORS.miku}` }}
           />
         ) : (
           <img src={icon} width={300} height={300} alt="" />
@@ -85,11 +86,11 @@ export async function producerImage(
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', fontSize: bigSize, lineHeight: 1.15 }}>{big}</div>
           {song ? (
-            <div style={{ display: 'flex', fontSize: 40, color: '#0b7770' }}>{name}</div>
+            <div style={{ display: 'flex', fontSize: 40, color: COLORS.accentLight }}>{name}</div>
           ) : (
-            <div style={{ display: 'flex', fontSize: 34, color: '#5d6f73' }}>
+            <div style={{ display: 'flex', fontSize: 34, color: COLORS.muted }}>
               {caption}
-              <span style={{ marginLeft: 16, color: '#0b7770' }}>{count}</span>
+              <span style={{ marginLeft: 16, color: COLORS.accentLight }}>{count}</span>
             </div>
           )}
         </div>
@@ -97,7 +98,7 @@ export async function producerImage(
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, alignSelf: 'flex-end' }}>
         <img src={icon} width={64} height={64} alt="" />
         <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 900, fontSize: 48 }}>
-          Voca<span style={{ color: '#0b7770' }}>fy</span>
+          Voca<span style={{ color: COLORS.accentLight }}>fy</span>
         </div>
       </div>
     </div>,

@@ -144,7 +144,11 @@ function SongNotes({
       const below =
         (end?.getBoundingClientRect().height ?? 0) +
         (main ? parseFloat(getComputedStyle(main).paddingBottom) : 0);
-      setHeight(window.innerHeight - stuck - Math.max(BOTTOM, below));
+      // 下の再生の帯の上端は globals.css の --bar-top（長さとして登録してあるので px で読める）
+      const barTop = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--bar-top'),
+      );
+      setHeight(window.innerHeight - stuck - Math.max(barTop + GAP, below));
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -190,9 +194,9 @@ function SongNotes({
         {/* 入る高さが足りない画面では出さない。無理に出すと、列ごと押し上げられる */}
         {height !== undefined && height >= MIN_HEIGHT && (
           <div
-            style={{ maxHeight: height }}
+            style={{ maxHeight: height, marginTop: GAP }}
             ref={text}
-            className={`mt-6 overflow-y-auto rounded-2xl border border-line/60 bg-glass p-4 text-sm break-words whitespace-pre-line ${FADE} ${boxOn ? '' : HIDDEN}`}
+            className={`overflow-y-auto rounded-2xl border border-line/60 bg-glass p-4 text-sm break-words whitespace-pre-line ${FADE} ${boxOn ? '' : HIDDEN}`}
           >
             {body}
           </div>
@@ -202,9 +206,7 @@ function SongNotes({
   );
 }
 
-/** 下の再生の帯（下から 12px・高さ 64px）と、その上の余白 24px */
-const BOTTOM = 100;
-/** 枠の上の間（mt-6） */
+/** 枠の上の間と、下の再生の帯との間（px。枠の style の marginTop もこれ） */
 const GAP = 24;
 /** 枠に取れる高さがこれより低い画面では出さない（px） */
 const MIN_HEIGHT = 120;

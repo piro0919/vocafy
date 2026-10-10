@@ -13,23 +13,23 @@ export /**
  * 右下の窓の位置と大きさ。スマホでは下のタブと帯の上、パソコンでは帯の上。
  * スマホは画面が狭いので、規約の下限（200×200）ちょうどの正方形にする。16:9 の動画は窓の中で上下に黒い帯が入る。
  * パソコンは 16:9 の 356×200。
- * 左に寄せたとき（html の data-dock が left）は、パソコンでは左のメニューの板（幅 15.75rem）の右に置く
+ * 左に寄せたとき（html の data-dock が left）は、パソコンでは左のメニューの板（--spacing-sidebar）の右に置く
  */
 const DOCK =
-  'fixed right-3 bottom-[calc(8.25rem+12px)] h-[200px] w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px)] md:w-[356px] [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-3 md:[html[data-dock=left]_&]:right-auto md:[html[data-dock=left]_&]:left-[calc(15.75rem+12px)]';
+  'fixed right-gutter bottom-(--dock-bottom) size-dock md:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
 
 /**
  * 窓のすぐ上に付ける帯。窓と帯で一枚の板に見せ、角の丸みと縁の線をほかの浮いた板（左のメニュー・下の再生の帯）にそろえる。
  * 動画の側の線は外へ描く（ring）。枠の内側に線（border）を引くと、動画が 200×200（YouTube の規約の下限）を割る
  */
 const DOCK_STRIP =
-  'fixed right-3 bottom-[calc(8.25rem+12px+200px)] h-9 w-[200px] md:right-3 md:bottom-[calc(4rem+12px+12px+200px)] md:w-[356px] [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-3 md:[html[data-dock=left]_&]:right-auto md:[html[data-dock=left]_&]:left-[calc(15.75rem+12px)]';
+  'fixed right-gutter bottom-(--dock-strip-bottom) h-dock-strip w-dock md:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
 /** 帯をこれだけ横に動かしたら、引いている扱いにする（押しただけの揺れと分ける） */
 const DRAG_START = 8;
 /** 離したとき、これだけ引いていれば、引いた向きの側へ寄せる */
 const DRAG_SWITCH = 48;
 /** 出入りの動き。閉じたあとは少し下へずらして消す */
-export const FADE = 'transition-[opacity,translate,visibility] duration-move';
+export const FADE = 'transition-show duration-move';
 export const HIDDEN = 'pointer-events-none invisible translate-y-4 opacity-0';
 
 /**
@@ -137,7 +137,7 @@ export function DockStrip({
           e.preventDefault();
           e.stopPropagation();
         }}
-        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-30 flex touch-pan-y items-center select-none rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
+        className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-chrome flex touch-pan-y items-center select-none rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
       >
         {shown && (
           <Link
@@ -168,7 +168,7 @@ export function DockStrip({
           type="button"
           aria-label="プレイヤーを閉じる"
           onClick={onClose}
-          className="grid h-full w-9 shrink-0 place-items-center text-muted transition-[color,scale] duration-react hover:text-foreground active:scale-95"
+          className="grid h-full w-9 shrink-0 place-items-center text-muted transition duration-react hover:text-foreground active:scale-95"
         >
           <Icon name="close" className="size-4" />
         </button>

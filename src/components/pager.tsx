@@ -50,7 +50,7 @@ export function Pager({
           key={p}
           href={href(p)}
           aria-current={p === page ? 'page' : undefined}
-          className={`grid h-9 min-w-9 place-items-center rounded-full px-2 font-tech text-sm font-black transition-[background-color,scale] duration-react active:scale-95 ${
+          className={`grid h-9 min-w-9 place-items-center rounded-full px-2 font-tech text-sm font-black transition duration-react active:scale-95 ${
             p === page ? 'bg-miku text-on-miku' : 'text-accent hover:bg-accent/10'
           }`}
         >

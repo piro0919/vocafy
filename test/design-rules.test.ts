@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BREAKPOINTS } from '../src/lib/breakpoints';
+import { COLORS } from '../src/lib/colors';
 import { EASE_OUT, MOTION } from '../src/lib/motion';
 
 /**
@@ -77,7 +79,7 @@ describe('見た目の決まり', () => {
   });
 
   it('押したときの縮みは 95%。幅いっぱいの曲の行だけ 98%', () => {
-    expect(offenders((l) => /(?<!group-)active:scale-(?!95\b|\[0\.98\])/.test(l))).toEqual([]);
+    expect(offenders((l) => /(?<!group-)active:scale-(?!95\b|98\b)/.test(l))).toEqual([]);
   });
 
   it('すりガラスの地は bg-glass だけ（bg-sidebar の透け具合を個別に書かない）', () => {
@@ -106,5 +108,64 @@ describe('見た目の決まり', () => {
         ],
       ),
     ).toEqual([]);
+  });
+
+  // 寸法・重なりの順・色・画面の幅の区切りも、名前を付けて1か所に置く（2026-10-11 に本人と決めた）。
+  // className に直接書いた [...] は eslint-plugin-tailwindcss が見る。ここでは、文字列の定数とそれ以外の書き方を見る
+  it('[...] に数字をじかに書かない（globals.css の @theme に名前を付けて使う）', () => {
+    expect(offenders((l) => /(?<![\w&[-])(?!data-|aria-)[a-z][\w:-]*-\[[^\]]*\d/.test(l))).toEqual(
+      [],
+    );
+  });
+
+  it('重なりの順は z-raised などの名前だけ（数字を書かない）', () => {
+    expect(offenders((l) => /(?<![\w-])-?z-\d/.test(l))).toEqual([]);
+  });
+
+  it('色の値は colors.ts とキャラの色の表にだけ書く', () => {
+    expect(
+      offenders(
+        (l) => /#[0-9a-fA-F]{6}\b/.test(l),
+        ['lib/colors.ts', 'lib/voice-color.ts', 'components/theme/voice.ts'],
+      ),
+    ).toEqual([]);
+  });
+
+  it('画面の幅の区切りは breakpoints.ts から組み立てる', () => {
+    expect(offenders((l) => /\((min|max)-width:\s*\d/.test(l))).toEqual([]);
+  });
+
+  it('globals.css の位置の計算は @theme の名前から組み立てる（rem・px をじかに書かない）', () => {
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8').split('\n');
+    const raw = css.flatMap((line, i) =>
+      /^\s*(--|\*|\/\*)/.test(line) || !/calc\(/.test(line) || !/\d(rem|px)\b/.test(line)
+        ? []
+        : [`app/globals.css:${i + 1}`],
+    );
+    expect(raw).toEqual([]);
+  });
+
+  it('colors.ts の色は globals.css と同じ値', () => {
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+    for (const [name, value] of [
+      ['--miku', COLORS.miku],
+      ['--accent', COLORS.accentLight],
+      ['--background', COLORS.lightBg],
+      ['--background', COLORS.darkBg],
+      ['--foreground', COLORS.ink],
+      ['--muted', COLORS.muted],
+    ]) {
+      expect(css).toContain(`${name}: ${value};`);
+    }
+  });
+
+  it('breakpoints.ts の区切りは Tailwind と同じ値', () => {
+    const theme = readFileSync(
+      join(import.meta.dirname, '..', 'node_modules', 'tailwindcss', 'theme.css'),
+      'utf8',
+    );
+    for (const [name, value] of Object.entries(BREAKPOINTS)) {
+      expect(theme).toContain(`--breakpoint-${name}: ${value};`);
+    }
   });
 });

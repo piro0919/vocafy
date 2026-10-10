@@ -44,7 +44,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           <span className="relative size-24 shrink-0 sm:size-32">
             <span
               aria-hidden
-              className="absolute inset-x-[6%] bottom-0 aspect-square rounded-full opacity-45"
+              className="absolute inset-x-voice-dot bottom-0 aspect-square rounded-full opacity-45"
               style={{ background: voiceColor(voice.name) }}
             />
             <Image

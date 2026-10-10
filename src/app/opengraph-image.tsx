@@ -1,12 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
+import { COLORS } from '@/lib/colors';
 
 export const alt = 'Vocafy — ボカロ曲を、ずっと聴ける。';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-// アイコンは src/assets/icon-source.png（ChatGPT で生成した、跳ねるデフォルメの初音ミクの影絵）を縮めたもの。地色もアイコンの明るい灰色（#ecf0f2）に合わせる
+// アイコンは src/assets/icon-source.png（ChatGPT で生成した、跳ねるデフォルメの初音ミクの影絵）を縮めたもの。地色もアイコンの明るい灰色（COLORS.iconBg）に合わせる
 const icon = `data:image/png;base64,${await readFile(join(process.cwd(), 'src/app/icon.png'), 'base64')}`;
 // Noto Sans JP の太字から、この絵で使う文字だけを抜いたもの（Google Fonts の text= で取得）。
 // 題字を変えて文字が増えたら取り直す。無い文字は豆腐になる
@@ -27,8 +28,8 @@ export default function OpengraphImage() {
         justifyContent: 'center',
         gap: 48,
         padding: '0 80px',
-        background: '#ecf0f2',
-        color: '#10181a',
+        background: COLORS.iconBg,
+        color: COLORS.ink,
         fontFamily: 'Noto Sans JP',
       }}
     >
@@ -42,9 +43,9 @@ export default function OpengraphImage() {
             fontSize: 120,
           }}
         >
-          Voca<span style={{ color: '#0b7770' }}>fy</span>
+          Voca<span style={{ color: COLORS.accentLight }}>fy</span>
         </div>
-        <div style={{ fontSize: 34, color: '#5d6f73' }}>ボカロ曲を、ずっと聴ける。</div>
+        <div style={{ fontSize: 34, color: COLORS.muted }}>ボカロ曲を、ずっと聴ける。</div>
       </div>
     </div>,
     {

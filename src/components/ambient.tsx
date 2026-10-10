@@ -146,7 +146,7 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     <SourceContext value={setSource}>
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[32rem] opacity-35 dark:opacity-100"
+        className="pointer-events-none fixed inset-x-0 top-0 -z-behind h-ambient opacity-35 dark:opacity-100"
       >
         {layers.map((layer) => (
           <div
@@ -185,7 +185,7 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
           右上へ向かってほぼ見えなくなるまで薄くする（本人の指定）。細い線は 24px ごと、4マスごとに少し濃い線 */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 [mask-image:linear-gradient(to_top_right,black,transparent_60%)]"
+        className="pointer-events-none fixed inset-0 -z-behind grid-fade"
         style={{
           backgroundImage: [
             `linear-gradient(to right, ${GRID_MAJOR} 1px, transparent 1px)`,

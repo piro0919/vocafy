@@ -74,8 +74,8 @@ export function RadioPlayer({
 
   return (
     // 一覧の再生用の画面（list-player.tsx）と同じ組み立て
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-25 lg:block">
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
+      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
         <PlayerStage
           active={here}
           cover={seed.thumb}
@@ -131,8 +131,8 @@ export function RadioLoading() {
   const { current, context } = usePlayer();
   return (
     <div className="pt-4">
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
-        <div className="contents lg:sticky lg:top-25 lg:block">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
+        <div className="contents lg:sticky lg:top-(--content-top) lg:block">
           <PlayerStage
             active={current !== null && context === 'radio'}
             cover={current?.thumb ?? null}
@@ -156,7 +156,7 @@ export function RadioLoading() {
 function SkeletonRows({ count }: { count: number }) {
   return Array.from({ length: count }, (_, i) => (
     <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">
-      <span className="aspect-video w-[85px] shrink-0 animate-pulse rounded bg-surface" />
+      <span className="aspect-video w-thumb shrink-0 animate-pulse rounded bg-surface" />
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
         <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />

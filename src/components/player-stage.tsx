@@ -15,6 +15,7 @@ import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
 import { COVER_PLAY, PRIMARY } from './button-styles';
+import { atLeast, below } from '@/lib/breakpoints';
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -69,7 +70,7 @@ export function PlayerStage({
       <div aria-hidden className="md:hidden">
         <div className="aspect-video" />
       </div>
-      <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-40 max-md:bg-background">
+      <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-tabs max-md:bg-background">
         {on ? (
           <div
             ref={slot}
@@ -89,7 +90,7 @@ export function PlayerStage({
                   alt=""
                   fill
                   loading="eager"
-                  sizes="(min-width: 1024px) 60vw, 100vw"
+                  sizes={`${atLeast('lg')} 60vw, 100vw`}
                   className="object-cover"
                 />
                 <span className={`absolute top-1/2 left-1/2 size-16 -translate-1/2 ${COVER_PLAY}`}>
@@ -111,7 +112,7 @@ export function PlayerStage({
                 alt=""
                 fill
                 loading="eager"
-                sizes="(min-width: 1024px) 60vw, 100vw"
+                sizes={`${atLeast('lg')} 60vw, 100vw`}
                 className="object-cover"
               />
             )}
@@ -228,7 +229,7 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
       </div>
       <div
         inert={!pinned}
-        className={`fixed inset-x-3 top-[calc(56.25vw+12px)] z-30 h-10 rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity,visibility] duration-move md:hidden ${pinned ? '' : 'invisible -translate-y-[calc(100%+12px)] opacity-0'}`}
+        className={`fixed inset-x-gutter top-(--stage-controls-top) z-chrome h-stage-controls rounded-2xl border border-line/60 bg-glass shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150 transition-show duration-move md:hidden ${pinned ? '' : 'invisible translate-y-(--hide-up) opacity-0'}`}
       >
         {/* 題名の部分と同じく、下へ引くと前の画面に戻り、流している曲は右下の窓に縮む */}
         <SwipeToLeave className="flex size-full items-center justify-center">
@@ -241,7 +242,7 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
 }
 
 /** ヘッダーと下のタブを隠す幅。globals.css の印の範囲と同じ */
-const MOBILE = '(max-width: 47.99rem)';
+const MOBILE = below('md');
 
 /** 下へこれだけ引いて離したら戻る（px） */
 const PULL = 60;

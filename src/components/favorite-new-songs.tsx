@@ -15,7 +15,7 @@ const SONGS = 12;
 const PER_PRODUCER = 6;
 /** 棚の並べ方。スマホは列を横に送る（行の数は使う側で足す）、パソコンは格子 */
 const SHELF =
-  '-mx-4 grid auto-cols-[88%] grid-flow-col content-start gap-x-3 gap-y-1 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-[min(22rem,80%)] sm:scroll-pl-8 sm:px-8 md:mx-0 md:grid-flow-row md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3 [&::-webkit-scrollbar]:hidden';
+  '-mx-4 grid auto-cols-day grid-flow-col content-start gap-x-3 gap-y-1 overflow-x-auto px-4 no-scrollbar snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-day-sm sm:scroll-pl-8 sm:px-8 md:mx-0 md:grid-flow-row md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3';
 
 /**
  * トップの「お気に入りのボカロPの新曲」。お気に入りに入れたボカロPの新しい曲を、投稿の新しい順に混ぜて並べる。
@@ -84,7 +84,7 @@ export function FavoriteNewSongs() {
           {/* 読み終えたときと同じ数（多くて SONGS 曲）を並べ、高さを合わせる */}
           {Array.from({ length: Math.min(SONGS, ids.length * PER_PRODUCER) }, (_, i) => (
             <div key={i} className="flex items-center gap-3 p-1.5">
-              <span className="aspect-video w-[85px] shrink-0 animate-pulse rounded bg-surface" />
+              <span className="aspect-video w-thumb shrink-0 animate-pulse rounded bg-surface" />
               <span className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
                 <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />

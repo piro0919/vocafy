@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { COLORS } from '@/lib/colors';
 
 /**
  * ホーム画面に置いたときの姿。`display: standalone` でブラウザの URL 欄が消える。
@@ -16,8 +17,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ecf0f2',
-    theme_color: '#ecf0f2',
+    background_color: COLORS.iconBg,
+    theme_color: COLORS.iconBg,
     icons: [
       { src: '/icon-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

@@ -5,6 +5,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { readAmbientColors, subscribeAmbientColors } from '../ambient-colors';
 import { usePlayer } from '../player/player-provider';
 import { readVisualizer, subscribeVisualizer } from './visualizer-store';
+import { COLORS } from '@/lib/colors';
 
 /** Vocafy Visualizer が待っている口。アプリの LinkServer.swift と docs/protocol.md に合わせる */
 const LINK_URL = 'ws://127.0.0.1:47823';
@@ -37,7 +38,7 @@ function toHex(css: string): string {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return '#39c5bb';
+  if (!ctx) return COLORS.miku;
   ctx.fillStyle = computed;
   ctx.fillRect(0, 0, 1, 1);
   const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;

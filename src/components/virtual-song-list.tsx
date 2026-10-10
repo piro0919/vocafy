@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
 import { SongItem, useOpenSong } from './song-list';
+import { atLeast } from '@/lib/breakpoints';
 
 /** /api/list が1回に返す曲の数（src/lib/catalog.ts の PAGE_SIZE と同じ） */
 const PAGE_SIZE = 300;
@@ -13,8 +14,8 @@ const ROW = 64;
 
 /** 段の数。曲の一覧（SongList）の md:grid-cols-2 xl:grid-cols-3 と同じ幅で切り替える */
 const COLUMNS = [
-  { query: '(min-width: 80rem)', columns: 3 },
-  { query: '(min-width: 48rem)', columns: 2 },
+  { query: atLeast('xl'), columns: 3 },
+  { query: atLeast('md'), columns: 2 },
 ] as const;
 
 /**
@@ -139,7 +140,7 @@ export function VirtualSongList({
             ) : (
               // まだ読んでいない曲。サムネイルと2行の字の形だけ出す
               <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">
-                <span className="h-12 w-[85px] shrink-0 rounded bg-surface" />
+                <span className="h-12 w-thumb shrink-0 rounded bg-surface" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className="h-3.5 w-2/3 rounded bg-surface" />
                   <span className="h-3 w-1/2 rounded bg-surface/70" />

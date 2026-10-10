@@ -57,7 +57,7 @@ export function SingerSilhouette({ song }: { song: QueueItem | null }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed right-4 bottom-[calc(4rem+12px+16px)] -z-10 size-40 bg-accent transition-opacity duration-slow lg:right-8 lg:bottom-[calc(4rem+12px+24px)] lg:size-64 ${on ? 'opacity-10 dark:opacity-12' : 'opacity-0'}`}
+      className={`pointer-events-none fixed right-4 bottom-(--above-bar) -z-behind size-40 bg-accent transition-opacity duration-slow sm:right-8 lg:size-64 ${on ? 'opacity-10 dark:opacity-12' : 'opacity-0'}`}
       style={{
         maskImage: `url(${shown})`,
         maskSize: 'contain',

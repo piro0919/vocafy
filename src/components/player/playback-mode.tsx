@@ -218,7 +218,7 @@ function OnDot() {
   return (
     <span
       aria-hidden
-      className="absolute top-[calc(50%+12px)] left-1/2 size-1 -translate-x-1/2 rounded-full bg-current"
+      className="absolute top-1/2 left-1/2 mt-3 size-1 -translate-x-1/2 rounded-full bg-current"
     />
   );
 }

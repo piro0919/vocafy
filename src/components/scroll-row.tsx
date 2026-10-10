@@ -45,7 +45,7 @@ export function ScrollRow({
     <nav
       ref={row}
       aria-label={label}
-      className={`flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+      className={`flex overflow-x-auto no-scrollbar ${className}`}
       style={
         {
           '--fade-l': edges.left ? `${FADE}px` : '0px',

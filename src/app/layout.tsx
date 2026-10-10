@@ -25,6 +25,7 @@ import { themeScript } from '@/components/theme/theme-script';
 import { ThemeWatcher } from '@/components/theme/theme-watcher';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
+import { COLORS } from '@/lib/colors';
 
 // ロゴの字。合成音声の機械らしさを出す、角ばった字。使うのは「Vocafy」の6文字だけ
 const orbitron = Orbitron({
@@ -59,8 +60,8 @@ export const metadata: Metadata = {
 // スマホのブラウザの枠の色。端末の設定に合わせて、地の色とそろえる
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#12181b' },
-    { media: '(prefers-color-scheme: light)', color: '#f5f9f9' },
+    { media: '(prefers-color-scheme: dark)', color: COLORS.darkBg },
+    { media: '(prefers-color-scheme: light)', color: COLORS.lightBg },
   ],
 };
 
@@ -90,7 +91,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             <div className="relative isolate flex min-h-dvh">
               <AmbientProvider>
                 <Sidebar />
-                <div className="flex min-w-0 flex-1 flex-col md:pl-63">
+                <div className="flex min-w-0 flex-1 flex-col md:pl-sidebar">
                   <Header>
                     <HeaderBar />
                   </Header>
@@ -98,8 +99,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。ログインの左に、きょうの出会いを流すサイコロ。
                     左のメニューと同じく、画面の端から離した角丸の板として画面の上に留める
                   */}
-                  <div className="sticky top-0 z-20 hidden px-3 pt-3 md:block">
-                    <div className="flex h-14 items-center justify-between gap-4 rounded-2xl border border-line/60 bg-glass px-3 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
+                  <div className="sticky top-0 z-header hidden px-gutter pt-gutter md:block">
+                    <div className="flex h-header items-center justify-between gap-4 rounded-2xl border border-line/60 bg-glass px-3 shadow-lg shadow-black/5 backdrop-blur-lg backdrop-saturate-150">
                       <Suspense fallback={<HeaderSearchFallback />}>
                         <HeaderSearch />
                       </Suspense>
@@ -109,7 +110,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                       </div>
                     </div>
                   </div>
-                  <main className="flex-1 px-4 sm:px-8 md:pt-4">{children}</main>
+                  <main className="flex-1 px-4 sm:px-8 md:pt-content-top">{children}</main>
                   <SiteFooter />
                 </div>
               </AmbientProvider>

@@ -43,7 +43,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     <div
       aria-hidden={!open}
       inert={!open}
-      className={`chrome-bottom chrome-bar fixed inset-x-3 bottom-[4.25rem] z-30 h-16 rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 transition-[translate,opacity] duration-move md:bottom-3 md:rounded-2xl md:border-b md:shadow-lg md:shadow-black/5 ${
+      className={`chrome-bottom chrome-bar fixed inset-x-gutter bottom-(--bar-bottom) z-chrome h-bar rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 transition duration-move md:rounded-2xl md:border-b md:shadow-lg md:shadow-black/5 ${
         open ? '' : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >
@@ -279,15 +279,15 @@ function Progress({
       />
       {/* 見た目の線とつまみは、当たり判定の下の端に置く（スマホで当たり判定を上へ広げても、線の位置は変わらない） */}
       <span className="absolute inset-x-0 bottom-0 h-4">
-        <span className="absolute inset-x-0 top-1.5 h-1 bg-line transition-[height,top] duration-react group-hover:top-[5px] group-hover:h-1.5" />
+        <span className="absolute inset-x-0 top-1.5 h-1 bg-line transition-layout duration-react group-hover:top-1.25 group-hover:h-1.5" />
         <span
           ref={fill}
-          className="absolute inset-x-0 top-1.5 h-1 origin-left scale-x-0 bg-accent transition-[height,top] duration-react group-hover:top-[5px] group-hover:h-1.5"
+          className="absolute inset-x-0 top-1.5 h-1 origin-left scale-x-0 bg-accent transition-layout duration-react group-hover:top-1.25 group-hover:h-1.5"
         />
         <span
           ref={knob}
           // マウスの無い端末では、どこを狙えばよいか分かるよう、つまみを常に出す
-          className="absolute top-2 size-3 -translate-1/2 scale-0 rounded-full bg-accent shadow transition-[scale] duration-react group-hover:scale-100 group-focus-visible:scale-100 group-active:scale-100 [@media(hover:none)]:scale-100"
+          className="absolute top-2 size-3 -translate-1/2 scale-0 rounded-full bg-accent shadow transition duration-react group-hover:scale-100 group-focus-visible:scale-100 group-active:scale-100 [@media(hover:none)]:scale-100"
         />
       </span>
     </div>
@@ -330,7 +330,7 @@ function BarButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className={`grid shrink-0 place-items-center rounded-full transition-[scale,color,filter] duration-react active:scale-95 disabled:opacity-30 ${className} ${
+      className={`grid shrink-0 place-items-center rounded-full transition duration-react active:scale-95 disabled:opacity-30 ${className} ${
         large
           ? 'size-11 bg-miku text-on-miku shadow-md shadow-miku/30 hover:brightness-110 disabled:opacity-100 [&_svg]:size-6'
           : 'size-10 text-muted hover:text-foreground'

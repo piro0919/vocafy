@@ -35,8 +35,8 @@ export function FavoriteSongs() {
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-25 lg:block">
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
+      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
         <PlayerStage
           active={here}
           cover={songs[0]?.thumb ?? null}

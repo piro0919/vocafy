@@ -6,12 +6,13 @@ import { CoverCard } from '@/components/cover-card';
 import type { Producer } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
 import { formatCount } from '@/lib/format';
+import { atLeast } from '@/lib/breakpoints';
 
 /** 段の数。cover-card.tsx の ARTIST_GRID（grid-cols-3 sm:4 lg:5 xl:6）と同じ幅で切り替える */
 const COLUMNS = [
-  { query: '(min-width: 80rem)', columns: 6 },
-  { query: '(min-width: 64rem)', columns: 5 },
-  { query: '(min-width: 40rem)', columns: 4 },
+  { query: atLeast('xl'), columns: 6 },
+  { query: atLeast('lg'), columns: 5 },
+  { query: atLeast('sm'), columns: 4 },
 ] as const;
 /** 段の高さの見込み（px）。札の高さは幅で変わるので、描いたあとに測り直す */
 const ESTIMATE = 220;

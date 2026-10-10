@@ -199,6 +199,74 @@
   --default-transition-duration: var(--transition-duration-react);
   --default-transition-timing-function: var(--ease-out);
 
+  /*
+   * 寸法（2026-10-11 に本人と決めた）。浮いた板の置き場所の計算や、2か所以上で使う大きさは、ここに名前を付けて置く。
+   * 部品で [...] に数字を書くと eslint-plugin-tailwindcss の no-arbitrary-value が、文字列の定数に書くと test/design-rules.test.ts が落とす
+   */
+  /* 浮いた板と画面の端・板どうしの間 */
+  --spacing-gutter: 0.75rem;
+  /* 下の再生の帯の高さ */
+  --spacing-bar: 4rem;
+  /* スマホの下のタブと、上の段（スマホの上の帯・パソコンの検索欄の段）の高さ */
+  --spacing-tabs: 3.5rem;
+  --spacing-header: 3.5rem;
+  /* 右下の窓の動画（スマホは正方形。YouTube の規約の下限 200×200）と、パソコンの幅（16:9）、上の帯の高さ */
+  --spacing-dock: 200px;
+  --spacing-dock-wide: 356px;
+  --spacing-dock-strip: 2.25rem;
+  /* パソコンの左のメニューの板（画面の端からの間を含む） */
+  --spacing-sidebar: 15.75rem;
+  /* スマホの詳細画面で、動画の下に出す操作の帯の高さ */
+  --spacing-stage-controls: 2.5rem;
+  /* 一覧の小さな表紙の幅 */
+  --spacing-thumb: 85px;
+  /* 本文の最後の下の余白 */
+  --spacing-page-end: 2rem;
+  /* パソコンで、上の段の下から本文が始まるまでの間 */
+  --spacing-content-top: 1rem;
+  /* 画面の上部の色の背景の高さ */
+  --spacing-ambient: 32rem;
+  /* 絵の札。キャラの枠を左右にはみ出させる幅と、台の上端の位置。歌声の画面の色の丸の左右の間 */
+  --spacing-art-bleed: 12%;
+  --spacing-art-stand: 42%;
+  --spacing-voice-dot: 6%;
+  /* 次に流れる曲などの板の高さの上限 */
+  --max-height-panel: 60dvh;
+
+  /*
+   * 重なりの順（下から）。本文の後ろ・本文の中で隣より手前・上の段・浮いた板（左のメニュー・再生の帯・右下の窓）・
+   * スマホの下のタブと上に固定した動画・いちばん上に開くもの（次に流れる曲などの板・共有の板・スワイプの印）
+   */
+  --z-index-behind: 10;
+  --z-index-raised: 10;
+  --z-index-header: 20;
+  --z-index-chrome: 30;
+  --z-index-tabs: 40;
+  --z-index-overlay: 50;
+
+  /* 字の大きさと字間（上の小さな英字・スマホの下のタブの字・下の段の字） */
+  --text-eyebrow: 0.65rem;
+  --text-tab: 10px;
+  --text-footer: 11px;
+  --tracking-eyebrow: 0.3em;
+  --tracking-label: 0.2em;
+
+  /* 並べ方。動画を大きく出す画面の左右（動画と一覧）、トップのきょうの日付の曲の左右、キーボードの説明の2列 */
+  --grid-template-columns-stage: minmax(0, 3fr) minmax(0, 2fr);
+  --grid-template-columns-hero: minmax(0, 1.1fr) minmax(0, 1fr);
+  --grid-template-columns-keys: auto 1fr;
+  /* 横に送る棚の1列の幅（きょうの日付の曲の列・きょうの出会いの列・曲の列） */
+  --grid-auto-columns-day: 88%;
+  --grid-auto-columns-day-sm: min(22rem, 80%);
+  --grid-auto-columns-day-lg: 90%;
+  --grid-auto-columns-mix: 30%;
+  --grid-auto-columns-mix-sm: 23%;
+  --grid-auto-columns-songs: minmax(17rem, 22rem);
+
+  /* 動きで変える性質の組み合わせ。色・透け・大きさ・位置などは名前の無い transition（Tailwind の既定）にまかせる */
+  --transition-property-show: opacity, translate, visibility;
+  --transition-property-layout: padding, height, top;
+
   --animate-fade-in: fade-in var(--transition-duration-slow) var(--ease-out) both;
   --animate-fade-out: fade-out var(--transition-duration-slow) var(--ease-out) both;
   --animate-ambient-drift: ambient-drift var(--transition-duration-drift) ease-in-out infinite
@@ -212,10 +280,30 @@
   --animate-pulse: pulse calc(var(--transition-duration-slow) * 2) ease-in-out infinite;
 }
 
+/* 横に送る棚などの、スクロールバーを見せない入れ物。続きは端のぼかしと矢印で見せる */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 画面全体の方眼（ambient.tsx）を、左下を濃く、右上へ向かって薄くし、対角線の6割で消す（本人の指定） */
+@utility grid-fade {
+  mask-image: linear-gradient(to top right, black, transparent 60%);
+}
+
 /* dark: は暗い画面のときに効く。端末の設定ではなく data-theme を見る */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme inline {
+  /* 絵の札の台（browse-cards.tsx）。--c はその札のキャラの色 */
+  --color-art-stand: color-mix(in oklab, var(--c) 30%, var(--sidebar));
+  --color-art-stand-hover: color-mix(in oklab, var(--c) 42%, var(--sidebar));
+  --color-art-stand-dark: color-mix(in oklab, var(--c) 48%, var(--sidebar));
+  --color-art-stand-dark-hover: color-mix(in oklab, var(--c) 60%, var(--sidebar));
+  --drop-shadow-art: 3px 4px 0 color-mix(in oklab, var(--c) 55%, black);
+  --shadow-art-shine: inset 0 1px 0 rgb(255 255 255 / 0.35);
   --color-background: var(--background);
   --color-sidebar: var(--sidebar);
   /* 浮いた板（すりガラス）と、ページの中の札・ボタン・流している曲の行の地。濃さはどれも同じにそろえる */
@@ -248,7 +336,7 @@ body {
  * スマホで下へスクロールしているあいだ（scroll-chrome.tsx が印を付ける）、上の帯と下のタブを隠し、
  * 下の帯と右下の窓をタブの分（3.5rem）だけ下へずらす
  */
-@media (max-width: 47.99rem) {
+@variant max-md {
   /* 出入りの動きは、ここでまとめて指定する（クラスの指定より、こちらが勝つため） */
   .chrome-header {
     transition: translate var(--transition-duration-move) var(--ease-out);
@@ -268,12 +356,12 @@ body {
   html[data-chrome='hidden'] .chrome-header {
     translate: 0 -100%;
   }
-  /* タブは画面の下から 0.75rem 浮いているので、その分も足して下へ出しきる */
+  /* タブは画面の下から gutter 浮いているので、その分も足して下へ出しきる */
   html[data-chrome='hidden'] .chrome-tabs {
-    translate: 0 calc(100% + 0.75rem);
+    translate: 0 calc(100% + var(--spacing-gutter));
   }
   html[data-chrome='hidden'] .chrome-bottom {
-    margin-bottom: -3.5rem;
+    margin-bottom: calc(var(--spacing-tabs) * -1);
   }
 
   /*
@@ -285,7 +373,7 @@ body {
     display: none;
   }
   html[data-watch] .chrome-bottom {
-    margin-bottom: -3.5rem;
+    margin-bottom: calc(var(--spacing-tabs) * -1);
   }
 
   /*
@@ -300,8 +388,8 @@ body {
   }
   html:is([data-chrome='hidden'], [data-watch]) .chrome-bar {
     border-bottom-width: 1px;
-    border-bottom-left-radius: 1rem;
-    border-bottom-right-radius: 1rem;
+    border-bottom-left-radius: var(--radius-2xl);
+    border-bottom-right-radius: var(--radius-2xl);
   }
 }
 
@@ -490,74 +578,118 @@ body {
 }
 
 /*
- * 画面の下に出したままのもの（スマホのタブ・操作の帯・右下のプレイヤー）が本文の最後を隠さないよう、
- * 本文の下に同じだけ余白を足す（右下の窓は、高さ 200 の動画と上の帯 2.25rem）。印は PlayerProvider が付ける
+ * 画面の下に浮かせた板の置き場所（画面の下からの高さ）。寸法は @theme の名前から組み立て、数字を書かない。
+ * 板どうしと画面の端の間はどれも gutter。印は PlayerProvider（data-player）・player-stage.tsx（data-watch）・scroll-chrome.tsx（data-chrome）が付ける。
+ *
+ * - --tabs: 板を置くときに数える下のタブの高さ。タブを隠すときは板ごと .chrome-bottom の margin でずらすので、ここは変えない
+ * - --tabs-shown: 本文の下の余白と知らせの高さで数えるタブの高さ。動画の画面（data-watch）ではタブを出さない
+ * - --tabs-now: いま見えているタブの高さ。スクロールで隠れているあいだ（data-chrome）も 0。窓の上に積む板の高さで数える
  */
-.page-bottom {
-  padding-bottom: calc(0.75rem + 3.5rem + 2rem);
+@property --toast-bottom {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
 }
-html[data-player='slot'] .page-bottom {
-  padding-bottom: calc(0.75rem + 3.5rem + 4rem + 2rem);
+@property --bar-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
 }
-html[data-player='dock'] .page-bottom {
-  padding-bottom: calc(0.75rem + 3.5rem + 4rem + 200px + 2.25rem + 2rem);
-}
-/* 詳細画面で下のタブを隠しているあいだ（data-watch）は、タブの分（3.5rem）を引く。引かないと、帯の上がタブの分だけ空いた */
-@media (max-width: 47.99rem) {
-  html[data-watch] .page-bottom {
-    padding-bottom: 2rem;
-  }
-  html[data-watch][data-player='slot'] .page-bottom {
-    padding-bottom: calc(0.75rem + 4rem + 2rem);
-  }
-  html[data-watch][data-player='dock'] .page-bottom {
-    padding-bottom: calc(0.75rem + 4rem + 200px + 2.25rem + 2rem);
-  }
-}
-@media (min-width: 48rem) {
-  .page-bottom {
-    padding-bottom: 2rem;
-  }
-  /* 下の帯は画面の下から 0.75rem 浮いているので、その分も足す */
-  html[data-player='slot'] .page-bottom {
-    padding-bottom: calc(0.75rem + 4rem + 2rem);
-  }
-  /* 右下の窓（高さ 200px と上の帯 2.25rem）が、ページの最後の部分を隠さないよう、その分の余白を足す */
-  html[data-player='dock'] .page-bottom {
-    padding-bottom: calc(0.75rem + 4rem + 0.75rem + 200px + 2.25rem + 2rem);
-  }
-}
-
-/* トースト（toaster.tsx）を出す高さ。再生の帯の上。スマホは下のタブと帯を重ねた板の上 */
 :root {
-  --toast-bottom: calc(8.25rem + 24px);
+  --tabs: var(--spacing-tabs);
+  --tabs-shown: var(--spacing-tabs);
+  --tabs-now: var(--spacing-tabs);
+  /* 何も流していないときの、下に出したままのものの上端（スマホは下のタブ） */
+  --bottom-edge: calc(var(--spacing-gutter) + var(--tabs-shown));
 }
-/* スマホの動画の画面（ボカロPの画面など）は下のタブを隠すので、帯だけの上 */
-:root[data-watch] {
-  --toast-bottom: calc(4rem + 24px);
-}
-@media (width >= 48rem) {
-  :root,
+@variant max-md {
   :root[data-watch] {
-    --toast-bottom: calc(4rem + 36px);
+    --tabs-shown: 0px;
+    --tabs-now: 0px;
+    --bottom-edge: 0px;
   }
+  :root[data-chrome='hidden'] {
+    --tabs-now: 0px;
+  }
+}
+@variant md {
+  :root {
+    --tabs: 0px;
+    --tabs-shown: 0px;
+    --tabs-now: 0px;
+    --bottom-edge: 0px;
+  }
+}
+:root {
+  /* 下の再生の帯の下端と上端。上端は song-notes.tsx が px で読むので、長さとして登録してある（@property） */
+  --bar-bottom: calc(var(--spacing-gutter) + var(--tabs));
+  --bar-top: calc(var(--spacing-gutter) + var(--tabs-shown) + var(--spacing-bar));
+  /* 右下の窓（動画）の下端。帯の上に gutter を空けて置く */
+  --dock-bottom: calc(var(--bar-bottom) + var(--spacing-bar) + var(--spacing-gutter));
+  /* 右下の窓の上に付ける帯の下端 */
+  --dock-strip-bottom: calc(var(--dock-bottom) + var(--spacing-dock));
+  /* パソコンで左のメニューの板の右隣（右下の窓を左に寄せたとき） */
+  --beside-sidebar: calc(var(--spacing-sidebar) + var(--spacing-gutter));
+  /* 右下の窓の帯の上端。次に流れる曲の板（queue-panel.tsx）をこの上に積む */
+  --dock-top: calc(
+    var(--spacing-gutter) + var(--tabs-now) + var(--spacing-bar) + var(--spacing-gutter) +
+      var(--spacing-dock) + var(--spacing-dock-strip)
+  );
+  /* 再生の帯の上に gutter を空けた高さ。左のメニューの板の下端（nav.tsx）もここまで上げる。
+     知らせ（toaster.tsx）と板（floating-panel.tsx）はここに出す。*/
+  --above-bar: calc(var(--bar-top) + var(--spacing-gutter));
+  --toast-bottom: var(--above-bar);
+}
+html[data-player='slot'] {
+  --bottom-edge: var(--bar-top);
+}
+html[data-player='dock'] {
+  --bottom-edge: calc(
+    var(--bar-top) + var(--spacing-gutter) + var(--spacing-dock) + var(--spacing-dock-strip)
+  );
+}
+/*
+ * 画面の上からの位置。パソコンの上の段の下（gutter・段・gutter）と、本文の始まり。
+ * スマホの詳細画面では動画を画面の幅で上に固定する（高さは幅の 9/16）ので、その下に操作の帯（player-stage.tsx）、さらにその下に年の札（producer-player.tsx）を貼る
+ */
+:root {
+  --below-header: calc(var(--spacing-gutter) * 2 + var(--spacing-header));
+  --content-top: calc(var(--below-header) + var(--spacing-content-top));
+  --video-full: calc(100vw * 9 / 16);
+  --stage-controls-top: calc(var(--video-full) + var(--spacing-gutter));
+  --below-stage-controls: calc(
+    var(--stage-controls-top) + var(--spacing-stage-controls) + var(--spacing-gutter)
+  );
+  /* 上へ出しきって隠す（自分の高さと gutter の分） */
+  --hide-up: calc(-100% - var(--spacing-gutter));
 }
 
 /*
- * 右下の窓の帯の上端の、画面の下からの高さ（player-provider.tsx の DOCK_STRIP と合わせる）。窓で流しているあいだ、
- * 次に流れる曲の板（queue-panel.tsx）をこの上に積む。スマホでタブを隠しているあいだは、窓もタブの分だけ下がる（.chrome-bottom）
+ * 次に流れる曲などの板（floating-panel.tsx）の置き場所と高さの上限。動画の上に重ねない（YouTube の規約）。
+ * スマホの動画の画面では、上に固定した動画の下までに収める。右下の窓で流しているときは窓の帯の上に積み、
+ * パソコンは上の段の下まで、スマホは画面の上の端までに収める
  */
 :root {
-  --dock-top: calc(8.25rem + 12px + 200px + 2.25rem);
+  --above-dock: calc(var(--dock-top) + var(--spacing-gutter));
+  --panel-bottom: var(--above-bar);
+  --panel-max: var(--max-height-panel);
 }
-:root[data-watch],
-:root[data-chrome='hidden'] {
-  --dock-top: calc(8.25rem + 12px + 200px + 2.25rem - 3.5rem);
-}
-@media (width >= 48rem) {
-  :root,
-  :root[data-watch],
-  :root[data-chrome='hidden'] {
-    --dock-top: calc(4rem + 24px + 200px + 2.25rem);
+@variant max-md {
+  :root[data-watch] {
+    --panel-max: calc(100dvh - var(--video-full) - var(--above-bar) - var(--spacing-gutter));
   }
+}
+html[data-player='dock'] {
+  --panel-bottom: var(--above-dock);
+  --panel-max: calc(100dvh - var(--above-dock) - var(--spacing-gutter));
+}
+@variant md {
+  html[data-player='dock'] {
+    --panel-max: calc(100dvh - var(--above-dock) - var(--below-header));
+  }
+}
+
+/* 下に出したままのものが本文の最後を隠さないよう、本文の下に同じだけ余白を足す */
+.page-bottom {
+  padding-bottom: calc(var(--bottom-edge) + var(--spacing-page-end));
 }

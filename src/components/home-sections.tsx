@@ -12,6 +12,7 @@ import { usePreload } from './player/use-preload';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
+import { atLeast } from '@/lib/breakpoints';
 
 /**
  * きょうの日付の曲。1曲を大きく見せ、残りを横に小さく並べる。
@@ -60,7 +61,7 @@ export function OnThisDay({
           />
         </div>
       </div>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-8">
+      <div className="grid gap-5 lg:grid-cols-hero lg:gap-8">
         <button
           ref={heroButton}
           type="button"
@@ -73,16 +74,16 @@ export function OnThisDay({
               src={hero.thumb}
               alt=""
               fill
-              sizes="(min-width: 64rem) 40vw, (min-width: 40rem) 50vw, 100vw"
+              sizes={`${atLeast('lg')} 40vw, ${atLeast('sm')} 50vw, 100vw`}
               loading="eager"
-              className="object-cover group-hover:scale-[1.03]"
+              className="object-cover group-hover:scale-103"
             />
             <span className={`absolute right-3 bottom-3 size-12 ${COVER_PLAY}`}>
               <Icon name={heroActive && playing ? 'pause' : 'play'} />
             </span>
           </span>
           <span className="min-w-0">
-            <span className="block font-tech text-xs font-black tracking-[0.2em] text-accent">
+            <span className="block font-tech text-xs font-black tracking-label text-accent">
               {/* 右の一覧と同じ形。同じ日の曲は年だけ、前後の日から補った曲は月日も（今のデータでは0曲の日は無い） */}
               {sameDay(hero.publishedOn)
                 ? hero.publishedOn.slice(0, 4)
@@ -104,7 +105,7 @@ export function OnThisDay({
             ref={track}
             onScroll={update}
             style={{ maskImage: edgeMask(edge) }}
-            className="-mx-4 grid auto-cols-[88%] grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-6 sm:-mx-8 sm:auto-cols-[min(22rem,80%)] sm:scroll-pl-8 sm:px-8 lg:mx-0 lg:auto-cols-[90%] lg:grid-rows-7 lg:scroll-pl-6 lg:px-0 [&::-webkit-scrollbar]:hidden"
+            className="-mx-4 grid auto-cols-day grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto px-4 no-scrollbar snap-x scroll-pl-6 sm:-mx-8 sm:auto-cols-day-sm sm:scroll-pl-8 sm:px-8 lg:mx-0 lg:auto-cols-day-lg lg:grid-rows-7 lg:scroll-pl-6 lg:px-0"
           >
             {rest.map((song) => (
               // 行は曲の一覧と同じ部品。同じ日の曲は年だけ、前後の日から補った曲は月日も添える
@@ -148,7 +149,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
       ref={wall}
       onScroll={update}
       style={{ maskImage: edgeMask(edge) }}
-      className="-mx-4 grid auto-cols-[30%] grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-[23%] sm:gap-2 sm:px-8 sm:scroll-pl-8 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 grid auto-cols-mix grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto px-4 no-scrollbar snap-x scroll-pl-4 sm:-mx-8 sm:auto-cols-mix-sm sm:gap-2 sm:px-8 sm:scroll-pl-8 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0"
     >
       {songs.map((song) => {
         const active = current?.songId === song.songId;
@@ -160,13 +161,13 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             title={song.title}
             data-preload={song.service === 'niconico' ? song.videoId : undefined}
             onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-react active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} snap-start`}
+            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition duration-react active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} snap-start`}
           >
             <FadeImage
               src={song.thumb}
               alt=""
               fill
-              sizes="(min-width: 64rem) 16vw, (min-width: 40rem) 25vw, 33vw"
+              sizes={`${atLeast('lg')} 16vw, ${atLeast('sm')} 25vw, 33vw`}
               className="object-cover group-hover:scale-105"
             />
             <span
