@@ -31,7 +31,14 @@ export function StageHeading({
   const producer = useProducer(song?.producerId ?? null);
   if (!song) {
     return (
-      <Heading as="h1" size="page" eyebrow={eyebrow}>
+      // 題名の行は、流しているときのアイコン（48px・パソコン 56px）と同じ高さを取る。取らないと、再生を始めたときと止めたときに
+      // 下の「再生」の段が 11px ずれた
+      <Heading
+        as="h1"
+        size="page"
+        eyebrow={eyebrow}
+        className="flex min-h-12 items-center sm:min-h-14"
+      >
         {title}
       </Heading>
     );
