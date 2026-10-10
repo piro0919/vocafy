@@ -58,8 +58,17 @@ const RADIO_TRIES = 6;
 /** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
 const FADE_OUT_MS = 150;
 const FADE_STEPS = 10;
+/** 音量を 0 にしてから止めるまで待つ長さ（ミリ秒）。埋め込みの中で 0 が効くまでにばらつきがあり、一刻み（15ms）では
+ * 元の音量の1割が残ったまま止まることがあった */
+const SETTLE_MS = 60;
 /** 絞りきって消音・一時停止してから、次の動画を頼むまで待つ長さ（ミリ秒）。止まりきる前に替えると、プツッと鳴った */
 const PAUSE_WAIT_MS = 100;
+
+/**
+ * 絞る途中の音量。終わりほど細かく下げる（2乗）。一定の割合で下げると、最後の一刻みが元の音量の1割残り、
+ * そこで止めるとプツッと鳴った（2026-10-11 に録って確かめた）。2乗なら最後の一刻みは 1%
+ */
+const faded = (volume: number, step: number) => Math.round(volume * (1 - step / FADE_STEPS) ** 2);
 
 /** スリープタイマーで止めるときに、音を絞りきるまでの長さ（ミリ秒）。眠りかけの耳に急に切れないよう、曲を替えるときより長く */
 const SLEEP_FADE_MS = 3000;
@@ -176,6 +185,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     skipNoticed.current = true;
     toast(`${item.title}をスキップしました`);
   }, []);
+
+  // 一時停止の前に音量を絞っている途中なら、その時計
+  const pauseFade = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** 絞りきったプレイヤーの消音を解き、音量を絞ったときと同じ速さで、いまの音量まで上げる。上げる先は一刻みごとに読み直す */
   const rise = useCallback((engine: Engine) => {
@@ -326,6 +338,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const load = useCallback(
     (items: QueueItem[], at: number, ctx: PlayContext = 'list') => {
       keepAwake();
+      // 一時停止の前に絞っている途中なら、やめる。同じプレイヤーで次の曲を流すので、そのままだと次の曲が止まる
+      if (pauseFade.current) clearTimeout(pauseFade.current);
+      pauseFade.current = null;
       auto.current = autoNext.current;
       autoNext.current = false;
       setContext(ctx);
@@ -418,7 +433,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       fading.current = true;
       let step = 0;
       const tick = () => {
-        // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから一刻み待つ
+        // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから SETTLE_MS 待つ
         // 絞りきったら、消音して一時停止し、止まりきるのを待ってから替える
         if (step === FADE_STEPS) {
           current.setMuted(true);
@@ -434,8 +449,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return;
         }
         step += 1;
-        current.setVolume(Math.round(sound.volume * (1 - step / FADE_STEPS)));
-        fadeTimer.current = setTimeout(tick, FADE_OUT_MS / FADE_STEPS);
+        current.setVolume(faded(sound.volume, step));
+        fadeTimer.current = setTimeout(
+          tick,
+          step === FADE_STEPS ? SETTLE_MS : FADE_OUT_MS / FADE_STEPS,
+        );
       };
       tick();
     },
@@ -576,7 +594,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             done();
             return;
           }
-          p.setVolume(Math.round(volume * (1 - step / FADE_STEPS)));
+          p.setVolume(faded(volume, step));
           fadeTimer = setTimeout(tick, SLEEP_FADE_MS / FADE_STEPS);
         };
         tick();
@@ -836,6 +854,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     clearMore();
     clearTimeout(fadeTimer.current);
     clearTimeout(riseTimer.current);
+    if (pauseFade.current) clearTimeout(pauseFade.current);
+    pauseFade.current = null;
     letSleep();
     quiet.current = null;
     pausing.current = null;
@@ -914,12 +934,47 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (q[i]) load(q, i, contextRef.current);
       },
       toggle: () => {
-        if (playing) {
-          player.current?.pause();
+        const p = player.current;
+        // 絞っている途中にもう一度押されたら、止めるのをやめて音量を戻す
+        if (pauseFade.current) {
+          clearTimeout(pauseFade.current);
+          pauseFade.current = null;
+          if (p) rise(p);
           return;
         }
-        if (player.current?.service === 'niconico') primeParked(state.current.queue);
-        player.current?.play();
+        if (playing) {
+          // 鳴っている途中でいきなり止めると、波形が途切れてプツッと鳴る。曲の切り替えと同じく、絞りきってから止める。
+          // 音量は 0 のまま残し、次に鳴り始めたら上げる（rise）。iPad・iPhone は埋め込みの音量を変えられないので絞らない
+          const { volume, muted } = soundRef.current ?? sound;
+          if (!p || !sounding.current || muted || volume === 0 || isAppleDevice()) {
+            p?.pause();
+            return;
+          }
+          clearTimeout(riseTimer.current);
+          let step = 0;
+          const tick = () => {
+            if (player.current !== p) {
+              pauseFade.current = null;
+              return;
+            }
+            if (step === FADE_STEPS) {
+              pauseFade.current = null;
+              quiet.current = p;
+              p.pause();
+              return;
+            }
+            step += 1;
+            p.setVolume(faded(volume, step));
+            pauseFade.current = setTimeout(
+              tick,
+              step === FADE_STEPS ? SETTLE_MS : FADE_OUT_MS / FADE_STEPS,
+            );
+          };
+          tick();
+          return;
+        }
+        if (p?.service === 'niconico') primeParked(state.current.queue);
+        p?.play();
       },
       step,
       close,
@@ -959,6 +1014,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setSleep,
     }),
     [
+      rise,
       queue,
       index,
       current,
