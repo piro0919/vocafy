@@ -134,7 +134,7 @@ export function ProducerPlayer({
     // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky）。
     // 貼り付く高さは、スクロールする前の位置（上の段 68px＋余白 32px）と同じにする。ずれていると、スクロールの最初の分だけ動いてから止まった
     // スマホは画面が狭く、貼り付けると一覧が見づらくなるので、貼り付けずに縦に並べる
-    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
       <div className="contents lg:sticky lg:top-25 lg:block">
         <PlayerStage
           active={here}

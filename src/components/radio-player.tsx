@@ -74,7 +74,7 @@ export function RadioPlayer({
 
   return (
     // 一覧の再生用の画面（list-player.tsx）と同じ組み立て
-    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
       <div className="contents lg:sticky lg:top-25 lg:block">
         <PlayerStage
           active={here}
@@ -131,7 +131,7 @@ export function RadioLoading() {
   const { current, context } = usePlayer();
   return (
     <div className="pt-4">
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 lg:items-start">
         <div className="contents lg:sticky lg:top-25 lg:block">
           <PlayerStage
             active={current !== null && context === 'radio'}
