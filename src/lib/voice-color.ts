@@ -84,6 +84,9 @@ const COLORS: Record<string, string> = {
   暗鳴ニュイ: '#3cb8c8',
   東北イタコ: '#7fb8e0',
   ナクモ: '#2f4a7a',
+  Rana: '#f29ab8',
+  SONiKA: '#6f9a3a',
+  '#kzn': '#e040b0',
 };
 
 export function voiceColor(name: string): string {
