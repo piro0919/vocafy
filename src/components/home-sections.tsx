@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import type { DatedItem } from '@/lib/catalog';
 import { FadeImage } from './fade-image';
 import { Heading } from './heading';
@@ -7,6 +8,7 @@ import { PlayAllPill } from './play-all';
 import { Icon } from './icon';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
+import { usePreload } from './player/use-preload';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
@@ -38,6 +40,9 @@ export function OnThisDay({
   const { current, playing } = usePlayer();
   const { track, edge, update, page } = useShelfScroll<HTMLUListElement>();
   const open = useOpenSong();
+  // 大きな1曲がニコニコの曲なら、埋め込みを先に読み込んでおく（iPad・iPhone だけ。右の一覧の行は SongItem が読む）
+  const heroButton = useRef<HTMLButtonElement>(null);
+  usePreload(heroButton, hero.videoId);
   const sameDay = (iso: string) => iso.slice(5) === today.slice(5);
   const heroActive = current?.songId === hero.songId;
 
@@ -55,7 +60,9 @@ export function OnThisDay({
       </div>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-8">
         <button
+          ref={heroButton}
           type="button"
+          data-preload={hero.service === 'niconico' ? hero.videoId : undefined}
           onClick={() => open(hero)}
           className="group flex min-w-0 flex-col gap-3 text-left sm:flex-row sm:items-end lg:flex-col lg:items-stretch"
         >
@@ -129,8 +136,11 @@ export function OnThisDay({
 export function MixWall({ songs }: { songs: DatedItem[] }) {
   const { current, playing } = usePlayer();
   const open = useOpenSong();
+  // ニコニコの曲の表紙が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
+  const wall = useRef<HTMLDivElement>(null);
+  usePreload(wall, songs);
   return (
-    <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6">
+    <div ref={wall} className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6">
       {songs.map((song, i) => {
         const active = current?.songId === song.songId;
         return (
@@ -139,6 +149,7 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
             type="button"
             aria-label={`${song.title}（${song.producerName}）`}
             title={song.title}
+            data-preload={song.service === 'niconico' ? song.videoId : undefined}
             onClick={() => open(song)}
             className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition-[scale] duration-150 ease-(--ease-out) active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${i >= 12 ? 'max-lg:hidden' : ''}`}
           >
