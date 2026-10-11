@@ -1,4 +1,5 @@
 import type { WebSite, WithContext } from 'schema-dts';
+import { AmbientSource } from '@/components/ambient';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
 import { FavoriteNewSongs } from '@/components/favorite-new-songs';
 import { MixWall, OnThisDay } from '@/components/home-sections';
@@ -69,6 +70,8 @@ export default async function Home({ params }: PageProps<'/home/[date]/[hour]'>)
   return (
     <>
       <JsonLd data={jsonLd} />
+      {/* 何も流していないときの背景の色は、大きな1曲の表紙から取る。1時間ごとに曲が替わると、トップの色合いも替わる */}
+      <AmbientSource image={hero?.thumb ?? null} />
 
       {hero && (
         <OnThisDay
