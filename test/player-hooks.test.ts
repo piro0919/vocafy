@@ -396,3 +396,16 @@ describe('useSleepTimer（スリープタイマー）', () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe('useMirroredState（state と ref をいつも同じに保つ）', () => {
+  it('set は state と ref の両方を書き換える。ref は描き直しを待たずに新しい値を返す', async () => {
+    const { useMirroredState } = await import('@/lib/use-mirrored-state');
+    const { result } = renderHook(() => useMirroredState(1));
+    const [, ref, set] = result.current;
+    act(() => set(2));
+    expect(ref.current).toBe(2);
+    expect(result.current[0]).toBe(2);
+    expect(result.current[1]).toBe(ref);
+    expect(result.current[2]).toBe(set);
+  });
+});

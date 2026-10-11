@@ -16,7 +16,7 @@ import { isAppleDevice } from '@/lib/apple-device';
 import { keepAwake, letSleep, rest } from './keep-awake';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
-import type { EngineEvents } from './engine';
+import type { EngineEvents, Sound } from './engine';
 import { createNiconicoPool, type NiconicoPool } from './niconico-pool';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
@@ -53,6 +53,7 @@ import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { TIMING } from '@/lib/timing';
 import { useClientValue } from '@/lib/client-value';
+import { useMirroredState } from '@/lib/use-mirrored-state';
 import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
 
@@ -92,6 +93,11 @@ export function usePlaybackTime(): PlaybackTime {
  */
 const UPCOMING_LIMIT = 10;
 
+/** 音量とループ・ランダムを読む前に出す既定の値 */
+const DEFAULT_SOUND: Sound = { volume: 100, muted: false };
+type Playback = { repeat: Repeat; shuffle: boolean };
+const DEFAULT_PLAYBACK: Playback = { repeat: 'all', shuffle: false };
+
 /** プレイヤーの知らせの、中身を入れる前の形 */
 const NO_EVENTS: EngineEvents = {
   onPlaying: () => {},
@@ -130,12 +136,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   // 並びの持ち主（player-types.ts）。曲送り（プレイヤーの知らせから呼ばれる）でも引き継ぐので、ref にも持つ
-  const [owner, setOwnerState] = useState<Owner>(LOOSE);
-  const ownerRef = useRef<Owner>(LOOSE);
-  const setOwner = useCallback((next: Owner) => {
-    ownerRef.current = next;
-    setOwnerState(next);
-  }, []);
+  const [owner, ownerRef, setOwner] = useMirroredState<Owner>(LOOSE);
   const [time, setTime] = useState<PlaybackTime>({ current: 0, duration: 0, at: 0 });
   // 開き直したときに戻した、まだ流していない前の曲（player-resume.ts）。プレイヤーはまだ作っておらず、再生を押すと続きから流す。
   // resumeAt は続きの位置（秒）で、鳴り始めたところでそこへ飛ぶ
@@ -156,25 +157,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // プレイヤーの枠。置き場所か右下の窓に合わせ続ける（use-frame-layout.ts）
   const frame = useFrameLayout(mode, slot);
   // 残しておいた音量は、最初に曲を流したときに読む（サーバーでは localStorage を読めず、帯も曲を流すまで出ない）
-  const [sound, setSound] = useState({ volume: 100, muted: false });
-  const soundRef = useRef<{ volume: number; muted: boolean } | null>(null);
+  // まだ読んでいなければ null（画面には既定の値を出す）
+  const [savedSound, soundRef, setSound] = useMirroredState<Sound | null>(null);
+  const sound = savedSound ?? DEFAULT_SOUND;
   // ループとランダム。音量と同じく、最初に曲を流したときに読む
-  const [playback, setPlayback] = useState<{ repeat: Repeat; shuffle: boolean }>({
-    repeat: 'all',
-    shuffle: false,
-  });
-  const playbackRef = useRef<{ repeat: Repeat; shuffle: boolean } | null>(null);
+  const [savedPlaybackState, playbackRef, setPlayback] = useMirroredState<Playback | null>(null);
+  const playback = savedPlaybackState ?? DEFAULT_PLAYBACK;
   /** 残しておいた音量・ループ・ランダムを読む。最初に曲を流すときに1回だけ（前の曲を戻すときは、開いたときの effect で読む） */
   const loadSettings = useCallback(() => {
-    if (!soundRef.current) {
-      soundRef.current = savedVolume();
-      setSound(soundRef.current);
-    }
-    if (!playbackRef.current) {
-      playbackRef.current = savedPlayback();
-      setPlayback(playbackRef.current);
-    }
-  }, []);
+    if (!soundRef.current) setSound(savedVolume());
+    if (!playbackRef.current) setPlayback(savedPlayback());
+  }, [soundRef, playbackRef, setSound, setPlayback]);
   const [position, setPosition] = useState(0);
   // 並びと流す順（queue-state.ts）。プレイヤーの知らせは作ったときの関数を持ち続けるので、state と別に ref にも持つ
   const cursor = useRef<Cursor>(EMPTY_CURSOR);
@@ -352,6 +345,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       commit,
       setOwner,
       loadSettings,
+      playbackRef,
     ],
   );
 
@@ -359,7 +353,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const append = useCallback(
     (items: QueueItem[]) =>
       commit(appendItems(cursor.current, items, playbackRef.current?.shuffle ?? false)),
-    [commit],
+    [commit, playbackRef],
   );
 
   /**
@@ -374,7 +368,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       cursor.current = { ...cursor.current, order: step.order };
       load(cursor.current.queue, step.index, ownerRef.current);
     },
-    [load],
+    [load, ownerRef, playbackRef],
   );
   const step = next;
   useEffect(() => {
@@ -403,32 +397,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       autoNext.current = true;
       next(1);
     };
-  }, [next, setSleep, sleepRef, playerRef]);
+  }, [next, setSleep, sleepRef, playerRef, playbackRef]);
 
   const toggleShuffle = useCallback(() => {
     const now = playbackRef.current ?? savedPlayback();
     const value = { ...now, shuffle: !now.shuffle };
-    playbackRef.current = value;
     setPlayback(value);
     savePlayback(value);
     // いまの曲を起点に、流す順を作り直す
     commit(restart(cursor.current.queue, cursor.current.index, value.shuffle));
-  }, [commit]);
+  }, [commit, playbackRef, setPlayback]);
 
   const toggleRepeat = useCallback(() => {
     const now = playbackRef.current ?? savedPlayback();
     const value = { ...now, repeat: now.repeat === 'all' ? ('one' as const) : ('all' as const) };
-    playbackRef.current = value;
     setPlayback(value);
     savePlayback(value);
-  }, []);
+  }, [playbackRef, setPlayback]);
 
   const adopt = useCallback(
     (items: QueueItem[], at: number, nextOwner: Owner) => {
       commit(restart(items, at, playbackRef.current?.shuffle ?? false));
       setOwner(nextOwner);
     },
-    [commit, setOwner],
+    [commit, setOwner, playbackRef],
   );
 
   const playAll = useCallback(
@@ -456,7 +448,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       index: cursor.current.index,
       owner: ownerRef.current,
     };
-  }, []);
+  }, [ownerRef]);
 
   const startRadio = useCallback(
     (seed: QueueItem) => {
@@ -493,7 +485,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       append(items.slice(1));
     },
-    [append],
+    [append, ownerRef],
   );
 
   const stopRadio = useCallback(
@@ -580,16 +572,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = readResume();
     if (!saved) return;
-    soundRef.current = savedVolume();
-    setSound(soundRef.current);
-    playbackRef.current = savedPlayback();
-    setPlayback(playbackRef.current);
+    resumeAt.current = saved.position;
+    setSound(savedVolume());
+    setPlayback(savedPlayback());
+    // 控えは localStorage にあり、サーバーでは読めない。描いたあとのこの effect で、開いたときに1回だけ戻すほかない
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     commit(withOrder(saved.queue, saved.index, saved.order));
     setOwner(saved.owner);
-    resumeAt.current = saved.position;
     setTime({ current: saved.position, duration: saved.duration, at: performance.now() });
     setResumable(true);
-  }, [commit, setOwner]);
+  }, [commit, setOwner, setPlayback, setSound]);
 
   /** 戻した前の曲を、聴いていた位置から流す（再生を押したとき） */
   const resume = useCallback(() => {
@@ -599,7 +591,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     load(q, i, settledOwner(ownerRef.current, q[i]));
     // load は位置を 0 に戻すので、続きの位置を戻す（鳴り始めたところでそこへ飛ぶ）
     resumeAt.current = at;
-  }, [load]);
+  }, [load, ownerRef]);
 
   // 流しているあいだ、並びとどこまで聴いたかを残す（use-resume-writer.ts）
   const resumeSnapshot = useCallback(() => {
@@ -614,7 +606,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       duration: t?.duration ?? 0,
       owner: settledOwner(ownerRef.current, q[i]),
     };
-  }, [playerRef]);
+  }, [playerRef, ownerRef]);
   useResumeWriter(resumeSnapshot, { resumable, playing, time, queue, index, owner });
 
   const current = queue[index] ?? null;
@@ -703,7 +695,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setVolume: (volume) => {
         // つまみを動かしたら消音は解く
         const next = { volume, muted: false };
-        soundRef.current = next;
         setSound(next);
         saveVolume(volume, false);
         setEngineVolume(volume);
@@ -711,7 +702,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleMute: () => {
         const now = soundRef.current ?? sound;
         const next = { ...now, muted: !now.muted };
-        soundRef.current = next;
         setSound(next);
         saveVolume(next.volume, next.muted);
         playerRef.current?.setMuted(next.muted);
@@ -761,6 +751,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       pausingSoftly,
       softPause,
       setEngineVolume,
+      soundRef,
+      setSound,
+      ownerRef,
     ],
   );
 
