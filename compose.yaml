@@ -1,8 +1,8 @@
-# 手元の DB。本番は Neon の Postgres で、ここは同じ版の素の Postgres を立てるだけ。
+# 手元の DB。本番は Neon の Postgres 18 で、ここは同じ版の素の Postgres を立てるだけ。CI（ci.yml）も同じ版にそろえる。
 # 接続先は .env.local の DATABASE_URL（postgres://vocafy:vocafy@localhost:5434/vocafy）
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: vocafy
       POSTGRES_PASSWORD: vocafy
@@ -10,10 +10,12 @@ services:
     ports:
       - '5434:5432'
     volumes:
-      - db:/var/lib/postgresql/data
+      # 18 のイメージは版ごとの下の階層（/var/lib/postgresql/18/docker）に書くので、一つ上をつなぐ。
+      # 17 のときの db とは中身の形が違って使い回せないので、名前を分けた（2026-10-12）
+      - db18:/var/lib/postgresql
     healthcheck:
       test: ['CMD', 'pg_isready', '-U', 'vocafy']
       interval: 2s
       retries: 30
 volumes:
-  db:
+  db18:
