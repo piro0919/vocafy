@@ -11,7 +11,8 @@ import { hasSignInHint } from '@/lib/auth-client';
  * 出しっぱなしの一文は目障りなので、ⓘ にだけ持たせる。ログインは右上のボタンでするので、吹き出しには置かない。
  * ログインしたことのある端末（auth-client.ts の印）には出さない
  *
- * 形は shadcn の Tooltip（濃い地の小さな吹き出しに矢印）で、色は再生の帯のシーク位置の吹き出し（player-bar.tsx）と同じ。
+ * 形は shadcn の Tooltip（小さな吹き出し）で、地はほかの浮いた板と同じすりガラス。濃い地（文字色の反転）は、暗い画面で白く浮いた。
+ * 矢印は、すりガラスに重ねると重なった所だけ濃くなるので付けない。
  * マウスは乗せると出て、離すと消える。指の端末には乗せる操作が無いので、押しても出し入れでき、外を押すか Esc で閉じる
  */
 export function SignInInfo() {
@@ -64,9 +65,8 @@ export function SignInInfo() {
         id={id}
         role="tooltip"
         data-shown={open}
-        className="pointer-events-none absolute top-full left-1/2 z-overlay mt-1 w-max max-w-64 -translate-x-1/2 sm:max-w-none rounded-md bg-foreground px-3 py-1.5 text-xs font-bold text-background opacity-0 shadow-mark transition-opacity duration-react data-[shown=true]:opacity-100"
+        className="pointer-events-none absolute top-full left-1/2 z-overlay mt-1 w-max max-w-64 -translate-x-1/2 sm:max-w-none rounded-lg border border-line/60 bg-glass px-3 py-1.5 text-xs font-bold text-foreground opacity-0 shadow-float backdrop-blur-lg backdrop-saturate-150 transition-opacity duration-react data-[shown=true]:opacity-100"
       >
-        <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-foreground" />
         {/* 狭い幅では「、」で折る（文の途中で折れないよう、2つに分けて塊にする） */}
         <span className="inline-block">ログインすると、</span>
         <span className="inline-block">お気に入りをほかの端末と同期できます。</span>
