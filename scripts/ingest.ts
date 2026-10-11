@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { scriptEnv } from './lib/env';
+import { catalogRows, writeCatalog } from './lib/catalog-write';
 import { isDropped, tooManyDead, withoutDead } from './lib/dead';
 import type { ProducerLinks } from '../src/lib/catalog';
 import {
@@ -41,11 +42,17 @@ import { deadYouTube, viewCounts } from './lib/youtube';
  * 種は VocaDB の評価点、ニコニコの伝説入り（100万再生以上）、YouTube の再生数（100万回以上。2018年以降の曲から選ぶ）。
  * 種に掛からないボカロPも、pick.ts の EXTRA_PRODUCERS に書けば全曲を入れる
  */
+/**
+ * DB の接続。読む問い合わせと最後の書き込みで1つを使い回す。前は問い合わせごとに作って閉じていて、自動の取り込み
+ * （GitHub Actions からシンガポールの Neon）では、そのたびに接続の手間がかかった。main の終わりで閉じる
+ */
+let pool: pg.Pool | undefined;
+const db = () => (pool ??= new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') }));
+
 /** 再生中に流せないと分かった動画。表がまだ無い DB（0004 を当てる前）では空 */
 async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<string> }> {
-  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
   try {
-    const { rows } = await pool.query<{ service: string; video_id: string }>(
+    const { rows } = await db().query<{ service: string; video_id: string }>(
       'select service, video_id from unplayable',
     );
     const of = (service: string) =>
@@ -53,8 +60,6 @@ async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<s
     return { youtube: of('youtube'), niconico: of('niconico') };
   } catch {
     return { youtube: new Set(), niconico: new Set() };
-  } finally {
-    await pool.end();
   }
 }
 
@@ -62,18 +67,13 @@ async function readUnplayable(): Promise<{ youtube: Set<string>; niconico: Set<s
 async function ownersInDb(songIds: number[]): Promise<Map<number, Set<number>>> {
   const owners = new Map<number, Set<number>>();
   if (songIds.length === 0) return owners;
-  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
-  try {
-    const { rows } = await pool.query<{ song_id: number; producer_id: number }>(
-      'select song_id, producer_id from song_producer where song_id = any($1)',
-      [songIds],
-    );
-    for (const r of rows)
-      owners.set(r.song_id, (owners.get(r.song_id) ?? new Set()).add(r.producer_id));
-    return owners;
-  } finally {
-    await pool.end();
-  }
+  const { rows } = await db().query<{ song_id: number; producer_id: number }>(
+    'select song_id, producer_id from song_producer where song_id = any($1)',
+    [songIds],
+  );
+  for (const r of rows)
+    owners.set(r.song_id, (owners.get(r.song_id) ?? new Set()).add(r.producer_id));
+  return owners;
 }
 
 /**
@@ -82,17 +82,12 @@ async function ownersInDb(songIds: number[]): Promise<Map<number, Set<number>>> 
  */
 async function videosInDb(videoIds: string[], except: number[]): Promise<Set<string>> {
   if (videoIds.length === 0) return new Set();
-  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
-  try {
-    const { rows } = await pool.query<{ youtube_id: string | null; niconico_id: string | null }>(
-      `select youtube_id, niconico_id from song
-       where not (id = any($2)) and (youtube_id = any($1) or niconico_id = any($1))`,
-      [videoIds, except],
-    );
-    return new Set(rows.flatMap((r) => [r.youtube_id, r.niconico_id].filter((v) => v !== null)));
-  } finally {
-    await pool.end();
-  }
+  const { rows } = await db().query<{ youtube_id: string | null; niconico_id: string | null }>(
+    `select youtube_id, niconico_id from song
+     where not (id = any($2)) and (youtube_id = any($1) or niconico_id = any($1))`,
+    [videoIds, except],
+  );
+  return new Set(rows.flatMap((r) => [r.youtube_id, r.niconico_id].filter((v) => v !== null)));
 }
 
 function arg(name: string): string | undefined {
@@ -197,26 +192,19 @@ async function recentSongs(days: number): Promise<{
   complete: Set<number>;
   knownVocalists: Map<number, { name: string; baseId: number }>;
 }> {
-  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
-  try {
-    const producers = await pool.query<{ id: number }>('select id from producer where complete');
-    const complete = new Set(producers.rows.map((r) => r.id));
-    const vocalists = await pool.query<{ id: number; name: string; base_id: number }>(
-      'select id, name, base_id from vocalist',
-    );
-    const songs = (await songsPublishedAfter(daysAgo(days))).filter(
-      (s) => isEligible(s) && producersOf(s).some((p) => complete.has(p.id)),
-    );
-    return {
-      songs,
-      complete,
-      knownVocalists: new Map(
-        vocalists.rows.map((v) => [v.id, { name: v.name, baseId: v.base_id }]),
-      ),
-    };
-  } finally {
-    await pool.end();
-  }
+  const producers = await db().query<{ id: number }>('select id from producer where complete');
+  const complete = new Set(producers.rows.map((r) => r.id));
+  const vocalists = await db().query<{ id: number; name: string; base_id: number }>(
+    'select id, name, base_id from vocalist',
+  );
+  const songs = (await songsPublishedAfter(daysAgo(days))).filter(
+    (s) => isEligible(s) && producersOf(s).some((p) => complete.has(p.id)),
+  );
+  return {
+    songs,
+    complete,
+    knownVocalists: new Map(vocalists.rows.map((v) => [v.id, { name: v.name, baseId: v.base_id }])),
+  };
 }
 
 async function main() {
@@ -388,123 +376,32 @@ async function main() {
     roots.set(root.id, root.id);
   }
 
-  const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
-  const client = await pool.connect();
+  const client = await db().connect();
   try {
-    await client.query('begin');
-    // 1行ずつ書くと、海の向こうの DB（Neon）では往復が数万回になって1時間を超える。表ごとに JSON にまとめて1回で書く
-    await client.query(
-      `insert into producer (id, name, picture, links, complete)
-       select id, name, picture, coalesce(links, '{}'), complete
-       from jsonb_to_recordset($1) as x(id integer, name text, picture text, links jsonb, complete boolean)
-       on conflict (id) do update set name = excluded.name,
-         picture = coalesce(excluded.picture, producer.picture),
-         links = case when excluded.complete then excluded.links else producer.links end,
-         complete = producer.complete or excluded.complete`,
-      [
-        JSON.stringify(
-          [...producers.values()].map((p) => ({
-            id: p.id,
-            name: PRODUCER_NAMES.get(p.id) ?? p.name,
-            picture: pictures.get(p.id) ?? null,
-            links: links.get(p.id) ?? null,
-            complete: producerIds.has(p.id),
-          })),
-        ),
-      ],
+    await writeCatalog(
+      client,
+      catalogRows({
+        kept,
+        dropped,
+        sources,
+        seedIds,
+        producerIds,
+        names: PRODUCER_NAMES,
+        pictures,
+        links,
+        vocalists,
+        roots,
+      }),
     );
-    await client.query(
-      `insert into vocalist (id, name, kind, base_id)
-       select * from jsonb_to_recordset($1) as x(id integer, name text, kind text, base_id integer)
-       on conflict (id) do update set name = excluded.name, kind = excluded.kind, base_id = excluded.base_id`,
-      [
-        JSON.stringify(
-          [...vocalists.values()].map((v) => ({
-            id: v.id,
-            name: v.name,
-            kind: v.artistType,
-            base_id: roots.get(v.id) ?? v.id,
-          })),
-        ),
-      ],
-    );
-    await client.query(
-      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, niconico_thumb, romaji)
-       select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
-         rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean,
-         niconico_thumb text, romaji text)
-       on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
-         niconico_thumb = excluded.niconico_thumb, romaji = excluded.romaji,
-         rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
-         youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
-         seed = song.seed or excluded.seed, imported_at = now()`,
-      [
-        JSON.stringify(
-          kept.map((s) => {
-            const source = sources.get(s.id)!;
-            const romaji = romajiOf(s);
-            return {
-              id: s.id,
-              name: s.name,
-              published_on: s.publishDate?.slice(0, 10) ?? null,
-              rating_score: s.ratingScore,
-              favorited_times: s.favoritedTimes,
-              youtube_id: source.youtubeId,
-              niconico_id: source.niconicoId,
-              seed: seedIds.has(s.id),
-              niconico_thumb: source.niconicoThumb,
-              // 検索でローマ字でも引けるよう残す。曲名と同じなら（英語の曲名など）持たない
-              romaji: romaji === s.name ? null : (romaji ?? null),
-            };
-          }),
-        ),
-      ],
-    );
-    // 作者と歌声は、VocaDB の今の登録に合わせて入れ直す
-    const ids = kept.map((s) => s.id);
-    // 前の取り込みで入ったが、今回は流せないと分かった曲を消す（作者と歌声のつながりも一緒に消える）
-    await client.query('delete from song where id = any($1)', [dropped.map((s) => s.id)]);
-    await client.query('delete from song_producer where song_id = any($1)', [ids]);
-    await client.query('delete from song_vocalist where song_id = any($1)', [ids]);
-    await client.query(
-      `insert into song_producer (song_id, producer_id)
-       select distinct * from jsonb_to_recordset($1) as x(song_id integer, producer_id integer)`,
-      [
-        JSON.stringify(
-          kept.flatMap((s) => producersOf(s).map((p) => ({ song_id: s.id, producer_id: p.id }))),
-        ),
-      ],
-    );
-    await client.query(
-      `insert into song_vocalist (song_id, vocalist_id, support)
-       select distinct on (song_id, vocalist_id) *
-       from jsonb_to_recordset($1) as x(song_id integer, vocalist_id integer, support boolean)
-       order by song_id, vocalist_id, support`,
-      [
-        JSON.stringify(
-          kept.flatMap((s) =>
-            vocalistsOf(s).map((v) => ({ song_id: s.id, vocalist_id: v.id, support: v.support })),
-          ),
-        ),
-      ],
-    );
-    await client.query('commit');
     console.log('DB に書きました');
-  } catch (error) {
-    await client.query('rollback');
-    throw error;
   } finally {
     client.release();
-    await pool.end();
   }
 }
 
-/** VocaDB の Romaji の名前。無ければ undefined */
-function romajiOf(song: VdbSong): string | undefined {
-  return song.names?.find((n) => n.language === 'Romaji')?.value;
-}
-
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(() => pool?.end());
