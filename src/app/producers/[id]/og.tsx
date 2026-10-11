@@ -91,16 +91,15 @@ export async function producerImage(
   const big = song?.title ?? name;
   const sub = song ? name : `${count}を、まとめて聴ける。`;
   const eyebrow = song ? 'SONG' : 'PRODUCER';
-  const [cover, singers] = await Promise.all([
+  // 表紙・影絵・フォントは互いに待たないので、まとめて取りに行く（前は表紙と影絵を読み終えてからフォントを取っていた）
+  const [cover, singers, display, body, tech] = await Promise.all([
     song?.youtubeId ? youtubeCover(song.youtubeId) : null,
     singerArts(song ? song.vocalists : favoriteSingers(found?.songs ?? [])),
-  ]);
-  const silhouette = singersImage(singers);
-  const [display, body, tech] = await Promise.all([
     googleFont('M PLUS Rounded 1c', 800, big),
     googleFont('M PLUS Rounded 1c', 700, sub),
     googleFont('Orbitron', 900, `${eyebrow}Vocafy`),
   ]);
+  const silhouette = singersImage(singers);
   // 字の大きさ。右の欄は幅 640px ほど（表紙のときも、表紙の幅を顔の画像に近づけてそろえた）
   const bigSize = big.length > 24 ? 52 : big.length > 14 ? 62 : big.length > 8 ? 76 : 96;
 
