@@ -10,15 +10,14 @@ import { Heading, SECTION } from '@/components/heading';
 import { FadeImage } from '@/components/fade-image';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails } from '@/lib/catalog';
-import { normalize, score } from '@/lib/search';
+import { normalize } from '@/lib/search';
 import {
   addRecentSearch,
   clearRecentSearches,
   restoreRecentSearches,
   useRecentSearches,
 } from '@/lib/recent-searches';
-import { loadIndex, type Prepared } from '@/lib/search-index';
-import { thumbOf } from '@/lib/thumb';
+import { detailsToItems, findInIndex, loadIndex, type Prepared } from '@/lib/search-index';
 import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
@@ -98,31 +97,7 @@ export function SearchView() {
   const terms = useText(TERMS);
   const voices = useVoiceNames();
   const query = normalize(text);
-  const found = useMemo(() => {
-    if (!index || !query) return null;
-    const producers = index.producers
-      .map((p) => ({ p, s: score(p.key, query) }))
-      .filter((x) => x.s > 0)
-      .toSorted((a, b) => b.s - a.s || b.p.songCount - a.p.songCount)
-      .map((x) => x.p);
-    // 曲名（ローマ字の曲名も含む）で当たった曲を先に、ボカロP名だけで当たった曲を後にする。同じ当たり方の中は新しい順（索引の並び）
-    const songs = index.songs
-      .map((s) => ({
-        s,
-        rank:
-          Math.max(score(s.title, query), score(s.romaji, query)) * 2 ||
-          score(s.producer.key, query),
-      }))
-      .filter((x) => x.rank > 0)
-      .toSorted((a, b) => b.rank - a.rank)
-      .map((x) => x.s);
-    const voices = index.voices
-      .map((v) => ({ v, s: score(v.key, query) }))
-      .filter((x) => x.s > 0)
-      .toSorted((a, b) => b.s - a.s || b.v.songCount - a.v.songCount)
-      .map((x) => x.v);
-    return { producers, songs, voices };
-  }, [index, query]);
+  const found = useMemo(() => (index && query ? findInIndex(index, query) : null), [index, query]);
 
   // 出す曲のボカロPの分だけ2段目を読み、曲の一覧に組み立てる。打つあいだに古い結果が後から届いても使わない
   const [shown, setShown] = useState<{ query: string; items: QueueItem[] } | null>(null);
@@ -137,24 +112,7 @@ export function SearchView() {
     ).then(
       (loaded) => {
         if (!current) return;
-        const byProducer = new Map(loaded);
-        const items = top.flatMap((s): QueueItem[] => {
-          const row = byProducer.get(s.producer.id)?.[s.nth];
-          if (!row) return [];
-          const [songId, videoId, niconicoThumb, vocalists] = row;
-          return [
-            {
-              songId,
-              title: s.name,
-              service: niconicoThumb ? 'niconico' : 'youtube',
-              videoId,
-              thumb: niconicoThumb ?? thumbOf(videoId),
-              producerId: s.producer.id,
-              producerName: s.producer.name,
-              vocalists,
-            },
-          ];
-        });
+        const items = detailsToItems(top, new Map(loaded));
         setShown({ query, items });
       },
       () => current && setFailed(true),

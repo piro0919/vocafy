@@ -1,5 +1,6 @@
-import type { SearchIndex } from '@/lib/catalog';
-import { normalize, normalizeRomaji } from '@/lib/search';
+import type { QueueItem, SearchDetails, SearchIndex } from '@/lib/catalog';
+import { normalize, normalizeRomaji, score } from '@/lib/search';
+import { thumbOf } from '@/lib/thumb';
 
 /** 検索の索引の1段目を、ブラウザで読んで探す形にする（src/lib/catalog.ts の searchIndex の説明） */
 
@@ -70,4 +71,61 @@ export function loadIndex(): Promise<Prepared> {
       throw error;
     }));
   return pending;
+}
+
+export type Found = {
+  producers: Prepared['producers'];
+  songs: Prepared['songs'];
+  voices: Prepared['voices'];
+};
+
+/**
+ * 正規化した言葉（normalize）で、1段目の索引からボカロP・曲・歌声を探す。ボカロPと歌声は当たりの強い順、同じなら曲の多い順。
+ * 曲は曲名（ローマ字の曲名も含む）で当たった曲を先に、ボカロP名だけで当たった曲を後にする。同じ当たり方の中は新しい順（索引の並び）
+ */
+export function findInIndex(index: Prepared, query: string): Found {
+  const producers = index.producers
+    .map((p) => ({ p, s: score(p.key, query) }))
+    .filter((x) => x.s > 0)
+    .toSorted((a, b) => b.s - a.s || b.p.songCount - a.p.songCount)
+    .map((x) => x.p);
+  const songs = index.songs
+    .map((s) => ({
+      s,
+      rank:
+        Math.max(score(s.title, query), score(s.romaji, query)) * 2 || score(s.producer.key, query),
+    }))
+    .filter((x) => x.rank > 0)
+    .toSorted((a, b) => b.rank - a.rank)
+    .map((x) => x.s);
+  const voices = index.voices
+    .map((v) => ({ v, s: score(v.key, query) }))
+    .filter((x) => x.s > 0)
+    .toSorted((a, b) => b.s - a.s || b.v.songCount - a.v.songCount)
+    .map((x) => x.v);
+  return { producers, songs, voices };
+}
+
+/** 当たった曲を、ボカロPごとの2段目（曲の id・動画の ID・表紙・歌声）と合わせて曲の並びにする。2段目に無い曲は落とす */
+export function detailsToItems(
+  songs: Prepared['songs'],
+  byProducer: Map<number, SearchDetails>,
+): QueueItem[] {
+  return songs.flatMap((s): QueueItem[] => {
+    const row = byProducer.get(s.producer.id)?.[s.nth];
+    if (!row) return [];
+    const [songId, videoId, niconicoThumb, vocalists] = row;
+    return [
+      {
+        songId,
+        title: s.name,
+        service: niconicoThumb ? 'niconico' : 'youtube',
+        videoId,
+        thumb: niconicoThumb ?? thumbOf(videoId),
+        producerId: s.producer.id,
+        producerName: s.producer.name,
+        vocalists,
+      },
+    ];
+  });
 }
