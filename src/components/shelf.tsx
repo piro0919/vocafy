@@ -1,18 +1,19 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { easeOut, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { Icon } from './icon';
 import { Heading, SECTION } from './heading';
-import { FADE } from './scroll-row';
+import { edgeMask, useScrollEdges } from './scroll-row';
 import { ARROW } from './button-styles';
 
 /**
- * 横に流す帯の送り方（年代の棚と、トップのきょうの日付の曲の列で使う）。帯の要素に track を付け、onScroll で update を呼ぶ。
+ * 横に流す帯の送り方（年代の棚と、トップのきょうの日付の曲の列で使う）。帯の要素に track を付ける。
+ * watch は帯があとから現れるとき、現れたときに変わる値（useScrollEdges）。
  * edge は端にいるか（矢印を押せなくする・端をぼかすのに使う）、page は矢印で1画面ぶん送る
  */
-export function useShelfScroll<T extends HTMLElement = HTMLDivElement>() {
+export function useShelfScroll<T extends HTMLElement = HTMLDivElement>(watch?: unknown) {
   const track = useRef<T>(null);
   const frame = useRef(0);
 
@@ -39,17 +40,8 @@ export function useShelfScroll<T extends HTMLElement = HTMLDivElement>() {
     frame.current = requestAnimationFrame(step);
   };
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
-  const [edge, setEdge] = useState({ start: true, end: false });
-
-  const update = () => {
-    const el = track.current;
-    if (!el) return;
-    setEdge({
-      start: el.scrollLeft <= 1,
-      end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 1,
-    });
-  };
-  useEffect(update, []);
+  // 測る前は、右に続きがあるものとしてぼかす
+  const edge = useScrollEdges(track, { start: true, end: false }, watch);
 
   /**
    * 1画面ぶん送る。送り先はカードの頭（吸い付く位置）にそろえる。幅の何割かで送ると、止まった位置が
@@ -81,7 +73,7 @@ export function useShelfScroll<T extends HTMLElement = HTMLDivElement>() {
     glide(el, Math.max(0, Math.min(max, target)));
   };
 
-  return { track, edge, update, page };
+  return { track, edge, page };
 }
 
 /** 帯を送る左右の矢印。パソコンの幅でだけ出す */
@@ -104,11 +96,6 @@ export function ShelfArrows({
   );
 }
 
-/** 帯の端のぼかし。続きのある側だけ */
-export function edgeMask(edge: { start: boolean; end: boolean }) {
-  return `linear-gradient(to right, transparent, black ${edge.start ? '0px' : FADE}, black calc(100% - ${edge.end ? '0px' : FADE}), transparent)`;
-}
-
 /**
  * 見出しの付いた、横に流せる棚。左右の矢印で1画面ぶん送る。
  * 年の札の帯（ScrollRow）と同じく、続きがある側の端だけをぼかす。パソコンでは本文の幅の中で流す。
@@ -124,7 +111,7 @@ export function Shelf({
   eyebrow?: string;
   children: ReactNode;
 }) {
-  const { track, edge, update, page } = useShelfScroll();
+  const { track, edge, page } = useShelfScroll();
 
   return (
     <section className={SECTION}>
@@ -136,7 +123,6 @@ export function Shelf({
       </div>
       <div
         ref={track}
-        onScroll={update}
         className="bleed-x flex snap-x gap-2 overflow-x-auto py-2 no-scrollbar md:mx-0 md:scroll-px-fade md:px-0"
         style={{ maskImage: edgeMask(edge) }}
       >

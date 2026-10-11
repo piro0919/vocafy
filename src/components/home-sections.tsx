@@ -9,7 +9,8 @@ import { Icon } from './icon';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
 import { usePreload } from './player/use-preload';
-import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
+import { ShelfArrows, useShelfScroll } from './shelf';
+import { edgeMask } from './scroll-row';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
 import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
@@ -43,7 +44,7 @@ export function OnThisDay({
   today: string;
 }) {
   const { current, playing } = usePlayer();
-  const { track, edge, update, page } = useShelfScroll<HTMLUListElement>();
+  const { track, edge, page } = useShelfScroll<HTMLUListElement>();
   const open = useOpenSong();
   // 大きな1曲がニコニコの曲なら、埋め込みを先に読み込んでおく（iPad・iPhone だけ。右の一覧の行は SongItem が読む）
   const heroButton = useRef<HTMLButtonElement>(null);
@@ -101,7 +102,6 @@ export function OnThisDay({
         {rest.length > 0 && (
           <ul
             ref={track}
-            onScroll={update}
             style={{ maskImage: edgeMask(edge) }}
             className="bleed-x grid auto-cols-day grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm lg:mx-0 lg:auto-cols-day-lg lg:grid-rows-7 lg:scroll-px-fade lg:px-0"
           >
@@ -141,13 +141,12 @@ export function MixWall({ songs }: { songs: DatedItem[] }) {
 /** いままでの壁。パソコンは6列×3段で止まったまま、パソコンより狭い幅は3段のまま列を横に送る（ほかの棚と同じ） */
 function StaticWall({ songs }: { songs: DatedItem[] }) {
   // ニコニコの曲の表紙が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
-  const { track: wall, edge, update } = useShelfScroll<HTMLDivElement>();
+  const { track: wall, edge } = useShelfScroll<HTMLDivElement>();
   usePreload(wall, songs);
   return (
     // 一度に見えるのは3〜4列と、次の列の端
     <div
       ref={wall}
-      onScroll={update}
       style={{ maskImage: edgeMask(edge) }}
       className="bleed-x grid auto-cols-mix grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto no-scrollbar snap-x sm:auto-cols-mix-sm sm:gap-2 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0"
     >

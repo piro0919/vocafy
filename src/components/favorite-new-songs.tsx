@@ -6,7 +6,8 @@ import { useFavoriteProducers } from '@/lib/favorites';
 import { useHistory } from '@/lib/history';
 import { Heading, SECTION } from './heading';
 import { SongItem, useOpenSong } from './song-list';
-import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
+import { ShelfArrows, useShelfScroll } from './shelf';
+import { edgeMask } from './scroll-row';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
 import { atLeast } from '@/lib/breakpoints';
 
@@ -39,7 +40,6 @@ const SHELF =
  */
 export function FavoriteNewSongs() {
   const { items: producers } = useFavoriteProducers();
-  const { track, edge, update, page } = useShelfScroll<HTMLUListElement>();
   const open = useOpenSong();
   const ids = producers.slice(0, PRODUCERS).map((p) => p.id);
   const key = ids.join(',');
@@ -82,6 +82,8 @@ export function FavoriteNewSongs() {
       ...fetched.filter((s) => heard.has(s.songId)),
     ];
   }, [fetched, history]);
+  // 棚は曲を読み終えてから出るので、出たところで端の見張りを始める
+  const { track, edge, page } = useShelfScroll<HTMLUListElement>(songs);
 
   // パソコンでは、列を棚の幅いっぱいに割り付ける。列の幅の上限（auto-cols-day-lg）で何列入るかを決め、その列数で
   // 棚の幅をちょうど割る。端が中途半端に切れる列を出さず、矢印でちょうど1画面ずつ送れる（2026-10-11 に本人と決めた）。
@@ -106,12 +108,13 @@ export function FavoriteNewSongs() {
         // 曲が少なく1列が広がりすぎるときは、上限の幅のまま左に寄せる（行が長いと曲名と右端のあいだが空く）
         if (width <= column * STRETCH_LIMIT) el.style.gridAutoColumns = `${width}px`;
       }
-      update();
+      // 列の幅を変えても帯の大きさは変わらず、端の見張り（useScrollEdges）の大きさの見張りでは拾えないので、測り直させる
+      el.dispatchEvent(new Event('scroll'));
     };
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
-    // track と update は描くたびに作り直されるが、中身は同じ
+    // track は描くたびに同じものが返る
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songs]);
   // お気に入りのボカロPがいない人、読み終えて曲が無かった人には出さない
@@ -130,7 +133,7 @@ export function FavoriteNewSongs() {
       {songs ? (
         // 2行に並べて横に送る（きょうの日付の曲と同じ形）。スマホで12曲を縦に並べると棚だけで画面1枚半になり、
         // 下のきょうの出会いがずっと下に押し出された（2026-10-11）
-        <ul ref={track} onScroll={update} style={{ maskImage: edgeMask(edge) }} className={SHELF}>
+        <ul ref={track} style={{ maskImage: edgeMask(edge) }} className={SHELF}>
           {songs.map((song, i) => (
             <li key={song.songId} className="min-w-0">
               <SongItem song={song} eager={i < EAGER_IMAGES} onOpen={() => open(song)} />
