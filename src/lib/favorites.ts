@@ -23,6 +23,13 @@ export function setSignedIn(value: boolean) {
   signedIn = value;
 }
 
+/**
+ * このタブで押した回数（足す・外す・並べ替え）。AccountSync が、アカウントの中身を取りに行っているあいだに押されたかを見る。
+ * 押されていたら、届いた中身（押す前のもの）で手元を置き換えない
+ */
+let edits = 0;
+export const favoriteEdits = () => edits;
+
 /** お気に入りに残すボカロP。札に出すものだけ */
 export type FavoriteProducer = {
   id: number;
@@ -48,6 +55,7 @@ function createStore<T>(
       const id = idOf(item);
       const on = !now.some((s) => idOf(s) === id);
       write(on ? [item, ...now] : now.filter((s) => idOf(s) !== id));
+      edits += 1;
       if (signedIn) {
         // 送れなくても手元は変わったまま。次に開いたときにアカウントの中身で置き換わる
         fetch('/api/favorites', {
@@ -81,6 +89,7 @@ export function moveFavoriteSong(from: number, to: number) {
   const next = moveItem(songs.read(), from, to, songs.idOf);
   if (!next) return;
   songs.write(next);
+  edits += 1;
   if (signedIn) {
     // 送れなくても手元は並べ替えたまま。次に開いたときにアカウントの並びに戻る
     fetch('/api/favorites', {

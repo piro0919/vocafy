@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { authClient, hasSignInHint, setSignInHint } from '@/lib/auth-client';
-import { localFavoriteIds, replaceFavorites, setSignedIn } from '@/lib/favorites';
+import { favoriteEdits, localFavoriteIds, replaceFavorites, setSignedIn } from '@/lib/favorites';
 
 /** その端末のお気に入りを、そのユーザーのアカウントに足し終えた印。ユーザーごとに1回だけ足す */
 const mergedKey = (userId: string) => `vocafy-favorites-merged-${userId}`;
@@ -29,6 +29,8 @@ export function AccountSync() {
         setSignedIn(false);
         return;
       }
+      // 取りに行っているあいだに押されたかを、届いたときに見る
+      const editsBefore = favoriteEdits();
       let merged = false;
       try {
         merged = localStorage.getItem(mergedKey(userId)) !== null;
@@ -43,7 +45,10 @@ export function AccountSync() {
             body: JSON.stringify(localFavoriteIds()),
           });
       if (cancelled || !res.ok) return;
-      replaceFavorites(await res.json());
+      const account = (await res.json()) as Parameters<typeof replaceFavorites>[0];
+      // 取りに行っているあいだにハートを押していたら、届いた中身は押す前のものなので、手元を置き換えない
+      // （置き換えると、押したハートが外れて見えた）。押した分はアカウントにも送ってあり、別の端末の分は次に開いたときに入る
+      if (favoriteEdits() === editsBefore) replaceFavorites(account);
       try {
         localStorage.setItem(mergedKey(userId), new Date().toISOString());
       } catch {
