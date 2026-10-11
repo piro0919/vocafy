@@ -5,10 +5,14 @@ import { toast } from 'sonner';
 import { ICON } from './button-styles';
 import { Icon, type IconName } from './icon';
 
+/** 共有の文に付けるハッシュタグ。ボカロPの名前は付けない（記号入りの名前でタグが切れ、追う人もいない） */
+const HASHTAG = 'Vocafy';
+
 /**
  * 共有のボタン（2026-10-11 に本人と決めた）。スマホなど指で操作する端末で共有の窓（Web Share API）が出せるときは、端末の窓を出す
  * （入っているアプリ全部に送れる）。パソコンでは、ボタンの下に送り先の板を開く。前はパソコンでは押すとリンクを写すだけだった。
  * 送り先は、ボカロの話題が集まる X と、移る人の増えている Bluesky、LINE、リンクをコピー。どれも投稿の下書きを開く住所で、鍵は要らない
+ * 文には #Vocafy を付ける（2026-10-11）。LINE とリンクをコピーは住所だけ
  */
 export function ShareMenu({ url, text, label }: { url: string; text: string; label: string }) {
   const [open, setOpen] = useState(false);
@@ -34,7 +38,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
   const onClick = async () => {
     if ('share' in navigator && matchMedia('(pointer: coarse)').matches) {
       // 窓を閉じただけでも失敗が返るので、何もしない
-      await navigator.share({ url }).catch(() => {});
+      await navigator.share({ text: `${text} #${HASHTAG}`, url }).catch(() => {});
       return;
     }
     setOpen((o) => !o);
@@ -42,11 +46,15 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
 
   const enc = encodeURIComponent;
   const targets: { name: string; icon: IconName; href: string }[] = [
-    { name: 'X', icon: 'x', href: `https://x.com/intent/post?text=${enc(text)}&url=${enc(url)}` },
+    {
+      name: 'X',
+      icon: 'x',
+      href: `https://x.com/intent/post?text=${enc(text)}&url=${enc(url)}&hashtags=${HASHTAG}`,
+    },
     {
       name: 'Bluesky',
       icon: 'bluesky',
-      href: `https://bsky.app/intent/compose?text=${enc(`${text} ${url}`)}`,
+      href: `https://bsky.app/intent/compose?text=${enc(`${text} #${HASHTAG} ${url}`)}`,
     },
     {
       name: 'LINE',
