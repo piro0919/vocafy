@@ -2,60 +2,66 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
-import type { findProducer } from '@/lib/catalog';
+import type { findProducer, Song } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
-import { COLORS } from '@/lib/colors';
+import { googleFont, OG_COLORS as T, OG_SHADOW, OG_SIZE, OgBackdrop } from '../../og-backdrop';
 
-export const OG_SIZE = { width: 1200, height: 630 };
+export { OG_SIZE };
 
 const icon = `data:image/png;base64,${await readFile(join(process.cwd(), 'src/app/icon.png'), 'base64')}`;
-const logoFont = await readFile(join(process.cwd(), 'src/assets/orbitron-900-og.ttf'));
+const logoMark = `data:image/png;base64,${await readFile(join(process.cwd(), 'public/logo-mark.png'), 'base64')}`;
 
 /**
- * Noto Sans JP の太字から、text の文字だけを Google Fonts で抜いて取る。ボカロPの名前はどんな字でも来るので、
- * 共通の絵（src/app/opengraph-image.tsx）のように抜いた字を手元に置いておけない。
- * User-Agent を付けずに聞くと、絵を作る仕組み（Satori）が読める TrueType で返る（woff2 は読めない）
+ * YouTube の表紙のうち、ある中で一番大きいもの。maxresdefault（1280×720）は古い動画に無く、無いと 404 が返る。
+ * sddefault・hqdefault は上下に黒い帯の付いた 4:3 なので、16:9 の枠に object-cover で収めて帯だけを切る（thumb.ts の smallThumbOf と同じ）
  */
-async function notoSansJp(text: string): Promise<ArrayBuffer> {
-  const css = await (
-    await fetch(
-      `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=${encodeURIComponent(text)}`,
-    )
-  ).text();
-  const url = css.match(/src: url\((.+?)\) format\('(?:truetype|opentype)'\)/)?.[1];
-  if (!url) throw new Error('Noto Sans JP を取れませんでした');
-  return (await fetch(url)).arrayBuffer();
+async function youtubeCover(videoId: string): Promise<string> {
+  for (const name of ['maxresdefault', 'sddefault']) {
+    const url = `https://i.ytimg.com/vi/${videoId}/${name}.jpg`;
+    if ((await fetch(url, { method: 'HEAD' })).ok) return url;
+  }
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 }
 
 /**
- * ボカロPの画面を共有したときの絵。左に本人の画像、右に名前と曲数。地と色は共通の絵と同じ。
+ * ボカロPの画面を共有したときの絵。左に本人の画像、右に名前と曲数。
  * song を渡すと（曲を共有したとき）、名前の代わりに曲名を大きく出し、その下にボカロPの名前を添える。
- * 動画の表紙は使わない（YouTube の規約で、表紙を別の絵に組み込むのは改変にあたるおそれがある）
+ * YouTube の曲は、左に顔の画像の代わりに動画の表紙を出す（2026-10-11 に本人と決めた）。表紙には何も重ねず、切らずに横に並べる
+ * （規約の III.I.4 が API で取れるものの改変を禁じていて、字を重ねる・ぼかすと当たると読める余地がある）。
+ * ニコニコだけの曲は顔の画像のまま。表紙の9割が 130×100 で、大きく出すとぼやける
  */
 export async function producerImage(
   found: Awaited<ReturnType<typeof findProducer>>,
-  song?: { title: string },
+  song?: Pick<Song, 'title' | 'youtubeId'>,
 ) {
   const name = found?.producer.name ?? 'Vocafy';
   const picture = found?.producer.picture ?? null;
   const count = `${formatCount(found?.songs.length ?? 0)}曲`;
-  const caption = 'の曲を、まとめて聴ける。';
   const big = song?.title ?? name;
-  const font = await notoSansJp(song ? `${big}${name}` : `${name}${count}${caption}`);
-  // 字の大きさ。右の欄は幅 680px ほど。曲名は名前より長いことが多いので、一段小さめに決める（9字の曲名が 84px だと最後の1字だけ次の行に落ちた）
-  const bigSize = song
+  const sub = song ? name : `${count}を、まとめて聴ける。`;
+  const eyebrow = song ? 'SONG' : 'PRODUCER';
+  const cover = song?.youtubeId ? await youtubeCover(song.youtubeId) : null;
+  const [display, body, tech] = await Promise.all([
+    googleFont('M PLUS Rounded 1c', 800, big),
+    googleFont('M PLUS Rounded 1c', 700, sub),
+    googleFont('Orbitron', 900, `${eyebrow}Vocafy`),
+  ]);
+  // 字の大きさ。右の欄は、顔の画像のときは幅 640px ほど、表紙のときは 570px ほど
+  const bigSize = cover
     ? big.length > 24
+      ? 46
+      : big.length > 14
+        ? 54
+        : big.length > 7
+          ? 64
+          : 84
+    : big.length > 24
       ? 52
       : big.length > 14
-        ? 60
-        : big.length > 7
-          ? 72
-          : 96
-    : big.length > 14
-      ? 64
-      : big.length > 8
-        ? 84
-        : 104;
+        ? 62
+        : big.length > 8
+          ? 76
+          : 96;
 
   return new ImageResponse(
     <div
@@ -63,50 +69,98 @@ export async function producerImage(
         width: '100%',
         height: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '64px 80px',
-        background: COLORS.iconBg,
-        color: COLORS.ink,
-        fontFamily: 'Noto Sans JP',
+        position: 'relative',
+        background: T.bg,
+        color: T.ink,
+        fontFamily: 'Rounded',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 56, flex: 1 }}>
-        {picture ? (
+      <OgBackdrop />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: cover ? 48 : 56,
+          padding: cover ? '0 72px' : '0 80px',
+          width: '100%',
+        }}
+      >
+        {cover ? (
           <img
-            src={picture}
+            src={cover}
+            width={432}
+            height={243}
+            alt=""
+            style={{
+              borderRadius: 16,
+              objectFit: 'cover',
+              boxShadow: OG_SHADOW,
+            }}
+          />
+        ) : (
+          <img
+            src={picture ?? icon}
             width={300}
             height={300}
             alt=""
-            style={{ borderRadius: 9999, objectFit: 'cover', border: `8px solid ${COLORS.miku}` }}
+            style={{
+              borderRadius: 9999,
+              objectFit: 'cover',
+              boxShadow: OG_SHADOW,
+            }}
           />
-        ) : (
-          <img src={icon} width={300} height={300} alt="" />
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', fontSize: bigSize, lineHeight: 1.15 }}>{big}</div>
-          {song ? (
-            <div style={{ display: 'flex', fontSize: 40, color: COLORS.accentLight }}>{name}</div>
-          ) : (
-            <div style={{ display: 'flex', fontSize: 34, color: COLORS.muted }}>
-              {caption}
-              <span style={{ marginLeft: 16, color: COLORS.accentLight }}>{count}</span>
-            </div>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: 'Orbitron',
+              fontSize: 24,
+              letterSpacing: 6,
+              color: T.accent,
+              marginBottom: 12,
+            }}
+          >
+            {eyebrow}
+          </div>
+          <div style={{ display: 'flex', fontSize: bigSize, lineHeight: 1.2, letterSpacing: -1 }}>
+            {big}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: 'RoundedBody',
+              fontSize: 36,
+              color: song ? T.accent : T.muted,
+              marginTop: 16,
+            }}
+          >
+            {sub}
+          </div>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, alignSelf: 'flex-end' }}>
-        <img src={icon} width={64} height={64} alt="" />
-        <div style={{ display: 'flex', fontFamily: 'Orbitron', fontWeight: 900, fontSize: 48 }}>
-          Voca<span style={{ color: COLORS.accentLight }}>fy</span>
+      <div
+        style={{
+          position: 'absolute',
+          right: 72,
+          bottom: 56,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+        }}
+      >
+        <img src={logoMark} width={67} height={56} alt="" style={{ objectFit: 'contain' }} />
+        <div style={{ display: 'flex', fontFamily: 'Orbitron', fontSize: 44, color: T.ink }}>
+          Voca<span style={{ color: T.accent }}>fy</span>
         </div>
       </div>
     </div>,
     {
       ...OG_SIZE,
       fonts: [
-        { name: 'Noto Sans JP', data: font, weight: 700 },
-        { name: 'Orbitron', data: logoFont, weight: 900 },
+        { name: 'Rounded', data: display, weight: 800 },
+        { name: 'RoundedBody', data: body, weight: 700 },
+        { name: 'Orbitron', data: tech, weight: 900 },
       ],
     },
   );

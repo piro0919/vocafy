@@ -21,5 +21,5 @@ export default async function OpengraphImage({
   const { id, songId } = await params;
   const found = await findProducer(Number(id));
   const song = found?.songs.find((s) => s.id === Number(songId));
-  return producerImage(found, song ? { title: song.title } : undefined);
+  return producerImage(found, song);
 }

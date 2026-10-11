@@ -37,6 +37,7 @@ const eslintConfig = defineConfig([
     ignores: [
       'src/lib/voice-art.ts',
       'src/app/opengraph-image.tsx',
+      'src/app/og-backdrop.tsx',
       'src/app/producers/\\[id\\]/og.tsx',
     ],
   }),

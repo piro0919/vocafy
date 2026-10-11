@@ -228,7 +228,7 @@ describe('見た目の決まり', () => {
     expect(
       offenders(
         (l) => /\b(width|height)=\{\d/.test(l) || /\bsizes="[^"]*\d+px/.test(l),
-        ['app/opengraph-image.tsx', 'app/producers/[id]/og.tsx'],
+        ['app/opengraph-image.tsx', 'app/og-backdrop.tsx', 'app/producers/[id]/og.tsx'],
       ),
     ).toEqual([]);
   });
