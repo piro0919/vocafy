@@ -5,6 +5,8 @@ import { createHash } from 'node:crypto';
 import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import { cache } from 'react';
 import { db } from './db';
+import { englishTitle, type EnglishTitle } from './english-name';
+import { loadEnglishProducerNames } from './producer-names';
 import { thumbOf } from './thumb';
 import { monthOf, today, yearOf } from './iso-date';
 
@@ -14,6 +16,8 @@ import { monthOf, today, yearOf } from './iso-date';
 export type QueueItem = {
   songId: number;
   title: string;
+  /** 英語の画面に出す曲名（english-name.ts）。無ければ英語の画面でも title */
+  en?: EnglishTitle;
   /** 流す先。YouTube が基本で、YouTube に本家が無い曲だけニコニコ（補欠） */
   service: 'youtube' | 'niconico';
   /** service の側の動画の ID（YouTube の動画の ID か、ニコニコの sm… / so…） */
@@ -30,6 +34,8 @@ export type QueueItem = {
 export type Song = {
   id: number;
   title: string;
+  /** 英語の画面に出す曲名（english-name.ts）。無ければ英語の画面でも title */
+  en?: EnglishTitle;
   youtubeId: string | null;
   niconicoId: string | null;
   niconicoThumb: string | null;
@@ -49,6 +55,8 @@ export type ProducerLinks = Partial<Record<'x' | 'youtube' | 'niconico' | 'websi
 type SongRow = {
   id: number;
   name: string;
+  name_en: string | null;
+  romaji: string | null;
   youtube_id: string | null;
   niconico_id: string | null;
   niconico_thumb: string | null;
@@ -75,7 +83,7 @@ const VOCALIST_NAMES = `
 
 /** 曲に、作者と歌声（補助の歌声は後ろ）を付けて読む。where と order は呼ぶ側が書く */
 const SONG_SELECT = `
-  select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb,
+  select s.id, s.name, s.name_en, s.romaji, s.youtube_id, s.niconico_id, s.niconico_thumb,
     extract(year from s.published_on)::int as year,
     to_char(s.published_on, 'YYYY-MM-DD') as published_on,
     (select coalesce(json_agg(json_build_object('id', p.id, 'name', p.name) order by p.complete desc, p.id), '[]')
@@ -83,9 +91,16 @@ const SONG_SELECT = `
     (select coalesce(json_agg(x.name order by x.support, x.id), '[]') from (${VOCALIST_NAMES}) x) as vocalists
   from song s`;
 
+/** 英語の画面に出す曲名を、あるときだけ足す（無い曲は鍵ごと持たず、渡す JSON を増やさない） */
+const withEnglish = (name: string, nameEn: string | null, romaji: string | null) => {
+  const en = englishTitle(name, nameEn, romaji);
+  return en ? { en } : {};
+};
+
 const toSong = (r: SongRow): Song => ({
   id: r.id,
   title: r.name,
+  ...withEnglish(r.name, r.name_en, r.romaji),
   youtubeId: r.youtube_id,
   niconicoId: r.niconico_id,
   niconicoThumb: r.niconico_thumb,
@@ -124,6 +139,7 @@ export function queueOf(songs: Song[], producer?: { id: number; name: string }):
           {
             songId: s.id,
             title: s.title,
+            ...(s.en ? { en: s.en } : {}),
             ...source,
             producerId: by.id,
             producerName: by.name,
@@ -206,6 +222,8 @@ const PLAYABLE = '(s.youtube_id is not null or s.niconico_thumb is not null)';
 type QueueRow = {
   id: number;
   name: string;
+  name_en: string | null;
+  romaji: string | null;
   youtube_id: string | null;
   niconico_id: string | null;
   niconico_thumb: string | null;
@@ -222,7 +240,7 @@ type QueueRow = {
  * （YouTube に本家があるか、ニコニコに本家があって表紙が取れている曲。PLAYABLE）
  */
 const QUEUE_SELECT = `
-  select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb,
+  select s.id, s.name, s.name_en, s.romaji, s.youtube_id, s.niconico_id, s.niconico_thumb,
     to_char(s.published_on, 'YYYY-MM-DD') as published_on, s.rating_score,
     p.id as producer_id, p.name as producer_name,
     (select coalesce(string_agg(x.name, '・' order by x.support, x.id), '') from (${VOCALIST_NAMES}) x) as vocalists
@@ -236,6 +254,7 @@ const QUEUE_SELECT = `
 const toItem = (r: QueueRow): DatedItem => ({
   songId: r.id,
   title: r.name,
+  ...withEnglish(r.name, r.name_en, r.romaji),
   // QUEUE_SELECT は流せる曲だけを読むので、流す先は必ず決まる
   ...sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb)!,
   producerId: r.producer_id,
@@ -606,10 +625,10 @@ export const playlistOfVoiceYear = cache(async (id: number, year: number): Promi
  * 曲は新しい順。曲の作者は、全曲を取り込んだ人を先にして1人だけ（QUEUE_SELECT と同じ）
  */
 export type SearchIndex = {
-  /** [id, 名前, 画像, 曲数] */
-  producers: [number, string, string | null, number][];
-  /** [曲名, producers の何番目か, 曲名のローマ字（無ければ null）] */
-  songs: [string, number, string | null][];
+  /** [id, 名前, 画像, 曲数, 英語の名前（無ければ null）] */
+  producers: [number, string, string | null, number, string | null][];
+  /** [曲名, producers の何番目か, 曲名のローマ字（無ければ null）, 英語の名前（無ければ null）] */
+  songs: [string, number, string | null, string | null][];
   /** [id, 名前, 曲数]。キャラごとにまとめた歌声（voices と同じ） */
   voices: [number, string, number][];
 };
@@ -621,6 +640,7 @@ type SearchRow = {
   id: number;
   name: string;
   romaji: string | null;
+  nameEn: string | null;
   producerId: number;
   videoId: string;
   niconicoThumb: string | null;
@@ -646,10 +666,11 @@ function querySearchRows(producerId?: number): Promise<SearchRow[]> {
       niconico_id: string | null;
       niconico_thumb: string | null;
       romaji: string | null;
+      name_en: string | null;
       producer_id: number;
       vocalists: string;
     }>(
-      `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, p.id as producer_id,
+      `select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb, s.romaji, s.name_en, p.id as producer_id,
          (select coalesce(string_agg(x.name, '・' order by x.support, x.id), '') from (${VOCALIST_NAMES}) x) as vocalists
        from song s
        join lateral (
@@ -669,6 +690,7 @@ function querySearchRows(producerId?: number): Promise<SearchRow[]> {
                 id: r.id,
                 name: r.name,
                 romaji: r.romaji,
+                nameEn: r.name_en,
                 producerId: r.producer_id,
                 videoId: source.videoId,
                 niconicoThumb: source.service === 'niconico' ? source.thumb : null,
@@ -681,13 +703,18 @@ function querySearchRows(producerId?: number): Promise<SearchRow[]> {
 }
 
 export const searchIndex = cache(async (): Promise<SearchIndex> => {
-  const [list, rows, voiceList] = await Promise.all([producers(), querySearchRows(), voices()]);
+  const [list, rows, voiceList, english] = await Promise.all([
+    producers(),
+    querySearchRows(),
+    voices(),
+    loadEnglishProducerNames(),
+  ]);
   const at = new Map(list.map((p, i) => [p.id, i]));
   return {
-    producers: list.map((p) => [p.id, p.name, p.picture, p.songCount]),
+    producers: list.map((p) => [p.id, p.name, p.picture, p.songCount, english[p.id] ?? null]),
     songs: rows.flatMap((r) => {
       const i = at.get(r.producerId);
-      return i === undefined ? [] : [[r.name, i, r.romaji]];
+      return i === undefined ? [] : [[r.name, i, r.romaji, r.nameEn]];
     }),
     voices: voiceList.map((v) => [v.id, v.name, v.songCount]),
   };

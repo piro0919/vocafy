@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName } from '@/components/display-names';
 import { CoverCard } from '@/components/cover-card';
 import type { Producer } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
@@ -36,6 +37,7 @@ export function VirtualProducerGrid({
 }) {
   const columns = useColumns(COLUMNS, COLUMNS_BASE);
   const terms = useText(TERMS);
+  const producerName = useProducerName();
 
   const { list, virtualizer } = useWindowList({
     rows: Math.ceil(producers.length / columns),
@@ -65,7 +67,7 @@ export function VirtualProducerGrid({
               playing={{ producerId: p.id }}
               cover={p.picture}
               round
-              title={p.name}
+              title={producerName(p.id, p.name)}
               sub={terms.songs(formatCount(p.songCount))}
               eager={row.index * columns + c < EAGER_IMAGES}
             />

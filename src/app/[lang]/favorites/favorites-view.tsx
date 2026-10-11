@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName } from '@/components/display-names';
 import type { ReactNode } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { PRIMARY } from '@/components/button-styles';
@@ -47,6 +48,7 @@ export function FavoritesView() {
   useRefreshFavorites();
   const t = useText(TEXT);
   const terms = useText(TERMS);
+  const producerName = useProducerName();
 
   if (songs.length + producers.length === 0) {
     return (
@@ -105,7 +107,7 @@ export function FavoritesView() {
                 playing={{ producerId: p.id }}
                 cover={p.picture}
                 round
-                title={p.name}
+                title={producerName(p.id, p.name)}
                 eager={i < EAGER_IMAGES}
               />
             ))}

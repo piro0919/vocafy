@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalize, normalizeRomaji, score } from '@/lib/search';
+import { foldLong, normalize, normalizeRomaji, score } from '@/lib/search';
 
 describe('normalize', () => {
   it('カタカナとひらがなを区別しない', () => {
@@ -30,5 +30,13 @@ describe('normalizeRomaji', () => {
   it('長音の記号と空白を外し、記号なしで打っても当たるようにする', () => {
     expect(normalizeRomaji('Roshin Yūkai')).toBe('roshinyukai');
     expect(score(normalizeRomaji('Senbonzakura'), normalize('senbon'))).toBe(2);
+  });
+});
+
+describe('foldLong', () => {
+  it('伸ばす音の書き方の揺れをならす', () => {
+    const forms = ['Shoushitsu', 'Shoshitsu', 'Shōshitsu', 'Shooshitsu'].map(normalizeRomaji);
+    expect(new Set(forms).size).toBe(1);
+    expect(foldLong(normalize('Roshin Yuukai'))).toBe(normalizeRomaji('Roshin Yūkai'));
   });
 });

@@ -226,6 +226,20 @@ export async function artist(id: number): Promise<VdbArtist> {
   return get<VdbArtist>(`/artists/${id}`, { fields: 'MainPicture,WebLinks', lang: 'Japanese' });
 }
 
+/**
+ * ボカロPのほかの言語の名前（English・Romaji など）。英語の画面に出す名前を選ぶ（scripts/lib/song-names.ts の fillEnglishProducerNames）。
+ * artist と別に聞くのは、artist の問い合わせを変えると、残してある全員分の控えが使えず聞き直しになるため
+ */
+export async function artistNames(id: number): Promise<{ language: string; value: string }[]> {
+  return (
+    (
+      await get<{ names?: { language: string; value: string }[] }>(`/artists/${id}`, {
+        fields: 'Names',
+      })
+    ).names ?? []
+  );
+}
+
 type VdbVoicebank = Pick<VdbArtist, 'id' | 'name' | 'artistType'> & {
   baseVoicebank?: Pick<VdbArtist, 'id' | 'name' | 'artistType'>;
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { useSongTitle } from '@/components/display-names';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -223,6 +224,7 @@ function SleepButton({ className }: { className: string }) {
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
   const { owner, startRadio, stopRadio, holdSlot } = usePlayer();
   const t = useText(TEXT);
+  const title = useSongTitle()(song).main;
   const router = useRouter();
   const pathname = usePathname();
   const on = owner.kind === 'radio';
@@ -242,10 +244,10 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
   return (
     <button
       type="button"
-      aria-label={on ? t.radioOff : t.radioFrom(song.title)}
+      aria-label={on ? t.radioOff : t.radioFrom(title)}
       aria-pressed={on}
       aria-keyshortcuts="A"
-      title={on ? t.radioOff : t.radioFrom(song.title)}
+      title={on ? t.radioOff : t.radioFrom(title)}
       onClick={toggle}
       className={`${className} relative ${ICON} ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >

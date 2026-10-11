@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName } from '@/components/display-names';
 import { Link } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { usePathname, useRouter } from '@/i18n/navigation';
@@ -95,6 +96,7 @@ export function SearchView() {
   const recent = useRecentSearches();
   const t = useText(TEXT);
   const terms = useText(TERMS);
+  const producerName = useProducerName();
   const voices = useVoiceNames();
   const query = normalize(text);
   const found = useMemo(() => (index && query ? findInIndex(index, query) : null), [index, query]);
@@ -204,7 +206,7 @@ export function SearchView() {
                   ) : (
                     <span className="size-8 rounded-full bg-surface" />
                   )}
-                  {p.name}
+                  {producerName(p.id, p.name)}
                   <span className="text-xs font-normal text-muted">
                     {terms.songs(formatCount(p.songCount))}
                   </span>

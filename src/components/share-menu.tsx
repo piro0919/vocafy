@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName, useSongTitle } from '@/components/display-names';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { toast } from 'sonner';
@@ -228,11 +229,13 @@ export function SongShare({ song }: { song: QueueItem | null }) {
   const origin = useClientValue(() => window.location.origin, '');
   const to = useLocalize();
   const t = useText(TEXT);
+  const songTitle = useSongTitle();
+  const producerName = useProducerName();
   if (!song) return null;
   return (
     <ShareMenu
       url={`${origin}${to(`/producers/${song.producerId}/songs/${song.songId}`)}`}
-      text={`${song.title} - ${song.producerName}`}
+      text={`${songTitle(song).main} - ${producerName(song.producerId, song.producerName)}`}
       label={t.shareSong}
     />
   );

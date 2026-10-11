@@ -1,5 +1,6 @@
 'use client';
 
+import { useSongTitle } from '@/components/display-names';
 import { useRouter } from '@/i18n/navigation';
 import {
   type ComponentProps,
@@ -48,6 +49,7 @@ export function PlayerStage({
 }) {
   const { setSlot, holdingSlot, resumable, resume, current } = usePlayer();
   const t = useText(RESUME_TEXT);
+  const songTitle = useSongTitle();
   const slot = useRef<HTMLDivElement>(null);
   // 画面を移るあいだ（holdSlot）は、動画を出していた置き場所は、この画面の持ち主でなくなっても出し続ける
   const [wasOn, setWasOn] = useState(active);
@@ -93,7 +95,7 @@ export function PlayerStage({
             {resumable && current && (
               <CoverPlayButton
                 cover={current.thumb}
-                label={t.resume(current.title)}
+                label={t.resume(songTitle(current).main)}
                 onClick={resume}
                 sizes={RESPONSIVE_SIZES.stage}
                 eager

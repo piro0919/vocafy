@@ -73,6 +73,18 @@ describe('catalogRows（DB に書く行）', () => {
     expect(rows().songs[0]?.romaji).toBeNull();
   });
 
+  it('英語の名前も、曲名と違うときだけ持つ。出し直しの版は元の曲の番号を持つ', () => {
+    const song = vdb({
+      names: [{ language: 'English', value: 'Ghost Rule' }],
+      originalVersionId: 7,
+    });
+    expect(rows({ kept: [song] }).songs[0]).toMatchObject({
+      name_en: 'Ghost Rule',
+      original_id: 7,
+    });
+    expect(rows().songs[0]).toMatchObject({ name_en: null, original_id: null });
+  });
+
   it('投稿日は日付だけにする', () => {
     expect(rows().songs[0]?.published_on).toBe('2016-01-08');
   });
@@ -118,6 +130,35 @@ describe('writeCatalog（DB に書く）', () => {
     });
     await write(rows({ kept: [solo] }));
     expect(await query('select producer_id from song_producer')).toEqual([{ producer_id: 45 }]);
+  });
+
+  it('名前の無い出し直しの版は、元の曲の英語の名前とローマ字に、版の曲名の残りを足して借りる', async () => {
+    const original = vdb({
+      id: 1,
+      name: '千本桜',
+      names: [
+        { language: 'Romaji', value: 'Senbonzakura' },
+        { language: 'English', value: 'A Thousand Cherry Blossoms' },
+      ],
+    });
+    const version = vdb({ id: 2, name: '千本桜 -Hello ver.-', originalVersionId: 1 });
+    const other = vdb({ id: 3, name: '別の曲名', originalVersionId: 1 });
+    const source = { youtubeId: 'yt', niconicoId: null, niconicoThumb: null };
+    await write(
+      rows({
+        kept: [original, version, other],
+        sources: new Map([1, 2, 3].map((id) => [id, source])),
+      }),
+    );
+    expect(await query('select id, romaji, name_en from song where id > 1 order by id')).toEqual([
+      {
+        id: 2,
+        romaji: 'Senbonzakura -Hello ver.-',
+        name_en: 'A Thousand Cherry Blossoms -Hello ver.-',
+      },
+      // 元の曲名で始まらない版は借りない
+      { id: 3, romaji: null, name_en: null },
+    ]);
   });
 
   it('流せないと分かった曲は消す', async () => {

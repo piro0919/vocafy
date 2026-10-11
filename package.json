@@ -18,6 +18,7 @@
     "knip": "knip",
     "test:e2e": "playwright test",
     "voice-themes": "tsx scripts/voice-themes.ts",
+    "song-names": "tsx --env-file-if-exists=.env.local scripts/song-names.ts",
     "voice-names": "tsx --env-file-if-exists=.env.local scripts/voice-names.ts",
     "silhouettes": "tsx scripts/silhouettes.ts",
     "lighthouse": "pnpm build && lhci autorun",

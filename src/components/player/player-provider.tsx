@@ -1,5 +1,6 @@
 'use client';
 
+import { useSongTitle } from '@/components/display-names';
 import {
   createContext,
   type ReactNode,
@@ -122,6 +123,7 @@ function mockNiconicoBlocked(): boolean {
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const t = useText(TEXT);
+  const songTitle = useSongTitle();
   const resumeText = useText(RESUME_TEXT);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [index, setIndex] = useState(0);
@@ -220,9 +222,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setSkipsNiconico(true);
       if (skipNoticed.current || !item) return;
       skipNoticed.current = true;
-      toast(t.skipped(item.title));
+      toast(t.skipped(songTitle(item).main));
     },
-    [t],
+    [t, songTitle],
   );
 
   /** 自動で進んだ先のニコニコの曲を飛ばして、次の曲へ自動で進む */
@@ -783,7 +785,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         {resumable && mode === 'dock' && current && (
           <CoverPlayButton
             cover={current.thumb}
-            label={resumeText.resume(current.title)}
+            label={resumeText.resume(songTitle(current).main)}
             onClick={resume}
             sizes={`${IMAGE_SIZES.dockWide}px`}
             small

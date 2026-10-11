@@ -1,5 +1,11 @@
 'use client';
 
+import {
+  SongTitleText,
+  titleLine,
+  useProducerName,
+  useSongTitle,
+} from '@/components/display-names';
 import { Link } from '@/i18n/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { type PointerEvent, useEffect, useRef } from 'react';
@@ -79,6 +85,8 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
   const t = useText(TEXT);
   const terms = useText(TERMS);
   const voices = useVoiceNames();
+  const producerName = useProducerName();
+  const songTitle = useSongTitle();
 
   return (
     <div
@@ -125,18 +133,24 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
               className="hidden aspect-video rounded object-cover sm:block"
             />
             <div className="min-w-0">
-              <Marquee className="text-sm font-bold">{item.title}</Marquee>
+              <Marquee className="text-sm font-bold" text={titleLine(songTitle(item))}>
+                <SongTitleText song={item} />
+              </Marquee>
               {/* ボカロP名と歌声。スマホは帯が狭く、前はボカロP名だけにしていたが、収まらなければ流すので歌声も出す（2026-10-12） */}
               <Marquee
                 className="text-xs text-muted"
-                text={loading ? '' : `${item.producerName}・${voices.text(item.vocalists)}`}
+                text={
+                  loading
+                    ? ''
+                    : `${producerName(item.producerId, item.producerName)}・${voices.text(item.vocalists)}`
+                }
               >
                 {loading ? (
                   t.loading
                 ) : (
                   <>
                     <Link href={`/producers/${item.producerId}`} className="hover:text-foreground">
-                      {item.producerName}
+                      {producerName(item.producerId, item.producerName)}
                     </Link>
                     {item.vocalists && ` ・ ${voices.text(item.vocalists)}`}
                   </>

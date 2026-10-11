@@ -1,5 +1,6 @@
 'use client';
 
+import { useSongTitle } from '@/components/display-names';
 import {
   closestCenter,
   DndContext,
@@ -72,7 +73,11 @@ export function SortableSongList({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const t = useText(TEXT);
-  const titleOf = (id: string | number) => songs.find((s) => s.songId === id)?.title ?? '';
+  const songTitle = useSongTitle();
+  const titleOf = (id: string | number) => {
+    const song = songs.find((s) => s.songId === id);
+    return song ? songTitle(song).main : '';
+  };
   const placeOf = (id: string | number) => songs.findIndex((s) => s.songId === id) + 1;
   const announcements: Announcements = {
     onDragStart: ({ active }) => t.picked(titleOf(active.id), placeOf(active.id)),
@@ -140,6 +145,7 @@ function SortableSong({
     transition: { duration: MOTION.move, easing: EASE_OUT },
   });
   const t = useText(TEXT);
+  const songTitle = useSongTitle();
   // dnd-kit は受け口を Function の表で返すので、置き場所ごとに1つずつ取り出す
   const on = (name: 'onMouseDown' | 'onTouchStart' | 'onKeyDown') =>
     listeners?.[name] as ((event: SyntheticEvent) => void) | undefined;
@@ -166,7 +172,7 @@ function SortableSong({
             {...attributes}
             onTouchStart={on('onTouchStart')}
             onKeyDown={on('onKeyDown')}
-            aria-label={t.reorder(song.title)}
+            aria-label={t.reorder(songTitle(song).main)}
             className={`grid ${ICON_SM} touch-none text-muted hover:text-foreground ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           >
             <Icon name="grip" className="size-5" />

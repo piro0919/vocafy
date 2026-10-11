@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName, useSongTitle } from '@/components/display-names';
 import { useEffect, useRef } from 'react';
 import { usePlayer } from './player-provider';
 
@@ -13,7 +14,12 @@ export function SongTitle() {
   // その画面の題名（Next.js が付けたもの）と、こちらが付けた題名
   const page = useRef<string | null>(null);
   const ours = useRef<string | null>(null);
-  const wanted = current && playing ? `${current.title} - ${current.producerName} | Vocafy` : null;
+  const songTitle = useSongTitle();
+  const producerName = useProducerName();
+  const wanted =
+    current && playing
+      ? `${songTitle(current).main} - ${producerName(current.producerId, current.producerName)} | Vocafy`
+      : null;
   const wantedRef = useRef(wanted);
 
   useEffect(() => {

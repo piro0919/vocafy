@@ -1,3 +1,4 @@
+import { displayTitle } from '@/lib/english-name';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { RadioPlayer } from '@/components/radio-player';
@@ -19,7 +20,8 @@ export async function generateMetadata({
   if (!Number.isSafeInteger(Number(id))) notFound();
   const [seed] = await songsByIds([Number(id)]);
   if (!seed) notFound();
-  return { title: TERMS[await langOf(params)].radioOf(seed.title), robots: { index: false } };
+  const lang = await langOf(params);
+  return { title: TERMS[lang].radioOf(displayTitle(seed, lang).main), robots: { index: false } };
 }
 
 /**
@@ -33,10 +35,14 @@ export default async function RadioPage({ params }: PageProps<'/[lang]/radio/[id
   if (!Number.isSafeInteger(id)) notFound();
   const [seed] = await songsByIds([id]);
   if (!seed) notFound();
-  const t = TERMS[await langOf(params)];
+  const lang = await langOf(params);
   return (
     <div className="pt-content-top">
-      <RadioPlayer seed={seed} eyebrow="Radio" title={t.radioOf(seed.title)} />
+      <RadioPlayer
+        seed={seed}
+        eyebrow="Radio"
+        title={TERMS[lang].radioOf(displayTitle(seed, lang).main)}
+      />
     </div>
   );
 }

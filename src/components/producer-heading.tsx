@@ -17,6 +17,7 @@ import { IMAGE_SIZES } from '@/lib/image-sizes';
 export function ProducerHeading({
   id,
   name,
+  shown = name,
   picture,
   links,
   as = 'h1',
@@ -24,7 +25,10 @@ export function ProducerHeading({
   onFollow,
 }: {
   id: number;
+  /** 台帳の名前。お気に入りに残す */
   name: string;
+  /** 画面に出す名前。英語の画面では英語の名前（producer-name.ts）。無ければ name */
+  shown?: string;
   /** null は画像の無い人、undefined は取りに行っている途中 */
   picture: string | null | undefined;
   /** undefined は取りに行っている途中 */
@@ -49,7 +53,7 @@ export function ProducerHeading({
   // スマホでは、動画の下に名前とボタンを詰めて置くので、ほかの画面の題名より小さくする
   const title = (
     <Heading as={as} size="page" className="max-sm:text-2xl">
-      {name}
+      {shown}
     </Heading>
   );
   const hover = 'transition-opacity duration-react hover:opacity-hover';
@@ -60,7 +64,7 @@ export function ProducerHeading({
           <Link
             href={`/producers/${id}`}
             onClick={onFollow}
-            aria-label={name}
+            aria-label={shown}
             className={`shrink-0 ${hover}`}
           >
             {icon}
@@ -84,7 +88,7 @@ export function ProducerHeading({
         {links === undefined ? (
           <div className="h-9" />
         ) : (
-          <ProducerLinks name={name} links={links} />
+          <ProducerLinks name={shown} links={links} />
         )}
       </div>
     </div>

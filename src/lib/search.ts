@@ -18,7 +18,20 @@ export function normalize(text: string): string {
  * かなの曲名には使わない（濁点まで外れてしまうため）
  */
 export function normalizeRomaji(text: string): string {
-  return normalize(text.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''));
+  return foldLong(normalize(text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')));
+}
+
+/**
+ * ローマ字の伸ばす音の書き方の揺れをならす（2026-10-12）。Shoushitsu・Shoshitsu・Shōshitsu を同じにする。
+ * 探す言葉にも同じことをしてから比べる（findInIndex）。英語の名前にもかけるが、両側に同じことをするので当たり方は変わらない
+ */
+export function foldLong(text: string): string {
+  return text
+    .replace(/ou|oo/g, 'o')
+    .replace(/uu/g, 'u')
+    .replace(/aa/g, 'a')
+    .replace(/ii/g, 'i')
+    .replace(/ee/g, 'e');
 }
 
 /**

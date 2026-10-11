@@ -1,5 +1,6 @@
 'use client';
 
+import { SongTitleText, useProducerName } from '@/components/display-names';
 import { Link, useText } from '@/i18n/navigation';
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
@@ -59,6 +60,7 @@ export function DockStrip({
 }) {
   const t = useText(TEXT);
   const voices = useVoiceNames();
+  const producerName = useProducerName();
   const strip = useRef<HTMLDivElement>(null);
   // 引いたあとの「押した」を、帯の行き先へのリンクに渡さない
   const dragged = useRef(false);
@@ -173,9 +175,11 @@ export function DockStrip({
             className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
           >
             <span className="min-w-0 flex-1 truncate">
-              <span className="font-bold text-foreground">{shown.title}</span>
+              <span className="font-bold text-foreground">
+                <SongTitleText song={shown} />
+              </span>
               {' ・ '}
-              {shown.producerName}
+              {producerName(shown.producerId, shown.producerName)}
               {/* 下の再生の帯と同じく、スマホ（帯が 200px）ではボカロPだけにする */}
               {shown.vocalists && (
                 <span className="max-md:hidden">{` ・ ${voices.text(shown.vocalists)}`}</span>

@@ -2,6 +2,7 @@ import type pg from 'pg';
 import type { ProducerLinks } from '../../src/lib/catalog';
 import type { Source } from './dead';
 import { producersOf, vocalistsOf } from './pick';
+import { borrowVersionNames, nameIn } from './song-names';
 import type { VdbSong } from './vocadb';
 
 /** DB に書く行。表ごとにまとめ、1回ずつで書く */
@@ -25,17 +26,14 @@ export type CatalogRows = {
     seed: boolean;
     niconico_thumb: string | null;
     romaji: string | null;
+    name_en: string | null;
+    original_id: number | null;
   }[];
   songProducers: { song_id: number; producer_id: number }[];
   songVocalists: { song_id: number; vocalist_id: number; support: boolean }[];
   /** 前の取り込みで入ったが、今回は流せないと分かった曲。消す */
   dropped: number[];
 };
-
-/** VocaDB の Romaji の名前。無ければ undefined */
-function romajiOf(song: VdbSong): string | undefined {
-  return song.names?.find((n) => n.language === 'Romaji')?.value;
-}
 
 /**
  * 集めた曲から、DB に書く行を作る。合作の相手も作者として表に入る（complete は全曲を取ったボカロPだけ）。
@@ -85,7 +83,6 @@ export function catalogRows({
     })),
     songs: kept.map((s) => {
       const source = sources.get(s.id)!;
-      const romaji = romajiOf(s);
       return {
         id: s.id,
         name: s.name,
@@ -96,8 +93,10 @@ export function catalogRows({
         niconico_id: source.niconicoId,
         seed: seedIds.has(s.id),
         niconico_thumb: source.niconicoThumb,
-        // 検索でローマ字でも引けるよう残す。曲名と同じなら（英語の曲名など）持たない
-        romaji: romaji === s.name ? null : (romaji ?? null),
+        // 英語の画面に出し、検索でも引けるよう残す。曲名と同じなら（英語の曲名など）持たない
+        romaji: nameIn(s, 'Romaji'),
+        name_en: nameIn(s, 'English'),
+        original_id: s.originalVersionId ?? null,
       };
     }),
     songProducers: kept.flatMap((s) =>
@@ -136,12 +135,14 @@ export async function writeCatalog(client: pg.ClientBase, rows: CatalogRows) {
       [JSON.stringify(rows.vocalists)],
     );
     await client.query(
-      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, niconico_thumb, romaji)
+      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, niconico_thumb,
+         romaji, name_en, original_id)
        select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
          rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean,
-         niconico_thumb text, romaji text)
+         niconico_thumb text, romaji text, name_en text, original_id integer)
        on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
-         niconico_thumb = excluded.niconico_thumb, romaji = excluded.romaji,
+         niconico_thumb = excluded.niconico_thumb, romaji = excluded.romaji, name_en = excluded.name_en,
+         original_id = excluded.original_id,
          rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
          youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
          seed = song.seed or excluded.seed, imported_at = now()`,
@@ -164,6 +165,7 @@ export async function writeCatalog(client: pg.ClientBase, rows: CatalogRows) {
        order by song_id, vocalist_id, support`,
       [JSON.stringify(rows.songVocalists)],
     );
+    await borrowVersionNames(client);
     await client.query('commit');
   } catch (error) {
     await client.query('rollback');

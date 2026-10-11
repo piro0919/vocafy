@@ -1,4 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- 共有の絵を作る仕組み（next/og）は <img> しか読まない。opengraph-image.tsx の中なら注意は出ないが、ここは共用の関数なので明示する */
+import { displayTitle } from '@/lib/english-name';
+import { producerName } from '@/lib/producer-name';
+import { producerNamesFor } from '@/lib/producer-names';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
@@ -102,11 +105,14 @@ async function niconicoCover(thumb: string): Promise<string | null> {
 export async function producerImage(
   lang: Lang,
   found: Awaited<ReturnType<typeof findProducer>>,
-  song?: Pick<Song, 'title' | 'youtubeId' | 'niconicoThumb' | 'vocalists'>,
+  song?: Pick<Song, 'title' | 'en' | 'youtubeId' | 'niconicoThumb' | 'vocalists'>,
 ) {
-  const name = found?.producer.name ?? 'Vocafy';
+  // 英語の画面の絵は、英語の名前（producer-name.ts・english-name.ts）
+  const name = found
+    ? producerName(found.producer.id, found.producer.name, await producerNamesFor(lang))
+    : 'Vocafy';
   const picture = found?.producer.picture ?? null;
-  const big = song?.title ?? name;
+  const big = song ? displayTitle(song, lang).main : name;
   const sub = song ? name : TEXT[lang].listen(formatCount(found?.songs.length ?? 0));
   const eyebrow = song ? 'SONG' : 'PRODUCER';
   // 表紙・影絵・フォントは互いに待たないので、まとめて取りに行く（前は表紙と影絵を読み終えてからフォントを取っていた）

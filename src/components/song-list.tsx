@@ -17,6 +17,12 @@ import { Icon } from './icon';
 import { ICON_SM } from './button-styles';
 import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
 import { useVoiceNames } from '@/components/voice-names';
+import {
+  SongTitleText,
+  titleLine,
+  useProducerName,
+  useSongTitle,
+} from '@/components/display-names';
 
 /** 棚で縦に詰める行の数 */
 const SHELF_ROWS = 4;
@@ -90,6 +96,8 @@ export function SongItem({
   const active = current?.songId === song.songId;
   const row = useRef<HTMLDivElement>(null);
   const voices = useVoiceNames();
+  const producerName = useProducerName();
+  const title = useSongTitle()(song);
   // ニコニコの曲は、行が見えているあいだ埋め込みを先に読み込んでおく（iPad・iPhone だけ）
   usePreload(row, song.videoId);
   return (
@@ -113,11 +121,13 @@ export function SongItem({
         />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-sm font-bold">
-            <Marquee active={active}>{song.title}</Marquee>
+            <Marquee active={active} text={titleLine(title)}>
+              <SongTitleText song={song} />
+            </Marquee>
             {active && <Bars playing={playing} />}
           </span>
           <span className="block truncate text-xs text-muted">
-            {song.producerName}
+            {producerName(song.producerId, song.producerName)}
             {song.vocalists && ` ・ ${voices.text(song.vocalists)}`}
           </span>
         </span>

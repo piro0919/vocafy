@@ -1,3 +1,6 @@
+import { langOf } from '@/i18n/config';
+import { producerName } from '@/lib/producer-name';
+import { producerNamesFor } from '@/lib/producer-names';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { findProducer } from '@/lib/catalog';
@@ -16,11 +19,12 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/producers/[id]'>): Promise<Metadata> {
   const found = await findProducer(Number((await params).id));
   if (!found) notFound();
-  return { title: found.producer.name };
+  const names = await producerNamesFor(await langOf(params));
+  return { title: producerName(found.producer.id, found.producer.name, names) };
 }
 
 export default async function ProducerPage({ params }: PageProps<'/[lang]/producers/[id]'>) {
   const found = await findProducer(Number((await params).id));
   if (!found) notFound();
-  return <ProducerView found={found} />;
+  return <ProducerView found={found} lang={await langOf(params)} />;
 }

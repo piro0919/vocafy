@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName, useSongTitle } from '@/components/display-names';
 import type { QueueItem } from '@/lib/catalog';
 import { type FavoriteProducer, useFavoriteProducers, useFavorites } from '@/lib/favorites';
 import { type CSSProperties, useState } from 'react';
@@ -106,6 +107,7 @@ export function FavoriteButton({
   const { has, toggle } = useFavorites();
   const on = has(song.songId);
   const t = useText(TEXT);
+  const title = useSongTitle()(song).main;
   const [beat, setBeat] = useState(0);
   const shown =
     quiet && !on
@@ -114,7 +116,7 @@ export function FavoriteButton({
   return (
     <button
       type="button"
-      aria-label={on ? t.remove(song.title) : t.add(song.title)}
+      aria-label={on ? t.remove(title) : t.add(title)}
       aria-pressed={on}
       aria-keyshortcuts={keyshortcuts}
       onClick={(e) => {
@@ -134,11 +136,12 @@ export function FavoriteProducerButton({ producer }: { producer: FavoriteProduce
   const { has, toggle } = useFavoriteProducers();
   const on = has(producer.id);
   const t = useText(TEXT);
+  const name = useProducerName()(producer.id, producer.name);
   const [beat, setBeat] = useState(0);
   return (
     <button
       type="button"
-      aria-label={on ? t.remove(producer.name) : t.add(producer.name)}
+      aria-label={on ? t.remove(name) : t.add(name)}
       aria-pressed={on}
       onClick={() => {
         toggle(producer);

@@ -27,6 +27,7 @@ import {
   type VdbSong,
 } from './lib/vocadb';
 import { deadYouTube, viewCounts } from './lib/youtube';
+import { fillEnglishProducerNames } from './lib/song-names';
 import { fillEnglishVoiceNames } from './lib/voice-names';
 
 /**
@@ -384,6 +385,8 @@ async function main() {
     console.log('DB に書きました');
     // 新しく入った歌声の英語の名前（英語の画面で出す）。毎週の取り込みのあとの配備で画面に出る
     console.log(`歌声の英語の名前を ${await fillEnglishVoiceNames(client)} 件入れました`);
+    // 新しく入ったボカロPの英語の名前（英語の画面で出す）
+    console.log(`ボカロPの英語の名前を ${await fillEnglishProducerNames(client)} 件入れました`);
   } finally {
     client.release();
   }

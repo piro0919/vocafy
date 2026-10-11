@@ -1,5 +1,6 @@
 'use client';
 
+import { useSongTitle } from '@/components/display-names';
 import { useMemo } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { StagePlayButton } from './player-stage';
@@ -48,6 +49,7 @@ export function ListPlayer({
 }) {
   const { current, playing, playAll, toggle } = usePlayer();
   const t = useText(TEXT);
+  const songTitle = useSongTitle();
   // 流している曲がこの一覧にあれば、開いたときに並びをこの一覧にする（use-take-over.ts。どの画面も同じ決まり）。
   // 流すのは songs だけ（多くても PICKUP_SIZE 曲で、1ページに収まる）
   const owner = useMemo(() => ({ kind: 'list' as const, source }), [source]);
@@ -71,7 +73,7 @@ export function ListPlayer({
     <StageLayout
       song={here ? current : null}
       cover={linkedItem?.thumb ?? songs[0]?.thumb ?? null}
-      label={linkedItem ? t.playFrom(linkedItem.title) : t.playList}
+      label={linkedItem ? t.playFrom(songTitle(linkedItem).main) : t.playList}
       onPlay={start}
       heading={<StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />}
       play={

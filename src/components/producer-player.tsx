@@ -1,5 +1,6 @@
 'use client';
 
+import { SongTitleText, titleLine, useSongTitle } from '@/components/display-names';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
@@ -81,6 +82,7 @@ export function ProducerPlayer({
   const dateLabel = (iso: string) =>
     terms.date(yearOf(iso), Number(monthOf(iso)), Number(dayOf(iso)));
   const voices = useVoiceNames();
+  const songTitle = useSongTitle();
   const to = useLocalize();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
   // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の一覧に
@@ -140,7 +142,7 @@ export function ProducerPlayer({
   const share = (
     <ShareMenu
       url={`${origin}${to(`/producers/${producerId}${sharedSong ? `/songs/${sharedSong.songId}` : ''}`)}`}
-      text={sharedSong ? `${sharedSong.title} - ${producerName}` : producerName}
+      text={sharedSong ? `${songTitle(sharedSong).main} - ${producerName}` : producerName}
       label={sharedSong ? t.shareSong : t.shareProducer}
     />
   );
@@ -149,7 +151,7 @@ export function ProducerPlayer({
     <StageLayout
       song={here ? current : null}
       cover={linkedItem?.thumb ?? cover}
-      label={linkedItem ? t.playSong(linkedItem.title) : t.playProducer}
+      label={linkedItem ? t.playSong(songTitle(linkedItem).main) : t.playProducer}
       onPlay={() => start(linkedItem?.songId)}
       heading={heading}
       play={
@@ -197,8 +199,12 @@ export function ProducerPlayer({
                   </span>
                   <span className="min-w-0 flex-1">
                     {/* 曲名と補足の字は、ほかの曲の行（SongItem）と同じ 14px の太字と 12px の灰色 */}
-                    <Marquee active={active} className="text-sm font-bold">
-                      {song.title}
+                    <Marquee
+                      active={active}
+                      className="text-sm font-bold"
+                      text={titleLine(songTitle(song))}
+                    >
+                      <SongTitleText song={song} />
                     </Marquee>
                     {/* 歌声と投稿日。再生中の行だけ、収まらなければ曲名と同じく流す（ほかの行は末尾を切る） */}
                     <Marquee active={active} className="text-xs text-muted">

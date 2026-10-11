@@ -1,5 +1,6 @@
 'use client';
 
+import { useProducerName } from '@/components/display-names';
 import { useEffect, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { usePlayer } from './player/player-provider';
@@ -36,6 +37,7 @@ export function StageHeading({
   if (song && song !== last) setLast(song);
   song = song ?? (holdingSlot ? last : null);
   const producer = useProducer(song?.producerId ?? null);
+  const producerName = useProducerName();
   // 次に流れる曲のボカロPを先に取っておき、曲が替わったときにすぐ出せるようにする
   const { upcoming, followProducer } = usePlayer();
   const next = song ? upcoming()[0]?.item.producerId : undefined;
@@ -61,6 +63,7 @@ export function StageHeading({
       <ProducerHeading
         id={song.producerId}
         name={producer?.name ?? song.producerName}
+        shown={producerName(song.producerId, producer?.name ?? song.producerName)}
         picture={producer ? producer.picture : undefined}
         links={producer?.links}
         as="h2"

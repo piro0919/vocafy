@@ -11,13 +11,15 @@ vi.stubGlobal('fetch', fetchMock);
 const INDEX = {
   producers: [
     [45, 'ＤＥＣＯ＊２７', 'deco.jpg', 3],
-    [7, 'ハチ', null, 1],
+    [7, 'ハチ', null, 1, 'Hachi'],
   ],
   songs: [
     ['ゴーストルール', 0, 'Ghost Rule'],
     ['マトリョシカ', 1, null],
     ['ヴァンパイア', 0, null],
     ['妄想感傷代償連盟', 0, ''],
+    ['ブロッサム', 1, null, 'Sakura Blossom'],
+    ['桜ノ雨', 1, 'Sakura no Ame', null],
   ],
   voices: [[1, '初音ミク', 12925]],
 } as unknown as SearchIndex;
@@ -41,6 +43,8 @@ describe('loadIndex', () => {
       ['マトリョシカ', 7, 0],
       ['ヴァンパイア', 45, 1],
       ['妄想感傷代償連盟', 45, 2],
+      ['ブロッサム', 7, 1],
+      ['桜ノ雨', 7, 2],
     ]);
   });
 
@@ -70,7 +74,7 @@ describe('loadIndex', () => {
     const load = await loadIndex();
     await expect(load()).rejects.toThrow('offline');
     const index = await load();
-    expect(index.songs).toHaveLength(4);
+    expect(index.songs).toHaveLength(6);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
@@ -85,7 +89,22 @@ describe('findInIndex（索引から探す）', () => {
   it('ボカロPの名前で当たると、その人と、その人の曲が出る', async () => {
     const found = findInIndex(await index(), normalize('ハチ'));
     expect(names(found.producers)).toEqual(['ハチ']);
-    expect(names(found.songs)).toEqual(['マトリョシカ']);
+    expect(names(found.songs)).toEqual(['マトリョシカ', 'ブロッサム', '桜ノ雨']);
+  });
+
+  it('ボカロPの英語の名前でも当たる', async () => {
+    expect(names(findInIndex(await index(), normalize('hachi')).producers)).toEqual(['ハチ']);
+  });
+
+  it('曲名とローマ字で当たった曲を、英語の名前（訳）で当たった曲より先にする', async () => {
+    const found = findInIndex(await index(), normalize('sakura'));
+    expect(names(found.songs)).toEqual(['桜ノ雨', 'ブロッサム']);
+  });
+
+  it('ローマ字は伸ばす音の書き方が違っても当たる', async () => {
+    expect(names(findInIndex(await index(), normalize('sakura noo ame')).songs)).toEqual([
+      '桜ノ雨',
+    ]);
   });
 
   it('頭から当たる曲を、途中で当たる曲より先にする。ローマ字の曲名でも当たる', async () => {

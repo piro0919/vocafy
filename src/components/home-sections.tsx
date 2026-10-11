@@ -1,5 +1,6 @@
 'use client';
 
+import { SongTitleText, useProducerName, useSongTitle } from '@/components/display-names';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { DatedItem } from '@/lib/catalog';
 import { FadeImage } from './fade-image';
@@ -57,6 +58,7 @@ export function OnThisDay({
   // 大きな1曲がニコニコの曲なら、埋め込みを先に読み込んでおく（iPad・iPhone だけ。右の一覧の行は SongItem が読む）
   const heroButton = useRef<HTMLButtonElement>(null);
   const voices = useVoiceNames();
+  const producerName = useProducerName();
   usePreload(heroButton, hero.videoId);
   const heroActive = current?.songId === hero.songId;
 
@@ -98,11 +100,13 @@ export function OnThisDay({
               {dayLabel(hero.publishedOn, today)}
             </span>
             <span className="mt-1 flex items-center gap-2 font-display text-2xl leading-tight sm:text-3xl">
-              <span className="min-w-0 truncate">{hero.title}</span>
+              <span className="min-w-0 truncate">
+                <SongTitleText song={hero} />
+              </span>
               {heroActive && <Bars playing={playing} />}
             </span>
             <span className="mt-1 block truncate text-sm text-muted">
-              {hero.producerName}
+              {producerName(hero.producerId, hero.producerName)}
               {hero.vocalists && ` ・ ${voices.text(hero.vocalists)}`}
             </span>
           </span>
@@ -301,12 +305,14 @@ function MixTile({
   const { current, playing } = usePlayer();
   const open = useOpenSong();
   const t = useText(TEXT);
+  const title = useSongTitle()(song).main;
+  const producerName = useProducerName();
   const active = current?.songId === song.songId;
   return (
     <button
       type="button"
-      aria-label={t.tile(song.title, song.producerName)}
-      title={song.title}
+      aria-label={t.tile(title, producerName(song.producerId, song.producerName))}
+      title={title}
       tabIndex={copy ? -1 : undefined}
       data-preload={song.service === 'niconico' ? song.videoId : undefined}
       onClick={() => open(song)}
@@ -322,7 +328,7 @@ function MixTile({
       <span
         className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-react ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
       >
-        <span className="min-w-0 truncate">{song.title}</span>
+        <span className="min-w-0 truncate">{title}</span>
         {active && <Bars playing={playing} />}
       </span>
     </button>

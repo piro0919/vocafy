@@ -1,3 +1,6 @@
+import { displayTitle } from '@/lib/english-name';
+import { producerName } from '@/lib/producer-name';
+import { producerNamesFor } from '@/lib/producer-names';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { findProducer } from '@/lib/catalog';
@@ -31,8 +34,10 @@ export async function generateMetadata({
   const loaded = await load(params);
   if (!loaded) notFound();
   const { found, song } = loaded;
+  const lang = await langOf(params);
+  const name = producerName(found.producer.id, found.producer.name, await producerNamesFor(lang));
   return {
-    title: `${song.title} - ${found.producer.name}`,
+    title: `${displayTitle(song, lang).main} - ${name}`,
     robots: { index: false, follow: true },
     alternates: {
       canonical: `${SITE_URL}${localize(`/producers/${found.producer.id}`, await langOf(params))}`,
@@ -45,5 +50,7 @@ export default async function SongSharePage({
 }: PageProps<'/[lang]/producers/[id]/songs/[songId]'>) {
   const loaded = await load(params);
   if (!loaded) notFound();
-  return <ProducerView found={loaded.found} linkedSongId={loaded.song.id} />;
+  return (
+    <ProducerView found={loaded.found} linkedSongId={loaded.song.id} lang={await langOf(params)} />
+  );
 }
