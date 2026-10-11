@@ -74,7 +74,9 @@ export function CharacterFace({
       </span>
       <span className="relative min-w-0 px-3 pt-1.5 pb-2.5">
         <span className="block truncate text-sm font-bold">{name}</span>
-        {sub && <span className="block text-xs text-muted">{sub}</span>}
+        {/* 暗い画面では、キャラの色の台の上で灰色の字が地との比 2.5〜4.2 : 1 にしかならず読みにくいので、
+            名前と同じ字の色にする（2026-10-12。明るい画面は灰色のままで基準の 4.5 : 1 を超える） */}
+        {sub && <span className="block text-xs text-muted dark:text-foreground">{sub}</span>}
       </span>
     </>
   );
