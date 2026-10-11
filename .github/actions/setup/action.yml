@@ -1,0 +1,18 @@
+# CI と取り込みの仕事が共通で使う準備（nagara-kaigo と同じ形、2026-10-12）。
+# 取り出し（actions/checkout）は呼ぶ側でする。この action 自体がリポジトリの中にあるので、先に取り出さないと読めない
+name: Setup
+description: pnpm と Node.js を入れ、依存を入れる
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v5
+      with:
+        # 版は .nvmrc の一か所に書く。Vercel はプロジェクトの設定（Node.js 24.x）で、そろえておく
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash

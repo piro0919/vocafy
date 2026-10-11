@@ -36,15 +36,32 @@ jobs:
       DATABASE_URL: postgres://vocafy:vocafy@localhost:5434/vocafy
     steps:
       - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v5
         with:
-          node-version: 24
-          cache: pnpm
+          # 下のマイグレーションの確かめで、push の前のコミットと比べる
+          fetch-depth: 0
 
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
+
+      # 手元のフック（.squawk.toml と .lefthook/pre-commit/migrations.sh）と同じ確かめ。フックを通らなかったコミット
+      # （--no-verify）も、ここで止める。比べる元は、プルリクエストなら元のブランチ、push なら push の前の先頭
+      - name: マイグレーション（書き換え・消すのを止め、足したものに squawk）
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "比べる元のコミットが無いので飛ばす"
+            exit 0
+          fi
+          changed=$(git diff --name-only --diff-filter=MDR "$BASE" HEAD -- 'db/migrations/*.sql')
+          if [ -n "$changed" ]; then
+            echo "::error::コミット済みのマイグレーションを書き換えるか消しています。直すなら新しい番号のファイルを足す"
+            echo "$changed"
+            exit 1
+          fi
+          added=$(git diff --name-only --diff-filter=A "$BASE" HEAD -- 'db/migrations/*.sql')
+          if [ -n "$added" ]; then
+            echo "$added" | xargs pnpm exec squawk
+          fi
 
       - run: pnpm typecheck
 
@@ -89,16 +106,23 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v4
+      - uses: ./.github/actions/setup
 
-      - uses: actions/setup-node@v5
+      # ブラウザは Playwright の版ごとに残す。残っていれば、OS の部品だけ入れる
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+
+      - id: playwright-cache
+        uses: actions/cache@v4
         with:
-          node-version: 24
-          cache: pnpm
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      - run: pnpm install --frozen-lockfile
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
 
-      - run: pnpm exec playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
 
       - run: pnpm migrate
 
@@ -137,14 +161,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - run: pnpm migrate
 
