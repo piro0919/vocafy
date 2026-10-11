@@ -171,6 +171,26 @@ test('動画を縮めると、外から来たときはサイトの外に出ず�
   await expect(page).toHaveURL(`${baseURL}/`);
 });
 
+test('動画を縮めるのと同時に曲が替わっても、移動は取り消されない', async ({
+  page,
+  isMobile,
+  baseURL,
+}) => {
+  test.skip(!isMobile, 'スマホだけの操作');
+  // 曲が替わると住所の ?song= を書き換える。移り始めたあとに書き換えると、Next.js が移動を取り消して前の画面に残った
+  // （pending-navigation.ts）。CI では YouTube の曲が流せずに次々と進むので、縮めた瞬間に曲が替わって落ちていた
+  await page.setContent(`<a id="share" href="${baseURL}/producers/45">共有のリンク</a>`);
+  await page.click('#share');
+  await page.waitForURL(/producers\/45/);
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  await expect(page).toHaveURL(/song=/);
+  await page.getByRole('button', { name: '動画を縮めて前の画面に戻る' }).evaluate((el) => {
+    (el as HTMLElement).click();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'N', shiftKey: true }));
+  });
+  await expect(page).toHaveURL(`${baseURL}/`);
+});
+
 test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: /^2016/ }).click();

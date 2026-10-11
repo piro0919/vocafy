@@ -5,6 +5,7 @@ import NextLink from 'next/link';
 import { usePathname as useNextPathname } from 'next/navigation';
 import { type ComponentProps, useMemo } from 'react';
 import { langOfPath, localize, stripLang, type Lang } from './config';
+import { startNavigation } from '@/lib/pending-navigation';
 
 /**
  * 画面の移動は、頭に言語の付かない住所（`/producers/45`）で書き、ここでいまの言語の住所にする。
@@ -36,16 +37,24 @@ export function Link({ href, ...props }: ComponentProps<typeof NextLink>) {
 /** 先頭の引数（住所）を除いた引数 */
 type Rest<F> = F extends (href: string, ...rest: infer R) => unknown ? R : never;
 
-/** @bprogress/next/app の useRouter の代わり。push・replace・prefetch の住所を、いまの言語の住所にする */
+/**
+ * @bprogress/next/app の useRouter の代わり。push・replace・prefetch の住所を、いまの言語の住所にする。
+ * push・replace は、住所が変わるまで移動中の印を付ける（pending-navigation.ts）
+ */
 export function useRouter() {
   const router = useProgressRouter();
   const to = useLocalize();
   return useMemo(
     () => ({
       ...router,
-      push: (href: string, ...rest: Rest<typeof router.push>) => router.push(to(href), ...rest),
-      replace: (href: string, ...rest: Rest<typeof router.replace>) =>
-        router.replace(to(href), ...rest),
+      push: (href: string, ...rest: Rest<typeof router.push>) => {
+        startNavigation();
+        router.push(to(href), ...rest);
+      },
+      replace: (href: string, ...rest: Rest<typeof router.replace>) => {
+        startNavigation();
+        router.replace(to(href), ...rest);
+      },
       prefetch: (href: string, ...rest: Rest<typeof router.prefetch>) =>
         router.prefetch(to(href), ...rest),
     }),

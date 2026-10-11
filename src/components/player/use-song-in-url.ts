@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { useClientValue } from '@/lib/client-value';
 import { stripLang } from '@/i18n/config';
+import { navigationPending } from '@/lib/pending-navigation';
 
 /** 住所の ?song= の曲の id。無いか形が違えば null */
 export function songParam(search: string): number | null {
@@ -31,6 +32,8 @@ export function useSongInUrl(song: QueueItem | null, path: string) {
     if (songId === null) return;
     const url = new URL(window.location.href);
     if (stripLang(url.pathname) !== path) return;
+    // ほかの画面へ移り始めていて、住所がまだ変わっていないあいだは書き換えない。書き換えると移動が取り消される
+    if (navigationPending()) return;
     if (url.searchParams.get('song') === String(songId)) return;
     url.searchParams.set('song', String(songId));
     // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
