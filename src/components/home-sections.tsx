@@ -12,10 +12,10 @@ import { usePreload } from './player/use-preload';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
-import { atLeast } from '@/lib/breakpoints';
+import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
 import { canFlow, subscribeMixFlow } from '@/lib/mix-flow';
 import { LINEAR } from '@/lib/motion';
-import { dateOf, monthDayOf, yearOf } from '@/lib/iso-date';
+import { dayLabel } from '@/lib/iso-date';
 
 /**
  * きょうの日付の曲。1曲を大きく見せ、残りを横に小さく並べる。
@@ -48,7 +48,6 @@ export function OnThisDay({
   // 大きな1曲がニコニコの曲なら、埋め込みを先に読み込んでおく（iPad・iPhone だけ。右の一覧の行は SongItem が読む）
   const heroButton = useRef<HTMLButtonElement>(null);
   usePreload(heroButton, hero.videoId);
-  const sameDay = (iso: string) => monthDayOf(iso) === monthDayOf(today);
   const heroActive = current?.songId === hero.songId;
 
   return (
@@ -79,7 +78,7 @@ export function OnThisDay({
               src={hero.thumb}
               alt=""
               fill
-              sizes={`${atLeast('lg')} 40vw, ${atLeast('sm')} 50vw, 100vw`}
+              sizes={RESPONSIVE_SIZES.hero}
               loading="eager"
               className="object-cover group-hover:scale-103"
             />
@@ -90,9 +89,7 @@ export function OnThisDay({
           <span className="pointer-events-auto min-w-0">
             <span className="block font-tech text-xs font-black tracking-label text-accent">
               {/* 右の一覧と同じ形。同じ日の曲は年だけ、前後の日から補った曲は月日も（今のデータでは0曲の日は無い） */}
-              {sameDay(hero.publishedOn)
-                ? yearOf(hero.publishedOn)
-                : dateOf(hero.publishedOn).replaceAll('-', '.')}
+              {dayLabel(hero.publishedOn, today)}
             </span>
             <span className="mt-1 flex items-center gap-2 font-display text-2xl leading-tight sm:text-3xl">
               <span className="min-w-0 truncate">{hero.title}</span>
@@ -120,9 +117,7 @@ export function OnThisDay({
                   onOpen={() => open(song)}
                   meta={
                     <span className="shrink-0 font-tech text-xs font-black text-accent">
-                      {sameDay(song.publishedOn)
-                        ? yearOf(song.publishedOn)
-                        : dateOf(song.publishedOn).replaceAll('-', '.')}
+                      {dayLabel(song.publishedOn, today)}
                     </span>
                   }
                 />
@@ -316,7 +311,7 @@ function MixTile({
         src={song.thumb}
         alt=""
         fill
-        sizes={`${atLeast('lg')} 16vw, ${atLeast('sm')} 25vw, 33vw`}
+        sizes={RESPONSIVE_SIZES.mixTile}
         className="object-cover group-hover:scale-105"
       />
       <span

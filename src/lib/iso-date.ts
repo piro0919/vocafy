@@ -13,7 +13,7 @@ export const monthOf = (iso: string) => iso.slice(MONTH.start, MONTH.end);
 /** "10-11" */
 export const monthDayOf = (iso: string) => iso.slice(MONTH_DAY.start, MONTH_DAY.end);
 /** "2026-10-11" */
-export const dateOf = (iso: string) => iso.slice(DATE.start, DATE.end);
+const dateOf = (iso: string) => iso.slice(DATE.start, DATE.end);
 
 /** 日本の暦できょうの日付（"2026-10-11"）。トップの中身を選ぶ proxy.ts と、日替わりの選び方（catalog.ts）が使う */
 export function today(): string {
@@ -29,4 +29,13 @@ export function hourInJapan(): number {
       hourCycle: 'h23',
     }).format(new Date()),
   );
+}
+
+/**
+ * きょうの日付の曲に添える日付の札。同じ月日の曲は年だけ（2016）、前後の日から補った曲は年月日（2016.10.12）
+ */
+export function dayLabel(publishedOn: string, today: string): string {
+  return monthDayOf(publishedOn) === monthDayOf(today)
+    ? yearOf(publishedOn)
+    : dateOf(publishedOn).replaceAll('-', '.');
 }

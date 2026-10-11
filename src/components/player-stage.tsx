@@ -15,7 +15,8 @@ import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
 import { COVER_PLAY, PRIMARY } from './button-styles';
-import { atLeast, below } from '@/lib/breakpoints';
+import { below } from '@/lib/breakpoints';
+import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
 import { DRAG_SLOP } from '@/lib/input';
 
 /**
@@ -93,7 +94,7 @@ export function PlayerStage({
                   alt=""
                   fill
                   loading="eager"
-                  sizes={`${atLeast('lg')} 60vw, 100vw`}
+                  sizes={RESPONSIVE_SIZES.stage}
                   className="object-cover"
                 />
                 <span className={`absolute top-1/2 left-1/2 size-16 -translate-1/2 ${COVER_PLAY}`}>
@@ -115,7 +116,7 @@ export function PlayerStage({
                 alt=""
                 fill
                 loading="eager"
-                sizes={`${atLeast('lg')} 60vw, 100vw`}
+                sizes={RESPONSIVE_SIZES.stage}
                 className="object-cover"
               />
             )}
