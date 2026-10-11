@@ -1,5 +1,6 @@
 import type { QueueItem } from '@/lib/catalog';
 import type { Owner } from './player-types';
+import { createLocalFlag } from '@/lib/local-flag';
 import { isStoredSong } from '@/lib/stored-shapes';
 import { HOUR_MS } from '@/lib/timing';
 
@@ -62,35 +63,16 @@ export function readResume(): Resume | null {
  * 設定の「前回の続きから始める」（2026-10-11 に本人と決めた）。前の曲と、アプリから開いたときの前回の画面（page-restore.tsx）を
  * まとめて切り替える。はじめはオンで、切ったときだけ OFF_KEY を残す
  */
-const OFF_KEY = 'vocafy-resume-off';
-const CHANGE_EVENT = 'vocafy-resume-change';
+const resumeFlag = createLocalFlag({
+  key: 'vocafy-resume-off',
+  value: '1',
+  stored: false,
+  event: 'vocafy-resume-change',
+});
 
-export function resumeEnabled(): boolean {
-  try {
-    return localStorage.getItem(OFF_KEY) !== '1';
-  } catch {
-    return true;
-  }
-}
-
-export function setResumeEnabled(on: boolean) {
-  try {
-    if (on) localStorage.removeItem(OFF_KEY);
-    else localStorage.setItem(OFF_KEY, '1');
-  } catch {
-    // 残せない窓では、この画面のあいだだけ効く
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
-
-export function subscribeResume(onChange: () => void): () => void {
-  window.addEventListener(CHANGE_EVENT, onChange);
-  window.addEventListener('storage', onChange);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, onChange);
-    window.removeEventListener('storage', onChange);
-  };
-}
+export const resumeEnabled = resumeFlag.read;
+export const setResumeEnabled = resumeFlag.write;
+export const subscribeResume = resumeFlag.subscribe;
 
 /** 最後に見ていた画面（住所）の控え。アプリから開いたときに、RESUME_HOURS 時間以内ならそこから始める（page-restore.tsx） */
 const PAGE_KEY = 'vocafy-last-page';

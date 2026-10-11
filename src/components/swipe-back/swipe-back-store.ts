@@ -1,3 +1,5 @@
+import { createLocalFlag } from '@/lib/local-flag';
+
 /**
  * 「スワイプで戻る」の設定。koidamashii の src/lib/swipe-back.ts を写した（2026-10-07）。このブラウザに残す。
  * iPhone・iPad のホーム画面から開くとブラウザの戻るボタンが無く、詳細画面ではヘッダーと下のタブも出さないので、
@@ -6,9 +8,20 @@
  *
  * 左端は戻る。右端は戻るか進むかを選べる。はじめは戻る
  */
-const KEY = 'vocafy-swipe-back';
-const RIGHT_KEY = 'vocafy-swipe-back-right';
 const CHANGE_EVENT = 'vocafy-swipe-back-change';
+const enabled = createLocalFlag({
+  key: 'vocafy-swipe-back',
+  value: 'on',
+  stored: true,
+  event: CHANGE_EVENT,
+});
+/** 右端で進むか（入）、戻るか（切。はじめ） */
+const forward = createLocalFlag({
+  key: 'vocafy-swipe-back-right',
+  value: 'forward',
+  stored: true,
+  event: CHANGE_EVENT,
+});
 
 export type RightEdge = 'back' | 'forward';
 
@@ -17,48 +30,11 @@ export function isIosStandalone(): boolean {
   return (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
 
-export function swipeBackEnabled(): boolean {
-  try {
-    return localStorage.getItem(KEY) === 'on';
-  } catch {
-    return false;
-  }
-}
+export const swipeBackEnabled = enabled.read;
+export const setSwipeBack = enabled.write;
 
-export function setSwipeBack(on: boolean): void {
-  try {
-    if (on) localStorage.setItem(KEY, 'on');
-    else localStorage.removeItem(KEY);
-  } catch {
-    // 保存できない（プライベートブラウズなど）ときは、この画面のあいだだけ効く
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
+export const rightEdge = (): RightEdge => (forward.read() ? 'forward' : 'back');
+export const setRightEdge = (value: RightEdge) => forward.write(value === 'forward');
 
-export function rightEdge(): RightEdge {
-  try {
-    return localStorage.getItem(RIGHT_KEY) === 'forward' ? 'forward' : 'back';
-  } catch {
-    return 'back';
-  }
-}
-
-export function setRightEdge(value: RightEdge): void {
-  try {
-    if (value === 'forward') localStorage.setItem(RIGHT_KEY, 'forward');
-    else localStorage.removeItem(RIGHT_KEY);
-  } catch {
-    // 保存できないときは、この画面のあいだだけ効く
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
-
-/** useSyncExternalStore 用。設定が切り替わったら知らせる */
-export function subscribeSwipeBack(onChange: () => void): () => void {
-  window.addEventListener(CHANGE_EVENT, onChange);
-  window.addEventListener('storage', onChange);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, onChange);
-    window.removeEventListener('storage', onChange);
-  };
-}
+/** useSyncExternalStore 用。設定が切り替わったら知らせる（2つの設定で同じ合図を使う） */
+export const subscribeSwipeBack = enabled.subscribe;
