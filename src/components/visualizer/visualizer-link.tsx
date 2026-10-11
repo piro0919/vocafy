@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
-import type { QueueItem } from '@/lib/catalog';
 import { readAmbientColors, subscribeAmbientColors } from '../ambient-colors';
 import { usePlayer } from '../player/player-provider';
+import { artworkOf } from './artwork';
 import { readVisualizer, subscribeVisualizer } from './visualizer-store';
 import { COLORS } from '@/lib/colors';
 
@@ -14,18 +14,6 @@ const HEX = 16;
 const LINK_URL = 'ws://127.0.0.1:47823';
 /** アプリが起動していないあいだ、つなぎ直す間隔 */
 const RETRY_MS = 5000;
-
-/** 表紙の候補を、大きいものから。アプリは読めた最初の1枚を使う */
-function artworkOf(item: QueueItem): string[] {
-  if (item.service === 'youtube') {
-    // maxresdefault は古い動画に無いことがある
-    return ['maxresdefault', 'hqdefault', 'mqdefault'].map(
-      (name) => `https://i.ytimg.com/vi/${item.videoId}/${name}.jpg`,
-    );
-  }
-  // ニコニコの表紙は、末尾に .L（大）・.M（中）を付けた版がある。古い動画は付けない版だけ
-  return [`${item.thumb}.L`, `${item.thumb}.M`, item.thumb];
-}
 
 /** 色を計算させる要素と、塗って読む1画素のキャンバス。使い回す（前は色を直すたびに作って捨てていた） */
 let probe: HTMLSpanElement | undefined;

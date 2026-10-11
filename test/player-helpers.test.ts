@@ -181,3 +181,29 @@ describe('singerOfVocalists（色を変えるキャラ）', () => {
     expect(singerOfVocalists('toString')).toBeNull();
   });
 });
+
+describe('artworkOf（Vocafy Visualizer に送る表紙の候補）', () => {
+  it('YouTube は大きい版から順に', async () => {
+    const { artworkOf } = await import('@/components/visualizer/artwork');
+    expect(artworkOf({ service: 'youtube', videoId: 'abc', thumb: '' })).toEqual([
+      'https://i.ytimg.com/vi/abc/maxresdefault.jpg',
+      'https://i.ytimg.com/vi/abc/hqdefault.jpg',
+      'https://i.ytimg.com/vi/abc/mqdefault.jpg',
+    ]);
+  });
+
+  it('ニコニコの新しい表紙は、付いている .M を外してから大・中の版にする', async () => {
+    const { artworkOf } = await import('@/components/visualizer/artwork');
+    const base = 'https://nicovideo.cdn.nimg.jp/thumbnails/27040863/27040863.22386852';
+    expect(artworkOf({ service: 'niconico', videoId: 'sm1', thumb: `${base}.M` })).toEqual([
+      `${base}.L`,
+      `${base}.M`,
+    ]);
+  });
+
+  it('ニコニコの古い表紙（大・中の版が無い）は、そのまま', async () => {
+    const { artworkOf } = await import('@/components/visualizer/artwork');
+    const thumb = 'https://nicovideo.cdn.nimg.jp/thumbnails/1961633/1961633';
+    expect(artworkOf({ service: 'niconico', videoId: 'sm1', thumb })).toEqual([thumb]);
+  });
+});
