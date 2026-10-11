@@ -25,8 +25,12 @@ test('トップからボカロPの画面へ移り、その人の曲が並ぶ', a
 
 test('ニコニコにしか本家が無い曲は、ニコニコのプレイヤーで流す', async ({ page }) => {
   await page.goto('/producers/45');
-  // 曲の行には「◯◯をお気に入りに入れる」ボタンも並ぶので、曲名のあとにそれが続かないボタンを選ぶ
-  await page.getByRole('button', { name: /罪と罰(?!をお気に入り)/ }).click();
+  // 手元の台帳には同じ名前の曲（ほかの版）もあるので、曲の id（VocaDB の 8478）の行で選ぶ。
+  // 行には「◯◯をお気に入りに入れる」ボタンも並ぶので、曲名のあとにそれが続かないボタンを選ぶ
+  await page
+    .locator('#song-8478')
+    .getByRole('button', { name: /罪と罰(?!をお気に入り)/ })
+    .click();
   await expect(page.locator('[data-player-frame] iframe')).toHaveAttribute(
     'src',
     /embed\.nicovideo\.jp\/watch\/sm8166339/,
@@ -108,7 +112,10 @@ test('歌声の画面が開く', async ({ page }) => {
 test('検索で、曲名をひらがなで打ってもカタカナの曲が見つかる', async ({ page }) => {
   await page.goto('/search');
   await page.getByRole('searchbox', { name: '曲名・ボカロP・歌声の名前で探す' }).fill('ごーすと');
-  await expect(page.getByRole('button', { name: /ゴーストルール(?!をお気に入り)/ })).toBeVisible();
+  // 手元の台帳では、ほかの版（アレンジなど）も一緒に見つかるので、1つ目を見る
+  await expect(
+    page.getByRole('button', { name: /ゴーストルール(?!.*をお気に入り)/ }).first(),
+  ).toBeVisible();
 });
 
 test('流せない動画の知らせは、形の違う ID を断る', async ({ request }) => {
