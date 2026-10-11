@@ -9,6 +9,7 @@
  * - ICON / ICON_SM: アイコンだけのボタン。帯や題名の横は 40px、曲の行の中は 36px。地は指を乗せたときだけ出す
  * - ARROW: 青緑で塗った丸い矢印（棚の送り・ページ送り）。隣に並ぶ「再生」（PRIMARY）に合わせて塗る（2026-10-11。前は縁だけで、並ぶと違和感があった）
  * - COVER_PLAY: 表紙の上に重ねる丸い再生ボタン。押せるのは表紙ごと（親の group）。大きさと位置は使う側で足す
+ * - CHIP: 名前の札（検索の最近の言葉・見つかったボカロPと歌声）。押すとその先へ移る。余白と並べ方は使う側で足す
  */
 export const PRIMARY =
   'flex shrink-0 items-center gap-2 rounded-full bg-miku py-2 pr-5 pl-4 text-sm font-bold whitespace-nowrap text-on-miku shadow-press transition duration-react hover:brightness-110 active:scale-95 disabled:opacity-disabled';
@@ -33,3 +34,6 @@ export const ARROW =
 
 export const COVER_PLAY =
   'grid place-items-center rounded-full bg-miku text-on-miku shadow-press transition duration-react group-hover:scale-105 group-active:scale-95';
+
+export const CHIP =
+  'rounded-full border border-line/60 bg-glass text-sm font-bold transition duration-react hover:bg-hover-accent active:scale-95';
