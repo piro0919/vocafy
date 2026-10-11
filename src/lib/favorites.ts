@@ -1,8 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect } from 'react';
 import { hasSignInHint } from './auth-client';
 import type { QueueItem } from './catalog';
+import { mergeFresh, moveItem } from './list-ops';
+import { createLocalList } from './local-list';
+import { isStoredProducer, isStoredSong } from './stored-shapes';
 
 /**
  * お気に入りの曲とボカロP。このブラウザの localStorage に残す。
@@ -27,58 +30,18 @@ export type FavoriteProducer = {
   picture: string | null;
 };
 
-/** 種類ごとの入れ物。読むのはここの1か所にまとめ、中身が変わったときだけ読み直す */
-function createStore<T>(key: string, kind: 'song' | 'producer', idOf: (item: T) => number) {
-  /** 同じタブの中で足し引きしたことを知らせる合図。ほかのタブの変化は storage の合図で届く */
-  const changed = `${key}-changed`;
-  const empty: T[] = [];
-  let cached: { raw: string | null; items: T[] } = { raw: null, items: empty };
-
-  function read(): T[] {
-    let raw: string | null = null;
-    try {
-      raw = localStorage.getItem(key);
-    } catch {
-      // 開けない（プライベートブラウズなど）。お気に入りは空として扱う
-    }
-    // useSyncExternalStore は同じ中身なら同じ配列を返す必要があるので、読んだ文字列が変わったときだけ作り直す
-    if (raw !== cached.raw) {
-      let items = empty;
-      try {
-        items = raw ? (JSON.parse(raw) as T[]) : empty;
-      } catch {
-        // 壊れていたら空として扱う
-      }
-      cached = { raw, items };
-    }
-    return cached.items;
-  }
-
-  function write(items: T[]) {
-    try {
-      localStorage.setItem(key, JSON.stringify(items));
-    } catch {
-      // 残せない環境。この画面を開いている間だけ覚えておく手もあるが、黙って諦める
-      return;
-    }
-    window.dispatchEvent(new Event(changed));
-  }
-
-  function subscribe(onChange: () => void) {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === key) onChange();
-    };
-    window.addEventListener(changed, onChange);
-    window.addEventListener('storage', onStorage);
-    return () => {
-      window.removeEventListener(changed, onChange);
-      window.removeEventListener('storage', onStorage);
-    };
-  }
+/** 種類ごとの入れ物（local-list.ts） */
+function createStore<T>(
+  key: string,
+  kind: 'song' | 'producer',
+  idOf: (item: T) => number,
+  isItem: (value: unknown) => value is T,
+) {
+  const { read, write, useItems } = createLocalList(key, isItem);
 
   function useStore() {
-    // サーバーでは localStorage を読めないので空にする。ブラウザで読み直したときにハートが付く
-    const items = useSyncExternalStore(subscribe, read, () => empty);
+    // サーバーでは空。ブラウザで読み直したときにハートが付く
+    const items = useItems();
     const has = useCallback((id: number) => items.some((s) => idOf(s) === id), [items]);
     const toggle = useCallback((item: T) => {
       const now = read();
@@ -100,11 +63,12 @@ function createStore<T>(key: string, kind: 'song' | 'producer', idOf: (item: T) 
   return { useStore, read, write, idOf };
 }
 
-const songs = createStore<QueueItem>('vocafy-favorites', 'song', (s) => s.songId);
+const songs = createStore<QueueItem>('vocafy-favorites', 'song', (s) => s.songId, isStoredSong);
 const producers = createStore<FavoriteProducer>(
   'vocafy-favorite-producers',
   'producer',
   (p) => p.id,
+  isStoredProducer,
 );
 
 export const useFavorites = songs.useStore;
@@ -114,13 +78,8 @@ export const useFavoriteProducers = producers.useStore;
  * お気に入りの曲を1曲動かす。from の曲を、to の曲がいた位置へ。ログインしていれば、並びをアカウントにも送る
  */
 export function moveFavoriteSong(from: number, to: number) {
-  const now = songs.read();
-  const i = now.findIndex((s) => s.songId === from);
-  const j = now.findIndex((s) => s.songId === to);
-  if (i < 0 || j < 0 || i === j) return;
-  const next = [...now];
-  const [moved] = next.splice(i, 1);
-  next.splice(j, 0, moved!);
+  const next = moveItem(songs.read(), from, to, songs.idOf);
+  if (!next) return;
   songs.write(next);
   if (signedIn) {
     // 送れなくても手元は並べ替えたまま。次に開いたときにアカウントの並びに戻る
@@ -171,18 +130,7 @@ async function refreshFavorites() {
     store: { read: () => T[]; write: (items: T[]) => void; idOf: (item: T) => number },
     sent: T[],
     got: T[],
-  ) => {
-    const sentIds = new Set(sent.map(store.idOf));
-    const byId = new Map(got.map((item) => [store.idOf(item), item]));
-    store.write(
-      store.read().flatMap((item) => {
-        const id = store.idOf(item);
-        if (!sentIds.has(id)) return [item];
-        const now = byId.get(id);
-        return now ? [now] : [];
-      }),
-    );
-  };
+  ) => store.write(mergeFresh(store.read(), sent, got, store.idOf));
   merge(songs, sentSongs, fresh.songs);
   merge(producers, sentProducers, fresh.producers);
   try {

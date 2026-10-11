@@ -1,5 +1,6 @@
 import type { QueueItem } from '@/lib/catalog';
 import type { Owner } from './player-types';
+import { isStoredSong } from '@/lib/stored-shapes';
 import { HOUR_MS } from '@/lib/timing';
 
 /**
@@ -47,7 +48,7 @@ export function readResume(): Resume | null {
     if (!raw) return null;
     const r = JSON.parse(raw) as Resume;
     if (Date.now() - r.at > RESUME_HOURS * HOUR_MS) return null;
-    if (!Array.isArray(r.queue) || !r.queue[r.index]) return null;
+    if (!Array.isArray(r.queue) || !r.queue.every(isStoredSong) || !r.queue[r.index]) return null;
     if (!Array.isArray(r.order) || r.order.length !== r.queue.length) return null;
     // 持ち主を1つの値にまとめる前（2026-10-11 まで）の控えは戻さない
     if (typeof r.owner?.kind !== 'string') return null;
