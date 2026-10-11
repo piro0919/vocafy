@@ -23,6 +23,9 @@ const kind = z.enum(['song', 'producer']);
 
 const unauthorized = () => new Response(null, { status: 401, headers: NO_STORE });
 
+/** 本文。JSON として読めなければ null（形の検査で 400 にする。読めないまま投げると 500 になった） */
+const bodyOf = (request: Request): Promise<unknown> => request.json().catch(() => null);
+
 export async function GET(request: Request) {
   const userId = await userIdOf(request);
   if (!userId) return unauthorized();
@@ -32,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const userId = await userIdOf(request);
   if (!userId) return unauthorized();
-  const body = z.object({ kind, id, on: z.boolean() }).safeParse(await request.json());
+  const body = z.object({ kind, id, on: z.boolean() }).safeParse(await bodyOf(request));
   if (!body.success) return new Response(null, { status: 400, headers: NO_STORE });
   await setFavorite(userId, body.data.kind, body.data.id, body.data.on);
   return new Response(null, { status: 204, headers: NO_STORE });
@@ -43,7 +46,7 @@ export async function PUT(request: Request) {
   if (!userId) return unauthorized();
   const body = z
     .object({ songs: z.array(id).max(MAX_FAVORITES), producers: z.array(id).max(MAX_FAVORITES) })
-    .safeParse(await request.json());
+    .safeParse(await bodyOf(request));
   if (!body.success) return new Response(null, { status: 400, headers: NO_STORE });
   await mergeFavorites(userId, 'song', body.data.songs);
   await mergeFavorites(userId, 'producer', body.data.producers);
@@ -53,7 +56,7 @@ export async function PUT(request: Request) {
 export async function PATCH(request: Request) {
   const userId = await userIdOf(request);
   if (!userId) return unauthorized();
-  const body = z.object({ songs: z.array(id).max(MAX_FAVORITES) }).safeParse(await request.json());
+  const body = z.object({ songs: z.array(id).max(MAX_FAVORITES) }).safeParse(await bodyOf(request));
   if (!body.success) return new Response(null, { status: 400, headers: NO_STORE });
   await reorderFavoriteSongs(userId, body.data.songs);
   return new Response(null, { status: 204, headers: NO_STORE });
