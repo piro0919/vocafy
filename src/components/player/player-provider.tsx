@@ -62,6 +62,7 @@ import {
   settledOwner,
   skipsAutoNiconico,
 } from './player-rules';
+import { FADE_OUT_MS, FADE_STEPS, faded, fadeOut, PAUSE_WAIT_MS } from './fade';
 import { useFrameLayout } from './use-frame-layout';
 import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
@@ -88,21 +89,6 @@ const RADIO_TRIES = 6;
 
 /** 流しているあいだ、どこまで聴いたかを残す間隔（ミリ秒） */
 const SAVE_EVERY_MS = 5000;
-
-/** 曲を替えるときに、いまの音を絞りきるまでの長さ（ミリ秒）と、その刻み */
-const FADE_OUT_MS = 150;
-const FADE_STEPS = 10;
-/** 音量を 0 にしてから止めるまで待つ長さ（ミリ秒）。埋め込みの中で 0 が効くまでにばらつきがあり、一刻み（15ms）では
- * 元の音量の1割が残ったまま止まることがあった */
-const SETTLE_MS = 60;
-/** 絞りきって消音・一時停止してから、次の動画を頼むまで待つ長さ（ミリ秒）。止まりきる前に替えると、プツッと鳴った */
-const PAUSE_WAIT_MS = 100;
-
-/**
- * 絞る途中の音量。終わりほど細かく下げる（2乗）。一定の割合で下げると、最後の一刻みが元の音量の1割残り、
- * そこで止めるとプツッと鳴った（2026-10-11 に録って確かめた）。2乗なら最後の一刻みは 1%
- */
-const faded = (volume: number, step: number) => Math.round(volume * (1 - step / FADE_STEPS) ** 2);
 
 /** スリープタイマーで止めるときに、音を絞りきるまでの長さ（ミリ秒）。眠りかけの耳に急に切れないよう、曲を替えるときより長く */
 const SLEEP_FADE_MS = 3000;
@@ -489,11 +475,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       sounding.current = false;
       fading.current = true;
-      let step = 0;
-      const tick = () => {
-        // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた。0 にしてから SETTLE_MS 待つ
-        // 絞りきったら、消音して一時停止し、止まりきるのを待ってから替える
-        if (step === FADE_STEPS) {
+      // 音量の指示は埋め込みへの知らせなので、0 にしたのと同時に切ると、0 が効く前に切れた（fadeOut が 0 にしてから待つ）。
+      // 絞りきったら、消音して一時停止し、止まりきるのを待ってから替える
+      fadeOut(current, sound.volume, {
+        timer: (t) => {
+          fadeTimer.current = t;
+        },
+        done: () => {
           current.setMuted(true);
           pausing.current = current;
           current.pause();
@@ -504,16 +492,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             pendingSwap.current = null;
             next?.();
           }, PAUSE_WAIT_MS);
-          return;
-        }
-        step += 1;
-        current.setVolume(faded(sound.volume, step));
-        fadeTimer.current = setTimeout(
-          tick,
-          step === FADE_STEPS ? SETTLE_MS : FADE_OUT_MS / FADE_STEPS,
-        );
-      };
-      tick();
+        },
+      });
     },
     [waitForSlot, waits, drop, spawn, primeParked, noteSkip, commit, setOwner],
   );
@@ -1032,26 +1012,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             return;
           }
           clearTimeout(riseTimer.current);
-          let step = 0;
-          const tick = () => {
-            if (player.current !== p) {
-              pauseFade.current = null;
-              return;
-            }
-            if (step === FADE_STEPS) {
+          // 絞っているあいだに曲が替わったら（player.current が別のプレイヤー）、やめる
+          fadeOut(p, volume, {
+            timer: (t) => {
+              pauseFade.current = t;
+            },
+            done: () => {
               pauseFade.current = null;
               quiet.current = p;
               p.pause();
-              return;
-            }
-            step += 1;
-            p.setVolume(faded(volume, step));
-            pauseFade.current = setTimeout(
-              tick,
-              step === FADE_STEPS ? SETTLE_MS : FADE_OUT_MS / FADE_STEPS,
-            );
-          };
-          tick();
+            },
+            keep: () => player.current === p,
+            stop: () => {
+              pauseFade.current = null;
+            },
+          });
           return;
         }
         if (p?.service === 'niconico') primeParked(cursor.current.queue);
