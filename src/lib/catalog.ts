@@ -2,6 +2,7 @@
 import 'server-only';
 import { PAGE_SIZE } from './page-size';
 import { createHash } from 'node:crypto';
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import { cache } from 'react';
 import { db } from './db';
 import { thumbOf } from './thumb';
@@ -128,8 +129,24 @@ export function queueOf(songs: Song[], producer?: { id: number; name: string }):
   });
 }
 
+/**
+ * ビルドのあいだ、プロセスの中で使い回すボカロPの一覧。React の cache は1枚のページの中でしか使い回さず、
+ * 検索の索引の2段目（ボカロPの数だけ作る）が1枚ごとに一覧を読み直して、配備のたびに DB から約 60MB 流れていた（2026-10-12）。
+ * 動いているサイトでは使い回さない（流せない曲を外すと曲数が変わる）
+ */
+let buildProducers: Promise<Producer[]> | undefined;
+
 /** 一覧に出すボカロP（全曲を取り込んだ人）。最近曲を出した人から（人気の順にはしない） */
-export const producers = cache(async (): Promise<Producer[]> => {
+export const producers = cache((): Promise<Producer[]> => {
+  if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) return loadProducers();
+  buildProducers ??= loadProducers().catch((error: unknown) => {
+    buildProducers = undefined;
+    throw error;
+  });
+  return buildProducers;
+});
+
+async function loadProducers(): Promise<Producer[]> {
   const { rows } = await db().query<{
     id: number;
     name: string;
@@ -144,7 +161,7 @@ export const producers = cache(async (): Promise<Producer[]> => {
     group by p.id
     order by max(s.published_on) desc nulls last, p.id`);
   return rows.map((r) => ({ id: r.id, name: r.name, picture: r.picture, songCount: r.song_count }));
-});
+}
 
 /** ボカロPと、その人の曲（新しい順）。合作の相手として名前だけ入った人は出さない */
 export const findProducer = cache(
@@ -603,13 +620,17 @@ type SearchRow = {
 };
 
 /**
- * 索引の元になる全曲。1段目と2段目（ボカロPの数だけ作る）で同じものを使うので、作り置きのあいだ1回だけ読む。
+ * 索引の元になる曲。1段目は全曲、2段目はそのボカロPの曲だけを読む。
+ * 2段目はボカロPの数（775 人ほど）だけ作るので、全曲を読み回すと、ビルドの作業者ごとに全曲が DB から流れる。
+ * Neon の無料プランは DB から出る通信量が月 5GB で、配備のたびに約 100MB を読んで上限に届きかけた（2026-10-12）。
  * 配備のときにだけ動く（どちらの住所も作り置きで、開かれても作り直さない）
  */
-let searchRows: Promise<SearchRow[]> | undefined;
-
-function loadSearchRows(): Promise<SearchRow[]> {
-  searchRows ??= db()
+function querySearchRows(producerId?: number): Promise<SearchRow[]> {
+  const only =
+    producerId === undefined
+      ? ''
+      : 'and s.id in (select song_id from song_producer where producer_id = $1) and p.id = $1';
+  return db()
     .query<{
       id: number;
       name: string;
@@ -627,8 +648,9 @@ function loadSearchRows(): Promise<SearchRow[]> {
          select p.id from song_producer sp join producer p on p.id = sp.producer_id
          where sp.song_id = s.id order by p.complete desc, p.id limit 1
        ) p on true
-       where ${PLAYABLE}
+       where ${PLAYABLE} ${only}
        order by s.published_on desc nulls last, s.id`,
+      producerId === undefined ? [] : [producerId],
     )
     .then(({ rows }) =>
       rows.flatMap((r) => {
@@ -647,16 +669,11 @@ function loadSearchRows(): Promise<SearchRow[]> {
             ]
           : [];
       }),
-    )
-    .catch((error: unknown) => {
-      searchRows = undefined;
-      throw error;
-    });
-  return searchRows;
+    );
 }
 
 export const searchIndex = cache(async (): Promise<SearchIndex> => {
-  const [list, rows, voiceList] = await Promise.all([producers(), loadSearchRows(), voices()]);
+  const [list, rows, voiceList] = await Promise.all([producers(), querySearchRows(), voices()]);
   const at = new Map(list.map((p, i) => [p.id, i]));
   return {
     producers: list.map((p) => [p.id, p.name, p.picture, p.songCount]),
@@ -670,11 +687,10 @@ export const searchIndex = cache(async (): Promise<SearchIndex> => {
 
 /** そのボカロPの曲の2段目。一覧に出るボカロP（全曲を取り込んだ人）でなければ空 */
 export const searchDetails = cache(async (producerId: number): Promise<SearchDetails> => {
-  const [list, rows] = await Promise.all([producers(), loadSearchRows()]);
+  const list = await producers();
   if (!list.some((p) => p.id === producerId)) return [];
-  return rows
-    .filter((r) => r.producerId === producerId)
-    .map((r) => [r.id, r.videoId, r.niconicoThumb, r.vocalists]);
+  const rows = await querySearchRows(producerId);
+  return rows.map((r) => [r.id, r.videoId, r.niconicoThumb, r.vocalists]);
 });
 
 /** VocaDB の関連曲の返事。3種類とも12曲ずつ */
