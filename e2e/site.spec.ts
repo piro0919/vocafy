@@ -79,6 +79,18 @@ test('曲の一覧から押すと、その人の画面で大きく出し、次�
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
+test('ボカロPをお気に入りに入れると、お気に入りの画面に出て、外すと消える', async ({ page }) => {
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'DECO＊27をお気に入りに入れる' }).click();
+  await expect(page.getByRole('button', { name: 'DECO＊27をお気に入りから外す' })).toBeVisible();
+  await page.goto('/favorites');
+  await expect(page.getByRole('link', { name: /DECO＊27/ })).toBeVisible();
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'DECO＊27をお気に入りから外す' }).click();
+  await page.goto('/favorites');
+  await expect(page.getByText('お気に入りはまだありません')).toBeVisible();
+});
+
 test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: /^2016/ }).click();
