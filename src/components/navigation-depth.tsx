@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { useEffect, useRef } from 'react';
 import { navigationDepth, setNavigationDepth } from '@/lib/leave';
 

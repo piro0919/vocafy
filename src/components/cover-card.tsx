@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { FadeImage } from './fade-image';
 import { NowPlaying } from './now-playing';
 import { IMAGE_SIZES, RESPONSIVE_SIZES } from '@/lib/image-sizes';

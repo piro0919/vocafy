@@ -1,7 +1,6 @@
 'use client';
 
-import { useRouter } from '@bprogress/next/app';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { QueueItem } from '@/lib/catalog';

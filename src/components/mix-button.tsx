@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from '@bprogress/next/app';
+import { useRouter } from '@/i18n/navigation';
 import { useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PRIMARY_ICON } from './button-styles';

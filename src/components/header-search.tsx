@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from '@bprogress/next/app';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
 import { type Ref, useEffect, useRef, useState } from 'react';
 import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';

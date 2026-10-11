@@ -1,10 +1,11 @@
 'use client';
 
-import { useRouter } from '@bprogress/next/app';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { readLastPage, saveLastPage } from './player/player-resume';
 import { isStandaloneApp } from '@/lib/standalone';
+import { stripLang } from '@/i18n/config';
 
 /** このタブで一度でも開いたか（sessionStorage）。アプリを開き直すと消えるので、開いた最初の1回だけを見分けられる */
 const LAUNCHED_KEY = 'vocafy-launched';
@@ -27,7 +28,7 @@ export function PageRestore() {
     } catch {
       return;
     }
-    if (!first || location.pathname !== '/' || !isStandaloneApp()) return;
+    if (!first || stripLang(location.pathname) !== '/' || !isStandaloneApp()) return;
     const last = readLastPage();
     if (last && last !== '/') router.replace(last);
   }, [router]);

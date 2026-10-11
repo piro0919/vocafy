@@ -1,5 +1,5 @@
 /**
- * 共有の絵（src/app/producers/[id]/og.tsx）に出す、キャラの影絵を書き出す。
+ * 共有の絵（src/app/[lang]/producers/[id]/og.tsx）に出す、キャラの影絵を書き出す。
  * キャラの絵（public/characters/{id}.webp）の形を、初音ミクの青緑一色で塗った PNG にして src/assets/silhouettes/{id}.png に置く。
  * 共有の絵を作る仕組み（next/og）は、WebP の絵を切り抜きや SVG の中で読めなかったので、PNG を別に持つ（2026-10-11）
  *

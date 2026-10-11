@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from '@bprogress/next/app';
+import { useRouter } from '@/i18n/navigation';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';

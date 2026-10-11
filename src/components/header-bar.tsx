@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from '@bprogress/next/app';
-import { usePathname } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { Suspense, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { loadIndex } from '@/lib/search-index';

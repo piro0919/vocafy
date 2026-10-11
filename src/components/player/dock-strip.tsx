@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';

@@ -36,9 +36,9 @@ const eslintConfig = defineConfig([
     level: 'error',
     ignores: [
       'src/lib/voice-art.ts',
-      'src/app/opengraph-image.tsx',
-      'src/app/og-backdrop.tsx',
-      'src/app/producers/\\[id\\]/og.tsx',
+      'src/app/\\[lang\\]/opengraph-image.tsx',
+      'src/app/\\[lang\\]/og-backdrop.tsx',
+      'src/app/\\[lang\\]/producers/\\[id\\]/og.tsx',
     ],
   }),
   // Override default ignores of eslint-config-next.

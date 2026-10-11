@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { CONTACT_FORM_URL, OPERATOR } from '@/lib/site';
 import { isHomePath } from '@/lib/home-path';
 

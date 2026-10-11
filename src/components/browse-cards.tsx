@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { voiceColor } from '@/lib/voice-color';
 import { FadeImage } from './fade-image';
 import { HopOnHover } from './hop-on-hover';

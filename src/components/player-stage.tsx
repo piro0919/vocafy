@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from '@bprogress/next/app';
+import { useRouter } from '@/i18n/navigation';
 import {
   type ComponentProps,
   type ReactNode,

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import type { ProducerLinks as Links } from '@/lib/catalog';
 import { FadeImage } from './fade-image';
 import { FavoriteProducerButton } from './favorite-button';

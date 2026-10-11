@@ -46,7 +46,7 @@ describe('見た目の決まり', () => {
       offenders(
         (l) => /\bduration:\s*[1-9]/.test(l) || /\beasing:\s*['"`]/.test(l),
         // 知らせ（toast）を出しておく時間。動きの長さではない
-        ['app/history/history-view.tsx', 'app/search/search-view.tsx'],
+        ['app/[lang]/history/history-view.tsx', 'app/[lang]/search/search-view.tsx'],
       ),
     ).toEqual([]);
   });
@@ -228,7 +228,11 @@ describe('見た目の決まり', () => {
     expect(
       offenders(
         (l) => /\b(width|height)=\{\d/.test(l) || /\bsizes="[^"]*\d+px/.test(l),
-        ['app/opengraph-image.tsx', 'app/og-backdrop.tsx', 'app/producers/[id]/og.tsx'],
+        [
+          'app/[lang]/opengraph-image.tsx',
+          'app/[lang]/og-backdrop.tsx',
+          'app/[lang]/producers/[id]/og.tsx',
+        ],
       ),
     ).toEqual([]);
   });

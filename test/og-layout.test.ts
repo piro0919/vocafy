@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { favoriteSinger, singerLayout } from '@/app/producers/[id]/og-layout';
+import { favoriteSinger, singerLayout } from '@/app/[lang]/producers/[id]/og-layout';
 
 describe('favoriteSinger（ボカロPの絵のキャラ）', () => {
   const hasArt = (name: string) => name !== 'VY1';

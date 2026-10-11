@@ -1,4 +1,4 @@
-import type { useRouter } from '@bprogress/next/app';
+import type { useRouter } from '@/i18n/navigation';
 
 /**
  * サイトの中で進んだ画面の数（NavigationDepth が数える）。0 のときに「戻る」を押すと、ブラウザの履歴に残っている

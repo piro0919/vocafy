@@ -1,0 +1,27 @@
+import type { Metadata } from 'next';
+import { Link } from '@/i18n/navigation';
+import { PILL } from '@/components/button-styles';
+import { Heading } from '@/components/heading';
+import { FavoritesView } from './favorites-view';
+
+export const metadata: Metadata = { title: 'お気に入り', robots: { index: false } };
+
+/**
+ * お気に入りの曲。中身はこのブラウザに残したもの（src/lib/favorites.ts）なので、この画面そのものは作り置きの殻だけ
+ */
+export default function FavoritesPage() {
+  return (
+    <>
+      <div className="flex items-end gap-3 pt-4 pb-4 sm:pb-6">
+        <Heading as="h1" size="page" eyebrow="Favorites">
+          お気に入り
+        </Heading>
+        {/* スマホの履歴の入り口。下のタブは5つで埋まっている。パソコンは左のメニューから行く */}
+        <Link href="/history" className={`${PILL} mb-1 ml-auto md:hidden`}>
+          履歴
+        </Link>
+      </div>
+      <FavoritesView />
+    </>
+  );
+}

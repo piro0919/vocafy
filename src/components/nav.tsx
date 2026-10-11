@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { Icon, type IconName } from './icon';
 import { InstallButton } from './install-app';
 import { IMAGE_SIZES } from '@/lib/image-sizes';

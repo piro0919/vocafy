@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { PAGE_SIZE } from '@/lib/catalog';
 import { Icon } from './icon';
 import { ARROW } from './button-styles';

@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from '@bprogress/next/app';
+import { Link } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { leave } from '@/lib/leave';
