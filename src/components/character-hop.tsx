@@ -36,8 +36,11 @@ export function CharacterHop({ className, children }: { className: string; child
         if (!entry?.isIntersecting) return;
         observer.disconnect();
         markSeen();
-        // 列の順。画面の幅で列の数が変わるので、札の左の位置から数える
-        const items = [...el.children] as HTMLElement[];
+        // 列の順。画面の幅で列の数が変わるので、札の左の位置から数える。数えるのは見えている札だけ。幅で隠した札
+        // （display: none）は左の位置が 0 になり、一番左の列として数えられて、見えている左端の列が1拍遅れて跳ねた
+        const items = ([...el.children] as HTMLElement[]).filter(
+          (item) => item.offsetParent !== null,
+        );
         const columns = [...new Set(items.map((item) => item.offsetLeft))].toSorted(
           (a, b) => a - b,
         );
