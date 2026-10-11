@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
-import { renderHook, waitFor } from '@testing-library/react';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QueueItem } from '@/lib/catalog';
 import { endNavigation, startNavigation } from '@/lib/pending-navigation';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * 再生の周りの残り（曲の住所・ラジオの伸ばし方・前回の画面の控え・音の出口・きょうの出会いを流すか）。happy-dom の上で動かす

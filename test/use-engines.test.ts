@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Engine, EngineEvents, Sound } from '@/components/player/engine';
 import { FADE_OUT_MS, PAUSE_WAIT_MS, SETTLE_MS } from '@/components/player/fade';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * プレイヤーの持ち方と音の切り替え（use-engines.ts）。YouTube とニコニコのプレイヤーを偽物に差し替え、

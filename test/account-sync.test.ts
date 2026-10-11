@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
-import { act, render, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, render, renderHook, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QueueItem } from '@/lib/catalog';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * ログインしているあいだのお気に入りの同期（account-sync.tsx）と、アプリから開いたときに前回の画面へ移る処理（page-restore.tsx）。

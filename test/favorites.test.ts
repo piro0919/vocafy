@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QueueItem } from '@/lib/catalog';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * お気に入り（favorites.ts）。手元（localStorage）への書き方、ログインしているときだけアカウントへ送ること、

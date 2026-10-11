@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { type ComponentType, createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * 大きさを測って決める処理（共有の板の位置合わせ・流れる曲名）。happy-dom は大きさを測らないので、測る値を差し替える

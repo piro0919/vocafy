@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QueueItem } from '@/lib/catalog';
 import type { Owner, PlaybackTime } from '@/components/player/player-types';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * プレイヤーのフック（置き場所の待ち・開き直し用の控え・画面を消させない・画面の引き継ぎ）。

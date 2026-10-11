@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { renderHook } from '@testing-library/react';
+import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FrameMode, useFrameLayout } from '@/components/player/use-frame-layout';
+
+// vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
+afterEach(cleanup);
 
 /**
  * 動画の枠を置き場所（slot）と右下の窓（dock）に合わせる処理（use-frame-layout.ts）。happy-dom は大きさを測らないので、
