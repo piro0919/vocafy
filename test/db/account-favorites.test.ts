@@ -5,7 +5,7 @@ import {
   reorderFavoriteSongs,
   setFavorite,
 } from '@/lib/account-favorites';
-import { addUser, seed } from './seed';
+import { addUser, query, seed } from './seed';
 
 const USER = 'u1';
 const OTHER = 'u2';
@@ -58,7 +58,9 @@ describe('アカウントのお気に入り', () => {
   });
 
   it('ボカロPは、足した順の新しいものが先', async () => {
+    // アカウントにある分は、ログインして取り込むより前に入れたもの
     await setFavorite(USER, 'producer', 1, true);
+    await query("update favorite_producer set added_at = now() - interval '1 day'");
     await mergeFavorites(USER, 'producer', [2, 3]);
     expect(await producerIds()).toEqual([2, 3, 1]);
   });
