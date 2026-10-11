@@ -1,5 +1,5 @@
 import type { QueueItem } from '@/lib/catalog';
-import type { ListSource, Owner, QueueOwner, Repeat, Sleep } from './player-types';
+import type { Owner, QueueOwner, Repeat, Sleep } from './player-types';
 
 /**
  * プレイヤーの分かれ道のうち、状態だけで決まるもの。プレイヤー（engine）を呼ぶ時機や音量の扱いはここに置かない
@@ -9,11 +9,6 @@ import type { ListSource, Owner, QueueOwner, Repeat, Sleep } from './player-type
 /** 持ち主の画面が無い並び（歌声の画面の代表曲）と、ボカロPの画面へ移る途中 */
 export const LOOSE: Owner = { kind: 'loose' };
 export const PENDING: Owner = { kind: 'pending' };
-
-/** 持ち主になれる画面を、並びの持ち主の値にする（一覧はページの情報を落とす） */
-export function ownerOf(page: QueueOwner): Owner {
-  return page.kind === 'list' ? { kind: 'list', source: page.source.source } : page;
-}
 
 /**
  * その画面が、いま流している並びの持ち主か（動画を大きく出すか）。流していなければ持ち主ではない。
@@ -29,7 +24,7 @@ export function owns(owner: Owner, page: QueueOwner, current: QueueItem | null):
     case 'favorites':
       return owner.kind === 'favorites';
     case 'list':
-      return owner.kind === 'list' && owner.source === page.source.source;
+      return owner.kind === 'list' && owner.source === page.source;
     case 'radio':
       return owner.kind === 'radio' && owner.home === page.home;
   }
@@ -67,7 +62,6 @@ export type BeforeRadio = {
   queue: QueueItem[];
   index: number;
   owner: Owner;
-  more: ListSource | null;
 };
 
 /**

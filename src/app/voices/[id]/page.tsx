@@ -70,7 +70,7 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
           <PlayAll
             songs={songs}
             count={`${songs.length}曲（全${formatCount(voice.songCount)}曲）`}
-            list={{ source: `voices/${voice.id}`, page: 1, last: 1 }}
+            source={`voices/${voice.id}`}
           />
         </div>
       </div>

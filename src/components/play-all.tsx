@@ -10,21 +10,19 @@ import { PRIMARY } from './button-styles';
  * 曲の一覧（年・歌声・日付）を、その画面の曲の順に通して流すボタン。曲の数を添える。
  * 一覧の曲を押したときは、その曲のボカロPの画面へ移ってその人の曲が続く（song-list.tsx）。
  * こちらはこの一覧の曲だけを流し続け、流し始めてから一覧の再生用の画面へ移る。
- *
- * 押した時点で送るのはこのページの曲だけで、終わりが近づいたら次のページを取りに行って足す
- * （初音ミクのように1万曲ある一覧を全部送ると重い）。最後のページの次は1ページ目に戻り、押したページの手前まで流す
+ * 流すのは画面に並べた曲（catalog.ts の Playlist。100曲まで）で、一覧の続きのページは読み足さない
  */
 /** 一覧を通して流す処理（PlayAll と PlayAllPill で共有する） */
-function usePlayAll(songs: QueueItem[], list: { source: string; page: number; last: number }) {
+function usePlayAll(songs: QueueItem[], source: string) {
   const { current, playing, owner, playAll, toggle } = usePlayer();
   const router = useRouter();
   // この一覧を流しているか
-  const here = current !== null && owner.kind === 'list' && owner.source === list.source;
+  const here = current !== null && owner.kind === 'list' && owner.source === source;
   // 流し始めてから一覧の再生用の画面（/years/2026/play など。list-player.tsx）へ移り、そこで動画を大きく出す。
   // 移らないと動画の置き場所が無く、右下の窓で流れていた
   const start = () => {
-    playAll(songs, { source: list.source, start: list.page, last: list.last }, { moving: true });
-    router.push(`/${list.source}/play`);
+    playAll(songs, source, { moving: true });
+    router.push(`/${source}/play`);
   };
   return { here, playing, start, toggle, router };
 }
@@ -32,17 +30,17 @@ function usePlayAll(songs: QueueItem[], list: { source: string; page: number; la
 export function PlayAll({
   songs,
   count,
-  list,
+  source,
   pickup = false,
 }: {
   songs: QueueItem[];
   count: string;
-  /** 一覧の住所（years/2010 など）、このページ、最後のページ */
-  list: { source: string; page: number; last: number };
+  /** 一覧の住所（years/2010 など） */
+  source: string;
   /** 全曲から選んだ曲を流すか（catalog.ts の Playlist）。ランダムの矢印と「ピックアップ」にして、ふつうの「再生」と分ける */
   pickup?: boolean;
 }) {
-  const { here, playing, start, toggle } = usePlayAll(songs, list);
+  const { here, playing, start, toggle } = usePlayAll(songs, source);
   return (
     <div className="mt-3 flex items-center gap-3">
       <button type="button" onClick={() => (here ? toggle() : start())} className={PRIMARY}>
@@ -61,19 +59,20 @@ export function PlayAll({
  */
 export function PlayAllPill({
   songs,
-  list,
+  source,
   pickup = false,
 }: {
   songs: QueueItem[];
-  list: { source: string; page: number; last: number };
+  /** 一覧の住所（years/2010 など） */
+  source: string;
   /** 全曲から選んだ曲を流すか（PlayAll と同じ） */
   pickup?: boolean;
 }) {
-  const { here, start, router } = usePlayAll(songs, list);
+  const { here, start, router } = usePlayAll(songs, source);
   return (
     <button
       type="button"
-      onClick={() => (here ? router.push(`/${list.source}/play`) : start())}
+      onClick={() => (here ? router.push(`/${source}/play`) : start())}
       className={PRIMARY}
     >
       <Icon name={pickup ? 'shuffle' : 'play'} className="size-5" />

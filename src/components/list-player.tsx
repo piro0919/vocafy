@@ -34,26 +34,21 @@ export function ListPlayer({
   songs: QueueItem[];
 }) {
   const { current, playing, playAll, toggle } = usePlayer();
-  // 流すのは songs だけ（多くても PICKUP_SIZE 曲で、1ページに収まる）。続きのページは読み足さない
-  const last = 1;
-  // 流している曲がこの一覧の1ページ目にあれば、開いたときに並びをこの一覧にする（use-take-over.ts。どの画面も同じ決まり）。
-  // 続きのページも「再生」を押したときと同じく読み足す
-  const owner = useMemo(
-    () => ({ kind: 'list' as const, source: { source, start: 1, last } }),
-    [source, last],
-  );
+  // 流している曲がこの一覧にあれば、開いたときに並びをこの一覧にする（use-take-over.ts。どの画面も同じ決まり）。
+  // 流すのは songs だけ（多くても PICKUP_SIZE 曲で、1ページに収まる）
+  const owner = useMemo(() => ({ kind: 'list' as const, source }), [source]);
   // この一覧を流しているときに、動画をここに大きく出す
   const here = useTakeOver(songs, owner);
 
-  // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
+  // 共有されたり読み込み直したりした住所の曲。一覧にあれば、そこから流す
   const linked = useLinkedSong();
   const linkedAt = linked ? songs.findIndex((s) => s.songId === linked) : -1;
   const linkedItem = !here && linkedAt >= 0 ? songs[linkedAt] : undefined;
 
-  const play = (page: { number: number; songs: QueueItem[] }, at: number) =>
-    page.songs.length > 0 && playAll(page.songs, { source, start: page.number, last }, { at });
+  const play = (page: { songs: QueueItem[] }, at: number) =>
+    page.songs.length > 0 && playAll(page.songs, source, { at });
   // 住所の曲（共有されたり読み込み直したりしたとき）が一覧にあれば、そこから流す。無ければ先頭から
-  const start = () => play({ number: 1, songs }, Math.max(0, linkedAt));
+  const start = () => play({ songs }, Math.max(0, linkedAt));
 
   // この一覧を流しているあいだは、住所に流している曲を入れる（use-song-in-url.ts）
   useSongInUrl(here ? current : null, `/${source}/play`);

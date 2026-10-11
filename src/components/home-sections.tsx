@@ -36,7 +36,7 @@ export function OnThisDay({
   title: string;
   /** 「再生」で流す、その日の一覧（日付の画面の1ページ目と、その住所・ページ数） */
   /** pickup は、全曲から選んだ曲を流すか（catalog.ts の Playlist） */
-  playlist: { songs: DatedItem[]; source: string; last: number; pickup: boolean };
+  playlist: { songs: DatedItem[]; source: string; pickup: boolean };
   hero: DatedItem;
   rest: DatedItem[];
   /** きょうの日付（YYYY-MM-DD） */
@@ -56,11 +56,7 @@ export function OnThisDay({
         <Heading eyebrow="On This Day">{title}</Heading>
         <div className="ml-auto flex items-center gap-2">
           {rest.length > 0 && <ShelfArrows edge={edge} page={page} />}
-          <PlayAllPill
-            songs={playlist.songs}
-            list={{ source: playlist.source, page: 1, last: playlist.last }}
-            pickup={playlist.pickup}
-          />
+          <PlayAllPill songs={playlist.songs} source={playlist.source} pickup={playlist.pickup} />
         </div>
       </div>
       <div className="grid gap-5 lg:grid-cols-hero lg:gap-8">

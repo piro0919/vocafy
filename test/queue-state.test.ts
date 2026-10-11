@@ -3,8 +3,6 @@ import type { QueueItem } from '@/lib/catalog';
 import {
   appendItems,
   EMPTY_CURSOR,
-  firstMore,
-  followingPage,
   freshItems,
   isNearEnd,
   moveTo,
@@ -85,52 +83,29 @@ describe('isNearEnd', () => {
   });
 });
 
-describe('一覧の続きのページ', () => {
-  it('押したページの次から、最後のページのあとは1ページ目に戻り、押したページの手前で終わる', () => {
-    const pages: number[] = [];
-    let m = firstMore({ source: 'years/2010', start: 3, last: 4 });
-    while (m) {
-      pages.push(m.next);
-      m = followingPage(m);
-    }
-    expect(pages).toEqual([4, 1, 2]);
-  });
-
-  it('1ページしかなければ続きは無い', () => {
-    expect(firstMore({ source: 'years/2010', start: 1, last: 1 })).toBeNull();
-  });
-});
-
 describe('stepFrom', () => {
-  const plain = { hasMore: false, shuffle: false };
-
   it('並びが空なら進まない', () => {
-    expect(stepFrom(EMPTY_CURSOR, 1, plain)).toEqual({ kind: 'stay' });
+    expect(stepFrom(EMPTY_CURSOR, 1, false)).toEqual({ kind: 'stay' });
   });
 
   it('流す順の先頭から前へは戻らない', () => {
-    expect(stepFrom(restart(songs(1, 2), 0, false), -1, plain)).toEqual({ kind: 'stay' });
+    expect(stepFrom(restart(songs(1, 2), 0, false), -1, false)).toEqual({ kind: 'stay' });
   });
 
   it('流す順で次の曲へ進む', () => {
     const c = withOrder(songs(1, 2, 3), 2, [2, 0, 1]);
-    expect(stepFrom(c, 1, plain)).toEqual({ kind: 'play', order: [2, 0, 1], index: 0 });
+    expect(stepFrom(c, 1, false)).toEqual({ kind: 'play', order: [2, 0, 1], index: 0 });
   });
 
   it('最後の曲の次は先頭に戻る', () => {
     const c = restart(songs(1, 2, 3), 2, false);
-    expect(stepFrom(c, 1, plain)).toEqual({ kind: 'play', order: [0, 1, 2], index: 0 });
-  });
-
-  it('一覧の続きがあれば、最後の曲の次は先頭に戻らず続きを待つ', () => {
-    const c = restart(songs(1, 2, 3), 2, false);
-    expect(stepFrom(c, 1, { hasMore: true, shuffle: false })).toEqual({ kind: 'more' });
+    expect(stepFrom(c, 1, false)).toEqual({ kind: 'play', order: [0, 1, 2], index: 0 });
   });
 
   it('ランダムなら、ひと回りしたところで混ぜ直す', () => {
     const c = restart(songs(1, 2, 3, 4), 0, false);
     const last = withOrder(c.queue, 3, c.order);
-    const step = stepFrom(last, 1, { hasMore: false, shuffle: true }, () => 0.5);
+    const step = stepFrom(last, 1, true, () => 0.5);
     expect(step.kind).toBe('play');
     if (step.kind !== 'play') return;
     expect(step.index).toBe(2);

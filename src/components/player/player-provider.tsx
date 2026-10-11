@@ -31,10 +31,6 @@ import {
   appendItems,
   type Cursor,
   EMPTY_CURSOR,
-  firstMore,
-  followingPage,
-  freshItems,
-  isNearEnd,
   moveTo,
   restart,
   stepFrom,
@@ -42,20 +38,12 @@ import {
   withOrder,
 } from './queue-state';
 import { savedPlayback, savedVolume, savePlayback, saveVolume } from './player-storage';
-import type {
-  ListSource,
-  Owner,
-  PlaybackTime,
-  PlayerContext,
-  QueueOwner,
-  Repeat,
-} from './player-types';
+import type { Owner, PlaybackTime, PlayerContext, QueueOwner, Repeat } from './player-types';
 import {
   afterEnded,
   type BeforeRadio,
   radioExit,
   LOOSE,
-  ownerOf,
   PENDING,
   settledOwner,
   skipsAutoNiconico,
@@ -69,7 +57,7 @@ import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { TIMING } from '@/lib/timing';
 
-export type { ListSource, Owner, PlaybackTime, Repeat, Sleep } from './player-types';
+export type { Owner, PlaybackTime, Repeat, Sleep } from './player-types';
 
 const Context = createContext<PlayerContext | null>(null);
 
@@ -144,16 +132,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     shuffle: false,
   });
   const playbackRef = useRef<{ repeat: Repeat; shuffle: boolean } | null>(null);
-  // 「すべて再生」で流している一覧の続き。ほかの並びに替えたら消す
-  const more = useRef<ListSource | null>(null);
-  // 次のページを待っているあいだに並びの最後を越えたら、先頭に戻らず、届いたところで次の曲へ進む
-  const advanceAfterMore = useRef(false);
-  // 待っているあいだの曲送りが、曲が終わって自動で進むものか。待つあいだに押された曲を、自動で進んだ先と取り違えないよう分けて持つ
-  const advanceAuto = useRef(false);
-  const clearMore = useCallback(() => {
-    more.current = null;
-    advanceAfterMore.current = false;
-  }, []);
   const [position, setPosition] = useState(0);
   // 並びと流す順（queue-state.ts）。プレイヤーの知らせは作ったときの関数を持ち続けるので、state と別に ref にも持つ
   const cursor = useRef<Cursor>(EMPTY_CURSOR);
@@ -497,77 +475,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
-  const fetchingMore = useRef(false);
-  /** 一覧の次のページを取りに行って後ろに足す。取りに行っている途中なら何もしない */
-  const fetchMore = useCallback(() => {
-    const m = more.current;
-    if (!m || fetchingMore.current) return;
-    fetchingMore.current = true;
-    const q = cursor.current.queue;
-    fetch(`/api/list/${m.source}/${m.next}`)
-      .then((res) =>
-        res.ok
-          ? (res.json() as Promise<QueueItem[]>)
-          : Promise.reject(new Error(String(res.status))),
-      )
-      .then((items) => {
-        // 待っているあいだに別の並びに替わっていたら、足さない
-        if (more.current !== m || cursor.current.queue !== q) return;
-        more.current = followingPage(m);
-        const fresh = freshItems(q, items);
-        if (fresh.length > 0) append(fresh);
-      })
-      .catch(() => {
-        // 取れなかったとき、次の曲を待たせているなら続きはあきらめて、いまの並びの先頭に戻る。
-        // 待たせていなければ、次に曲が進んだときにもう一度取りに行く
-        if (advanceAfterMore.current && more.current === m) more.current = null;
-      })
-      .finally(() => {
-        fetchingMore.current = false;
-        if (advanceAfterMore.current) {
-          advanceAfterMore.current = false;
-          autoNext.current = advanceAuto.current;
-          nextRef.current(1);
-        }
-      });
-  }, [append]);
-
   /**
    * 流す順で前後の曲へ。ループは全体なので、最後の曲の次は先頭へ戻る。
    * ランダムのときは、ひと回りしたら混ぜ直す（同じ順の繰り返しにしない）
    */
   const next = useCallback(
     (dir: 1 | -1) => {
-      const step = stepFrom(cursor.current, dir, {
-        hasMore: more.current !== null,
-        shuffle: playbackRef.current?.shuffle ?? false,
-      });
+      const step = stepFrom(cursor.current, dir, playbackRef.current?.shuffle ?? false);
       if (step.kind === 'stay') return;
-      // 「すべて再生」の一覧にまだ続きのページがあれば、届くのを待ってから進む
-      if (step.kind === 'more') {
-        advanceAfterMore.current = true;
-        advanceAuto.current = autoNext.current;
-        autoNext.current = false;
-        fetchMore();
-        return;
-      }
       // 流す順を作り直したとき（最後の曲の次）は、それを入れてから流す。load は同じ並びなら流す順をそのまま使う
       cursor.current = { ...cursor.current, order: step.order };
       load(cursor.current.queue, step.index, ownerRef.current);
     },
-    [load, fetchMore],
+    [load],
   );
   const step = next;
   useEffect(() => {
     nextRef.current = next;
   }, [next]);
-
-  // 「すべて再生」で流す順の終わりが近づいたら（残り1曲まで）、一覧の次のページを取りに行って後ろに足す
-  useEffect(() => {
-    if (owner.kind !== 'list' || more.current?.source !== owner.source || queue.length === 0)
-      return;
-    if (isNearEnd(position, cursor.current.order)) fetchMore();
-  }, [owner, queue, position, fetchMore]);
 
   // スリープタイマー（use-sleep-timer.ts）
   const { sleep, sleepRef, setSleep } = useSleepTimer(player, soundRef);
@@ -622,15 +547,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playAll = useCallback(
     (
       items: QueueItem[],
-      source: Omit<ListSource, 'next'>,
+      source: string,
       { at = 0, moving = false }: { at?: number; moving?: boolean } = {},
     ) => {
-      load(items, at, { kind: 'list', source: source.source });
+      load(items, at, { kind: 'list', source });
       if (moving) {
         // 一覧の再生用の画面へ移る途中。曲の一覧から押してボカロPの画面へ移るとき（pending）と同じく、置き場所を待つ
         waitForSlot(waits());
       }
-      more.current = firstMore(source);
     },
     [load, waitForSlot, waits],
   );
@@ -644,14 +568,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       queue: cursor.current.queue,
       index: cursor.current.index,
       owner: ownerRef.current,
-      more: more.current,
     };
   }, []);
 
   const startRadio = useCallback(
     (seed: QueueItem) => {
       rememberBeforeRadio();
-      clearMore();
       const radio: Owner = { kind: 'radio', home: `/radio/${seed.songId}` };
       const { queue: q, index: i } = cursor.current;
       // ラジオの画面へ移る途中。一覧の再生用の画面へ移るとき（playAll の moving）と同じく、置き場所を待つ（waitForSlot）
@@ -664,17 +586,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setOwner(radio);
       waitForSlot(waits());
     },
-    [load, clearMore, rememberBeforeRadio, commit, setOwner, waitForSlot, waits],
+    [load, rememberBeforeRadio, commit, setOwner, waitForSlot, waits],
   );
 
   const playRadio = useCallback(
     (items: QueueItem[], at: number) => {
       if (items.length === 0) return;
       rememberBeforeRadio();
-      clearMore();
       load(items, at, { kind: 'radio', home: `/radio/${items[0].songId}` });
     },
-    [load, clearMore, rememberBeforeRadio],
+    [load, rememberBeforeRadio],
   );
 
   const fillRadio = useCallback(
@@ -700,7 +621,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (exit.kind === 'restore') {
         const { before } = exit;
         adopt(before.queue, before.index, exit.owner);
-        more.current = before.more;
         return exit.href;
       }
       // 曲の一覧から押したときと同じく、その1曲だけの並びにしておき、ボカロPの画面に着いたところでその人の曲に差し替える
@@ -726,25 +646,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const takeOver = useCallback(
     (items: QueueItem[], at: number, page: QueueOwner) => {
-      clearMore();
       beforeRadio.current = null;
-      adopt(items, at, ownerOf(page));
-      if (page.kind === 'list') more.current = firstMore(page.source);
+      adopt(items, at, page);
     },
-    [adopt, clearMore],
+    [adopt],
   );
 
   const followProducer = useCallback(() => {
     const { queue: q, index: i } = cursor.current;
     const now = q[i];
     if (!now) return;
-    clearMore();
     beforeRadio.current = null;
     adopt([now], 0, PENDING);
     // ボカロPの画面が開くまで、いまの画面の置き場所に動画を出し続ける。出し続けないと、この画面がもう持ち主でなくなり、
     // 開くまでの一瞬だけ右下の窓になった
     holdSlot();
-  }, [adopt, clearMore, holdSlot]);
+  }, [adopt, holdSlot]);
 
   // ラジオの並びを関連曲で伸ばす（use-radio-extension.ts）
   useRadioExtension({ active: owner.kind === 'radio', queue, index, position, cursor, append });
@@ -755,7 +672,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     resumeAt.current = null;
     setSleep(null);
     setOwner(LOOSE);
-    clearMore();
     clearTimeout(fadeTimer.current);
     clearTimeout(riseTimer.current);
     if (pauseFade.current) clearTimeout(pauseFade.current);
@@ -773,7 +689,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     commit(EMPTY_CURSOR);
     setPlaying(false);
     setLoading(false);
-  }, [clearMore, drop, commit, setOwner, setSleep]);
+  }, [drop, commit, setOwner, setSleep]);
 
   // 再生中は時刻を拾う。間は帯の側で補ってなめらかに進める
   useEffect(() => {
@@ -848,7 +764,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleRepeat,
       toggleShuffle,
       playQueue: (items, start, nextOwner, moving) => {
-        clearMore();
         load(items, start, nextOwner);
         // 移る先の画面の置き場所ができるまで待つ（playAll の moving と同じ）。待たないと、移るまでの一瞬だけ右下の窓に出て、
         // 着いてから大きな置き場所へ移る動きが見えた
@@ -972,7 +887,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleShuffle,
       load,
       playAll,
-      clearMore,
       startRadio,
       playRadio,
       fillRadio,

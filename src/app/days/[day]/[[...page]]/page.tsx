@@ -48,7 +48,7 @@ export default async function DayPage({ params }: PageProps<'/days/[day]/[[...pa
           songs={playlist.songs}
           // 一覧の画面には全曲が並ぶので、曲数は全曲の数だけ（「100曲（全313曲）」だと100曲しか並んでいないように読めた）
           count={`${formatCount(playlist.total)}曲`}
-          list={{ source: `days/${day}`, page: 1, last: 1 }}
+          source={`days/${day}`}
           pickup={playlist.pickup}
         />
       </div>

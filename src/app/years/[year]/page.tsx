@@ -42,7 +42,7 @@ export default async function YearPage({ params }: PageProps<'/years/[year]'>) {
         <PlayAll
           songs={songs}
           count={`${songs.length}曲（全${formatCount(total)}曲）`}
-          list={{ source: `years/${year}`, page: 1, last: 1 }}
+          source={`years/${year}`}
         />
       </div>
       <div className="grid gap-6">

@@ -5,7 +5,6 @@ import {
   type BeforeRadio,
   LOOSE,
   ownerHref,
-  ownerOf,
   owns,
   PENDING,
   radioExit,
@@ -21,12 +20,11 @@ const before = (over: Partial<BeforeRadio> = {}): BeforeRadio => ({
   queue: [song(1), song(2), song(3)],
   index: 1,
   owner: { kind: 'producer', producerId: 45 },
-  more: null,
   ...over,
 });
 
 const PRODUCER_45: QueueOwner = { kind: 'producer', producerId: 45 };
-const YEAR_2010: QueueOwner = { kind: 'list', source: { source: 'years/2010', start: 1, last: 3 } };
+const YEAR_2010: QueueOwner = { kind: 'list', source: 'years/2010' };
 const RADIO_1: QueueOwner = { kind: 'radio', home: '/radio/1' };
 const FAVORITES: QueueOwner = { kind: 'favorites' };
 
@@ -72,7 +70,7 @@ describe('owns', () => {
 
   it('持ち主になった画面は、自分を持ち主とみる（takeOver のあと）', () => {
     for (const page of [PRODUCER_45, YEAR_2010, RADIO_1, FAVORITES]) {
-      expect(owns(ownerOf(page), page, song(1))).toBe(true);
+      expect(owns(page, page, song(1))).toBe(true);
     }
   });
 });

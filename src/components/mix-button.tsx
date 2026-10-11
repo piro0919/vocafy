@@ -45,7 +45,7 @@ export function MixButton() {
       songs.current = null;
       return;
     }
-    playAll(list, { source, start: 1, last: 1 }, { moving: true });
+    playAll(list, source, { moving: true });
     router.push(`/${source}/play`);
   };
 

@@ -80,7 +80,6 @@ export default async function Home({ params }: PageProps<'/home/[date]/[hour]'>)
           playlist={{
             songs: dayList.songs,
             source: `days/${monthDayOf(date)}`,
-            last: 1,
             pickup: dayList.pickup,
           }}
           hero={hero}
@@ -97,7 +96,7 @@ export default async function Home({ params }: PageProps<'/home/[date]/[hour]'>)
         <div className="mb-3 flex items-end gap-3">
           <Heading eyebrow="Daily Mix">きょうの出会い</Heading>
           <div className="ml-auto">
-            <PlayAllPill songs={mix} list={{ source: `mix/${date}`, page: 1, last: 1 }} />
+            <PlayAllPill songs={mix} source={`mix/${date}`} />
           </div>
         </div>
         <MixWall songs={mix} />

@@ -4,12 +4,6 @@ import type { QueueItem } from '@/lib/catalog';
 export type Repeat = 'all' | 'one';
 
 /**
- * 「すべて再生」で流している一覧の続き。source は一覧の住所（years/2010 など）、start は押したページ、
- * next は次に足すページ、last は最後のページ。最後のページの次は1ページ目に戻り、押したページの手前まで足す
- */
-export type ListSource = { source: string; start: number; next: number; last: number };
-
-/**
  * いま流している並びの持ち主。動画を大きく出すのは、持ち主の画面だけ（player-rules.ts の owns）。
  * - producer: そのボカロPの曲の並び。そのボカロPの画面
  * - pending: 曲の一覧から押して、その1曲だけを流しながらボカロPの画面へ移る途中。着いた画面が producer に改める
@@ -26,14 +20,8 @@ export type Owner =
   | { kind: 'radio'; home: string }
   | { kind: 'loose' };
 
-/**
- * 並びの持ち主になれる画面（takeOver・use-take-over.ts）。一覧は、続きのページを読み足すためにページの情報も持つ
- */
-export type QueueOwner =
-  | { kind: 'producer'; producerId: number }
-  | { kind: 'favorites' }
-  | { kind: 'list'; source: Omit<ListSource, 'next'> }
-  | { kind: 'radio'; home: string };
+/** 並びの持ち主になれる画面（takeOver・use-take-over.ts）。移る途中（pending）と持ち主の画面が無い並び（loose）を除いたもの */
+export type QueueOwner = Exclude<Owner, { kind: 'pending' } | { kind: 'loose' }>;
 
 /** 時刻は流している仕組み（YouTube かニコニコ）から 0.5 秒おきに拾う。at は拾った瞬間で、その間は表示側で補って進める */
 export type PlaybackTime = { current: number; duration: number; at: number };
@@ -69,16 +57,16 @@ export type PlayerContext = {
   playQueue: (items: QueueItem[], start: number, owner: Owner, moving?: boolean) => void;
   /**
    * 流している曲は止めずに、並びをその画面の一覧に差し替え、その画面を並びの持ち主にする（use-take-over.ts）。
-   * owner はその画面。ボカロPの画面・お気に入りの曲の画面・一覧の再生用の画面（続きを読み足す元）・ラジオの画面（その住所）
+   * owner はその画面。ボカロPの画面・お気に入りの曲の画面・一覧の再生用の画面・ラジオの画面（その住所）
    */
   takeOver: (items: QueueItem[], index: number, owner: QueueOwner) => void;
   /**
-   * 一覧の1ページの曲を流し、並びの終わりが近づいたら、一覧の残りのページの曲を後ろに足していく（play-all.tsx）。
-   * ページ数が多い一覧（初音ミクの年など）を、押した時点で全部送らないため
+   * 一覧の曲を流す（play-all.tsx）。source は一覧の住所（years/2010 など）で、その一覧の再生用の画面が並びの持ち主になる。
+   * 流すのは100曲まで（catalog.ts の Playlist）で、一覧の続きのページは読み足さない
    */
   playAll: (
     items: QueueItem[],
-    source: Omit<ListSource, 'next'>,
+    source: string,
     options?: {
       /** items の何番目から流すか。既定は先頭 */
       at?: number;

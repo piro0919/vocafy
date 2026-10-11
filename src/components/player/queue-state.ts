@@ -1,6 +1,5 @@
 import type { QueueItem } from '@/lib/catalog';
 import { buildOrder } from './play-order';
-import type { ListSource } from './player-types';
 
 /**
  * 並び（queue）と、いまの曲（index）と、流す順（order。並びの何番目をどの順で流すか）と、いま流す順の何番目にいるか（position）。
@@ -49,34 +48,21 @@ export function freshItems(queue: QueueItem[], items: QueueItem[]): QueueItem[] 
   return items.filter((s) => !have.has(s.songId));
 }
 
-/** 流す順の終わりが近いか（残り1曲まで）。一覧の続きやラジオの関連曲を取りに行く合図 */
+/** 流す順の終わりが近いか（残り1曲まで）。ラジオの関連曲を取りに行く合図 */
 export function isNearEnd(position: number, order: number[]): boolean {
   return position >= order.length - 2;
 }
 
-/** 一覧の続きで、next の次に足すページ。最後のページの次は1ページ目に戻り、押したページ（start）まで一周したら null */
-export function followingPage(source: ListSource): ListSource | null {
-  const next = (source.next % source.last) + 1;
-  return next === source.start ? null : { ...source, next };
-}
-
-/** 一覧の start ページを流し始めたときの、最初に足す続き。1ページしかなければ null */
-export function firstMore(source: Omit<ListSource, 'next'>): ListSource | null {
-  return followingPage({ ...source, next: source.start });
-}
-
 /**
- * 前後の曲へ進むとき、どうするか。stay は進まない（並びが空か、先頭より前）、more は一覧の続きが届くのを待つ、
- * play は order の流す順で index 番目を流す。ループは全体なので、最後の曲の次は先頭へ戻り、
+ * 前後の曲へ進むとき、どうするか。stay は進まない（並びが空か、先頭より前）、play は order の流す順で index 番目を流す。ループは全体なので、最後の曲の次は先頭へ戻り、
  * ランダムならひと回りしたところで混ぜ直す（同じ順の繰り返しにしない）
  */
-export type Step =
-  { kind: 'stay' } | { kind: 'more' } | { kind: 'play'; order: number[]; index: number };
+export type Step = { kind: 'stay' } | { kind: 'play'; order: number[]; index: number };
 
 export function stepFrom(
   cursor: Cursor,
   dir: 1 | -1,
-  { hasMore, shuffle }: { hasMore: boolean; shuffle: boolean },
+  shuffle: boolean,
   random: () => number = Math.random,
 ): Step {
   const { queue, order } = cursor;
@@ -84,7 +70,6 @@ export function stepFrom(
   const pos = cursor.position + dir;
   if (pos < 0) return { kind: 'stay' };
   if (pos < order.length) return { kind: 'play', order, index: order[pos] };
-  if (hasMore) return { kind: 'more' };
   const fresh = buildOrder(
     queue.length,
     shuffle ? Math.floor(random() * queue.length) : 0,
