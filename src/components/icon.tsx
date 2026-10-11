@@ -231,6 +231,18 @@ const ICONS = {
   share: (
     <path d="M12 14.5V4m0 0L8 8m4-4 4 4M8.5 11H7a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1.5" />
   ),
+  // QR コード。3つの角の目印と、右下の小さなマス
+  qr: (
+    <>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <path
+        d="M14 14h.01M19.5 14h.01M16.75 16.75h.01M14 19.5h.01M19.5 19.5h.01"
+        strokeWidth={2.5}
+      />
+    </>
+  ),
   left: <path d="M14.5 6.5 9 12l5.5 5.5" strokeWidth={2.5} />,
   down: <path d="M6.5 9.5 12 15l5.5-5.5" strokeWidth={2.5} />,
   // 次に流れる曲（順番待ち）。3本の線に、再生の三角を添える

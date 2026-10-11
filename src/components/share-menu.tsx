@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { toast } from 'sonner';
-import { ICON } from './button-styles';
+import { ICON, ICON_SM } from './button-styles';
 import { Icon, type IconName } from './icon';
+import { QrCode } from './qr-code';
 
 /** 共有の文に付けるハッシュタグ。ボカロPの名前は付けない（記号入りの名前でタグが切れ、追う人もいない） */
 const HASHTAG = 'Vocafy';
@@ -17,6 +18,8 @@ const HASHTAG = 'Vocafy';
  */
 export function ShareMenu({ url, text, label }: { url: string; text: string; label: string }) {
   const [open, setOpen] = useState(false);
+  // 板の中身を送り先から QR に差し替えているか
+  const [qr, setQr] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
   // 板の外を押すか Esc で閉じる
@@ -42,6 +45,8 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
       await navigator.share({ text: `${text} #${HASHTAG}`, url }).catch(() => {});
       return;
     }
+    // 開き直したときは送り先の並びから
+    setQr(false);
     setOpen((o) => !o);
   };
 
@@ -84,33 +89,60 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
           role="menu"
           className="absolute top-full left-0 z-overlay mt-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-float backdrop-blur-lg backdrop-saturate-150"
         >
-          {targets.map((t) => (
-            <a
-              key={t.name}
-              role="menuitem"
-              href={t.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className={row}
-            >
-              <Icon name={t.icon} className="size-5" />
-              {t.name}
-            </a>
-          ))}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={async () => {
-              setOpen(false);
-              await navigator.clipboard.writeText(url);
-              toast('リンクをコピーしました');
-            }}
-            className={row}
-          >
-            <Icon name="share" className="size-5" />
-            リンクをコピー
-          </button>
+          {qr ? (
+            // QR は板の中身を差し替えて出す。押したボタンのすぐ下に出るので、カメラを向ける先が分かりやすい。
+            // 右下の板（次に流れる曲などと同じ外枠）に出す形は、押した所から離れていて向けにくかった
+            <>
+              <div className="flex items-center pb-1">
+                <button
+                  type="button"
+                  aria-label="共有の一覧に戻る"
+                  autoFocus
+                  onClick={() => setQr(false)}
+                  className={`grid ${ICON_SM} text-muted hover:text-foreground`}
+                >
+                  <Icon name="left" className="size-4" />
+                </button>
+                <span className="text-sm font-bold">QRコード</span>
+              </div>
+              <QrCode value={url} label={`${text} の QR コード`} />
+            </>
+          ) : (
+            <>
+              {targets.map((t) => (
+                <a
+                  key={t.name}
+                  role="menuitem"
+                  href={t.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpen(false)}
+                  className={row}
+                >
+                  <Icon name={t.icon} className="size-5" />
+                  {t.name}
+                </a>
+              ))}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={async () => {
+                  setOpen(false);
+                  await navigator.clipboard.writeText(url);
+                  toast('リンクをコピーしました');
+                }}
+                className={row}
+              >
+                <Icon name="share" className="size-5" />
+                リンクをコピー
+              </button>
+              {/* パソコンで聴いている曲をスマホで開く・隣の人に読み取ってもらうためのもの。スマホは端末の共有の窓を出すので、ここに来ない */}
+              <button type="button" role="menuitem" onClick={() => setQr(true)} className={row}>
+                <Icon name="qr" className="size-5" />
+                QRコード
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
