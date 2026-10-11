@@ -108,3 +108,6 @@ export function voiceArtByName(name: string): string | null {
 
 /** 絵のある歌声の id。影絵の書き出し漏れの検査（test/silhouettes.test.ts）で使う */
 export const VOICE_ART_IDS = [...ART.keys()];
+
+/** 絵のある歌声の名前。色の表（voice-color.ts）と食い違わないかを test/voice-tables.test.ts が見る */
+export const VOICE_ART_NAMES = [...ART.values()];
