@@ -4,6 +4,7 @@ import { COLORS } from '@/lib/voice-color';
 import { VOICE_KEY } from './theme-script';
 import { vocalistNames } from '@/lib/vocalist-names';
 import { prefersReducedMotion } from '@/lib/motion';
+import { createLocalChoice, createLocalFlag } from '@/lib/local-flag';
 
 /**
  * 画面の色を合わせるキャラ。miku は data-voice を付けない（globals.css の既定の色が初音ミク）。
@@ -26,37 +27,23 @@ export type Voice = (typeof VOICES)[number]['value'];
 
 const CHANGE_EVENT = 'vocafy-voice-change';
 
-const isVoice = (v: string | null): v is Voice => VOICES.some((o) => o.value === v);
+const choice = createLocalChoice<Voice>({
+  key: VOICE_KEY,
+  values: VOICES.map((o) => o.value),
+  fallback: 'miku',
+  event: CHANGE_EVENT,
+});
 
-export function readVoice(): Voice {
-  try {
-    const v = localStorage.getItem(VOICE_KEY);
-    return isVoice(v) ? v : 'miku';
-  } catch {
-    return 'miku';
-  }
-}
-
-export function subscribeVoice(onChange: () => void): () => void {
-  window.addEventListener(CHANGE_EVENT, onChange);
-  window.addEventListener('storage', onChange);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, onChange);
-    window.removeEventListener('storage', onChange);
-  };
-}
+export const readVoice = choice.read;
+/** サイトカラーと、歌っているキャラの色に変える設定のどちらが変わっても知らせる（同じ合図） */
+export const subscribeVoice = choice.subscribe;
 
 export function setVoice(voice: Voice) {
-  try {
-    if (voice === 'miku') localStorage.removeItem(VOICE_KEY);
-    else localStorage.setItem(VOICE_KEY, voice);
-  } catch {
-    // 保存できない窓では、開き直すと初音ミクに戻る
-  }
+  choice.save(voice);
   const apply = () => {
     if (voice === 'miku') delete document.documentElement.dataset.voice;
     else document.documentElement.dataset.voice = voice;
-    window.dispatchEvent(new Event(CHANGE_EVENT));
+    choice.notify();
   };
   // 色は画面じゅうで一度に変わるので、前と後の画面を重ねてフェードさせる（View Transitions）。
   // そのあいだは画面を写真にして重ねるため、流している動画の絵が一瞬止まって見える（音は止まらない）。
@@ -74,25 +61,15 @@ export function setVoice(voice: Voice) {
  * そのキャラのいない曲と、何も流していないときは、全部が選んだサイトカラーに戻る。
  * はじめは ON（2026-10-10 に本人が決めた）。切ったときだけ 'off' を残す
  */
-const FOLLOW_KEY = 'vocafy-voice-follow';
+const follow = createLocalFlag({
+  key: 'vocafy-voice-follow',
+  value: 'off',
+  stored: false,
+  event: CHANGE_EVENT,
+});
 
-export function readFollowVoice(): boolean {
-  try {
-    return localStorage.getItem(FOLLOW_KEY) !== 'off';
-  } catch {
-    return true;
-  }
-}
-
-export function setFollowVoice(on: boolean) {
-  try {
-    if (on) localStorage.removeItem(FOLLOW_KEY);
-    else localStorage.setItem(FOLLOW_KEY, 'off');
-  } catch {
-    // 保存できない窓では、この画面のあいだだけ効く
-  }
-  window.dispatchEvent(new Event(CHANGE_EVENT));
-}
+export const readFollowVoice = follow.read;
+export const setFollowVoice = follow.write;
 
 /** 曲の歌声（「初音ミク・鏡音リン」の形）のうち、先に名前の出てくる、色のあるキャラ（voice-color.ts）。いなければ null */
 export function singerOfVocalists(vocalists: string): string | null {

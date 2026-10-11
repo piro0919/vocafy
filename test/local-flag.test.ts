@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createLocalFlag } from '@/lib/local-flag';
+import { createLocalChoice, createLocalFlag } from '@/lib/local-flag';
 
 const store = new Map<string, string>();
 vi.stubGlobal('localStorage', {
@@ -64,5 +64,38 @@ describe('最近の検索', () => {
     addRecentSearch('a');
     restoreRecentSearches(['b', 'a']);
     expect(JSON.parse(store.get('vocafy-recent-searches')!)).toEqual(['a', 'b']);
+  });
+});
+
+describe('createLocalChoice（選択の設定）', () => {
+  const choice = createLocalChoice({
+    key: 'theme',
+    values: ['system', 'light', 'dark'] as const,
+    fallback: 'system',
+    event: 'theme-change',
+  });
+
+  it('既定を選んだときは何も残さず、ほかを選んだら残す', () => {
+    choice.save('dark');
+    expect(store.get('theme')).toBe('dark');
+    expect(choice.read()).toBe('dark');
+    choice.save('system');
+    expect(store.has('theme')).toBe(false);
+    expect(choice.read()).toBe('system');
+  });
+
+  it('知らない値が残っていたら既定として読む', () => {
+    store.set('theme', 'sepia');
+    expect(choice.read()).toBe('system');
+  });
+
+  it('残しただけでは知らせず、notify で知らせる', () => {
+    const onChange = vi.fn();
+    const unsubscribe = choice.subscribe(onChange);
+    choice.save('light');
+    expect(onChange).not.toHaveBeenCalled();
+    choice.notify();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    unsubscribe();
   });
 });

@@ -48,3 +48,50 @@ export function createLocalFlag({
 
   return { read, write, subscribe };
 }
+
+/**
+ * このブラウザに残す選択（テーマ・サイトカラー）。既定（fallback）を選んだときは何も残さない。残っている値が values に無ければ既定。
+ * save は残すだけで、合図は送らない（画面に当て終えてから notify で知らせる。サイトカラーはフェードのあとに当たる）
+ */
+export function createLocalChoice<T extends string>({
+  key,
+  values,
+  fallback,
+  event,
+}: {
+  key: string;
+  values: readonly T[];
+  fallback: T;
+  event: string;
+}) {
+  function read(): T {
+    try {
+      const v = localStorage.getItem(key);
+      return values.find((value) => value === v) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function save(value: T) {
+    try {
+      if (value === fallback) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+    } catch {
+      // 残せない窓では、開き直すと既定に戻る
+    }
+  }
+
+  const notify = () => window.dispatchEvent(new Event(event));
+
+  function subscribe(onChange: () => void): () => void {
+    window.addEventListener(event, onChange);
+    window.addEventListener('storage', onChange);
+    return () => {
+      window.removeEventListener(event, onChange);
+      window.removeEventListener('storage', onChange);
+    };
+  }
+
+  return { read, save, notify, subscribe };
+}

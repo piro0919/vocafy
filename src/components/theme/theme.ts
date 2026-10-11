@@ -1,29 +1,20 @@
 'use client';
 
+import { createLocalChoice } from '@/lib/local-flag';
 import { THEME_KEY } from './theme-script';
 
 /** 本人が選んだテーマ。system は端末の設定に合わせる */
 export type ThemePref = 'system' | 'light' | 'dark';
 
-const CHANGE_EVENT = 'vocafy-theme-change';
+const choice = createLocalChoice<ThemePref>({
+  key: THEME_KEY,
+  values: ['system', 'light', 'dark'],
+  fallback: 'system',
+  event: 'vocafy-theme-change',
+});
 
-export function readThemePref(): ThemePref {
-  try {
-    const v = localStorage.getItem(THEME_KEY);
-    return v === 'light' || v === 'dark' ? v : 'system';
-  } catch {
-    return 'system';
-  }
-}
-
-export function subscribeThemePref(onChange: () => void): () => void {
-  window.addEventListener(CHANGE_EVENT, onChange);
-  window.addEventListener('storage', onChange);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, onChange);
-    window.removeEventListener('storage', onChange);
-  };
-}
+export const readThemePref = choice.read;
+export const subscribeThemePref = choice.subscribe;
 
 export const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -34,12 +25,7 @@ export function applyTheme(pref: ThemePref) {
 }
 
 export function setThemePref(pref: ThemePref) {
-  try {
-    if (pref === 'system') localStorage.removeItem(THEME_KEY);
-    else localStorage.setItem(THEME_KEY, pref);
-  } catch {
-    // 保存できない窓では、開き直すと端末の設定に戻る
-  }
+  choice.save(pref);
   applyTheme(pref);
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+  choice.notify();
 }
