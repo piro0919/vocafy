@@ -4,12 +4,75 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import type { findProducer, Song } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
+import { voiceArtIdByName } from '@/lib/voice-art';
 import { googleFont, OG_COLORS as T, OG_SHADOW, OG_SIZE, OgBackdrop } from '../../og-backdrop';
 
 export { OG_SIZE };
 
 const icon = `data:image/png;base64,${await readFile(join(process.cwd(), 'src/app/icon.png'), 'base64')}`;
 const logoMark = `data:image/png;base64,${await readFile(join(process.cwd(), 'public/logo-mark.png'), 'base64')}`;
+
+type Art = { src: string; width: number; height: number };
+
+/**
+ * 歌っているキャラのうち、絵のある人を名前の出てくる順に2人まで（画面の影絵 singer-silhouette.tsx と同じ順）。
+ * 影絵は青緑で塗った PNG（src/assets/silhouettes。scripts/silhouettes.ts で書き出す）。縦横は PNG の頭の 16〜23 バイト目
+ */
+async function singerArts(vocalists: string[]): Promise<Art[]> {
+  const ids = [
+    ...new Set(vocalists.map((v) => voiceArtIdByName(v.trim())).filter((id) => id !== null)),
+  ].slice(0, 2);
+  return Promise.all(
+    ids.map(async (id) => {
+      const file = await readFile(join(process.cwd(), 'src/assets/silhouettes', `${id}.png`));
+      return {
+        src: `data:image/png;base64,${file.toString('base64')}`,
+        width: file.readUInt32BE(16),
+        height: file.readUInt32BE(20),
+      };
+    }),
+  );
+}
+
+/**
+ * ボカロPの絵に出すキャラ。その人の曲で一番多く歌っている、絵のあるキャラ（2026-10-11 に本人と決めた）。
+ * 1人だけ返す。曲の数で数え、同じ数なら先に出てきた人
+ */
+function favoriteSingers(songs: Pick<Song, 'vocalists'>[]): string[] {
+  const counts = new Map<string, number>();
+  for (const s of songs) {
+    for (const v of new Set(s.vocalists)) {
+      if (voiceArtIdByName(v.trim()) !== null) counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+  }
+  const top = [...counts].sort((a, b) => b[1] - a[1])[0];
+  return top ? [top[0]] : [];
+}
+
+/** 影絵の高さ。2人のときは2人とも同じ大きさで、右側に収まるよう低くする */
+const SINGER_HEIGHT = { one: 480, two: 400 };
+/** 2人の影絵を並べる幅の上限。超えるときは、2人目を1人目の後ろに重ねて収める（横に広いキャラが表紙まで届かないように） */
+const SINGERS_MAX_WIDTH = 680;
+
+/**
+ * 影絵（1人か2人）を1枚の SVG にまとめ、まとめたものを薄くする。1枚ずつ薄くすると、重なった所だけ濃くなる。
+ * 1人目を右に、2人目をその左隣に置き、2人の幅が SINGERS_MAX_WIDTH を超えるときは2人目を1人目の後ろに重ねる
+ */
+function singersImage(arts: Art[]): { src: string; width: number; height: number } | null {
+  const [first, second] = arts;
+  if (!first) return null;
+  const height = second ? SINGER_HEIGHT.two : SINGER_HEIGHT.one;
+  const widthOf = (a: Art) => Math.round((a.width / a.height) * height);
+  const firstWidth = widthOf(first);
+  // 右端からの距離
+  const secondRight = second ? Math.min(firstWidth - 24, SINGERS_MAX_WIDTH - widthOf(second)) : 0;
+  const width = second ? Math.max(firstWidth, secondRight + widthOf(second)) : firstWidth;
+  const image = (a: Art, right: number) =>
+    `<image xlink:href="${a.src}" x="${width - right - widthOf(a)}" y="0" width="${widthOf(a)}" height="${height}"/>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}">
+<g opacity="0.22">${second ? image(second, secondRight) : ''}${image(first, 0)}</g></svg>`;
+  return { src: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`, width, height };
+}
 
 /**
  * YouTube の表紙のうち、ある中で一番大きいもの。maxresdefault（1280×720）は古い動画に無く、無いと 404 が返る。
@@ -28,11 +91,13 @@ async function youtubeCover(videoId: string): Promise<string> {
  * song を渡すと（曲を共有したとき）、名前の代わりに曲名を大きく出し、その下にボカロPの名前を添える。
  * YouTube の曲は、左に顔の画像の代わりに動画の表紙を出す（2026-10-11 に本人と決めた）。表紙には何も重ねず、切らずに横に並べる
  * （規約の III.I.4 が API で取れるものの改変を禁じていて、字を重ねる・ぼかすと当たると読める余地がある）。
- * ニコニコだけの曲は顔の画像のまま。表紙の9割が 130×100 で、大きく出すとぼやける
+ * ニコニコだけの曲は顔の画像のまま。表紙の9割が 130×100 で、大きく出すとぼやける。
+ * 右下には歌っているキャラの影絵を出す。曲の絵はその曲を歌う2人まで、ボカロPの絵はその人の曲で一番多く歌うキャラ。
+ * ロゴは右上（X は大きな画像のカードの左下にサイトの住所を重ねるので、左下を避ける）
  */
 export async function producerImage(
   found: Awaited<ReturnType<typeof findProducer>>,
-  song?: Pick<Song, 'title' | 'youtubeId'>,
+  song?: Pick<Song, 'title' | 'youtubeId' | 'vocalists'>,
 ) {
   const name = found?.producer.name ?? 'Vocafy';
   const picture = found?.producer.picture ?? null;
@@ -40,7 +105,11 @@ export async function producerImage(
   const big = song?.title ?? name;
   const sub = song ? name : `${count}を、まとめて聴ける。`;
   const eyebrow = song ? 'SONG' : 'PRODUCER';
-  const cover = song?.youtubeId ? await youtubeCover(song.youtubeId) : null;
+  const [cover, singers] = await Promise.all([
+    song?.youtubeId ? youtubeCover(song.youtubeId) : null,
+    singerArts(song ? song.vocalists : favoriteSingers(found?.songs ?? [])),
+  ]);
+  const silhouette = singersImage(singers);
   const [display, body, tech] = await Promise.all([
     googleFont('M PLUS Rounded 1c', 800, big),
     googleFont('M PLUS Rounded 1c', 700, sub),
@@ -62,6 +131,16 @@ export async function producerImage(
       }}
     >
       <OgBackdrop />
+      {silhouette && (
+        // 歌っているキャラの影絵（2026-10-11）。画面の影絵と同じく差し色で薄く塗り、右下に立たせる
+        <img
+          src={silhouette.src}
+          width={silhouette.width}
+          height={silhouette.height}
+          alt=""
+          style={{ position: 'absolute', right: 40, bottom: 0 }}
+        />
+      )}
       <div
         style={{
           display: 'flex',
@@ -128,8 +207,9 @@ export async function producerImage(
       <div
         style={{
           position: 'absolute',
+          // 右上（2026-10-11）。X は大きな画像のカードの左下にサイトの住所を重ねるので、左下を避ける
           right: 72,
-          bottom: 56,
+          top: 48,
           display: 'flex',
           alignItems: 'center',
           gap: 14,

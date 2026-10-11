@@ -120,6 +120,9 @@ importers:
       secretlint:
         specifier: ^13.0.7
         version: 13.0.7
+      sharp:
+        specifier: 0.35.5
+        version: 0.35.5(@types/node@24.19.1)
       tailwindcss:
         specifier: ^4
         version: 4.3.3
@@ -3267,8 +3270,8 @@ packages:
     resolution: {integrity: sha512-U69YGDNsZ7R+umeSzdLzORNCHQFz/w4LKyNTjJQcGrQRQCr8hlCJfJwwm9sqq9Uc5N6dImS58ywURA0FkqoHlg==}
     hasBin: true
 
-  legacy-javascript@0.0.2:
-    resolution: {integrity: sha512-6cMw8OPPX9VOgnWwL6Y7vbNCpd45/RmGMrcSJGaOF4FZfTdEbtlSDUs2ZvHleTUsqSDuKthzHvD6C//jW8ETBA==}
+  legacy-javascript@0.0.3:
+    resolution: {integrity: sha512-1r6MT4dVaJyXt4G07Cm2cQ0AUaLJdefiEp4SmIAylA++gnEQ82YvmzE58RkM5EP0fk5hROLCslUPGnwIYdZQVA==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -5379,8 +5382,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.35.5':
     optionalDependencies:
@@ -5738,7 +5740,7 @@ snapshots:
 
   '@paulirish/trace_engine@0.0.53':
     dependencies:
-      legacy-javascript: 0.0.2
+      legacy-javascript: 0.0.3
       third-party-web: 0.30.0
 
   '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)':
@@ -7910,7 +7912,7 @@ snapshots:
       lefthook-windows-arm64: 2.1.16
       lefthook-windows-x64: 2.1.16
 
-  legacy-javascript@0.0.2: {}
+  legacy-javascript@0.0.3: {}
 
   levn@0.4.1:
     dependencies:
@@ -8886,7 +8888,6 @@ snapshots:
       '@img/sharp-win32-ia32': 0.35.5
       '@img/sharp-win32-x64': 0.35.5
       '@types/node': 24.19.1
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:

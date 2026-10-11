@@ -29,7 +29,7 @@ export default function OpengraphImage() {
         fontFamily: 'Rounded',
       }}
     >
-      <OgBackdrop />
+      <OgBackdrop notes />
       <div
         style={{
           display: 'flex',

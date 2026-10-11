@@ -67,8 +67,11 @@ const NOTES = [
   { x: 1110, y: 60, w: 60 },
 ];
 
-/** 地の方眼と音符の棒。絵の一番外の div（position: relative）の先頭に置く */
-export function OgBackdrop() {
+/**
+ * 地の方眼と音符の棒。絵の一番外の div（position: relative）の先頭に置く。
+ * 音符の棒はサイト全体の絵だけに出す。ボカロPと曲の絵は、キャラの影絵と飾りが重なるので方眼だけ（2026-10-11）
+ */
+export function OgBackdrop({ notes = false }: { notes?: boolean }) {
   return (
     <>
       <img
@@ -78,21 +81,22 @@ export function OgBackdrop() {
         alt=""
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
-      {NOTES.map((n) => (
-        <div
-          key={n.x}
-          style={{
-            position: 'absolute',
-            left: n.x,
-            top: n.y + 3,
-            width: n.w - 3,
-            height: 24,
-            borderRadius: 6,
-            background: COLORS.miku,
-            opacity: 0.35,
-          }}
-        />
-      ))}
+      {notes &&
+        NOTES.map((n) => (
+          <div
+            key={n.x}
+            style={{
+              position: 'absolute',
+              left: n.x,
+              top: n.y + 3,
+              width: n.w - 3,
+              height: 24,
+              borderRadius: 6,
+              background: COLORS.miku,
+              opacity: 0.35,
+            }}
+          />
+        ))}
     </>
   );
 }

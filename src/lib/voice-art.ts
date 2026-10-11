@@ -95,8 +95,16 @@ export function voiceArt(id: number): string | null {
 
 const BY_NAME = new Map([...ART].map(([id, name]) => [name, id]));
 
+/** 名前（曲の歌声に出す名前）から、絵のある歌声の id を引く。絵が無ければ null */
+export function voiceArtIdByName(name: string): number | null {
+  return BY_NAME.get(name) ?? null;
+}
+
 /** 名前（曲の歌声に出す名前）から絵を引く。流している曲の歌声から引くときに使う */
 export function voiceArtByName(name: string): string | null {
-  const id = BY_NAME.get(name);
-  return id === undefined ? null : `/characters/${id}.webp`;
+  const id = voiceArtIdByName(name);
+  return id === null ? null : `/characters/${id}.webp`;
 }
+
+/** 絵のある歌声の id。影絵の書き出し漏れの検査（test/silhouettes.test.ts）で使う */
+export const VOICE_ART_IDS = [...ART.keys()];

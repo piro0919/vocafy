@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   // スマホから手元の開発サーバーを開くため（http://MacBook-Pro.local:3100 のように Mac の名前で開く）。
   // 開発サーバーは、localhost 以外から開かれると画面を動かす部品を渡さない
   allowedDevOrigins: ['*.local'],
+  // 共有の絵（producers/[id]/og.tsx）が読むキャラの影絵。読むファイルの名前が曲ごとに変わり、自動では関数に含まれないので名指しする
+  outputFileTracingIncludes: {
+    '/producers/**': ['src/assets/silhouettes/*.png'],
+  },
   images: {
     // 変換した画像の作り置きの期限。既定の4時間だと、期限が切れた画像が見られるたびに変換し直し、そのたびに料金がかかる。
     // 変換しているのはボカロPの画像（VocaDB。差し替わると住所の ?v= が変わる）と、背景の色を取るためのニコニコの表紙だけで、
