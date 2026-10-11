@@ -5,8 +5,7 @@ import NextLink from 'next/link';
 import { usePathname as useNextPathname } from 'next/navigation';
 import { type ComponentProps, useMemo } from 'react';
 import { langOfPath, localize, stripLang, type Lang } from './config';
-import { startNavigationTo } from '@/lib/pending-navigation';
-import { markReplace } from '@/lib/leave';
+import { markReplace, startNavigationTo } from '@/lib/navigation-state';
 
 /**
  * 画面の移動は、頭に言語の付かない住所（`/producers/45`）で書き、ここでいまの言語の住所にする。
@@ -31,7 +30,7 @@ export function useLocalize(): (path: string) => string {
 
 /**
  * next/link の代わり。href を、いまの言語の住所にする。押してサイトの中の別の画面へ移るときは、住所が変わるまで移動中の印を付ける
- * （pending-navigation.ts。印が無いと、曲の替わり目に押したときに曲の住所の書き換えで移動が取り消されうる）。
+ * （navigation-state.ts。印が無いと、曲の替わり目に押したときに曲の住所の書き換えで移動が取り消されうる）。
  * 新しいタブで開く押し方（修飾キー・中ボタン・target）では付けない
  */
 export function Link({ href, onClick, ...props }: ComponentProps<typeof NextLink>) {
@@ -55,7 +54,7 @@ type Rest<F> = F extends (href: string, ...rest: infer R) => unknown ? R : never
 
 /**
  * @bprogress/next/app の useRouter の代わり。push・replace・prefetch の住所を、いまの言語の住所にする。
- * push・replace は、住所が変わるまで移動中の印を付ける（pending-navigation.ts）
+ * push・replace は、住所が変わるまで移動中の印を付ける（navigation-state.ts）
  */
 export function useRouter() {
   const router = useProgressRouter();

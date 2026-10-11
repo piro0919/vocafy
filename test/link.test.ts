@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * サイトの Link（i18n/navigation.tsx）。押してサイトの中の別の画面へ移るときだけ、住所が変わるまで移動中の印を付ける
- * （pending-navigation.ts）。next/link は、押されたら何もしない a に差し替える
+ * （navigation-state.ts）。next/link は、押されたら何もしない a に差し替える
  */
 
 vi.mock('next/link', () => ({
@@ -36,7 +36,7 @@ vi.mock('next/navigation', () => ({ usePathname: () => window.location.pathname 
 vi.mock('@bprogress/next/app', () => ({ useRouter: () => ({}) }));
 
 const { Link } = await import('@/i18n/navigation');
-const { endNavigation, navigationPending } = await import('@/lib/pending-navigation');
+const { endNavigation, navigationPending } = await import('@/lib/navigation-state');
 
 // vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
 afterEach(cleanup);

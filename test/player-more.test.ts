@@ -7,7 +7,7 @@ import {
   navigationPending,
   startNavigation,
   startNavigationTo,
-} from '@/lib/pending-navigation';
+} from '@/lib/navigation-state';
 
 // vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
 afterEach(cleanup);

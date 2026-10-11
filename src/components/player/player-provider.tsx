@@ -66,7 +66,7 @@ const TEXT = defineText({
   },
 });
 
-export type { Owner, PlaybackTime, Repeat, Sleep } from './player-types';
+export type { Owner, PlaybackTime, Sleep } from './player-types';
 
 const Context = createContext<PlayerContext | null>(null);
 

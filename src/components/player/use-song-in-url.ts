@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { useClientValue } from '@/lib/client-value';
 import { stripLang } from '@/i18n/config';
-import { navigationPending } from '@/lib/pending-navigation';
+import { navigationPending } from '@/lib/navigation-state';
 
 /** 住所の ?song= の曲の id。無いか形が違えば null */
 export function songParam(search: string): number | null {

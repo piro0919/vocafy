@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildOrder } from '@/components/player/play-order';
 import { isHomePath } from '@/lib/home-path';
-import { arrivedByReplace, leave, markReplace, setNavigationDepth } from '@/lib/leave';
+import { leave } from '@/lib/leave';
+import { arrived, markReplace, navigationDepth, setNavigationDepth } from '@/lib/navigation-state';
 import { producerName } from '@/lib/producer-name';
 import { dayTitle, monthTitle, voiceYearTitle, withPickup } from '@/lib/list-titles';
 import { frameOf, smallThumbOf, thumbOf } from '@/lib/thumb';
@@ -245,17 +246,33 @@ describe('artworkOf（Vocafy Visualizer に送る表紙の候補）', () => {
   });
 });
 
-describe('置き換えで移った先（markReplace・arrivedByReplace）', () => {
-  it('置き換えで移る先に着いたら一度だけ当たり、印を外す', () => {
+describe('arrived（住所が変わったときの数え方）', () => {
+  it('ふつうの移動は1つ進め、戻る・進む（popped）は1つ戻す。0 より下には行かない', () => {
+    setNavigationDepth(0);
+    arrived('/years', false);
+    arrived('/producers/45', false);
+    expect(navigationDepth()).toBe(2);
+    arrived('/years', true);
+    expect(navigationDepth()).toBe(1);
+    arrived('/', true);
+    arrived('/', true);
+    expect(navigationDepth()).toBe(0);
+  });
+
+  it('置き換えで移った先に着いたときは数えず、印は一度で外れる', () => {
+    setNavigationDepth(0);
     markReplace('/producers/45', '/');
-    expect(arrivedByReplace('/years')).toBe(false);
-    expect(arrivedByReplace('/producers/45')).toBe(true);
-    expect(arrivedByReplace('/producers/45')).toBe(false);
+    arrived('/producers/45', false);
+    expect(navigationDepth()).toBe(0);
+    arrived('/producers/45', false);
+    expect(navigationDepth()).toBe(1);
   });
 
   it('住所の変わらない置き換え（検索の ?q=）は覚えない', () => {
+    setNavigationDepth(0);
     markReplace('/search', '/search');
-    expect(arrivedByReplace('/search')).toBe(false);
+    arrived('/search', false);
+    expect(navigationDepth()).toBe(1);
   });
 });
 
