@@ -19,18 +19,20 @@ export function NowPlaying({ producerId }: { producerId: number }) {
   return <Bars playing={playing} />;
 }
 
-/** 再生中の印。棒ごとに1周の3分の1ずつずらし、伸びる山が左から右へ流れる。一時停止中は止める */
+/** 棒ごとの伸び縮み。Tailwind が拾えるよう名前を書き切る */
+const BAR_ANIMATIONS = ['animate-eq-1', 'animate-eq-2', 'animate-eq-3'];
+
+/** 再生中の印。棒ごとに違う並びで伸び縮みさせ、音に揺れて見せる。一時停止中は止める */
 export function Bars({ playing }: { playing: boolean }) {
   const t = useText(TEXT);
   return (
     <span aria-label={t.playing} className="inline-flex h-3 shrink-0 items-end gap-0.5">
-      {[0, 1, 2].map((i) => (
+      {BAR_ANIMATIONS.map((animation) => (
         <span
-          key={i}
-          className="w-0.5 origin-bottom animate-eq rounded-full bg-accent"
+          key={animation}
+          className={`w-0.5 origin-bottom rounded-full bg-accent ${animation}`}
           style={{
             height: '100%',
-            animationDelay: `calc(var(--transition-duration-move) * ${-i} * 2 / 3)`,
             animationPlayState: playing ? 'running' : 'paused',
           }}
         />

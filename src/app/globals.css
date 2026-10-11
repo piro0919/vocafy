@@ -304,8 +304,11 @@
   --animate-heart-note: heart-note var(--transition-duration-move) var(--ease-out) forwards;
   --animate-hop: hop var(--transition-duration-move) var(--ease-out);
   /* 繰り返す動きは片道をどれかの長さにする（漂いも片道が drift）。一周は行きと帰りで2倍。行って戻るので、漂いと同じく ease-in-out。
-     再生中の印の棒は move（slow では一周 2.4秒になり、だらけて音に合って見えなかった）、読み込み中の札の明滅は slow */
-  --animate-eq: eq calc(var(--transition-duration-move) * 2) ease-in-out infinite;
+     再生中の印の棒は move（slow では一周 2.4秒になり、だらけて音に合って見えなかった）、読み込み中の札の明滅は slow。
+     棒は1本ずつ高さの違う山を move ごとに渡り、山の数を 4・5・3 と変えて、3本がそろう形が 18秒に1度しか来ないようにする */
+  --animate-eq-1: eq-1 calc(var(--transition-duration-move) * 4) ease-in-out infinite;
+  --animate-eq-2: eq-2 calc(var(--transition-duration-move) * 5) ease-in-out infinite;
+  --animate-eq-3: eq-3 calc(var(--transition-duration-move) * 3) ease-in-out infinite;
   --animate-pulse: pulse calc(var(--transition-duration-slow) * 2) ease-in-out infinite;
 }
 
@@ -533,13 +536,49 @@ body {
   }
 }
 
-/* 再生中の印の棒の伸び縮み */
-@keyframes eq {
+/* 再生中の印の棒の伸び縮み。音に揺れて見えるよう、棒ごとに高さの並びを変える */
+@keyframes eq-1 {
   0%,
   100% {
-    transform: scaleY(0.3);
+    transform: scaleY(0.4);
+  }
+  25% {
+    transform: scaleY(1);
   }
   50% {
+    transform: scaleY(0.55);
+  }
+  75% {
+    transform: scaleY(0.85);
+  }
+}
+@keyframes eq-2 {
+  0%,
+  100% {
+    transform: scaleY(0.9);
+  }
+  20% {
+    transform: scaleY(0.35);
+  }
+  40% {
+    transform: scaleY(0.7);
+  }
+  60% {
+    transform: scaleY(1);
+  }
+  80% {
+    transform: scaleY(0.5);
+  }
+}
+@keyframes eq-3 {
+  0%,
+  100% {
+    transform: scaleY(0.7);
+  }
+  33.333% {
+    transform: scaleY(0.3);
+  }
+  66.667% {
     transform: scaleY(1);
   }
 }
