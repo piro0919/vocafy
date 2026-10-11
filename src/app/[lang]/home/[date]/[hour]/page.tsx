@@ -11,6 +11,7 @@ import { Shelf } from '@/components/shelf';
 import { unstable_cache } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, voices, years } from '@/lib/catalog';
+import { niconicoBigCover } from '@/lib/niconico-cover';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
 import { hourInJapan, monthDayOf, today } from '@/lib/iso-date';
@@ -46,7 +47,7 @@ const DEPLOYMENT = process.env.VERCEL_DEPLOYMENT_ID ?? 'local';
 const dayOf = unstable_cache(
   (date: string) =>
     Promise.all([
-      onThisDay(date, ON_THIS_DAY_MIN),
+      onThisDay(date, ON_THIS_DAY_MIN, niconicoBigCover),
       playlistOfDay(monthDayOf(date)),
       dailyMix(date, MIX_SIZE),
     ]),

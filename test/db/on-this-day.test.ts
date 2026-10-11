@@ -23,7 +23,34 @@ const songs: SeedSong[] = [
   ...[3021, 3022, 3023, 3024, 3025].map((id, i) => ({ id, publishedOn: `${2015 + i}-03-08` })),
   { id: 4001, publishedOn: '2024-02-29' },
   { id: 5001, publishedOn: '2020-01-01' },
+  // 6月15日。ニコニコだけの曲は、大きい版の表紙が取れる 6002 だけが大きな1曲の候補
+  { id: 6001, publishedOn: '2015-06-15' },
+  {
+    id: 6002,
+    publishedOn: '2014-06-15',
+    youtubeId: null,
+    niconicoId: 'sm6002',
+    niconicoThumb: 'nico/6002',
+  },
+  {
+    id: 6003,
+    publishedOn: '2009-06-15',
+    youtubeId: null,
+    niconicoId: 'sm6003',
+    niconicoThumb: 'nico/6003',
+  },
+  // 7月20日は大きい版の取れないニコニコの曲だけ
+  {
+    id: 7001,
+    publishedOn: '2009-07-20',
+    youtubeId: null,
+    niconicoId: 'sm7001',
+    niconicoThumb: 'nico/7001',
+  },
 ];
+
+/** 大きい版の表紙。6002 だけ取れる */
+const bigCover = async (thumb: string) => (thumb === 'nico/6002' ? `${thumb}.L` : null);
 
 const ids = (items: { songId: number }[]) => items.map((s) => s.songId);
 
@@ -77,5 +104,18 @@ describe('onThisDay', () => {
 
   it('年をまたいで前後の日を数える（12月31日の翌日は1月1日）', async () => {
     expect(ids((await onThisDay('2026-12-31', 1)).songs)).toEqual([5001]);
+  });
+
+  it('ニコニコだけの曲は、大きい版の表紙が取れる曲だけを大きな1曲にし、表紙をその大きい版にする', async () => {
+    const { songs: found, heroes } = await onThisDay('2026-06-15', 1, bigCover);
+    expect(ids(found)).toEqual([6001, 6002, 6003]);
+    expect(ids(heroes).toSorted((x, y) => x - y)).toEqual([6001, 6002]);
+    expect(heroes.find((s) => s.songId === 6002)?.thumb).toBe('nico/6002.L');
+  });
+
+  it('大きい版の表紙が取れる曲が無い日は、表紙を問わずに選ぶ', async () => {
+    const { heroes } = await onThisDay('2026-07-20', 1, bigCover);
+    expect(ids(heroes)).toEqual([7001]);
+    expect(heroes[0]?.thumb).toBe('nico/7001');
   });
 });

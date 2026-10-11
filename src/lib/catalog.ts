@@ -313,9 +313,17 @@ const HERO_POPULAR_POOL = 24;
  * 何時にどれを出すかはトップが決める。24枠のうち8枠はその日の評価点の上位24曲から、残りの16枠はその日の全曲から選び、
  * 日付で決まる順に混ぜる。知られていない曲も出しつつ、知っている曲にも出会えるようにする（きょうの出会いの MIX_POPULAR と同じ考え）。
  * 曲が24曲に満たない日（2月29日の18曲だけ）は、全曲を並べて一周したら頭に戻る
+ *
+ * bigCover を渡すと、ニコニコだけの曲は大きい版の表紙が取れる曲だけを大きな1曲の候補にし、表紙もその大きい版にする
+ * （2026-10-12 に本人と決めた。2011年ごろまでのニコニコの表紙は 130×100 しか無く、大きく出すとぼやける）。
+ * 候補が1曲も残らない日は、前後の日から補った曲、それも無ければ表紙を問わずに選ぶ
  */
 export const onThisDay = cache(
-  async (date: string, min: number): Promise<{ heroes: DatedItem[]; songs: DatedItem[] }> => {
+  async (
+    date: string,
+    min: number,
+    bigCover?: (thumb: string) => Promise<string | null>,
+  ): Promise<{ heroes: DatedItem[]; songs: DatedItem[] }> => {
     const { rows } = await db().query<QueueRow & { distance: number }>(
       `select * from (
        select q.*, least(abs(d.doy - t.doy), 366 - abs(d.doy - t.doy)) as distance
@@ -338,15 +346,30 @@ export const onThisDay = cache(
     const within = rows.filter((r) => r.distance <= reach);
     const exact = within.filter((r) => r.distance === 0);
     const shuffle = <T extends { id: number }>(list: T[]) => shuffleOn(date, list);
-    const pool = (exact.length > 0 ? exact : within).toSorted(
-      (a, b) => b.rating_score - a.rating_score || a.id - b.id,
+    // ニコニコだけの曲の大きい版の表紙。取れなかった曲は null
+    const covers = new Map(
+      bigCover
+        ? await Promise.all(
+            within
+              .filter((r) => r.youtube_id === null && r.niconico_thumb !== null)
+              .map(async (r) => [r.id, await bigCover(r.niconico_thumb ?? '')] as const),
+          )
+        : [],
     );
+    const sharp = (list: typeof rows) => list.filter((r) => covers.get(r.id) !== null);
+    const pool = (
+      [sharp(exact), sharp(within), exact].find((list) => list.length > 0) ?? within
+    ).toSorted((a, b) => b.rating_score - a.rating_score || a.id - b.id);
     const popular = shuffle(pool.slice(0, HERO_POPULAR_POOL)).slice(0, HERO_POPULAR);
     const others = shuffle(pool.filter((r) => !popular.includes(r))).slice(
       0,
       HERO_SLOTS - popular.length,
     );
-    return { heroes: shuffle([...popular, ...others]).map(toItem), songs: within.map(toItem) };
+    const heroes = shuffle([...popular, ...others]).map((r) => {
+      const item = toItem(r);
+      return { ...item, thumb: covers.get(r.id) ?? item.thumb };
+    });
+    return { heroes, songs: within.map(toItem) };
   },
 );
 

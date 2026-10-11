@@ -9,6 +9,7 @@ import type { Lang } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import type { findProducer, Song } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
+import { niconicoBigCover } from '@/lib/niconico-cover';
 import { voiceArtIdByName } from '@/lib/voice-art';
 import { favoriteSinger, singerLayout } from './og-layout';
 import { googleFont, OG_COLORS as T, OG_SHADOW, OG_SIZE, OgBackdrop } from '../../og-backdrop';
@@ -84,21 +85,11 @@ async function youtubeCover(videoId: string): Promise<string> {
 }
 
 /**
- * ニコニコの表紙の大きい版（末尾に .L を付けた 360×270。上下に黒い帯の付いた 4:3 で、帯を切ると表紙の枠とほぼ同じ大きさ）。
- * 2012年ごろより前の動画には無く 404 が返るので、そのときは null（顔の画像に戻す）。2026-10-12 に202曲を抜き取って調べ、
- * 2011年までは52曲中1曲、2012年からは150曲中148曲で取れた
- */
-async function niconicoCover(thumb: string): Promise<string | null> {
-  const url = `${thumb}.L`;
-  return (await fetch(url, { method: 'HEAD' })).ok ? url : null;
-}
-
-/**
  * ボカロPの画面を共有したときの絵。左に本人の画像、右に名前と曲数。
  * song を渡すと（曲を共有したとき）、名前の代わりに曲名を大きく出し、その下にボカロPの名前を添える。
  * YouTube の曲は、左に顔の画像の代わりに動画の表紙を出す（2026-10-11 に本人と決めた）。表紙には何も重ねず、切らずに横に並べる
  * （規約の III.I.4 が API で取れるものの改変を禁じていて、字を重ねる・ぼかすと当たると読める余地がある）。
- * ニコニコだけの曲は、大きい版の表紙（niconicoCover）がある曲だけ表紙を出し、無い曲は顔の画像のまま（130×100 しか無く、大きく出すとぼやける）。
+ * ニコニコだけの曲は、大きい版の表紙（niconico-cover.ts）がある曲だけ表紙を出し、無い曲は顔の画像のまま（130×100 しか無く、大きく出すとぼやける）。
  * 右下には歌っているキャラの影絵を出す。曲の絵はその曲を歌う2人まで、ボカロPの絵はその人の曲で一番多く歌うキャラ。
  * ロゴは右上（X は大きな画像のカードの左下にサイトの住所を重ねるので、左下を避ける）
  */
@@ -120,7 +111,7 @@ export async function producerImage(
     song?.youtubeId
       ? youtubeCover(song.youtubeId)
       : song?.niconicoThumb
-        ? niconicoCover(song.niconicoThumb)
+        ? niconicoBigCover(song.niconicoThumb)
         : null,
     singerArts(song ? song.vocalists : favoriteSingers(found?.songs ?? [])),
     googleFont('M PLUS Rounded 1c', 800, big),
