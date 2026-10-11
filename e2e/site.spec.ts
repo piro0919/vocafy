@@ -145,6 +145,28 @@ test('お気に入りの曲は、行をつかんで並べ替えられ、ただ�
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
+test('動画を縮めると、サイトの中から来たなら前の画面へ、外から来たならトップへ', async ({
+  page,
+  isMobile,
+  baseURL,
+}) => {
+  // 縮めるボタンはスマホの幅の動画の画面にだけある
+  test.skip(!isMobile, 'スマホだけの操作');
+  const leave = page.getByRole('button', { name: '動画を縮めて前の画面に戻る' });
+  await page.goto('/years/2016');
+  await page.locator('main button').filter({ hasText: '・' }).first().click();
+  await page.waitForURL(/producers\/\d+/);
+  await leave.click();
+  await expect(page).toHaveURL(/\/years\/2016$/);
+  // 共有のリンクを同じタブで開いた人。「戻る」にすると外のページへ出てしまう（leave.ts）
+  await page.setContent(`<a id="share" href="${baseURL}/producers/45">共有のリンク</a>`);
+  await page.click('#share');
+  await page.waitForURL(/producers\/45/);
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  await leave.click();
+  await expect(page).toHaveURL(`${baseURL}/`);
+});
+
 test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: /^2016/ }).click();
