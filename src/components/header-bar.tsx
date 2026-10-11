@@ -56,38 +56,36 @@ export function HeaderBar() {
   }
 
   return (
-    <>
-      <div className="flex w-full items-center gap-1 md:hidden">
-        <Logo compact />
-        <span className="flex-1" />
-        <InstallButton className="md:hidden" />
-        {/* 検索は下のタブに入りきらないので、上の帯に置く（YouTube のアプリと同じ） */}
-        {/* 触れた時点で検索の索引を読み始める（src/lib/search-index.ts） */}
-        {/*
+    <div className="flex w-full items-center gap-1 md:hidden">
+      <Logo compact />
+      <span className="flex-1" />
+      <InstallButton />
+      {/* 検索は下のタブに入りきらないので、上の帯に置く（YouTube のアプリと同じ） */}
+      {/* 触れた時点で検索の索引を読み始める（src/lib/search-index.ts） */}
+      {/*
           押した操作の中で欄を出して選ぶ。iPhone は押した操作の外で欄を選んでもキーボードを出さないので、
           画面が移ってから選ぶと、欄をもう一度押させることになる
         */}
-        <button
-          type="button"
-          aria-label="検索"
-          className={ICON_BUTTON}
-          onPointerDown={() => void loadIndex().catch(() => {})}
-          onClick={() => {
-            flushSync(() => setOpening(true));
-            input.current?.focus();
-            openedFromSite = true;
-            router.push('/search');
-          }}
-        >
-          <Icon name="search" className="size-5" />
-        </button>
-        {/* スマホは左のメニューが出ないので、設定への入口を上の帯の右端に置く（YouTube Music のアプリと同じ） */}
-        <Link href="/settings" aria-label="設定" className={ICON_BUTTON}>
-          <Icon name="settings" className="size-5" />
-        </Link>
-        {/* ログインは右端に置く（YouTube と同じ） */}
-        <AccountButton />
-      </div>
-    </>
+      <button
+        type="button"
+        aria-label="検索"
+        className={ICON_BUTTON}
+        onPointerDown={() => void loadIndex().catch(() => {})}
+        onClick={() => {
+          flushSync(() => setOpening(true));
+          input.current?.focus();
+          openedFromSite = true;
+          router.push('/search');
+        }}
+      >
+        <Icon name="search" className="size-5" />
+      </button>
+      {/* スマホは左のメニューが出ないので、設定への入口を上の帯の右端に置く（YouTube Music のアプリと同じ） */}
+      <Link href="/settings" aria-label="設定" className={ICON_BUTTON}>
+        <Icon name="settings" className="size-5" />
+      </Link>
+      {/* ログインは右端に置く（YouTube と同じ） */}
+      <AccountButton />
+    </div>
   );
 }
