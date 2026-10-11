@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { isAppleDevice } from '@/lib/apple-device';
-import { keepAwake, letSleep } from './keep-awake';
+import { keepAwake, letSleep, rest } from './keep-awake';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
 import type { Engine, EngineEvents, Sound } from './engine';
@@ -754,6 +754,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const current = queue[index] ?? null;
   useWakeLock(playing);
+  // 一時停止がしばらく続いたら、無音で開けておいた音の出口を止める（keep-awake.ts）。すぐ再生し直すときは開けたままにして、
+  // 開け直しで鳴るプツッという音を出さない。流し始めたら開け直す
+  useEffect(() => {
+    if (playing) {
+      keepAwake();
+      return;
+    }
+    if (queue.length === 0) return;
+    const timer = setTimeout(rest, TIMING.audioRest);
+    return () => clearTimeout(timer);
+  }, [playing, queue.length]);
   // 閉じたあとも、帯が下へ消えきるまでは最後の曲を出しておく
   const [shown, setShown] = useState<QueueItem | null>(null);
   if (current && current !== shown) setShown(current);
@@ -839,6 +850,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return;
         }
         if (p?.service === 'niconico') primeParked(cursor.current.queue);
+        // 止めていた音の出口を、押した操作の中で開け直す（押した操作の外だと、ブラウザが開け直しを止めることがある）
+        keepAwake();
         p?.play();
       },
       step,

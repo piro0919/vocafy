@@ -12,4 +12,6 @@ export const TIMING = {
   undoToast: 5000,
   /** 再生中に、再生位置をプレイヤーから拾う間隔（間は帯の側で補う） */
   positionPoll: 500,
+  /** 一時停止がこれだけ続いたら、無音で開けておいた音の出口を止める（keep-awake.ts） */
+  audioRest: 30_000,
 } as const;
