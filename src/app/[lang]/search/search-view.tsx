@@ -11,7 +11,7 @@ import { Heading, SECTION } from '@/components/heading';
 import { FadeImage } from '@/components/fade-image';
 import { SongList } from '@/components/song-list';
 import type { QueueItem, SearchDetails } from '@/lib/catalog';
-import { normalize } from '@/lib/search';
+import { normalize, searchable } from '@/lib/search';
 import {
   addRecentSearch,
   clearRecentSearches,
@@ -98,7 +98,9 @@ export function SearchView() {
   const terms = useText(TERMS);
   const producerName = useProducerName();
   const voices = useVoiceNames();
-  const query = normalize(text);
+  // かな・英数字の1文字では探さず、何も打っていないときと同じく最近の検索を出す
+  const normalized = normalize(text);
+  const query = searchable(normalized) ? normalized : '';
   const found = useMemo(() => (index && query ? findInIndex(index, query) : null), [index, query]);
 
   // 出す曲のボカロPの分だけ2段目を読み、曲の一覧に組み立てる。打つあいだに古い結果が後から届いても使わない

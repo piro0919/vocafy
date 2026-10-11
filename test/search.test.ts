@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { foldLong, normalize, normalizeRomaji, score } from '@/lib/search';
+import { foldLong, normalize, normalizeRomaji, score, searchable } from '@/lib/search';
 
 describe('normalize', () => {
   it('カタカナとひらがなを区別しない', () => {
@@ -38,5 +38,21 @@ describe('foldLong', () => {
     const forms = ['Shoushitsu', 'Shoshitsu', 'Shōshitsu', 'Shooshitsu'].map(normalizeRomaji);
     expect(new Set(forms).size).toBe(1);
     expect(foldLong(normalize('Roshin Yuukai'))).toBe(normalizeRomaji('Roshin Yūkai'));
+  });
+});
+
+describe('searchable', () => {
+  it('かな・英数字の1文字では探さない', () => {
+    for (const q of ['あ', 'a', '7', 'ー']) expect(searchable(normalize(q))).toBe(false);
+    expect(searchable(normalize('ア'))).toBe(false);
+    expect(searchable(normalize('Ａ'))).toBe(false);
+  });
+
+  it('漢字や記号の1文字、2文字からは探す', () => {
+    for (const q of ['嘘', '🐈', '∞', 'ia', 'あい']) expect(searchable(normalize(q))).toBe(true);
+  });
+
+  it('空では探さない', () => {
+    expect(searchable('')).toBe(false);
   });
 });

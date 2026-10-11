@@ -42,3 +42,14 @@ export function score(target: string, query: string): number {
   if (target.startsWith(query)) return 2;
   return target.includes(query) ? 1 : 0;
 }
+
+/**
+ * 探す価値のある言葉か（2026-10-12 に本人と決めた）。かな・英数字の1文字では探さない。「a」「あ」で始まる曲だけで
+ * 数百〜千曲あり、上位を出すために2段目の索引を数十本読むことになるため。漢字や記号の1文字は探す
+ * （「嘘」「雨」「🐈」のような1文字の曲名が約300曲ある）。normalize したあとの言葉を受け取る
+ */
+export function searchable(query: string): boolean {
+  const chars = [...query];
+  if (chars.length !== 1) return chars.length > 1;
+  return !/^[\p{Script=Hiragana}\p{Script=Katakana}a-z0-9ー]$/u.test(query);
+}
