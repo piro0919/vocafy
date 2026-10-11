@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
+import { SongShare } from './share-menu';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
 import { useStageNotes } from './song-notes';
@@ -73,6 +74,9 @@ export function RadioPlayer({
     if (here && queue.length === 1 && related) fillRadio([seed, ...related]);
   }, [here, queue.length, fillRadio, seed, related]);
 
+  // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
+  const share = <SongShare song={here ? current : null} />;
+
   return (
     // 一覧の再生用の画面（list-player.tsx）と同じ組み立て
     <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
@@ -86,11 +90,19 @@ export function RadioPlayer({
         <SwipeToLeave className="lg:mt-4">
           <StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />
         </SwipeToLeave>
-        <StageControls extra={notes.button}>
+        <StageControls
+          extra={
+            <>
+              {share}
+              {notes.button}
+            </>
+          }
+        >
           <StagePlayButton
             playing={here && playing}
             onClick={() => (here ? toggle() : playRadio(songs, 0))}
           />
+          {share}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />

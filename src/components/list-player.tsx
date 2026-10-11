@@ -4,6 +4,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
+import { SongShare } from './share-menu';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
 import { useStageNotes } from './song-notes';
@@ -81,6 +82,9 @@ export function ListPlayer({
     window.history.replaceState(null, '', url);
   }, [listSource, current, source]);
 
+  // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
+  const share = <SongShare song={here ? current : null} />;
+
   return (
     // ボカロPの画面（producer-player.tsx）と同じ組み立て
     <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
@@ -94,8 +98,16 @@ export function ListPlayer({
         <SwipeToLeave className="lg:mt-4">
           <StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />
         </SwipeToLeave>
-        <StageControls extra={notes.button}>
+        <StageControls
+          extra={
+            <>
+              {share}
+              {notes.button}
+            </>
+          }
+        >
           <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
+          {share}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />

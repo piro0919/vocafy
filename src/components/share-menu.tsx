@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import type { QueueItem } from '@/lib/catalog';
 import { toast } from 'sonner';
 import { ICON } from './button-styles';
 import { Icon, type IconName } from './icon';
@@ -113,5 +114,29 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
         </div>
       )}
     </div>
+  );
+}
+
+const noSubscribe = () => () => {};
+
+/**
+ * 流している曲の共有のボタン。お気に入りの曲・一覧の再生用・ラジオの画面の「再生」の段に置く（2026-10-11 に本人と決めた）。
+ * 送るのはボカロPの画面と同じ、曲名を題名と共有の絵に入れた住所（/producers/45/songs/曲の id）。並びそのものは送らない
+ * （きょうの出会いは日付で、ラジオは流すにつれて中身が変わり、受け取った側が同じものを聴けない）。song が null なら何も出さない
+ */
+export function SongShare({ song }: { song: QueueItem | null }) {
+  // 住所の元はブラウザの側で決める（作り置きのページにサーバーの住所を焼き込まない）
+  const origin = useSyncExternalStore(
+    noSubscribe,
+    () => window.location.origin,
+    () => '',
+  );
+  if (!song) return null;
+  return (
+    <ShareMenu
+      url={`${origin}/producers/${song.producerId}/songs/${song.songId}`}
+      text={`${song.title} - ${song.producerName}`}
+      label="この曲を共有"
+    />
   );
 }

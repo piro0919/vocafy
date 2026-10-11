@@ -8,6 +8,7 @@ import {
   SwipeToLeave,
 } from '@/components/player-stage';
 import { PlaybackMode } from '@/components/player/playback-mode';
+import { SongShare } from '@/components/share-menu';
 import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -34,6 +35,9 @@ export function FavoriteSongs() {
   const notes = useStageNotes(here ? current : null);
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
 
+  // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
+  const share = <SongShare song={here ? current : null} />;
+
   return (
     <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
       <div className="contents lg:sticky lg:top-(--content-top) lg:block">
@@ -47,7 +51,14 @@ export function FavoriteSongs() {
           <StageHeading eyebrow="Favorites" title="お気に入りの曲" song={here ? current : null} />
         </SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <StageControls extra={notes.button}>
+        <StageControls
+          extra={
+            <>
+              {share}
+              {notes.button}
+            </>
+          }
+        >
           <StagePlayButton
             playing={here && playing}
             disabled={songs.length === 0}
@@ -55,6 +66,7 @@ export function FavoriteSongs() {
             {...NO_RESTORE}
             onClick={() => (here ? toggle() : play())}
           />
+          {share}
           {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
           {notes.button}
           <PlaybackMode className="md:hidden" radio scroll />
