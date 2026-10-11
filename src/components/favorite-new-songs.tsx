@@ -5,7 +5,7 @@ import type { DatedItem } from '@/lib/catalog';
 import { useFavoriteProducers } from '@/lib/favorites';
 import { Heading, SECTION } from './heading';
 import { SongItem, useOpenSong } from './song-list';
-import { edgeMask, useShelfScroll } from './shelf';
+import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
 
 /** 新しい曲を読むボカロPの数（お気に入りに足した新しい順） */
@@ -14,9 +14,13 @@ const PRODUCERS = 12;
 const SONGS = 12;
 /** 1人のボカロPから読む曲の数（/api/latest/[producer] が返す数） */
 const PER_PRODUCER = 6;
-/** 棚の並べ方。スマホは列を横に送る（行の数は使う側で足す）、パソコンは格子 */
+/**
+ * 棚の並べ方。どの幅でも3曲ずつの列にして横に送る（きょうの日付の曲の右側と同じ列の幅）。
+ * パソコンで格子にしていたころは、列を幅いっぱいに伸ばすと曲名と右端のハートのあいだが大きく空き、列の幅に上限を付けると
+ * 棚の右が空いた（2026-10-11 に本人と決めた）
+ */
 const SHELF =
-  'bleed-x grid auto-cols-day grid-flow-col content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm md:mx-0 md:grid-flow-row md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3';
+  'bleed-x grid auto-cols-day grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm lg:mx-0 lg:auto-cols-day-lg lg:scroll-px-fade lg:px-0';
 
 /**
  * トップの「お気に入りのボカロPの新曲」。お気に入りに入れたボカロPの新しい曲を、投稿の新しい順に混ぜて並べる。
@@ -26,7 +30,7 @@ const SHELF =
  */
 export function FavoriteNewSongs() {
   const { items: producers } = useFavoriteProducers();
-  const { track, edge, update } = useShelfScroll<HTMLUListElement>();
+  const { track, edge, update, page } = useShelfScroll<HTMLUListElement>();
   const open = useOpenSong();
   const ids = producers.slice(0, PRODUCERS).map((p) => p.id);
   const key = ids.join(',');
@@ -61,18 +65,18 @@ export function FavoriteNewSongs() {
   if (!key || songs?.length === 0) return null;
   return (
     <section className={SECTION} aria-busy={!songs}>
-      <div className="mb-3">
+      <div className="mb-3 flex items-end gap-3">
         <Heading eyebrow="From Your Favorites">お気に入りのボカロPの新曲</Heading>
+        {songs && (
+          <div className="ml-auto flex items-center gap-2">
+            <ShelfArrows edge={edge} page={page} />
+          </div>
+        )}
       </div>
       {songs ? (
-        // スマホは3曲ずつの列にして横に送る（きょうの日付の曲と同じ形）。12曲を縦に並べると棚だけで画面1枚半になり、
-        // 下のきょうの出会いがずっと下に押し出された（2026-10-11）。パソコンは2〜3列の格子のまま
-        <ul
-          ref={track}
-          onScroll={update}
-          style={{ maskImage: edgeMask(edge) }}
-          className={`${SHELF} max-md:grid-rows-3`}
-        >
+        // 3曲ずつの列にして横に送る（きょうの日付の曲と同じ形）。スマホで12曲を縦に並べると棚だけで画面1枚半になり、
+        // 下のきょうの出会いがずっと下に押し出された（2026-10-11）
+        <ul ref={track} onScroll={update} style={{ maskImage: edgeMask(edge) }} className={SHELF}>
           {songs.map((song, i) => (
             <li key={song.songId} className="min-w-0">
               <SongItem song={song} eager={i < EAGER_IMAGES} onOpen={() => open(song)} />
@@ -81,7 +85,7 @@ export function FavoriteNewSongs() {
         </ul>
       ) : (
         // 読み込むあいだは、曲の行の形だけを並べて場所を取っておく。読み終えたときに下の区画が押し下がらないように
-        <div aria-hidden className={`${SHELF} max-md:grid-rows-3`}>
+        <div aria-hidden className={SHELF}>
           {/* 読み終えたときと同じ数（多くて SONGS 曲）を並べ、高さを合わせる */}
           {Array.from({ length: Math.min(SONGS, ids.length * PER_PRODUCER) }, (_, i) => (
             <div key={i} className="flex items-center gap-3 p-1.5">

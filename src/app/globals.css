@@ -281,7 +281,8 @@
   /* 横に送る棚の1列の幅（きょうの日付の曲の列・きょうの出会いの列・曲の列） */
   --grid-auto-columns-day: 88%;
   --grid-auto-columns-day-sm: min(22rem, 80%);
-  --grid-auto-columns-day-lg: 90%;
+  /* パソコンは右の欄の 90% まで。ただし曲の一覧と同じく 22rem で止める（上限が無いと、広い画面で曲名と年のあいだが大きく空いた） */
+  --grid-auto-columns-day-lg: min(22rem, 90%);
   --grid-auto-columns-mix: 30%;
   --grid-auto-columns-mix-sm: 23%;
   --grid-auto-columns-songs: minmax(17rem, 22rem);
@@ -630,7 +631,7 @@ body {
 }
 
 /*
- * キャラの絵の札が1回跳ねる（browse-cards.tsx の CharacterFace）。指を乗せたときと、トップの歌声の区画が画面に入ったとき（character-hop.tsx）。
+ * キャラの絵の札が1回跳ねる（browse-cards.tsx の CharacterFace）。指を乗せたとき（hop-on-hover.tsx が data-hopping を付ける）と、トップの歌声の区画が画面に入ったとき（character-hop.tsx）。
  * 画面に入ったときは、左の列から順に少しずつ遅らせて跳ねる。遅れは列の順（--hop-order）ごとに react の半分
  */
 @keyframes hop {
@@ -641,6 +642,9 @@ body {
   40% {
     transform: translateY(-12%);
   }
+}
+[data-hopping] {
+  animation: var(--animate-hop);
 }
 [data-hop] [data-hop-target] {
   animation: var(--animate-hop);

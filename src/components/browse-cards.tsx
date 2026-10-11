@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { voiceColor } from '@/lib/voice-color';
 import { FadeImage } from './fade-image';
+import { HopOnHover } from './hop-on-hover';
 import { formatCount } from '@/lib/format';
 import { PILL } from './button-styles';
 
@@ -51,15 +52,17 @@ export function CharacterFace({
             髪は隣との間へはみ出してよい。z-raised で隣の札より手前に出す。並べる側で、列と列の間を空ける */}
         <span className="absolute -inset-x-art-bleed top-0 bottom-0 z-raised origin-bottom transition duration-react group-hover:-translate-y-1 group-hover:scale-105">
           {/* ぼかさずにずらしただけの影で、ステッカーのように浮かせる。色はキャラの色を暗くしたもの。
-              指を乗せると1回跳ねる。トップで画面に入ったときの跳ね（data-hop-target）は、重ならないよう外側の枠で受ける */}
+              指を乗せると1回跳ねる（HopOnHover）。トップで画面に入ったときの跳ね（data-hop-target）は、重ならないよう外側の枠で受ける */}
           <span data-hop-target className="absolute inset-0">
-            <FadeImage
-              src={art}
-              alt=""
-              fill
-              unoptimized
-              className="object-contain object-bottom drop-shadow-art group-hover:animate-hop"
-            />
+            <HopOnHover>
+              <FadeImage
+                src={art}
+                alt=""
+                fill
+                unoptimized
+                className="object-contain object-bottom drop-shadow-art"
+              />
+            </HopOnHover>
           </span>
         </span>
       </span>

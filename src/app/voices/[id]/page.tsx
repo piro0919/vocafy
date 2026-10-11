@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import { HopOnHover } from '@/components/hop-on-hover';
 import { notFound } from 'next/navigation';
 import { MoreLink } from '@/components/browse-cards';
 import { Heading, YEAR_HEADING } from '@/components/heading';
@@ -48,14 +49,17 @@ export default async function VoicePage({ params }: PageProps<'/voices/[id]'>) {
               className="absolute inset-x-voice-dot bottom-0 aspect-square rounded-full opacity-45"
               style={{ background: voiceColor(voice.name) }}
             />
-            <Image
-              src={art}
-              alt=""
-              fill
-              unoptimized
-              priority
-              className="object-contain object-bottom"
-            />
+            {/* 開いたときに1回跳ね、絵に指を乗せたときも跳ねる（札と同じ動き） */}
+            <HopOnHover onArrive>
+              <Image
+                src={art}
+                alt=""
+                fill
+                unoptimized
+                priority
+                className="object-contain object-bottom"
+              />
+            </HopOnHover>
           </span>
         )}
         <div>
