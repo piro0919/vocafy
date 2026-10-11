@@ -558,12 +558,17 @@ const PICKS_PER_YEAR = 5;
  * 新しい年から並べ、年の中は評価点の順。初音ミクは1万曲を超え、全曲を新しい順に並べても1ページ目しか見られなかった。
  * 評価点の上位をそのまま選ぶと 2013 年より前に偏るので、年ごとにならす
  */
+/** id で引いた歌声。台帳に無ければ undefined */
+export const voiceById = cache(async (id: number): Promise<Voice | undefined> =>
+  (await voices()).find((v) => v.id === id),
+);
+
 export const findVoice = cache(
   async (
     id: number,
   ): Promise<{ voice: Voice; songs: DatedItem[]; yearTotals: Map<string, number> } | undefined> => {
     if (!Number.isSafeInteger(id)) return;
-    const voice = (await voices()).find((v) => v.id === id);
+    const voice = await voiceById(id);
     if (!voice) return;
     const rows = await topPerGroup(`and ${SUNG_BY}`, [id], {
       group: GROUP.year,

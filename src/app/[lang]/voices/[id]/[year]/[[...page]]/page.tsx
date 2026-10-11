@@ -4,21 +4,20 @@ import { Heading } from '@/components/heading';
 import { pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { VirtualSongList } from '@/components/virtual-song-list';
-import { playlistOfVoiceYear, songsOfVoiceYear, voices } from '@/lib/catalog';
+import { playlistOfVoiceYear, songsOfVoiceYear, voiceById } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
+import { voiceYearTitle } from '@/lib/list-titles';
 import { voiceName } from '@/lib/voice-name';
 import { voiceNamesFor } from '@/lib/voice-names';
 
 const TEXT = defineText({
   ja: {
-    title: (name: string, year: string) => `${name}の${year}年の曲`,
     page: (n: number) => `（${n}ページ目）`,
   },
   en: {
-    title: (name: string, year: string) => `${name} in ${year}`,
     page: (n: number) => ` (page ${n})`,
   },
 });
@@ -31,22 +30,18 @@ export function generateStaticParams() {
   return [];
 }
 
-async function voiceOf(id: string) {
-  return (await voices()).find((v) => v.id === Number(id));
-}
-
 export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/voices/[id]/[year]/[[...page]]'>): Promise<Metadata> {
   const { id, year, page } = await params;
-  const voice = await voiceOf(id);
+  const voice = await voiceById(Number(id));
   const n = pageOf(page);
   if (!n || !voice || !/^\d{4}$/.test(year)) notFound();
   if ((await songsOfVoiceYear(voice.id, Number(year), n)).songs.length === 0) notFound();
   const lang = await langOf(params);
   const t = TEXT[lang];
   return {
-    title: `${t.title(voiceName(voice.name, await voiceNamesFor(lang)), year)}${n && n > 1 ? t.page(n) : ''}`,
+    title: `${voiceYearTitle(voiceName(voice.name, await voiceNamesFor(lang)), year, lang)}${n && n > 1 ? t.page(n) : ''}`,
   };
 }
 
@@ -56,7 +51,7 @@ export default async function VoiceYearPage({
 }: PageProps<'/[lang]/voices/[id]/[year]/[[...page]]'>) {
   const { id, year, page: segments } = await params;
   const page = pageOf(segments);
-  const voice = await voiceOf(id);
+  const voice = await voiceById(Number(id));
   if (!page || !voice || !/^\d{4}$/.test(year)) notFound();
   const { songs, total } = await songsOfVoiceYear(voice.id, Number(year), page);
   if (songs.length === 0) notFound();
@@ -66,7 +61,7 @@ export default async function VoiceYearPage({
     <>
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow={year}>
-          {TEXT[lang].title(voiceName(voice.name, await voiceNamesFor(lang)), year)}
+          {voiceYearTitle(voiceName(voice.name, await voiceNamesFor(lang)), year, lang)}
         </Heading>
         <PlayAll
           songs={playlist.songs}

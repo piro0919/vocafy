@@ -1,17 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
-import { withPickup } from '@/lib/list-titles';
-import { playlistOfVoiceYear, voices } from '@/lib/catalog';
+import { voiceYearTitle, withPickup } from '@/lib/list-titles';
+import { playlistOfVoiceYear, voiceById } from '@/lib/catalog';
 import { langOf } from '@/i18n/config';
-import { defineText } from '@/i18n/text';
 import { voiceName } from '@/lib/voice-name';
 import { voiceNamesFor } from '@/lib/voice-names';
-
-const TEXT = defineText({
-  ja: { title: (name: string, year: string) => `${name}の${year}年の曲` },
-  en: { title: (name: string, year: string) => `${name} in ${year}` },
-});
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
 // 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
@@ -21,21 +15,16 @@ export function generateStaticParams() {
   return [];
 }
 
-async function voiceOf(id: string) {
-  return (await voices()).find((v) => v.id === Number(id));
-}
-
 export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/voices/[id]/[year]/play'>): Promise<Metadata> {
   const { id, year } = await params;
-  const voice = await voiceOf(id);
+  const voice = await voiceById(Number(id));
   if (!voice || !/^\d{4}$/.test(year)) notFound();
   if ((await playlistOfVoiceYear(voice.id, Number(year))).songs.length === 0) notFound();
   const lang = await langOf(params);
-  const t = TEXT[lang];
   return {
-    title: t.title(voiceName(voice.name, await voiceNamesFor(lang)), year),
+    title: voiceYearTitle(voiceName(voice.name, await voiceNamesFor(lang)), year, lang),
     robots: { index: false },
   };
 }
@@ -45,12 +34,11 @@ export default async function VoiceYearPlayPage({
   params,
 }: PageProps<'/[lang]/voices/[id]/[year]/play'>) {
   const { id, year } = await params;
-  const voice = await voiceOf(id);
+  const voice = await voiceById(Number(id));
   if (!voice || !/^\d{4}$/.test(year)) notFound();
   const playlist = await playlistOfVoiceYear(voice.id, Number(year));
   if (playlist.songs.length === 0) notFound();
   const lang = await langOf(params);
-  const t = TEXT[lang];
   return (
     <div className="pt-content-top">
       <ListPlayer
@@ -58,7 +46,7 @@ export default async function VoiceYearPlayPage({
         songs={playlist.songs}
         // 全曲から選んだ100曲を流すときは、小さな英字に PICKUP を添える（「2026 PICKUP」。2026-10-11 に本人と決めた）
         eyebrow={withPickup(String(year), playlist.pickup)}
-        title={t.title(voiceName(voice.name, await voiceNamesFor(lang)), year)}
+        title={voiceYearTitle(voiceName(voice.name, await voiceNamesFor(lang)), year, lang)}
       />
     </div>
   );

@@ -6,13 +6,8 @@ import { VirtualSongList } from '@/components/virtual-song-list';
 import { MONTH, playlistOfMonth, songsOfMonth } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
 import { langOf } from '@/i18n/config';
-import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
-
-const TEXT = defineText({
-  ja: { title: (year: string, month: number) => `${year}年${month}月の曲` },
-  en: { title: (year: string, month: number) => `Songs from ${TERMS.en.yearMonth(year, month)}` },
-});
+import { monthTitle } from '@/lib/list-titles';
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
 // 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
@@ -28,7 +23,7 @@ export async function generateMetadata({
   const { year, month } = await params;
   if (!/^\d{4}$/.test(year) || !MONTH.test(month)) notFound();
   if ((await songsOfMonth(Number(year), month, 1)).songs.length === 0) notFound();
-  return { title: TEXT[await langOf(params)].title(year, Number(month)) };
+  return { title: monthTitle(year, Number(month), await langOf(params)) };
 }
 
 /**
@@ -47,7 +42,7 @@ export default async function MonthPage({ params }: PageProps<'/[lang]/years/[ye
     <>
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow={year}>
-          {TEXT[lang].title(year, Number(month))}
+          {monthTitle(year, Number(month), lang)}
         </Heading>
         <PlayAll
           songs={playlist.songs}

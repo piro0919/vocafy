@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildOrder } from '@/components/player/play-order';
 import { isHomePath } from '@/lib/home-path';
 import { leave, setNavigationDepth } from '@/lib/leave';
-import { dayTitle, withPickup } from '@/lib/list-titles';
+import { dayTitle, monthTitle, voiceYearTitle, withPickup } from '@/lib/list-titles';
 import { frameOf, smallThumbOf, thumbOf } from '@/lib/thumb';
 import { voiceName, voiceNamesText } from '@/lib/voice-name';
 import { vocalistNames } from '@/lib/vocalist-names';
@@ -110,6 +110,13 @@ describe('一覧の題名', () => {
   it('日付の一覧の題名を言語ごとに作る（先頭の 0 は外す）', () => {
     expect(dayTitle('10-09', 'ja')).toBe('10月9日に生まれた曲');
     expect(dayTitle('01-31', 'en')).toBe('Born on January 31');
+  });
+
+  it('月の一覧と、歌声の年の一覧の題名', () => {
+    expect(monthTitle('2010', 3, 'ja')).toBe('2010年3月の曲');
+    expect(monthTitle('2010', 3, 'en')).toMatch(/2010/);
+    expect(voiceYearTitle('初音ミク', '2010', 'ja')).toBe('初音ミクの2010年の曲');
+    expect(voiceYearTitle('Hatsune Miku', '2010', 'en')).toBe('Hatsune Miku in 2010');
   });
 
   it('選んだ曲を流すときだけ PICKUP を添える', () => {
