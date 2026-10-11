@@ -171,7 +171,7 @@ function SongNotes({
 
   const body = (
     <div className={`transition-opacity duration-move ${textOn ? '' : 'opacity-0'}`}>
-      {linkify(current.text)}
+      {linkify(current.text, current.key.startsWith('niconico/'))}
     </div>
   );
 
@@ -218,12 +218,12 @@ const LEAVE_WAIT_MS = 400;
 /** 取った説明文（動画ごと）。画面を移っても残し、同じ動画の説明文を取り直さない */
 const known = new Map<string, string>();
 
-function linkify(text: string) {
-  return splitUrls(text).map((part, i) =>
-    part.url ? (
+function linkify(text: string, niconico: boolean) {
+  return splitUrls(text, niconico).map((part, i) =>
+    part.href ? (
       <a
         key={i}
-        href={part.text}
+        href={part.href}
         target="_blank"
         rel="noopener noreferrer"
         className="text-accent underline-offset-2 hover:underline"

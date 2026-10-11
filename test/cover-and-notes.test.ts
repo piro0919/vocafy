@@ -44,18 +44,18 @@ describe('splitUrls（説明文の URL）', () => {
   it('地の文と URL に分ける', () => {
     expect(splitUrls('配信 https://example.com/a?b=1 です')).toEqual([
       { text: '配信 ' },
-      { text: 'https://example.com/a?b=1', url: true },
+      { text: 'https://example.com/a?b=1', href: 'https://example.com/a?b=1' },
       { text: ' です' },
     ]);
   });
 
   it('括弧と「」で URL の終わりとみなす', () => {
     expect(
-      splitUrls('（https://x.jp/1）「http://y.jp」(https://z.jp)').filter((p) => p.url),
+      splitUrls('（https://x.jp/1）「http://y.jp」(https://z.jp)').filter((p) => p.href),
     ).toEqual([
-      { text: 'https://x.jp/1', url: true },
-      { text: 'http://y.jp', url: true },
-      { text: 'https://z.jp', url: true },
+      { text: 'https://x.jp/1', href: 'https://x.jp/1' },
+      { text: 'http://y.jp', href: 'http://y.jp' },
+      { text: 'https://z.jp', href: 'https://z.jp' },
     ]);
   });
 
@@ -63,5 +63,29 @@ describe('splitUrls（説明文の URL）', () => {
     expect(splitUrls('javascript:alert(1) ftp://a')).toEqual([
       { text: 'javascript:alert(1) ftp://a' },
     ]);
+  });
+
+  it('ニコニコの曲では、番号の書き方もリンクにする', () => {
+    expect(
+      splitUrls('→sm9 mylist/4943376 user/1 nc184354 nm2 ar3', true).filter((p) => p.href),
+    ).toEqual([
+      { text: 'sm9', href: 'https://www.nicovideo.jp/watch/sm9' },
+      { text: 'mylist/4943376', href: 'https://www.nicovideo.jp/mylist/4943376' },
+      { text: 'user/1', href: 'https://www.nicovideo.jp/user/1' },
+      { text: 'nc184354', href: 'https://commons.nicovideo.jp/works/nc184354' },
+      { text: 'nm2', href: 'https://www.nicovideo.jp/watch/nm2' },
+      { text: 'ar3', href: 'https://ch.nicovideo.jp/article/ar3' },
+    ]);
+  });
+
+  it('URL の中・英数字に続く番号・コミュニティと、YouTube の曲ではリンクにしない', () => {
+    expect(
+      splitUrls('https://www.nicovideo.jp/watch/sm9 sm12mp3 xsm1 co386117', true).filter(
+        (p) => p.href,
+      ),
+    ).toEqual([
+      { text: 'https://www.nicovideo.jp/watch/sm9', href: 'https://www.nicovideo.jp/watch/sm9' },
+    ]);
+    expect(splitUrls('sm9')).toEqual([{ text: 'sm9' }]);
   });
 });
