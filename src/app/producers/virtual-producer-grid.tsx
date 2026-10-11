@@ -1,14 +1,12 @@
 'use client';
 
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CoverCard } from '@/components/cover-card';
 import type { Producer } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
 import { formatCount } from '@/lib/format';
 import { atLeast } from '@/lib/breakpoints';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
-import { SERVER_HEIGHT } from '@/components/virtual-song-list';
+import { useWindowList } from '@/components/use-window-list';
 
 /** 段の数。cover-card.tsx の ARTIST_GRID（grid-cols-3 sm:4 lg:5 xl:6）と同じ幅で切り替える */
 /** 段の数を決められないとき（サーバーで描くとき）の段の数 */
@@ -36,33 +34,12 @@ export function VirtualProducerGrid({
 }) {
   const columns = useColumns(COLUMNS, COLUMNS_BASE);
 
-  const list = useRef<HTMLDivElement>(null);
-  const [margin, setMargin] = useState(0);
-  useLayoutEffect(() => {
-    const el = list.current;
-    if (!el) return;
-    const measure = () => setMargin(el.getBoundingClientRect().top + window.scrollY);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.body);
-    return () => observer.disconnect();
-  }, []);
-
-  const virtualizer = useWindowVirtualizer({
-    count: Math.ceil(producers.length / columns),
-    estimateSize: () => ESTIMATE,
+  const { list, virtualizer } = useWindowList({
+    rows: Math.ceil(producers.length / columns),
+    estimate: ESTIMATE,
     overscan: 3,
-    scrollMargin: margin,
-    // サーバーでも最初の数段は描く
-    initialRect: { width: 0, height: SERVER_HEIGHT },
+    jumpRow: Math.floor(start / columns),
   });
-
-  const jumped = useRef(false);
-  useEffect(() => {
-    if (jumped.current || start === 0 || margin === 0) return;
-    jumped.current = true;
-    virtualizer.scrollToIndex(Math.floor(start / columns), { align: 'start' });
-  }, [start, margin, columns, virtualizer]);
 
   return (
     <div ref={list} className="relative" style={{ height: virtualizer.getTotalSize() }}>

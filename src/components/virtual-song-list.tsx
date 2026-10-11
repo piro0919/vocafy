@@ -1,16 +1,14 @@
 'use client';
 
-import { useWindowVirtualizer, windowScroll } from '@tanstack/react-virtual';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { useColumns } from '@/lib/use-columns';
 import { SongItem, useOpenSong } from './song-list';
+import { useWindowList } from './use-window-list';
 import { atLeast } from '@/lib/breakpoints';
 import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
 import { PAGE_SIZE } from '@/lib/page-size';
 
-/** サーバーで描くときに見えているとみなす高さ（最初の数段だけ描く）。ボカロPの一覧（virtual-producer-grid.tsx）も同じ */
-export const SERVER_HEIGHT = 1200;
 /** 行の上下の余白（SongItem の p-1.5 で 12px）と行のあいだ（gap-1 で 4px） */
 const ROW_SPACE = { padding: 12, gap: 4 };
 /** 1行の高さ（px） */
@@ -57,43 +55,15 @@ export function VirtualSongList({
   const [pages, setPages] = useState(() => new Map([[page, songs]]));
   const requested = useRef(new Set([page]));
 
-  // 一覧の上端の、ページの頭からの位置。画面のスクロールの位置から、どの行が見えているかを割り出すのに使う
-  const list = useRef<HTMLDivElement>(null);
-  const [margin, setMargin] = useState(0);
-  useLayoutEffect(() => {
-    const el = list.current;
-    if (!el) return;
-    const measure = () => setMargin(el.getBoundingClientRect().top + window.scrollY);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.body);
-    return () => observer.disconnect();
-  }, []);
-
   const rows = Math.ceil(total / columns);
-  const virtualizer = useWindowVirtualizer({
-    count: rows,
-    estimateSize: () => ROW,
+  // ページ番号付きで開いたときは、そのページの先頭へ
+  const { list, virtualizer } = useWindowList({
+    rows,
+    estimate: ROW,
     overscan: 8,
-    scrollMargin: margin,
-    // サーバーでも最初の数十行は描く（スクロールの位置が分からないので、上から）
-    initialRect: { width: 0, height: SERVER_HEIGHT },
-    // 付けたときに覚えている位置へ戻すスクロール（behavior の無いもの）は通さない。
-    // 別の画面から移ってきた直後は前の画面の位置を覚えていて、Next.js が先頭へ戻したあとにそこへ書き戻していた。
-    // 開発のときは effect が2回走るので必ず起き、本番でも順序しだいで起きうる。scrollToIndex は behavior を付けて呼ぶので通る
-    scrollToFn: (offset, options, instance) => {
-      if (options.behavior) windowScroll(offset, options, instance);
-    },
+    jumpRow: page === 1 ? 0 : Math.floor(((page - 1) * PAGE_SIZE) / columns),
   });
   const items = virtualizer.getVirtualItems();
-
-  // ページ番号付きで開いたときは、そのページの先頭へ
-  const jumped = useRef(false);
-  useEffect(() => {
-    if (jumped.current || page === 1 || margin === 0) return;
-    jumped.current = true;
-    virtualizer.scrollToIndex(Math.floor(((page - 1) * PAGE_SIZE) / columns), { align: 'start' });
-  }, [page, margin, columns, virtualizer]);
 
   // 見えている行の曲が手元に無ければ、そのページを読む
   const first = items[0]?.index ?? 0;
