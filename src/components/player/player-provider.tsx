@@ -52,6 +52,13 @@ import type {
   Repeat,
   Sleep,
 } from './player-types';
+import {
+  afterEnded,
+  type BeforeRadio,
+  radioExit,
+  settledContext,
+  skipsAutoNiconico,
+} from './player-rules';
 import { useFrameLayout } from './use-frame-layout';
 import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
@@ -292,7 +299,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           sounding.current = false;
           setLoading(false);
           const { queue: q, index: i } = cursor.current;
-          if (auto.current && q[i]?.service === 'niconico' && skipped.current < q.length) {
+          const skip = skipsAutoNiconico(q[i], {
+            auto: auto.current,
+            blocked: true,
+            skipped: skipped.current,
+            length: q.length,
+          });
+          if (skip) {
             noteSkip(q[i]);
             skipped.current += 1;
             autoNext.current = true;
@@ -407,8 +420,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const { service, videoId } = items[at];
       // 自分で押したニコニコの曲なら、押した操作のうちに隠している YouTube のプレイヤーに許しを付け、あとに続く YouTube の曲が止められないようにする
       if (!auto.current && service === 'niconico') primeParked(items);
+      const skip = skipsAutoNiconico(items[at], {
+        auto: auto.current,
+        blocked: niconicoBlocked.current,
+        skipped: skipped.current,
+        length: items.length,
+      });
       if (!auto.current || service !== 'niconico') skipped.current = 0;
-      else if (niconicoBlocked.current && skipped.current < items.length) {
+      else if (skip) {
         noteSkip(items[at]);
         skipped.current += 1;
         autoNext.current = true;
@@ -640,14 +659,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // 曲が終わったら、ループが1曲なら頭から、そうでなければ流す順の次の曲へ（最後なら先頭に戻る）
     onEnded.current = () => {
       // スリープタイマーが「この曲が終わったら」なら、次へ進まずに止める（曲は終わったところで止まっている）
-      if (sleepRef.current?.kind === 'end') {
+      const action = afterEnded(sleepRef.current, playbackRef.current?.repeat);
+      if (action === 'stop') {
         sleepRef.current = null;
         setSleepState(null);
         // 曲が終わったときは「止まった」の知らせが来ないので、流していない表示にここで切り替える
         setPlaying(false);
         return;
       }
-      if (playbackRef.current?.repeat === 'one' && player.current) {
+      if (action === 'repeat' && player.current) {
         player.current.seek(0);
         player.current.play();
         return;
@@ -702,13 +722,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   // ラジオを始める前に流していた並び。ラジオをやめたら、ここへ戻す
-  const beforeRadio = useRef<{
-    queue: QueueItem[];
-    index: number;
-    context: PlayContext;
-    listSource: string | null;
-    more: ListSource | null;
-  } | null>(null);
+  const beforeRadio = useRef<BeforeRadio | null>(null);
   // ラジオの中で押し直したとき（いまの曲から始め直す）は、ラジオの前の並びを上書きしない
   const rememberBeforeRadio = useCallback(() => {
     if (contextRef.current === 'radio') return;
@@ -767,32 +781,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const stopRadio = useCallback(
     (moving: boolean) => {
       const { queue: q, index: i } = cursor.current;
-      const now = q[i];
-      const before = beforeRadio.current;
+      const exit = radioExit(q[i], beforeRadio.current);
       beforeRadio.current = null;
       setRadioHome(null);
-      if (!now) {
+      if (exit.kind === 'empty') {
         adopt([], 0);
-        return '/';
+        return exit.href;
       }
-      // 始めた曲のまま（ラジオでまだ次へ進んでいない）なら、元の並びのその位置に戻す
-      if (before && before.queue[before.index]?.songId === now.songId) {
+      if (exit.kind === 'restore') {
+        const { before } = exit;
         adopt(before.queue, before.index);
-        setContext(
-          before.context === 'pending' || before.context === 'radio' ? 'list' : before.context,
-        );
+        setContext(exit.context);
         more.current = before.more;
         setListSource(before.listSource);
-        return before.context === 'favorites'
-          ? '/favorites/songs'
-          : before.listSource
-            ? `/${before.listSource}/play`
-            : `/producers/${now.producerId}`;
+        return exit.href;
       }
-      // ラジオで次へ進んでいたら（戻す並びが無いときも）、いまの曲のボカロPの曲の並びにして、その曲から続ける。
-      // 元の並びに戻すと、いまの曲が終わるまで、その曲の載っていない元の持ち主の画面に動画を大きく出すことになった（2026-10-10 に本人と決めた）。
       // 曲の一覧から押したときと同じく、その1曲だけの並びにしておき、ボカロPの画面に着いたところでその人の曲に差し替える
       // （producer-player.tsx）。画面を移らないときは、その人の曲をここで取って差し替える
+      const now = exit.item;
       const items = [now];
       adopt(items, 0);
       setContext('pending');
@@ -807,7 +813,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             if (at >= 0) adopt(songs, at);
           });
       }
-      return `/producers/${now.producerId}`;
+      return exit.href;
     },
     [adopt],
   );
@@ -934,7 +940,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const { queue: q, index: i } = cursor.current;
     if (!q[i]) return;
     const at = resumeAt.current;
-    load(q, i, contextRef.current === 'pending' ? 'list' : contextRef.current);
+    load(q, i, settledContext(contextRef.current));
     // load は位置を 0 に戻すので、続きの位置を戻す（鳴り始めたところでそこへ飛ぶ）
     resumeAt.current = at;
   }, [load]);
@@ -958,7 +964,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       order: cursor.current.order,
       position: t?.current ?? 0,
       duration: t?.duration ?? 0,
-      context: contextRef.current === 'pending' ? 'list' : contextRef.current,
+      context: settledContext(contextRef.current),
       listSource: listSourceRef.current,
       radioHome: radioHomeRef.current,
     });
