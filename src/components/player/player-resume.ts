@@ -1,5 +1,5 @@
 import type { QueueItem } from '@/lib/catalog';
-import type { PlayContext } from './player-types';
+import type { Owner } from './player-types';
 import { HOUR_MS } from '@/lib/timing';
 
 /**
@@ -17,9 +17,8 @@ export type Resume = {
   /** その曲のどこまで聴いたか（秒）と、曲の長さ */
   position: number;
   duration: number;
-  context: PlayContext;
-  listSource: string | null;
-  radioHome: string | null;
+  /** 並びの持ち主（player-types.ts） */
+  owner: Owner;
   /** 残した時刻（Date.now()） */
   at: number;
 };
@@ -50,6 +49,8 @@ export function readResume(): Resume | null {
     if (Date.now() - r.at > RESUME_HOURS * HOUR_MS) return null;
     if (!Array.isArray(r.queue) || !r.queue[r.index]) return null;
     if (!Array.isArray(r.order) || r.order.length !== r.queue.length) return null;
+    // 持ち主を1つの値にまとめる前（2026-10-11 まで）の控えは戻さない
+    if (typeof r.owner?.kind !== 'string') return null;
     return r;
   } catch {
     return null;

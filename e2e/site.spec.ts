@@ -43,6 +43,38 @@ test('再生を押すと、プレイヤーが画面の置き場所に出る', as
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
+// 動画を大きく出すのは、流している並びの持ち主の画面だけ（player-rules.ts の owns）。戻る・進むや曲送りで、
+// 大きく出したり右下の窓にしたりが食い違ったことが何度もあった
+test('一覧を流すと再生用の画面で大きく出し、戻ると右下の窓、進むとまた大きく出す', async ({
+  page,
+}) => {
+  await page.goto('/years/2016');
+  await page.getByRole('button', { name: /^(再生|ピックアップ)$/ }).click();
+  await expect(page).toHaveURL(/\/years\/2016\/play/);
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+  await page.goBack();
+  await expect(page).toHaveURL(/\/years\/2016$/);
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'dock');
+  await page.goForward();
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+});
+
+test('曲の一覧から押すと、その人の画面で大きく出し、次の曲へ進んでも大きいまま', async ({
+  page,
+}) => {
+  await page.goto('/years/2016');
+  // 曲の行は「曲名 ボカロP ・ 歌声」の名前のボタン。ハートのボタンは名前に「・」を含まない
+  await page.locator('main button').filter({ hasText: '・' }).first().click();
+  await expect(page).toHaveURL(/\/producers\/\d+/);
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+  const before = page.url();
+  await page.keyboard.press('Shift+N');
+  // その人の曲の並びに差し替わっていれば、次の曲もこの画面の曲で、住所の ?song= が書き換わる
+  await expect(page).not.toHaveURL(before);
+  await expect(page).toHaveURL(/\/producers\/\d+\?song=\d+/);
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+});
+
 test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: /^2016/ }).click();

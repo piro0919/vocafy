@@ -26,14 +26,13 @@ import { useTakeOver } from '@/components/player/use-take-over';
 export function FavoriteSongs() {
   const { items: songs } = useFavorites();
   useRefreshFavorites();
-  const { current, playing, context, playQueue, toggle } = usePlayer();
-  // お気に入りの並びのときに、動画をここに大きく出す
-  const here = !!current && context === 'favorites';
-  // 流している曲がお気に入りにあれば、開いたときに並びをお気に入りにする（use-take-over.ts。どの画面も同じ決まり）
-  useTakeOver(here, songs, FAVORITES);
+  const { current, playing, playQueue, toggle } = usePlayer();
+  // お気に入りの並びのときに、動画をここに大きく出す。流している曲がお気に入りにあれば、開いたときに並びをお気に入りにする
+  // （use-take-over.ts。どの画面も同じ決まり）
+  const here = useTakeOver(songs, FAVORITES);
   // 流している曲の動画の説明文（song-notes.tsx）
   const notes = useStageNotes(here ? current : null);
-  const play = (at = 0) => songs.length > 0 && playQueue(songs, at, 'favorites');
+  const play = (at = 0) => songs.length > 0 && playQueue(songs, at, FAVORITES);
 
   // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
   const share = <SongShare song={here ? current : null} />;

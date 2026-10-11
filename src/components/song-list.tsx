@@ -9,6 +9,7 @@ import { FadeImage } from './fade-image';
 import { FavoriteButton } from './favorite-button';
 import { Bars } from './now-playing';
 import { usePlayer } from './player/player-provider';
+import { PENDING } from './player/player-rules';
 import { usePreload } from './player/use-preload';
 import { Marquee } from './marquee';
 import { Icon } from './icon';
@@ -131,7 +132,7 @@ export function useOpenSong() {
   const { playQueue } = usePlayer();
   const router = useRouter();
   return (song: QueueItem) => {
-    playQueue([song], 0, 'pending');
+    playQueue([song], 0, PENDING);
     router.push(`/producers/${song.producerId}`);
   };
 }

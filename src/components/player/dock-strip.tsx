@@ -7,7 +7,8 @@ import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { Icon } from '../icon';
 import type { FrameMode } from './use-frame-layout';
 import { type DockSide, savedDockSide, saveDockSide } from './player-storage';
-import type { PlayContext } from './player-types';
+import { ownerHref } from './player-rules';
+import type { Owner } from './player-types';
 import { DRAG_SLOP } from '@/lib/input';
 
 export /**
@@ -37,17 +38,14 @@ export const HIDDEN = 'pointer-events-none invisible translate-y-4 opacity-0';
 export function DockStrip({
   mode,
   shown,
-  context,
-  listSource,
-  radioHome,
+  owner,
   onClose,
 }: {
   mode: FrameMode;
   /** 帯に出す曲。閉じたあとも、帯が消えきるまでは最後の曲 */
   shown: QueueItem | null;
-  context: PlayContext;
-  listSource: string | null;
-  radioHome: string | null;
+  /** 流している並びの持ち主。帯の行き先 */
+  owner: Owner;
   onClose: () => void;
 }) {
   const strip = useRef<HTMLDivElement>(null);
@@ -141,15 +139,7 @@ export function DockStrip({
         {shown && (
           <Link
             draggable={false}
-            href={
-              context === 'favorites'
-                ? '/favorites/songs'
-                : listSource
-                  ? `/${listSource}/play`
-                  : context === 'radio' && radioHome
-                    ? radioHome
-                    : `/producers/${shown.producerId}`
-            }
+            href={ownerHref(owner, shown)}
             className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 text-xs text-muted transition-colors hover:text-foreground"
           >
             <span className="min-w-0 flex-1 truncate">

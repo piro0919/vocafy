@@ -29,20 +29,8 @@ export function RadioPlayer({
   eyebrow: string;
   title: string;
 }) {
-  const {
-    current,
-    playing,
-    queue,
-    radioHome,
-    playRadio,
-    fillRadio,
-    jumpTo,
-    toggle,
-    skipsNiconico,
-  } = usePlayer();
-  const here = current !== null && radioHome === `/radio/${seed.songId}`;
-  // 流している曲の動画の説明文（song-notes.tsx）
-  const notes = useStageNotes(here ? current : null);
+  const { current, playing, queue, playRadio, fillRadio, jumpTo, toggle, skipsNiconico } =
+    usePlayer();
   // 届くまでは null。取れなかったときは空にして、元の曲だけのラジオにする
   const [related, setRelated] = useState<QueueItem[] | null>(null);
   useEffect(() => {
@@ -64,7 +52,9 @@ export function RadioPlayer({
     () => ({ kind: 'radio' as const, home: `/radio/${seed.songId}` }),
     [seed.songId],
   );
-  useTakeOver(here, songs, owner);
+  const here = useTakeOver(songs, owner);
+  // 流している曲の動画の説明文（song-notes.tsx）
+  const notes = useStageNotes(here ? current : null);
   const list = here ? queue : songs;
   // 流している並びがまだ元の曲だけで、関連曲も届いていないあいだ
   const waiting = related === null && list.length === 1;
@@ -141,13 +131,13 @@ export function RadioPlayer({
  * 置き場所が無いと、待ち（WAIT_FOR_SLOT）を越えて右下の窓に出てから、画面ができたところで大きな置き場所へ移った
  */
 export function RadioLoading() {
-  const { current, context } = usePlayer();
+  const { current, owner } = usePlayer();
   return (
     <div className="pt-4">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
         <div className="contents lg:sticky lg:top-(--content-top) lg:block">
           <PlayerStage
-            active={current !== null && context === 'radio'}
+            active={current !== null && owner.kind === 'radio'}
             cover={current?.thumb ?? null}
             label="このラジオを再生"
             onPlay={() => {}}

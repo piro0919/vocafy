@@ -183,10 +183,10 @@ function SleepButton({ className }: { className: string }) {
  * ラジオの画面にいたら、その並びの持ち主の画面へ移る
  */
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
-  const { context, radioHome, startRadio, stopRadio, holdSlot } = usePlayer();
+  const { owner, startRadio, stopRadio, holdSlot } = usePlayer();
   const router = useRouter();
   const pathname = usePathname();
-  const on = context === 'radio';
+  const on = owner.kind === 'radio';
   const toggle = () => {
     // 並びの持ち主が先に替わるので、ラジオの画面（切るときは戻る画面）に着くまで、いまの置き場所に動画を出し続ける
     if (!on) {
@@ -195,7 +195,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       router.push(`/radio/${song.songId}`);
       return;
     }
-    const onRadioPage = decodeURIComponent(pathname) === radioHome;
+    const onRadioPage = owner.kind === 'radio' && decodeURIComponent(pathname) === owner.home;
     if (onRadioPage) holdSlot();
     const home = stopRadio(onRadioPage);
     if (onRadioPage) router.push(home);

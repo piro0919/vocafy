@@ -1,22 +1,72 @@
 import type { QueueItem } from '@/lib/catalog';
-import type { ListSource, PlayContext, Repeat, Sleep } from './player-types';
+import type { ListSource, Owner, QueueOwner, Repeat, Sleep } from './player-types';
 
 /**
  * プレイヤーの分かれ道のうち、状態だけで決まるもの。プレイヤー（engine）を呼ぶ時機や音量の扱いはここに置かない
  * （player-provider.tsx）。値を書き換えず、決めた結果を返すだけにする（テストできるように）
  */
 
-/** 移る途中（pending）は、開き直したときや流し直すときには残さない。着いた画面が差し替える前の仮の種類のため */
-export function settledContext(context: PlayContext): PlayContext {
-  return context === 'pending' ? 'list' : context;
+/** 持ち主の画面が無い並び（歌声の画面の代表曲）と、ボカロPの画面へ移る途中 */
+export const LOOSE: Owner = { kind: 'loose' };
+export const PENDING: Owner = { kind: 'pending' };
+
+/** 持ち主になれる画面を、並びの持ち主の値にする（一覧はページの情報を落とす） */
+export function ownerOf(page: QueueOwner): Owner {
+  return page.kind === 'list' ? { kind: 'list', source: page.source.source } : page;
+}
+
+/**
+ * その画面が、いま流している並びの持ち主か（動画を大きく出すか）。流していなければ持ち主ではない。
+ * ボカロPの画面へ移る途中（pending）は、流している曲のボカロPの画面を持ち主とみる（着いた画面が並びを差し替える）
+ */
+export function owns(owner: Owner, page: QueueOwner, current: QueueItem | null): boolean {
+  if (!current) return false;
+  switch (page.kind) {
+    case 'producer':
+      return owner.kind === 'producer'
+        ? owner.producerId === page.producerId
+        : owner.kind === 'pending' && current.producerId === page.producerId;
+    case 'favorites':
+      return owner.kind === 'favorites';
+    case 'list':
+      return owner.kind === 'list' && owner.source === page.source.source;
+    case 'radio':
+      return owner.kind === 'radio' && owner.home === page.home;
+  }
+}
+
+/**
+ * 並びの持ち主の画面の住所（右下の窓の帯の行き先など）。持ち主の画面が無い並びは、流している曲のボカロPの画面
+ */
+export function ownerHref(owner: Owner, item: QueueItem): string {
+  switch (owner.kind) {
+    case 'producer':
+      return `/producers/${owner.producerId}`;
+    case 'favorites':
+      return '/favorites/songs';
+    case 'list':
+      return `/${owner.source}/play`;
+    case 'radio':
+      return owner.home;
+    case 'pending':
+    case 'loose':
+      return `/producers/${item.producerId}`;
+  }
+}
+
+/**
+ * 移る途中（pending）は、開き直したときや流し直すときには残さず、流している曲のボカロPの並びとして残す。
+ * 着いた画面が差し替える前の仮の値のため
+ */
+export function settledOwner(owner: Owner, item: QueueItem): Owner {
+  return owner.kind === 'pending' ? { kind: 'producer', producerId: item.producerId } : owner;
 }
 
 /** ラジオを始める前に流していた並び。ラジオをやめたら、始めた曲のままならここへ戻す */
 export type BeforeRadio = {
   queue: QueueItem[];
   index: number;
-  context: PlayContext;
-  listSource: string | null;
+  owner: Owner;
   more: ListSource | null;
 };
 
@@ -30,26 +80,20 @@ export type BeforeRadio = {
  */
 export type RadioExit =
   | { kind: 'empty'; href: string }
-  | { kind: 'restore'; before: BeforeRadio; context: PlayContext; href: string }
+  | { kind: 'restore'; before: BeforeRadio; owner: Owner; href: string }
   | { kind: 'producer'; item: QueueItem; href: string };
 
 export function radioExit(now: QueueItem | undefined, before: BeforeRadio | null): RadioExit {
   if (!now) return { kind: 'empty', href: '/' };
-  const producer = `/producers/${now.producerId}`;
-  if (before && before.queue[before.index]?.songId === now.songId) {
-    return {
-      kind: 'restore',
-      before,
-      context: before.context === 'radio' ? 'list' : settledContext(before.context),
-      href:
-        before.context === 'favorites'
-          ? '/favorites/songs'
-          : before.listSource
-            ? `/${before.listSource}/play`
-            : producer,
-    };
+  if (
+    before &&
+    before.owner.kind !== 'radio' &&
+    before.queue[before.index]?.songId === now.songId
+  ) {
+    const owner = settledOwner(before.owner, now);
+    return { kind: 'restore', before, owner, href: ownerHref(owner, now) };
   }
-  return { kind: 'producer', item: now, href: producer };
+  return { kind: 'producer', item: now, href: `/producers/${now.producerId}` };
 }
 
 /**

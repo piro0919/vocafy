@@ -14,7 +14,7 @@ import { usePlayer } from './player/player-provider';
  * （指を乗せたときに先に取っておく）。押した操作の外で流し始めることになるが、パソコンのブラウザは一度押した画面なら流す
  */
 export function MixButton() {
-  const { current, listSource, playAll } = usePlayer();
+  const { current, owner, playAll } = usePlayer();
   const router = useRouter();
   const songs = useRef<{ date: string; promise: Promise<QueueItem[]> } | null>(null);
 
@@ -35,7 +35,7 @@ export function MixButton() {
   const onClick = async () => {
     const day = date();
     const source = `mix/${day}`;
-    if (current !== null && listSource === source) {
+    if (current !== null && owner.kind === 'list' && owner.source === source) {
       router.push(`/${source}/play`);
       return;
     }

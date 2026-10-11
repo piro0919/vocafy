@@ -9,31 +9,20 @@ import { PRIMARY } from './button-styles';
 /**
  * 曲の一覧（年・歌声・日付）を、その画面の曲の順に通して流すボタン。曲の数を添える。
  * 一覧の曲を押したときは、その曲のボカロPの画面へ移ってその人の曲が続く（song-list.tsx）。
- * こちらはこの一覧の曲だけを流し続ける。list があるときは、流し始めてから一覧の再生用の画面へ移る。
+ * こちらはこの一覧の曲だけを流し続け、流し始めてから一覧の再生用の画面へ移る。
  *
- * list を渡すと一覧の全ページを流す。押した時点で送るのはこのページの曲だけで、終わりが近づいたら
- * 次のページを取りに行って足す（初音ミクのように1万曲ある一覧を全部送ると重い）。
- * 最後のページの次は1ページ目に戻り、押したページの手前まで流す。
- * list が無いとき（歌声の画面の代表曲）は、このページの曲だけを流す
+ * 押した時点で送るのはこのページの曲だけで、終わりが近づいたら次のページを取りに行って足す
+ * （初音ミクのように1万曲ある一覧を全部送ると重い）。最後のページの次は1ページ目に戻り、押したページの手前まで流す
  */
 /** 一覧を通して流す処理（PlayAll と PlayAllPill で共有する） */
-function usePlayAll(songs: QueueItem[], list?: { source: string; page: number; last: number }) {
-  const { queue, current, playing, listSource, playQueue, playAll, toggle } = usePlayer();
+function usePlayAll(songs: QueueItem[], list: { source: string; page: number; last: number }) {
+  const { current, playing, owner, playAll, toggle } = usePlayer();
   const router = useRouter();
-  // この一覧を流しているか。一覧の続きを足すものは住所で、そうでないものは並びの先頭と長さで見る
-  const here = list
-    ? current !== null && listSource === list.source
-    : current !== null &&
-      queue.length === songs.length &&
-      queue[0]?.songId === songs[0]?.songId &&
-      songs.some((s) => s.songId === current.songId);
-  // 一覧の続きを足すものは、流し始めてから一覧の再生用の画面（/years/2026/play など。list-player.tsx）へ移り、
-  // そこで動画を大きく出す。移らないと動画の置き場所が無く、右下の窓で流れていた
+  // この一覧を流しているか
+  const here = current !== null && owner.kind === 'list' && owner.source === list.source;
+  // 流し始めてから一覧の再生用の画面（/years/2026/play など。list-player.tsx）へ移り、そこで動画を大きく出す。
+  // 移らないと動画の置き場所が無く、右下の窓で流れていた
   const start = () => {
-    if (!list) {
-      playQueue(songs, 0);
-      return;
-    }
     playAll(songs, { source: list.source, start: list.page, last: list.last }, { moving: true });
     router.push(`/${list.source}/play`);
   };
@@ -49,7 +38,7 @@ export function PlayAll({
   songs: QueueItem[];
   count: string;
   /** 一覧の住所（years/2010 など）、このページ、最後のページ */
-  list?: { source: string; page: number; last: number };
+  list: { source: string; page: number; last: number };
   /** 全曲から選んだ曲を流すか（catalog.ts の Playlist）。ランダムの矢印と「ピックアップ」にして、ふつうの「再生」と分ける */
   pickup?: boolean;
 }) {

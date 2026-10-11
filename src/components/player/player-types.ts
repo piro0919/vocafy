@@ -4,21 +4,33 @@ import type { QueueItem } from '@/lib/catalog';
 export type Repeat = 'all' | 'one';
 
 /**
- * 並びの出どころ。list はふつうの一覧、pending は曲の一覧から押して1曲だけ流している途中（ボカロPの画面で差し替える）、
- * radio はラジオ（押した曲から関連曲を足し続ける。並びの終わりが近づくと、いまの曲の関連曲を後ろに足す）、
- * favorites はお気に入りの曲の並び（お気に入りの曲の画面で大きく出す。Janify と同じ）
- */
-export type PlayContext = 'list' | 'pending' | 'radio' | 'favorites';
-
-/**
  * 「すべて再生」で流している一覧の続き。source は一覧の住所（years/2010 など）、start は押したページ、
  * next は次に足すページ、last は最後のページ。最後のページの次は1ページ目に戻り、押したページの手前まで足す
  */
 export type ListSource = { source: string; start: number; next: number; last: number };
 
-/** 並びの持ち主の画面（takeOver） */
+/**
+ * いま流している並びの持ち主。動画を大きく出すのは、持ち主の画面だけ（player-rules.ts の owns）。
+ * - producer: そのボカロPの曲の並び。そのボカロPの画面
+ * - pending: 曲の一覧から押して、その1曲だけを流しながらボカロPの画面へ移る途中。着いた画面が producer に改める
+ * - favorites: お気に入りの曲の並び。お気に入りの曲の画面
+ * - list: 一覧（年・日付・歌声の年など）の並び。その一覧の再生用の画面（/years/2026/play など）
+ * - radio: ラジオ（押した曲から関連曲を足し続ける）。ラジオの画面（home。/radio/123）
+ * - loose: 持ち主の画面が無い並び（歌声の画面の代表曲）。どの画面でも右下の窓に出す
+ */
+export type Owner =
+  | { kind: 'producer'; producerId: number }
+  | { kind: 'pending' }
+  | { kind: 'favorites' }
+  | { kind: 'list'; source: string }
+  | { kind: 'radio'; home: string }
+  | { kind: 'loose' };
+
+/**
+ * 並びの持ち主になれる画面（takeOver・use-take-over.ts）。一覧は、続きのページを読み足すためにページの情報も持つ
+ */
 export type QueueOwner =
-  | { kind: 'producer' }
+  | { kind: 'producer'; producerId: number }
   | { kind: 'favorites' }
   | { kind: 'list'; source: Omit<ListSource, 'next'> }
   | { kind: 'radio'; home: string };
@@ -39,7 +51,8 @@ export type PlayerContext = {
   playing: boolean;
   /** 曲を選んでから音が出るまで。最初の1曲は YouTube の仕組みやニコニコのプレイヤーの読み込みも待つ */
   loading: boolean;
-  context: PlayContext;
+  /** いま流している並びの持ち主 */
+  owner: Owner;
   /** 前の曲・次の曲へ進めるか。ループ（全体）なら最後の曲からも次へ進める */
   hasPrev: boolean;
   hasNext: boolean;
@@ -50,13 +63,13 @@ export type PlayerContext = {
   toggleRepeat: () => void;
   toggleShuffle: () => void;
   /**
-   * 曲の一覧を順番待ちに積み、start 番目から再生する。moving は、流し始めてから並びの持ち主の画面へ移るとき
+   * 曲の一覧を順番待ちに積み、start 番目から再生する。owner はその並びの持ち主。moving は、流し始めてから並びの持ち主の画面へ移るとき
    * （/favorites からお気に入りの曲の画面へ移るときなど）。置き場所が見つかるまで右下の窓を出さずに待つ
    */
-  playQueue: (items: QueueItem[], start: number, context?: PlayContext, moving?: boolean) => void;
+  playQueue: (items: QueueItem[], start: number, owner: Owner, moving?: boolean) => void;
   /**
    * 流している曲は止めずに、並びをその画面の一覧に差し替え、その画面を並びの持ち主にする（use-take-over.ts）。
-   * owner は画面の種類。ボカロPの画面・お気に入りの曲の画面・一覧の再生用の画面（続きを読み足す元）・ラジオの画面（その住所）
+   * owner はその画面。ボカロPの画面・お気に入りの曲の画面・一覧の再生用の画面（続きを読み足す元）・ラジオの画面（その住所）
    */
   takeOver: (items: QueueItem[], index: number, owner: QueueOwner) => void;
   /**
@@ -73,12 +86,6 @@ export type PlayerContext = {
       moving?: boolean;
     },
   ) => void;
-  /** 「すべて再生」で流している一覧の住所。ほかの並びを流しているときは null */
-  listSource: string | null;
-  /**
-   * いまの曲を大きく出す画面の住所。ラジオのあいだはラジオの画面（/radio/123）。ほかは null
-   */
-  radioHome: string | null;
   /** その曲からラジオを流す。いま流している曲なら、止めずにラジオに切り替える。ラジオの画面へ移るのは呼んだ側 */
   startRadio: (seed: QueueItem) => void;
   /** ラジオの画面の一覧（先頭が元の曲、続いて関連曲）を、at 番目から流す */

@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -50,13 +50,12 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, context, listSource, playQueue, takeOver, toggle, skipsNiconico } =
-    usePlayer();
+  const { current, playing, owner, playQueue, takeOver, toggle, skipsNiconico } = usePlayer();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
-  // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の曲なら、
-  // 開いたときに並びをこの人の曲に切り替える（useTakeOver）
-  const ownQueue = context === 'pending' || (context === 'list' && listSource === null);
-  const here = ownQueue && current?.producerId === producerId;
+  // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の一覧に
+  // あれば、開いたときに並びをこの人の曲に切り替える（use-take-over.ts。どの画面も同じ決まり）
+  const page = useMemo(() => ({ kind: 'producer' as const, producerId }), [producerId]);
+  const here = useTakeOver(queue, page);
   // 流せる曲。ニコニコにしか本家が無い曲もニコニコで流せるが、表紙の取れていない曲は流さない
   const playable = new Map(queue.map((q) => [q.songId, q]));
   // ニコニコの曲の行が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
@@ -95,17 +94,14 @@ export function ProducerPlayer({
   // 曲の一覧から押して来たときは、その1曲だけを流している。曲は止めずに、順番待ちをこの人の曲にする。
   // 一覧は新しい順なので、古い曲だと流している行がずっと下にある。その行が見えるところまでスクロールする
   useEffect(() => {
-    if (!here || !current || context !== 'pending') return;
+    if (!here || !current || owner.kind !== 'pending') return;
     const at = queue.findIndex((q) => q.songId === current.songId);
     if (at < 0) return;
     // 並びの種類も「移る途中（pending）」から「この人の曲の並び（list）」に改める。pending のまま残すと、ほかの画面
     // （お気に入りの曲の画面など）が「移る途中」と見分けられず、並びを横取りしたり、戻ったときに取り戻せなかったりした
-    takeOver(queue, at, PRODUCER);
+    takeOver(queue, at, page);
     document.getElementById(`song-${current.songId}`)?.scrollIntoView({ block: 'center' });
-  }, [here, current, context, queue, takeOver]);
-
-  // 流している曲がこの人の一覧にあれば、開いたときに並びをこの人の曲にする（use-take-over.ts。どの画面も同じ決まり）
-  useTakeOver(here, queue, PRODUCER);
+  }, [here, current, owner.kind, queue, takeOver, page]);
 
   const start = (songId?: number) =>
     playQueue(
@@ -116,6 +112,7 @@ export function ProducerPlayer({
             queue.findIndex((q) => q.songId === songId),
           )
         : 0,
+      page,
     );
 
   // 流している曲の動画の説明文（ボタンと、動画の下の枠・全文の板）
@@ -236,9 +233,6 @@ function linkedSong(): number | null {
   const id = Number(new URLSearchParams(window.location.search).get('song'));
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
-
-/** この画面が並びの持ち主になるときの種類（takeOver） */
-const PRODUCER = { kind: 'producer' } as const;
 
 /** これより曲の多い人だけ、一覧の上に年の札を出す */
 const YEAR_JUMP_MIN = 100;
