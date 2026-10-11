@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CONTACT_FORM_URL, OPERATOR } from '@/lib/site';
+import { isHomePath } from '@/lib/home-path';
 
 /**
  * 本文の下の段。規約などのリンクはトップにだけ出す（全ページに出すとうっとうしいと言われた。2026-10-09）。
@@ -10,7 +11,7 @@ import { CONTACT_FORM_URL, OPERATOR } from '@/lib/site';
  */
 export function SiteFooter() {
   const pathname = usePathname();
-  if (pathname !== '/') return <div className="page-bottom" />;
+  if (!isHomePath(pathname)) return <div className="page-bottom" />;
 
   return (
     // 375px の幅でも、リンク3つと © が1行に収まるよう、スマホでは字を小さく、間を詰める

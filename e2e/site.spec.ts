@@ -23,6 +23,17 @@ test('トップからボカロPの画面へ移り、その人の曲が並ぶ', a
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 });
 
+test('トップを開いても、サーバーの HTML と画面の中身が食い違わない', async ({ page }) => {
+  // トップは住所が / のまま中身を /home/日付/時 から返すので、/ かどうかで出し分ける部品が食い違いやすい（home-path.ts）。
+  // 食い違うと React がエラー #418 を出し、サーバーの HTML を捨てて作り直す
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'きょうの出会い' })).toBeVisible();
+  await page.waitForTimeout(1000);
+  expect(errors).toEqual([]);
+});
+
 test('ニコニコにしか本家が無い曲は、ニコニコのプレイヤーで流す', async ({ page }) => {
   await page.goto('/producers/45');
   // 手元の台帳には同じ名前の曲（ほかの版）もあるので、曲の id（VocaDB の 8478）の行で選ぶ。

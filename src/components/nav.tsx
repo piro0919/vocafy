@@ -7,6 +7,7 @@ import { Icon, type IconName } from './icon';
 import { InstallButton } from './install-app';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { GLASS_PANEL, sidebarRow } from '@/components/surface-styles';
+import { isHomePath } from '@/lib/home-path';
 
 const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'ホーム', icon: 'home' },
@@ -26,7 +27,7 @@ const SIDEBAR_ITEMS = [
 
 function useActive() {
   const pathname = usePathname();
-  return (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+  return (href: string) => (href === '/' ? isHomePath(pathname) : pathname.startsWith(href));
 }
 
 /** ロゴ。開いたときに一度だけ、マウスを載せるともう一度、きらめきが字の上を走る（globals.css の .logo） */
