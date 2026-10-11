@@ -16,19 +16,28 @@ type Fake = Engine & {
   calls: string[];
   events: EngineEvents;
   videoId: string;
+  /** 先に読み込んでおいた埋め込みを受け取って作ったか */
+  preloaded?: unknown;
 };
 
 const made = vi.hoisted(() => ({ list: [] as unknown[] }));
 const apple = vi.hoisted(() => ({ value: false }));
 
 function fake(service: Engine['service']) {
-  return (_box: HTMLElement, videoId: string, _sound: Sound, events: EngineEvents) => {
+  return (
+    _box: HTMLElement,
+    videoId: string,
+    _sound: Sound,
+    events: EngineEvents,
+    preloaded?: unknown,
+  ) => {
     const calls: string[] = [];
     const engine: Fake = {
       service,
       calls,
       events,
       videoId,
+      preloaded,
       load: (id) => calls.push(`load:${id}`),
       play: () => calls.push('play'),
       pause: () => calls.push('pause'),
@@ -54,6 +63,7 @@ const { useEngines } = await import('@/components/player/use-engines');
 const FADE_TOTAL = FADE_OUT_MS + SETTLE_MS;
 
 let sound: Sound;
+let playing: string | undefined;
 let handlers: Record<keyof EngineEvents, ReturnType<typeof vi.fn>>;
 const engines = () => made.list as Fake[];
 const last = () => engines().at(-1)!;
@@ -63,13 +73,15 @@ function setup() {
   document.body.append(frame);
   const soundRef = { current: sound };
   const handlersRef = { current: handlers as unknown as EngineEvents };
-  const view = renderHook(() => useEngines({ current: frame }, soundRef, handlersRef));
+  const view = renderHook(() =>
+    useEngines({ current: frame }, soundRef, handlersRef, () => playing),
+  );
   return { ...view, frame, soundRef };
 }
 
 /** 曲を替える（provider の load と同じ呼び方） */
 function play(r: ReturnType<typeof setup>['result'], service: Engine['service'], videoId: string) {
-  act(() => r.current.change(() => r.current.switchTo(service, videoId, undefined)));
+  act(() => r.current.change(() => r.current.switchTo(service, videoId)));
 }
 
 beforeEach(() => {
@@ -77,6 +89,7 @@ beforeEach(() => {
   made.list = [];
   apple.value = false;
   sound = { volume: 80, muted: false };
+  playing = undefined;
   handlers = {
     onPlaying: vi.fn(),
     onPaused: vi.fn(),
@@ -290,5 +303,54 @@ describe('音量と後片付け', () => {
     expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
     expect(handlers.onError).toHaveBeenCalledTimes(1);
     expect(handlers.onBlocked).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ニコニコの曲の先読み（iPad・iPhone だけ）', () => {
+  /** 先読みの埋め込みが読み込み終わった（埋め込みからの知らせ） */
+  function loaded(frame: HTMLElement) {
+    const src = frame.querySelector('iframe')?.getAttribute('src') ?? '';
+    const playerId = new URL(src).searchParams.get('playerId');
+    const e = new MessageEvent('message', {
+      origin: 'https://embed.nicovideo.jp',
+      data: { eventName: 'loadComplete', playerId },
+    });
+    act(() => {
+      window.dispatchEvent(e);
+    });
+  }
+
+  it('ほかの端末では先読みしない', () => {
+    const { result, frame } = setup();
+    act(() => void result.current.preload('sm1'));
+    expect(frame.querySelector('iframe')).toBeNull();
+  });
+
+  it('見えた曲の埋め込みを隠して読み込み、読み込み済みなら、曲を替えるときにそれで流す', () => {
+    apple.value = true;
+    const { result, frame } = setup();
+    act(() => void result.current.preload('sm1'));
+    expect(frame.querySelector('iframe')?.getAttribute('src')).toContain('/watch/sm1');
+    loaded(frame);
+    play(result, 'niconico', 'sm1');
+    expect(last().service).toBe('niconico');
+    expect(last().preloaded).toMatchObject({ videoId: 'sm1' });
+  });
+
+  it('読み込みが終わる前に押された曲は、新しく埋め込みを作って流す', () => {
+    apple.value = true;
+    const { result, frame } = setup();
+    act(() => void result.current.preload('sm1'));
+    play(result, 'niconico', 'sm1');
+    expect(last().preloaded).toBeUndefined();
+    expect(frame).toBeDefined();
+  });
+
+  it('いま流している曲は先読みしない', () => {
+    apple.value = true;
+    playing = 'sm1';
+    const { result, frame } = setup();
+    act(() => void result.current.preload('sm1'));
+    expect(frame.querySelector('iframe')).toBeNull();
   });
 });

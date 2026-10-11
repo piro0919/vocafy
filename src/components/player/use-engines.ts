@@ -4,7 +4,7 @@ import type { QueueItem } from '@/lib/catalog';
 import type { Engine, EngineEvents, Sound } from './engine';
 import { FADE_OUT_MS, FADE_STEPS, fadeOut, PAUSE_WAIT_MS } from './fade';
 import { createNiconicoEngine } from './niconico';
-import type { Preloaded } from './niconico-pool';
+import { createNiconicoPool, type NiconicoPool, type Preloaded } from './niconico-pool';
 import { savedVolume } from './player-storage';
 import { createYouTubeEngine } from './youtube';
 
@@ -21,11 +21,23 @@ const DEFAULT_SOUND: Sound = { volume: 100, muted: false };
  *   自動で流すので、作り直すと次の YouTube の曲が止められる
  * - 鳴っている途中の音をいきなり切ると、波形が途切れてプツッと鳴る。曲を替えるときも一時停止するときも、絞りきってから切る。
  *   iPad・iPhone は絞らない（埋め込みの音量を Web から変えられず、切り替えが押した操作の外へずれて止められる）
+ *
+ * iPad・iPhone の Safari の、押す操作の無い再生を止める決まりへの回避策は、すべてここにある（2026-10-12 にまとめた）。互いに前提にし合うので、
+ * 1つを変えるときはほかの2つも読む
+ * 1. 開いたときに、空の YouTube のプレイヤーを作っておく（prewarm の effect）。押した操作の中で動画を頼めるので、1曲目が止められない
+ * 2. ニコニコの曲のあいだ、YouTube のプレイヤーを壊さず隠す（parked）。作り直すと次の YouTube の曲が止められる。
+ *    隠したプレイヤーに、押した操作の中で音を消して一度流しておく（primeParked）。一度押して流れたプレイヤーなら、あとの曲も自動で流れる。
+ *    1 で作ったプレイヤーも、ここで隠すプレイヤーとして扱う
+ * 3. 画面に見えているニコニコの曲の埋め込みを、隠して先に読み込んでおく（preload・niconico-pool.ts）。押された曲の埋め込みが読み込み済みなら、
+ *    押した操作の中で play を送れるので、1回で流れる。曲を替える（switchTo）ときに受け取る
+ * どれも Mac の WebKit では一部しか再現できず、実機での確かめが要る（CLAUDE.md の「分かっている問題」）
  */
 export function useEngines(
   frameRef: RefObject<HTMLDivElement | null>,
   soundRef: RefObject<Sound | null>,
   handlersRef: RefObject<EngineEvents>,
+  /** いま流している動画。その曲は先に読み込まない（niconico-pool.ts） */
+  playingVideo: () => string | undefined,
 ) {
   const player = useRef<Engine | null>(null);
   // ニコニコの曲を流すあいだ、止めて隠しておく YouTube のプレイヤー。プレイヤーごとの入れ物（枠の中の div）
@@ -151,6 +163,25 @@ export function useEngines(
     parked.current = engine;
   }, [spawn]);
 
+  // 3. 見えているニコニコの曲の埋め込みの先読み。曲の行の部品は先に作られて頼んでくるので、初めて頼まれたときに作る。ほかの端末では作らない
+  const pool = useRef<NiconicoPool | null>(null);
+  useEffect(
+    () => () => {
+      pool.current?.destroy();
+      pool.current = null;
+    },
+    [],
+  );
+  /** 曲の行が見えたときに呼ぶ。返す関数は見えなくなったときに呼ぶ */
+  const preload = useCallback(
+    (videoId: string) => {
+      if (!pool.current && isAppleDevice())
+        pool.current = createNiconicoPool(() => frameRef.current, playingVideo);
+      return pool.current?.want(videoId) ?? (() => {});
+    },
+    [frameRef, playingVideo],
+  );
+
   /** 隠している YouTube のプレイヤーに、押した操作の中で許しを付けておく（engine.ts の prime）。並びに YouTube の曲が無ければ要らない */
   const primeParked = useCallback((items: QueueItem[]) => {
     const youtube = items.find((s) => s.service === 'youtube');
@@ -162,7 +193,10 @@ export function useEngines(
    * あれば、いまのプレイヤーを使い回さずにそれで流す
    */
   const switchTo = useCallback(
-    (service: QueueItem['service'], videoId: string, preloaded: Preloaded | undefined) => {
+    (service: QueueItem['service'], videoId: string) => {
+      // 先に読み込んでおいたニコニコの埋め込みがあれば受け取る（3）
+      const preloaded =
+        service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined;
       // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
       const now = soundRef.current ?? DEFAULT_SOUND;
       // 絞って替えたときは、消音と音量を戻すのは次の曲が鳴り始めてから（onPlaying の rise）。頼んだ直後に戻すと、
@@ -310,6 +344,7 @@ export function useEngines(
 
   return {
     player,
+    preload,
     primeParked,
     switchTo,
     stopPauseFade,

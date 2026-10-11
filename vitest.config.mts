@@ -15,7 +15,22 @@ export default defineConfig({
       // DB の要らないテスト（pnpm test。push の前にも走る）
       {
         extends: true,
-        test: { name: 'unit', include: ['test/**/*.test.ts'], exclude: ['test/db/**'] },
+        test: {
+          name: 'unit',
+          include: ['test/**/*.test.ts'],
+          exclude: ['test/db/**'],
+          // happy-dom を使うテスト（ファイルの頭の @vitest-environment happy-dom）で、外へ取りに行かない。
+          // 埋め込み（iframe）の住所を付けると、そのままではニコニコや YouTube のページを本物から読み込もうとした
+          environmentOptions: {
+            happyDOM: {
+              settings: {
+                disableIframePageLoading: true,
+                disableJavaScriptFileLoading: true,
+                disableCSSFileLoading: true,
+              },
+            },
+          },
+        },
       },
       // DB を読むテスト（pnpm test:db）。テスト用の DB を作り直して使う（test/db/global-setup.ts）。
       // どのファイルも表を空にしてから自分の場面を入れるので、同時には走らせない

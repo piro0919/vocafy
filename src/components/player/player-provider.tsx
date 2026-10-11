@@ -12,12 +12,10 @@ import {
   useState,
 } from 'react';
 import { toast } from 'sonner';
-import { isAppleDevice } from '@/lib/apple-device';
 import { keepAwake, letSleep, rest } from './keep-awake';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerBar } from './player-bar';
 import type { EngineEvents, Sound } from './engine';
-import { createNiconicoPool, type NiconicoPool } from './niconico-pool';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
 import { DOCK, DockStrip, FADE, HIDDEN } from './dock-strip';
@@ -178,6 +176,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPosition(next.position);
   }, []);
 
+  // いま流している動画（use-engines.ts の先読みが、その曲を読み込まないように見る）。描くたびに作り直すと、
+  // 先読みを頼む関数（preload）まで描くたびに変わり、曲の行の見張りがやり直しになるので、変わらない関数にする
+  const playingVideo = useCallback(() => cursor.current.queue[cursor.current.index]?.videoId, []);
   // プレイヤーの知らせ（use-engines.ts が、いま流しているプレイヤーのものだけ渡す）。中身は下で、使う関数ができてから入れる
   const handlers = useRef<EngineEvents>(NO_EVENTS);
   const {
@@ -187,10 +188,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     stopPauseFade,
     change,
     pause: softPause,
+    preload,
     pausingSoftly,
     setVolume: setEngineVolume,
     reset: resetEngines,
-  } = useEngines(frame, soundRef, handlers);
+  } = useEngines(frame, soundRef, handlers, playingVideo);
   // 曲が終わったときの処理。load から自分自身を呼ぶことになるので、ref を通して呼ぶ
   const onEnded = useRef(() => {});
   // 前後の曲へ進む（next）。load から呼ぶので、next より先に置く
@@ -272,29 +274,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [skipAhead, playerRef]);
 
-  // iPad・iPhone で、見えているニコニコの曲の埋め込みを先に読み込んでおく（niconico-pool.ts）。ほかの端末では作らない
-  // 曲の行の部品は先に作られて頼んでくるので、初めて頼まれたときに作る
-  const pool = useRef<NiconicoPool | null>(null);
-  useEffect(
-    () => () => {
-      pool.current?.destroy();
-      pool.current = null;
-    },
-    [],
-  );
-  /** 曲の行が見えたときに呼ぶ。返す関数は見えなくなったときに呼ぶ */
-  const preload = useCallback(
-    (videoId: string) => {
-      if (!pool.current && isAppleDevice())
-        pool.current = createNiconicoPool(
-          () => frame.current,
-          () => cursor.current.queue[cursor.current.index]?.videoId,
-        );
-      return pool.current?.want(videoId) ?? (() => {});
-    },
-    [frame],
-  );
-
   const load = useCallback(
     (items: QueueItem[], at: number, nextOwner: Owner) => {
       keepAwake();
@@ -326,13 +305,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
       // 音量を絞りきってから替える（use-engines.ts）。先に読み込んでおいたニコニコの埋め込みは、替えるときに受け取る
-      change(() =>
-        switchTo(
-          service,
-          videoId,
-          service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined,
-        ),
-      );
+      change(() => switchTo(service, videoId));
     },
     [
       waitForSlot,
