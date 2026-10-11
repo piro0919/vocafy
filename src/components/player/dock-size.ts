@@ -101,7 +101,8 @@ export function useDockSize() {
 
 /**
  * 引き手を押したとき。外側の角を引いた分だけ窓を大きくする。右に寄せているときは左上の角を左か上へ、
- * 左に寄せているときは右上の角を右か上へ引くと大きくなる。横と縦の引いた量の大きい方に合わせる
+ * 左に寄せているときは右上の角を右か上へ引くと大きくなり、逆へ引くと小さくなる。横と縦のうち、大きく動かした方に合わせる。
+ * 前は増やす向きの大きい方（Math.max）に合わせていて、真横や真下にだけ戻すと、もう片方の 0 に合って縮まなかった（2026-10-12 に直した）
  */
 export function startDockResize(e: ReactPointerEvent<HTMLElement>) {
   if (e.button !== 0) return;
@@ -123,7 +124,7 @@ export function startDockResize(e: ReactPointerEvent<HTMLElement>) {
   const move = (ev: PointerEvent) => {
     const dx = left ? ev.clientX - startX : startX - ev.clientX;
     const dy = (startY - ev.clientY) * RATIO;
-    width = clamp(startWidth + Math.max(dx, dy), max);
+    width = clamp(startWidth + (Math.abs(dx) >= Math.abs(dy) ? dx : dy), max);
     apply(width);
   };
   const up = () => {

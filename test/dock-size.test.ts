@@ -83,12 +83,22 @@ describe('引き手を引いたとき', () => {
     expect(width()).toBe(MIN + 100);
   });
 
-  it('小さくするのは、内側と下の両方へ引いたとき（横か縦の片方だけでは、大きい方の 0 に合って縮まない）', () => {
+  it('真横か真下に内側へ引くだけで小さくなる', () => {
     frameWidth = MIN + 200;
     drag(100, 0);
-    expect(width()).toBe(MIN + 200);
-    drag(100, 100 / RATIO);
-    expect(width()).toBeCloseTo(MIN + 100);
+    expect(width()).toBe(MIN + 100);
+    drag(0, 50 / RATIO);
+    expect(width()).toBeCloseTo(MIN + 150);
+  });
+
+  it('斜めに引いたときは、大きく動かした方に合わせる', () => {
+    frameWidth = MIN + 200;
+    // 横は内側へ 30、縦は外側へ 90 → 縦に合わせて大きくなる
+    drag(30, -90 / RATIO);
+    expect(width()).toBeCloseTo(MIN + 290);
+    // 横は内側へ 120、縦は外側へ 20 → 横に合わせて小さくなる
+    drag(120, -20 / RATIO);
+    expect(width()).toBeCloseTo(MIN + 80);
   });
 
   it('上へ引いた量は 16:9 の幅に直し、横と縦の大きい方に合わせる', () => {
