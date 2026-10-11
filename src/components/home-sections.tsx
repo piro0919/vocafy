@@ -68,7 +68,7 @@ export function OnThisDay({
           type="button"
           data-preload={hero.service === 'niconico' ? hero.videoId : undefined}
           onClick={() => open(hero)}
-          className="group flex min-w-0 flex-col gap-3 text-left sm:flex-row sm:items-end lg:flex-col lg:items-stretch"
+          className="group flex min-w-0 flex-col gap-3 self-start text-left sm:flex-row sm:items-end lg:flex-col lg:items-stretch"
         >
           <span className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-surface shadow-lift sm:w-1/2 lg:w-full">
             <FadeImage
