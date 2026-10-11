@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { type ReactNode, useSyncExternalStore } from 'react';
 import { useRouter } from '@bprogress/next/app';
 import { PRIMARY } from '@/components/button-styles';
 import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
@@ -8,6 +8,7 @@ import { Heading, SECTION } from '@/components/heading';
 import { Icon } from '@/components/icon';
 import { usePlayer } from '@/components/player/player-provider';
 import { SongList } from '@/components/song-list';
+import { hasSignInHint, signIn } from '@/lib/auth-client';
 import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { formatCount } from '@/lib/format';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
@@ -30,11 +31,14 @@ export function FavoritesView() {
 
   if (songs.length + producers.length === 0) {
     return (
-      <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
-        お気に入りはまだありません。曲やボカロPの
-        <Icon name="heart" className="size-4" />
-        で追加できます。
-      </p>
+      <>
+        <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
+          お気に入りはまだありません。曲やボカロPの
+          <Icon name="heart" className="size-4" />
+          で追加できます。
+        </p>
+        <SignInNote />
+      </>
     );
   }
 
@@ -88,7 +92,33 @@ export function FavoritesView() {
           </div>
         </Section>
       )}
+      <SignInNote />
     </div>
+  );
+}
+
+/**
+ * ログインで何ができるかの一文。右上のログインを押して得られるのはお気に入りを端末どうしで分け合うことだけで、
+ * それが画面のどこにも書かれていなかった。ログインしたことのある端末（auth-client.ts の印）には出さない
+ */
+function SignInNote() {
+  const hinted = useSyncExternalStore(
+    () => () => {},
+    hasSignInHint,
+    () => true,
+  );
+  if (hinted) return null;
+  return (
+    <p className={`${SECTION} text-sm text-muted`}>
+      <button
+        type="button"
+        onClick={() => signIn()}
+        className="font-bold text-accent hover:underline"
+      >
+        ログイン
+      </button>
+      すると、ほかの端末でもお気に入りを使えます。
+    </p>
   );
 }
 
