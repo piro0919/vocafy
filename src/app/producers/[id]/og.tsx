@@ -46,22 +46,8 @@ export async function producerImage(
     googleFont('M PLUS Rounded 1c', 700, sub),
     googleFont('Orbitron', 900, `${eyebrow}Vocafy`),
   ]);
-  // 字の大きさ。右の欄は、顔の画像のときは幅 640px ほど、表紙のときは 570px ほど
-  const bigSize = cover
-    ? big.length > 24
-      ? 46
-      : big.length > 14
-        ? 54
-        : big.length > 7
-          ? 64
-          : 84
-    : big.length > 24
-      ? 52
-      : big.length > 14
-        ? 62
-        : big.length > 8
-          ? 76
-          : 96;
+  // 字の大きさ。右の欄は幅 640px ほど（表紙のときも、表紙の幅を顔の画像に近づけてそろえた）
+  const bigSize = big.length > 24 ? 52 : big.length > 14 ? 62 : big.length > 8 ? 76 : 96;
 
   return new ImageResponse(
     <div
@@ -80,16 +66,16 @@ export async function producerImage(
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: cover ? 48 : 56,
-          padding: cover ? '0 72px' : '0 80px',
+          gap: 56,
+          padding: '0 80px',
           width: '100%',
         }}
       >
         {cover ? (
           <img
             src={cover}
-            width={432}
-            height={243}
+            width={352}
+            height={198}
             alt=""
             style={{
               borderRadius: 16,
