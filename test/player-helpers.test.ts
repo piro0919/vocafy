@@ -121,12 +121,41 @@ describe('一覧の題名', () => {
 describe('動画の画面から戻る（leave）', () => {
   const router = () => ({ back: vi.fn(), push: vi.fn() });
 
+  /** 「戻る」で popstate が来るかを選べる window */
+  const stubWindow = (pops: boolean) => {
+    const target = new EventTarget();
+    // localStorage の差し替えは残したいので、vi.stubGlobal を使わず window だけを置いて、終わったら外す
+    Object.assign(globalThis, { window: target });
+    return () => {
+      if (pops) target.dispatchEvent(new Event('popstate'));
+    };
+  };
+
   it('サイトの中で進んでいれば「戻る」', () => {
+    vi.useFakeTimers();
+    const pop = stubWindow(true);
+    const r = router();
+    r.back.mockImplementation(pop);
+    setNavigationDepth(2);
+    leave(r as unknown as Parameters<typeof leave>[0]);
+    vi.runAllTimers();
+    expect(r.back).toHaveBeenCalledTimes(1);
+    expect(r.push).not.toHaveBeenCalled();
+    vi.useRealTimers();
+    Reflect.deleteProperty(globalThis, 'window');
+  });
+
+  it('「戻る」で履歴が動かなければ、トップへ', () => {
+    vi.useFakeTimers();
+    stubWindow(false);
     const r = router();
     setNavigationDepth(2);
     leave(r as unknown as Parameters<typeof leave>[0]);
+    vi.runAllTimers();
     expect(r.back).toHaveBeenCalledTimes(1);
-    expect(r.push).not.toHaveBeenCalled();
+    expect(r.push).toHaveBeenCalledWith('/');
+    vi.useRealTimers();
+    Reflect.deleteProperty(globalThis, 'window');
   });
 
   it('いきなりこの画面に来たときは、サイトの外へ戻さずトップへ', () => {

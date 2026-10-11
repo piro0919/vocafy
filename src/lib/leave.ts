@@ -1,4 +1,5 @@
 import type { useRouter } from '@/i18n/navigation';
+import { TIMING } from './timing';
 
 /**
  * サイトの中で進んだ画面の数（NavigationDepth が数える）。0 のときに「戻る」を押すと、ブラウザの履歴に残っている
@@ -39,6 +40,19 @@ export function arrivedByReplace(path: string): boolean {
  * サイトの中で戻る先が無いとき（いきなりこの画面に来たとき）は、トップへ
  */
 export function leave(router: ReturnType<typeof useRouter>) {
-  if (depth > 0) router.back({ showProgress: false });
-  else router.push('/');
+  if (depth === 0) {
+    router.push('/');
+    return;
+  }
+  // 数え違いの保険。戻る先が無く履歴が動かなかったら（popstate が来なければ）、トップへ移る
+  let moved = false;
+  const onPop = () => {
+    moved = true;
+  };
+  window.addEventListener('popstate', onPop, { once: true });
+  router.back({ showProgress: false });
+  setTimeout(() => {
+    window.removeEventListener('popstate', onPop);
+    if (!moved) router.push('/');
+  }, TIMING.backFallback);
 }

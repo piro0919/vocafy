@@ -16,4 +16,6 @@ export const TIMING = {
   audioRest: 30_000,
   /** 画面を移り始めてから、住所が変わらなくても移動中の印を外すまでの時間（pending-navigation.ts） */
   navigationLimit: 10_000,
+  /** 「戻る」を送ってから、履歴が動かなかったとみなしてトップへ移るまでの時間（leave.ts） */
+  backFallback: 500,
 } as const;
