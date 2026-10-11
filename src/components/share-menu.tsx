@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { toast } from 'sonner';
 import { ICON, ICON_SM } from './button-styles';
@@ -12,7 +12,7 @@ const HASHTAG = 'Vocafy';
 
 /**
  * 共有のボタン（2026-10-11 に本人と決めた）。スマホなど指で操作する端末で共有の窓（Web Share API）が出せるときは、端末の窓を出す
- * （入っているアプリ全部に送れる）。パソコンでは、ボタンの下に送り先の板を開く。前はパソコンでは押すとリンクを写すだけだった。
+ * （入っているアプリ全部に送れる）。パソコンでは、ボタンの右横に送り先の板を開く（fitMenu）。前はパソコンでは押すとリンクを写すだけだった。
  * 送り先は、ボカロの話題が集まる X と、移る人の増えている Bluesky、LINE、リンクをコピー。どれも投稿の下書きを開く住所で、鍵は要らない
  * 文には #Vocafy を付ける（2026-10-11）。LINE とリンクをコピーは住所だけ
  */
@@ -21,6 +21,18 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
   // 板の中身を送り先から QR に差し替えているか
   const [qr, setQr] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const qrBox = useRef<HTMLDivElement>(null);
+
+  // 板を画面の中に収める。中身を差し替えると高さが変わるので、そのたびに測り直す
+  useLayoutEffect(() => {
+    const el = menu.current;
+    if (!open || !el) return;
+    const fit = () => fitMenu(el, qrBox.current);
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [open, qr]);
 
   // 板の外を押すか Esc で閉じる
   useEffect(() => {
@@ -86,8 +98,9 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
       {open && (
         // 形は右上のアカウントのメニューと同じ（すりガラスの角丸の板）
         <div
+          ref={menu}
           role="menu"
-          className="absolute top-full left-0 z-overlay mt-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-float backdrop-blur-lg backdrop-saturate-150"
+          className="absolute top-0 left-full z-overlay ml-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-float backdrop-blur-lg backdrop-saturate-150"
         >
           {qr ? (
             // QR は板の中身を差し替えて出す。押したボタンのすぐ下に出るので、カメラを向ける先が分かりやすい。
@@ -105,7 +118,9 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
                 </button>
                 <span className="text-sm font-bold">QRコード</span>
               </div>
-              <QrCode value={url} label={`${text} の QR コード`} />
+              <div ref={qrBox} className="mx-auto">
+                <QrCode value={url} label={`${text} の QR コード`} />
+              </div>
             </>
           ) : (
             <>
@@ -147,6 +162,37 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
       )}
     </div>
   );
+}
+
+/**
+ * 共有の板を画面の中に収める（2026-10-11 に本人と決めた）。板はボタンの右横に、上の端をそろえて開き、
+ * 下の再生の帯にかかる分だけ上へずらす。ボタンの下に開いていたころは、縦が 800px ほどの画面で QR が帯の裏に隠れ、
+ * 動画の画面の左の列は貼り付いていてスクロールでも出てこなかった。右横なら上へずらしても押したボタンを覆わない。
+ * ずらすのは動画の下の端まで（動画に重ねない。YouTube の規約）。それでも入らないときは QR を縮める
+ */
+function fitMenu(el: HTMLElement, qrBox: HTMLElement | null) {
+  el.style.translate = '';
+  if (qrBox) qrBox.style.width = '';
+  // 板とボタンの間（ml-2）を、画面の端や動画との間にも使う
+  const gap = parseFloat(getComputedStyle(el).marginLeft);
+  // 再生の帯の上に間を空けた高さ（globals.css の --above-bar と同じ値。長さとして登録してあり px で読める --toast-bottom で読む）
+  const aboveBar = parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue('--toast-bottom'),
+  );
+  const rect = el.getBoundingClientRect();
+  const over = rect.bottom - (window.innerHeight - aboveBar);
+  // 画面の右の端からはみ出すときは、左へ寄せる（狭い画面で、動画の下の帯から開いたとき）
+  const x = Math.min(0, window.innerWidth - gap - rect.right);
+  if (over <= 0) {
+    el.style.translate = `${x}px 0`;
+    return;
+  }
+  const stage = document.querySelector('[data-stage-video]')?.getBoundingClientRect();
+  const ceiling = (stage && stage.height > 0 ? stage.bottom : 0) + gap;
+  const up = Math.max(0, Math.min(over, rect.top - ceiling));
+  el.style.translate = `${x}px ${-up}px`;
+  const left = over - up;
+  if (left > 0 && qrBox) qrBox.style.width = `${qrBox.getBoundingClientRect().width - left}px`;
 }
 
 const noSubscribe = () => () => {};

@@ -72,7 +72,11 @@ export function PlayerStage({
       <div aria-hidden className="md:hidden">
         <div className="aspect-video" />
       </div>
-      <div className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-tabs max-md:bg-background">
+      {/* data-stage-video は、共有の板が動画に重ならないよう測る目印（share-menu.tsx の fitMenu） */}
+      <div
+        data-stage-video
+        className="max-md:fixed max-md:inset-x-0 max-md:top-0 max-md:z-tabs max-md:bg-background"
+      >
         {on ? (
           <div
             ref={slot}
