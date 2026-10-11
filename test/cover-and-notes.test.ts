@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { colorsOf } from '@/lib/cover-colors';
+import { blendColors, colorsOf } from '@/lib/cover-colors';
 import { splitUrls } from '@/lib/split-urls';
 
 /** 同じ色の点を n 個並べた、表紙の点の値 */
@@ -87,5 +87,39 @@ describe('splitUrls（説明文の URL）', () => {
       { text: 'https://www.nicovideo.jp/watch/sm9', href: 'https://www.nicovideo.jp/watch/sm9' },
     ]);
     expect(splitUrls('sm9')).toEqual([{ text: 'sm9' }]);
+  });
+});
+
+describe('blendColors（再生位置での背景の色）', () => {
+  const stops: [string, string][] = [
+    ['#a', '#A'],
+    ['#b', '#B'],
+    ['#c', '#C'],
+    ['#d', '#D'],
+  ];
+
+  it('取った位置ちょうどでは、その位置の色を混ぜ始める（0%）', () => {
+    expect(blendColors(stops, 0)).toEqual([
+      'color-mix(in oklch, #b 0.0%, #a)',
+      'color-mix(in oklch, #B 0.0%, #A)',
+    ]);
+  });
+
+  it('位置を挟む2つの色を、進んだ割合で混ぜる', () => {
+    expect(blendColors(stops, 0.375)?.[0]).toBe('color-mix(in oklch, #c 50.0%, #b)');
+  });
+
+  it('最後のコマから先は、最後の色のまま', () => {
+    expect(blendColors(stops, 0.9)).toEqual(['#d', '#D']);
+    expect(blendColors(stops, 1)).toEqual(['#d', '#D']);
+  });
+
+  it('色が1つだけ（ニコニコの曲）なら、その色のまま', () => {
+    expect(blendColors([['#a', '#A']], 0.5)).toEqual(['#a', '#A']);
+  });
+
+  it('次の色がまだ読めていなければ、いまの位置の色のまま。いまの色も無ければ undefined', () => {
+    expect(blendColors([['#a', '#A'], undefined], 0.1)).toEqual(['#a', '#A']);
+    expect(blendColors([undefined, ['#b', '#B']], 0.1)).toBeUndefined();
   });
 });

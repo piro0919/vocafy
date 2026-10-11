@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { colorsOf } from '@/lib/cover-colors';
+import { blendColors, colorsOf } from '@/lib/cover-colors';
 import { MOTION } from '@/lib/motion';
 import { frameOf } from '@/lib/thumb';
 import { publishAmbientColors } from './ambient-colors';
@@ -44,11 +44,6 @@ const NEW_LAYER_STEP = 0.05;
 
 /** 読み込み中の絵。同じ絵を二重に取りに行かない */
 const loading = new Set<string>();
-
-/** 色を取る絵の数。表紙と、YouTube が自動で選ぶ途中の3コマ（frameOf） */
-const FRAMES = 4;
-/** 曲の中で色を取る位置 */
-const STOPS = Array.from({ length: FRAMES }, (_, i) => i / FRAMES);
 
 /** この画面の背景の色をどの絵から取るか。null は「流している曲の色、無ければ差し色」 */
 const SourceContext = createContext<(image: string | null) => void>(() => {});
@@ -110,7 +105,7 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     stops.push(found ?? (i === 0 ? (found === null ? BRAND_COLORS : undefined) : stops[i - 1]));
   }
   const progress = videoId && time.duration > 0 ? Math.min(1, time.current / time.duration) : 0;
-  const colors = images.length === 0 ? BRAND_COLORS : blend(stops, progress);
+  const colors = images.length === 0 ? BRAND_COLORS : blendColors(stops, progress);
 
   // 流している曲の色を、Vocafy Visualizer にも渡す（ambient-colors.ts）。まだ読めていないあいだは前の色のまま
   const songColors = videoId && colors ? colors.join('|') : null;
@@ -249,22 +244,6 @@ function EdgeVeil({ side, children }: { side: 'top' | 'bottom'; children: ReactN
       </div>
     </div>
   );
-}
-
-/**
- * 再生位置での色。位置を挟む2つの色を、進んだ割合で混ぜる。最後のコマから先は最後の色のまま。
- * 色相に沿って混ぜる（oklch）。oklab だと赤と緑のような離れた色の間が茶色く濁る。
- * 表紙の色がまだ読めていなければ undefined（いまの色を出したままにする）
- */
-function blend(stops: (Colors | undefined)[], progress: number): Colors | undefined {
-  let i = 0;
-  while (i + 1 < stops.length && progress >= STOPS[i + 1]) i++;
-  const a = stops[i];
-  const b = stops[i + 1];
-  if (!a || !b) return a;
-  const t = (progress - STOPS[i]) / (STOPS[i + 1] - STOPS[i]);
-  const mix = (x: string, y: string) => `color-mix(in oklch, ${y} ${(t * 100).toFixed(1)}%, ${x})`;
-  return [mix(a[0], b[0]), mix(a[1], b[1])];
 }
 
 /** この画面の背景の色を、この絵から取る。画面を離れたら、流している曲の色に戻す。何も描かない */

@@ -75,3 +75,24 @@ function tone({ r, g, b }: { r: number; g: number; b: number }): string {
   const light = Math.round(Math.min(LIGHTNESS.max, Math.max(LIGHTNESS.min, l)) * 100);
   return `hsl(${hue} ${sat}% ${light}%)`;
 }
+
+/**
+ * 再生位置での色（ambient.tsx）。colors は曲の中で等間隔に取った色で、表紙と YouTube が自動で選ぶ途中の3コマ（0・25・50・75%）。
+ * 位置を挟む2つの色を、進んだ割合で混ぜる。最後のコマから先は最後の色のまま。
+ * 色相に沿って混ぜる（oklch）。oklab だと赤と緑のような離れた色の間が茶色く濁る。
+ * 色がまだ読めていなければ undefined（いまの色を出したままにする）
+ */
+export function blendColors<T extends readonly [string, string]>(
+  colors: (T | undefined)[],
+  progress: number,
+): [string, string] | T | undefined {
+  const at = (i: number) => i / colors.length;
+  let i = 0;
+  while (i + 1 < colors.length && progress >= at(i + 1)) i++;
+  const a = colors[i];
+  const b = colors[i + 1];
+  if (!a || !b) return a;
+  const t = (progress - at(i)) / (at(i + 1) - at(i));
+  const mix = (x: string, y: string) => `color-mix(in oklch, ${y} ${(t * 100).toFixed(1)}%, ${x})`;
+  return [mix(a[0], b[0]), mix(a[1], b[1])];
+}
