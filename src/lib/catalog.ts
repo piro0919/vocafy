@@ -34,6 +34,8 @@ export type Song = {
   niconicoId: string | null;
   niconicoThumb: string | null;
   year: number | null;
+  /** 投稿日（"2026-10-09"）。ボカロPの画面で、流している曲の行だけ年の代わりに出す */
+  publishedOn: string | null;
   /** 曲の作者。合作なら複数 */
   producers: { id: number; name: string }[];
   vocalists: string[];
@@ -51,6 +53,7 @@ type SongRow = {
   niconico_id: string | null;
   niconico_thumb: string | null;
   year: number | null;
+  published_on: string | null;
   producers: { id: number; name: string }[];
   vocalists: string[];
 };
@@ -74,6 +77,7 @@ const VOCALIST_NAMES = `
 const SONG_SELECT = `
   select s.id, s.name, s.youtube_id, s.niconico_id, s.niconico_thumb,
     extract(year from s.published_on)::int as year,
+    to_char(s.published_on, 'YYYY-MM-DD') as published_on,
     (select coalesce(json_agg(json_build_object('id', p.id, 'name', p.name) order by p.complete desc, p.id), '[]')
        from song_producer sp join producer p on p.id = sp.producer_id where sp.song_id = s.id) as producers,
     (select coalesce(json_agg(x.name order by x.support, x.id), '[]') from (${VOCALIST_NAMES}) x) as vocalists
@@ -86,6 +90,7 @@ const toSong = (r: SongRow): Song => ({
   niconicoId: r.niconico_id,
   niconicoThumb: r.niconico_thumb,
   year: r.year,
+  publishedOn: r.published_on,
   producers: r.producers,
   vocalists: r.vocalists,
 });

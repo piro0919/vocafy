@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
+import { dayOf, monthOf, yearOf } from '@/lib/iso-date';
 import { FavoriteButton } from './favorite-button';
 import { Bars } from './now-playing';
 import { StagePlayButton } from './player-stage';
@@ -77,6 +78,8 @@ export function ProducerPlayer({
   const { current, playing, owner, playQueue, takeOver, toggle, skipsNiconico } = usePlayer();
   const t = useText(TEXT);
   const terms = useText(TERMS);
+  const dateLabel = (iso: string) =>
+    terms.date(yearOf(iso), Number(monthOf(iso)), Number(dayOf(iso)));
   const voices = useVoiceNames();
   const to = useLocalize();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
@@ -166,6 +169,7 @@ export function ProducerPlayer({
         <ol ref={list} className="-mx-3">
           {songs.map((song, i) => {
             const active = here && current?.songId === song.id;
+            const marked = active || linkedItem?.songId === song.id;
             const item = playable.get(song.id);
             return (
               <li
@@ -173,7 +177,7 @@ export function ProducerPlayer({
                 id={`song-${song.id}`}
                 data-preload={item?.service === 'niconico' ? item.videoId : undefined}
                 className={`group flex items-center rounded-md border pr-1 transition-colors duration-react ${
-                  active || linkedItem?.songId === song.id
+                  marked
                     ? 'border-line/60 bg-glass'
                     : item
                       ? 'border-transparent hover:bg-hover'
@@ -196,10 +200,11 @@ export function ProducerPlayer({
                     <Marquee active={active} className="text-sm font-bold">
                       {song.title}
                     </Marquee>
-                    <span className="block truncate text-xs text-muted">
-                      {song.vocalists.map(voices.name).join('・')}
-                      {song.year && ` ・ ${terms.year(song.year)}`}
-                    </span>
+                    {/* 歌声と投稿日。再生中の行だけ、収まらなければ曲名と同じく流す（ほかの行は末尾を切る） */}
+                    <Marquee active={active} className="text-xs text-muted">
+                      {song.vocalists.map(voices.name).join('・') +
+                        (song.publishedOn ? ` ・ ${dateLabel(song.publishedOn)}` : '')}
+                    </Marquee>
                   </span>
                 </button>
                 {skipsNiconico && item?.service === 'niconico' && <NoAutoplay />}

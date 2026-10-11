@@ -33,6 +33,7 @@ export const TERMS = defineText({
     monthDay: (month: number, day: number) => `${month}月${day}日`,
     yearMonth: (year: number | string, month: number) => `${year}年${month}月`,
     year: (year: number | string) => `${year}年`,
+    date: (year: number | string, month: number, day: number) => `${year}年${month}月${day}日`,
   },
   en: {
     home: 'Home',
@@ -61,6 +62,8 @@ export const TERMS = defineText({
     monthDay: (month: number, day: number) => `${MONTHS[month - 1]} ${day}`,
     yearMonth: (year: number | string, month: number) => `${MONTHS[month - 1]} ${year}`,
     year: (year: number | string) => String(year),
+    date: (year: number | string, month: number, day: number) =>
+      `${MONTHS[month - 1]} ${day}, ${year}`,
   },
 });
 

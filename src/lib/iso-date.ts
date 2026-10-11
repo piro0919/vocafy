@@ -3,6 +3,7 @@
  */
 const YEAR = { start: 0, end: 4 };
 const MONTH = { start: 5, end: 7 };
+const DAY = { start: 8, end: 10 };
 const MONTH_DAY = { start: 5, end: 10 };
 const DATE = { start: 0, end: 10 };
 
@@ -10,6 +11,8 @@ const DATE = { start: 0, end: 10 };
 export const yearOf = (iso: string) => iso.slice(YEAR.start, YEAR.end);
 /** "10" */
 export const monthOf = (iso: string) => iso.slice(MONTH.start, MONTH.end);
+/** "11" */
+export const dayOf = (iso: string) => iso.slice(DAY.start, DAY.end);
 /** "10-11" */
 export const monthDayOf = (iso: string) => iso.slice(MONTH_DAY.start, MONTH_DAY.end);
 /** "2026-10-11" */
