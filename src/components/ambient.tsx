@@ -13,7 +13,7 @@ import { colorsOf } from '@/lib/cover-colors';
 import { MOTION } from '@/lib/motion';
 import { frameOf } from '@/lib/thumb';
 import { publishAmbientColors } from './ambient-colors';
-import { usePlayer } from './player/player-provider';
+import { usePlaybackTime, usePlayer } from './player/player-provider';
 import { FRAME_NUMBERS } from '@/lib/thumb';
 
 /**
@@ -65,7 +65,8 @@ const SourceContext = createContext<(image: string | null) => void>(() => {});
  */
 export function AmbientProvider({ children }: { children: ReactNode }) {
   const [source, setSource] = useState<string | null>(null);
-  const { current, time } = usePlayer();
+  const { current } = usePlayer();
+  const time = usePlaybackTime();
   const videoId = current?.videoId ?? null;
   const service = current?.service;
   const thumb = current?.thumb;

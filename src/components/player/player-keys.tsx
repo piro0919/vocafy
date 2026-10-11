@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { FloatingPanel } from './floating-panel';
 import { KeyList } from './keyboard-help';
 import { now } from './playback-time';
-import { usePlayer } from './player-provider';
+import { usePlaybackTime, usePlayer } from './player-provider';
 import { LONG_SEEK_STEP, SEEK_STEP, VOLUME_STEP } from '@/lib/input';
 
 /**
@@ -44,10 +44,13 @@ export function PlayerKeys() {
   const current = usePlayer();
   // キーの受け口は付けたままにし、そのときのプレイヤーの状態を読む。状態をそのまま見張ると、流しているあいだは
   // 再生位置が 0.5 秒ごとに変わるので、そのたびに受け口を付け直していた
+  const time = usePlaybackTime();
   const playerRef = useRef(current);
+  const timeRef = useRef(time);
   useEffect(() => {
     playerRef.current = current;
-  }, [current]);
+    timeRef.current = time;
+  }, [current, time]);
   const [helpOpen, setHelpOpen] = useState(false);
   // 板は初めて開くまで描かない（読み込んだ直後のサーバーの HTML と食い違わせない）。一度描いたら、閉じる動きのために置いたままにする
   const [helpMounted, setHelpMounted] = useState(false);
@@ -85,12 +88,12 @@ export function PlayerKeys() {
       }
 
       if (player.queue.length === 0) return;
-      const t = now(player.time, player.playing);
-      const seekBy = (sec: number) =>
-        player.seek(Math.min(player.time.duration, Math.max(0, t + sec)));
+      const time = timeRef.current;
+      const t = now(time, player.playing);
+      const seekBy = (sec: number) => player.seek(Math.min(time.duration, Math.max(0, t + sec)));
       if (/^[0-9]$/.test(e.key)) {
         e.preventDefault();
-        player.seek((player.time.duration * Number(e.key)) / DIGITS);
+        player.seek((time.duration * Number(e.key)) / DIGITS);
         return;
       }
       const shortcut = KEY_BUTTONS[e.key.toUpperCase()];

@@ -11,7 +11,7 @@ import { FadeImage } from '../fade-image';
 import { FavoriteButton } from '../favorite-button';
 import { Icon } from '../icon';
 import { PlaybackMode } from './playback-mode';
-import { type PlaybackTime, type Sleep, usePlayer } from './player-provider';
+import { type PlaybackTime, type Sleep, usePlaybackTime, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
 import { ICON } from '../button-styles';
 import { clock, now } from './playback-time';
@@ -39,13 +39,13 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     step,
     close,
     seek,
-    time,
     sleep,
     volume,
     muted,
     setVolume,
     toggleMute,
   } = usePlayer();
+  const time = usePlaybackTime();
   const router = useRouter();
 
   return (

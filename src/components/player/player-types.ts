@@ -114,7 +114,6 @@ export type PlayerContext = {
   /** 再生をやめ、プレイヤーを消す */
   close: () => void;
   seek: (seconds: number) => void;
-  time: PlaybackTime;
   /** 音量（0〜100）と消音。このブラウザに残し、次に開いたときもその音量で始める */
   volume: number;
   muted: boolean;

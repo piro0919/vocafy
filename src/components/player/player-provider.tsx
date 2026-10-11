@@ -68,6 +68,17 @@ export function usePlayer(): PlayerContext {
 }
 
 /**
+ * 再生位置（0.5 秒おきに拾う）。usePlayer とは別に配る。同じ入れ物に入れていたころは、流しているあいだ 0.5 秒ごとに
+ * usePlayer を読む部品がすべて描き直され、曲の行の一覧（ボカロPの画面では数百行）まで1秒に2回描き直していた。
+ * 読むのは再生の帯・背景の色・キーボード操作だけ
+ */
+const TimeContext = createContext<PlaybackTime>({ current: 0, duration: 0, at: 0 });
+
+export function usePlaybackTime(): PlaybackTime {
+  return useContext(TimeContext);
+}
+
+/**
  * 次に流れる曲として見せる数。並び全体は開いている画面の一覧に出ているので、板は次に来る曲を見るだけにする
  * （100曲まで出していたら多すぎると言われた）
  */
@@ -837,7 +848,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         player.current?.seek(seconds);
         setTime((t) => ({ ...t, current: seconds, at: performance.now() }));
       },
-      time,
       volume: sound.volume,
       muted: sound.muted,
       setVolume: (volume) => {
@@ -894,7 +904,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       takeOver,
       step,
       close,
-      time,
       sound,
       setSlot,
       holdSlot,
@@ -909,43 +918,45 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   return (
     <Context value={value}>
-      {children}
-      <DockStrip mode={mode} shown={shown} owner={owner} onClose={close} />
-      {/* プレイヤーの上には何も重ねない（YouTube の規約）。200×200 を下回らない */}
-      <div
-        ref={frame}
-        // E2E テストや確かめのときに、プレイヤーの枠を見つける目印
-        data-player-frame
-        className={`${
-          mode === 'slot'
-            ? 'fixed z-raised overflow-hidden bg-black md:rounded-2xl [&_iframe]:size-full'
-            : `chrome-bottom ${DOCK} ${FADE} z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark [&_iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
-        } ${resumable ? 'invisible' : ''}`}
-      />
-      {/* 戻した前の曲をまだ流していないあいだ、右下の窓の場所に、その曲の表紙と再生ボタンを出す（動画の枠は隠している）。
+      <TimeContext value={time}>
+        {children}
+        <DockStrip mode={mode} shown={shown} owner={owner} onClose={close} />
+        {/* プレイヤーの上には何も重ねない（YouTube の規約）。200×200 を下回らない */}
+        <div
+          ref={frame}
+          // E2E テストや確かめのときに、プレイヤーの枠を見つける目印
+          data-player-frame
+          className={`${
+            mode === 'slot'
+              ? 'fixed z-raised overflow-hidden bg-black md:rounded-2xl [&_iframe]:size-full'
+              : `chrome-bottom ${DOCK} ${FADE} z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark [&_iframe]:size-full ${mode === 'none' ? HIDDEN : ''}`
+          } ${resumable ? 'invisible' : ''}`}
+        />
+        {/* 戻した前の曲をまだ流していないあいだ、右下の窓の場所に、その曲の表紙と再生ボタンを出す（動画の枠は隠している）。
           持ち主の画面では、その画面の大きな動画の場所に出す（player-stage.tsx） */}
-      {resumable && mode === 'dock' && current && (
-        <button
-          type="button"
-          onClick={resume}
-          aria-label={`「${current.title}」の続きを再生`}
-          className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
-        >
-          <FadeImage
-            src={current.thumb}
-            alt=""
-            fill
-            sizes={`${IMAGE_SIZES.dockWide}px`}
-            className="object-cover"
-          />
-          <span className={`absolute top-1/2 left-1/2 size-14 -translate-1/2 ${COVER_PLAY}`}>
-            <Icon name="play" className="size-8" />
-          </span>
-        </button>
-      )}
-      {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
-      <PlayerBar item={shown} open={queue.length > 0} />
-      <PlayerKeys />
+        {resumable && mode === 'dock' && current && (
+          <button
+            type="button"
+            onClick={resume}
+            aria-label={`「${current.title}」の続きを再生`}
+            className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
+          >
+            <FadeImage
+              src={current.thumb}
+              alt=""
+              fill
+              sizes={`${IMAGE_SIZES.dockWide}px`}
+              className="object-cover"
+            />
+            <span className={`absolute top-1/2 left-1/2 size-14 -translate-1/2 ${COVER_PLAY}`}>
+              <Icon name="play" className="size-8" />
+            </span>
+          </button>
+        )}
+        {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
+        <PlayerBar item={shown} open={queue.length > 0} />
+        <PlayerKeys />
+      </TimeContext>
     </Context>
   );
 }
