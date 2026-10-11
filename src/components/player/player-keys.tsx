@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FloatingPanel } from './floating-panel';
 import { KeyList } from './keyboard-help';
-import { now } from './player-bar';
+import { now } from './playback-time';
 import { usePlayer } from './player-provider';
 import { LONG_SEEK_STEP, SEEK_STEP, VOLUME_STEP } from '@/lib/input';
 

@@ -13,6 +13,8 @@ import { Icon } from '../icon';
 import { PlaybackMode } from './playback-mode';
 import { type PlaybackTime, type Sleep, usePlayer } from './player-provider';
 import { Marquee } from '../marquee';
+import { ICON } from '../button-styles';
+import { clock, now } from './playback-time';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { SEEK_STEP } from '@/lib/input';
 
@@ -204,12 +206,6 @@ function SleepFill({ sleep }: { sleep: Sleep | null }) {
   );
 }
 
-/** 拾った時刻から、今の時刻を補う。再生中だけ進める */
-export function now(time: PlaybackTime, playing: boolean): number {
-  const elapsed = playing ? (performance.now() - time.at) / 1000 : 0;
-  return Math.min(time.current + elapsed, time.duration || Infinity);
-}
-
 /**
  * 再生位置の線。時刻は 0.5 秒おきにしか拾えないので、間は毎フレーム補って描く。
  * 描き直しは React を通さず、要素の幅とつまみの位置を直接変える。
@@ -340,11 +336,6 @@ function Clock({ time, playing }: { time: PlaybackTime; playing: boolean }) {
   );
 }
 
-function clock(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
 function BarButton({
   label,
   large,
@@ -368,10 +359,11 @@ function BarButton({
       disabled={disabled}
       {...NO_RESTORE}
       onClick={onClick}
-      className={`grid shrink-0 place-items-center rounded-full transition duration-react active:scale-95 disabled:opacity-disabled ${className} ${
+      // 小さなボタンは、ほかのアイコンだけのボタン（ICON）と同じく、指を乗せたときに丸い地を出す
+      className={`grid disabled:opacity-disabled ${className} ${
         large
-          ? 'size-11 bg-miku text-on-miku shadow-press hover:brightness-110 disabled:opacity-100 [&_svg]:size-6'
-          : 'size-10 text-muted hover:text-foreground'
+          ? 'size-11 shrink-0 place-items-center rounded-full bg-miku text-on-miku shadow-press transition duration-react hover:brightness-110 active:scale-95 disabled:opacity-100 [&_svg]:size-6'
+          : `${ICON} text-muted hover:text-foreground disabled:hover:bg-transparent`
       }`}
     >
       {children}
