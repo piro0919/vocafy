@@ -1,4 +1,6 @@
 import { cdnCache } from '@/lib/cache-control';
+import { decodeEntities as decode, htmlToText as fromHtml } from '@/lib/description-text';
+import { isVideoId } from '@/lib/video-id';
 
 /** 説明文を CDN に置く日数。書き換えられることがまれなので長めにする */
 const CACHE_DAYS = 14;
@@ -10,11 +12,16 @@ const AGENT = { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' };
  * DB には残さず、流すたびにその場で聞く（YouTube の API のデータを長く持たないため）。
  * 取れなければ空の文字列を返す。鍵（YOUTUBE_API_KEY）が無い環境でも空を返し、画面には何も出ない。
  * CDN に14日置き、古くなってからも裏で取り直すあいだ14日まで古い方を返す（説明文はめったに変わらないため。2026-10-11）。
- * 合わせて28日にしているのは、YouTube の開発者向けポリシーが API のデータを持つのを30日までとしているため
+ * 合わせて28日にしているのは、YouTube の開発者向けポリシーが API のデータを持つのを30日までとしているため。
+ * 形の違う番号は 400 で、外には聞かない（でたらめな番号で叩かれると、取り込みと共用の Data API の割り当てを使われる）
  */
 export async function GET(_req: Request, ctx: RouteContext<'/api/description/[service]/[id]'>) {
   const { service, id } = await ctx.params;
-  const text = service === 'youtube' ? await youtube(id) : await niconico(id);
+  if ((service !== 'youtube' && service !== 'niconico') || !isVideoId(service, id)) {
+    return Response.json({ error: 'bad request' }, { status: 400 });
+  }
+  // 窓口につながらないときも、空の文字列を返す（画面には何も出ない）
+  const text = await (service === 'youtube' ? youtube(id) : niconico(id)).catch(() => '');
   return Response.json(
     { text },
     { headers: { 'Cache-Control': cdnCache(CACHE_DAYS, CACHE_DAYS) } },
@@ -61,19 +68,4 @@ async function embedDescription(id: string): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-/** 説明文の HTML を文にする。改行（<br>）だけ残してタグを外し、文字参照を戻す */
-function fromHtml(html: string) {
-  return decode(html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')).trim();
-}
-
-function decode(s: string) {
-  return s
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-    .replace(/&amp;/g, '&');
 }
