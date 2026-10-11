@@ -145,27 +145,29 @@ test('お気に入りの曲は、行をつかんで並べ替えられ、ただ�
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
-test('動画を縮めると、サイトの中から来たなら前の画面へ、外から来たならトップへ', async ({
+test('動画を縮めると、サイトの中から来たときは前の画面へ戻る', async ({ page, isMobile }) => {
+  // 縮めるボタンはスマホの幅の動画の画面にだけある
+  test.skip(!isMobile, 'スマホだけの操作');
+  await page.goto('/years/2016');
+  await page.locator('main button').filter({ hasText: '・' }).first().click();
+  await page.waitForURL(/producers\/\d+/);
+  await page.getByRole('button', { name: '動画を縮めて前の画面に戻る' }).click();
+  await expect(page).toHaveURL(/\/years\/2016$/);
+});
+
+test('動画を縮めると、外から来たときはサイトの外に出ずトップへ移る', async ({
   page,
   isMobile,
   baseURL,
 }) => {
-  // 縮めるボタンはスマホの幅の動画の画面にだけある
   test.skip(!isMobile, 'スマホだけの操作');
-  const leave = page.getByRole('button', { name: '動画を縮めて前の画面に戻る' });
-  await page.goto('/years/2016');
-  await page.locator('main button').filter({ hasText: '・' }).first().click();
-  await page.waitForURL(/producers\/\d+/);
-  await leave.click();
-  await expect(page).toHaveURL(/\/years\/2016$/);
   // 共有のリンクを同じタブで開いた人。「戻る」にすると外のページへ出てしまう（leave.ts）。
-  // 開き直すと前半で流した曲が「前回の続き」として戻り、同じボカロPの画面だと再生ボタンが「続きを再生」になるので、控えを消しておく
-  await page.evaluate(() => localStorage.removeItem('vocafy-resume'));
+  // 前の確かめと分けているのは、同じ窓だと前に流した曲が「前回の続き」として戻り、再生ボタンが「続きを再生」になるため
   await page.setContent(`<a id="share" href="${baseURL}/producers/45">共有のリンク</a>`);
   await page.click('#share');
   await page.waitForURL(/producers\/45/);
   await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
-  await leave.click();
+  await page.getByRole('button', { name: '動画を縮めて前の画面に戻る' }).click();
   await expect(page).toHaveURL(`${baseURL}/`);
 });
 
