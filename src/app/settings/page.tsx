@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { InstallApp } from '@/components/install-app';
+import { MixFlowSetting } from '@/components/mix-flow-setting';
 import { DockSetting } from '@/components/player/dock-setting';
 import { KeyboardHelp } from '@/components/player/keyboard-help';
 import { ResumeSetting } from '@/components/player/resume-setting';
@@ -24,6 +25,7 @@ export default function SettingsPage() {
       <VoiceSetting />
       <DockSetting />
       <ResumeSetting />
+      <MixFlowSetting />
       <VisualizerSetting />
       <InstallApp />
       <SwipeBackSetting />

@@ -12,8 +12,8 @@ import { usePreload } from './player/use-preload';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
-import { isAppleDevice } from '@/lib/apple-device';
 import { atLeast } from '@/lib/breakpoints';
+import { canFlow, subscribeMixFlow } from '@/lib/mix-flow';
 import { LINEAR } from '@/lib/motion';
 import { dateOf, monthDayOf, yearOf } from '@/lib/iso-date';
 
@@ -143,18 +143,9 @@ export function OnThisDay({
  * （2026-10-11。スマホの4段は多く見え、一度は 9 曲に減らしたが、ほかの棚と同じく横に送る形にした）
  */
 export function MixWall({ songs }: { songs: DatedItem[] }) {
-  const flowing = useSyncExternalStore(subscribeFlowing, canFlow, () => false);
+  const flowing = useSyncExternalStore(subscribeMixFlow, canFlow, () => false);
   return flowing ? <FlowingWall songs={songs} /> : <StaticWall songs={songs} />;
 }
-
-/** 流す壁にする端末か。パソコンの幅で、マウスで指せて、動きを減らす設定でない。iPad はトラックパッドでもマウスの端末に見えるので外す */
-const FLOW_QUERY = `${atLeast('lg')} and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`;
-const canFlow = () => window.matchMedia(FLOW_QUERY).matches && !isAppleDevice();
-const subscribeFlowing = (onChange: () => void) => {
-  const query = window.matchMedia(FLOW_QUERY);
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
-};
 
 /** いままでの壁。パソコンは6列×3段で止まったまま、パソコンより狭い幅は3段のまま列を横に送る（ほかの棚と同じ） */
 function StaticWall({ songs }: { songs: DatedItem[] }) {
