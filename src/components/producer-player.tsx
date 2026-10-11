@@ -320,7 +320,8 @@ function YearJump({ songs }: { songs: Song[] }) {
     // 地は、ほかの浮いた板（左のメニュー・再生の帯）と同じすりガラス。単色で塗ると上部の表紙の色の背景と合わなかった
     <div
       ref={bar}
-      className="sticky top-(--below-stage-controls) z-raised mb-3 rounded-full border border-line/60 bg-glass p-1 shadow-float backdrop-blur-lg backdrop-saturate-150 md:top-(--below-header) lg:top-(--content-top)"
+      // 上下の板の後ろの覆い（ambient.tsx の EdgeVeil、z-raised）より手前に出すため、ほかの浮いた板と同じく上の段の重なり（z-header）に置く
+      className="sticky top-(--below-stage-controls) z-header mb-3 rounded-full border border-line/60 bg-glass p-1 shadow-float backdrop-blur-lg backdrop-saturate-150 md:top-(--below-header) lg:top-(--content-top)"
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
       <ScrollRow label="年ごとに移動" className="gap-1">

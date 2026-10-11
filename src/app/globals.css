@@ -235,7 +235,7 @@
   /* 流す壁（home-sections.tsx の FlowingWall）の札の幅。札の右にすき間（gap-2）を持たせ、6枚で段の幅とすき間1つ分になる。
      札の絵の幅は止まった壁の6列と同じになる */
   /* 上下の板の後ろの覆いの高さ（ambient.tsx の EdgeVeil）。板の手前までと、その先の透かしていく幅 */
-  --spacing-veil-top: calc(var(--veil-top) + var(--veil-reach-top));
+  --spacing-veil-top: calc(var(--veil-top) + var(--veil-reach-top) - var(--veil-offset-top));
   --spacing-veil-bottom: calc(var(--veil-bottom) + var(--veil-reach-bottom));
   /* 覆いで本文を透かしていく長さ。板の手前のこれだけ前から薄くし始める */
   --spacing-veil-fade: 3rem;
@@ -344,9 +344,13 @@
 @utility veil-mask-top {
   mask-image: linear-gradient(
     to bottom,
-    black min(var(--spacing-gutter), var(--veil-top)),
+    black var(--veil-solid-top),
     transparent calc(var(--veil-top) + var(--veil-reach-top))
   );
+}
+/* 覆いの中の写しとにじみを、覆いをずらした分（--veil-offset-top）だけ上へ戻し、画面と同じ位置に置く */
+@utility veil-under-top {
+  top: calc(var(--veil-offset-top) * -1);
 }
 @utility veil-mask-bottom {
   mask-image: linear-gradient(
@@ -812,6 +816,11 @@ html[data-player='dock'] {
   inherits: true;
   initial-value: 0px;
 }
+@property --veil-solid-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
 @property --veil-scrolled-top {
   syntax: '<length>';
   inherits: true;
@@ -833,22 +842,27 @@ html[data-player='dock'] {
     --veil-scrolled-top: 0px;
   }
   to {
-    --veil-scrolled-top: var(--spacing-veil-fade);
+    --veil-scrolled-top: var(--veil-length);
   }
 }
 @keyframes veil-scroll-bottom {
   from {
-    --veil-scrolled-bottom: var(--spacing-veil-fade);
+    --veil-scrolled-bottom: var(--veil-length);
   }
   to {
     --veil-scrolled-bottom: 0px;
   }
 }
 :root {
+  /* 透かしていく長さ。スマホは画面が低いので、棚の端のぼかしと同じ fade の長さに縮める */
+  --veil-length: var(--spacing-veil-fade);
   --veil-top: calc(var(--spacing-gutter) + var(--spacing-header));
-  --veil-fade-top: var(--spacing-veil-fade);
+  /* 隠しきる所の下端と、覆いの始まり。ふだんは画面の上端から板までのすき間だけを隠す */
+  --veil-solid-top: min(var(--spacing-gutter), var(--veil-top));
+  --veil-offset-top: 0px;
+  --veil-fade-top: var(--veil-length);
   --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now));
-  --veil-fade-bottom: var(--spacing-veil-fade);
+  --veil-fade-bottom: var(--veil-length);
   --veil-reach-top: min(var(--veil-fade-top), var(--veil-scrolled-top));
   --veil-reach-bottom: min(var(--veil-fade-bottom), var(--veil-scrolled-bottom));
   animation:
@@ -856,10 +870,11 @@ html[data-player='dock'] {
     veil-scroll-bottom linear both;
   animation-timeline: scroll(root), scroll(root);
   animation-range:
-    0 var(--spacing-veil-fade),
-    calc(100% - var(--spacing-veil-fade)) 100%;
+    0 var(--veil-length),
+    calc(100% - var(--veil-length)) 100%;
   transition:
     --veil-top var(--transition-duration-move) var(--ease-out),
+    --veil-solid-top var(--transition-duration-move) var(--ease-out),
     --veil-fade-top var(--transition-duration-move) var(--ease-out),
     --veil-bottom var(--transition-duration-move) var(--ease-out),
     --veil-fade-bottom var(--transition-duration-move) var(--ease-out);
@@ -868,9 +883,26 @@ html:is([data-player='slot'], [data-player='dock']) {
   --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now) + var(--spacing-bar));
 }
 @variant max-md {
+  :root {
+    --veil-length: var(--spacing-fade);
+  }
   :root:is([data-chrome='hidden'], [data-watch]) {
     --veil-top: 0px;
     --veil-fade-top: 0px;
+  }
+  /* 動画の画面では、動画の下に操作の帯（player-stage.tsx の StageControls。帯が data-stage-controls を付ける）が
+     出ているときだけ覆う。いつも覆うと、帯の出ていない画面の頭で、動画のすぐ下の本文まで薄くなった（2026-10-11 に本人が指摘）。
+     覆い方はほかの板と同じで、動画と帯のすき間を隠しきり、帯の後ろからその先 fade の長さで透かす。
+     帯が出ていないあいだも始まりを動画の下端に置いておき、帯が出たら下へ伸ばす */
+  :root[data-watch] {
+    --veil-offset-top: var(--video-full);
+    --veil-solid-top: var(--video-full);
+    --veil-top: var(--video-full);
+  }
+  :root[data-watch][data-stage-controls] {
+    --veil-solid-top: var(--stage-controls-top);
+    --veil-top: calc(var(--stage-controls-top) + var(--spacing-stage-controls));
+    --veil-fade-top: var(--veil-length);
   }
   :root[data-chrome='hidden']:not([data-player='slot'], [data-player='dock']) {
     --veil-bottom: 0px;

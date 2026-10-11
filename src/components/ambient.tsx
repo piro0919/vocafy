@@ -225,6 +225,8 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
  * 板と画面の端のすき間を本文が通ると細切れに見えたので、板と画面の端のすき間だけは背景だけを見せ、そこから板の後ろを通って板の手前の veil-fade（48px）の所までで本文を
  * 少しずつにじませながら薄くする。薄くするのは、背景の写しを上に重ねて少しずつ透かす形。背景は画面に固定されているので、
  * 写しは元とぴったり重なる。高さは板が出ているかで変わる（globals.css の --veil-top・--veil-bottom）。
+ * スマホの動画の画面では、覆いの始まりを上に固定した動画の下端にずらし、動画の下の決まった幅だけで透かす。
+ * 中の写しとにじみは、画面と同じ位置に置くため、ずらした分だけ上へ戻す（veil-under-top）。
  * 本文の中で手前に出したもの（z-raised）より上、板より下。動画の枠は本文の外の重なりにあるので、この覆いは動画に重ならない（YouTube の規約）
  */
 function EdgeVeil({ side, children }: { side: 'top' | 'bottom'; children: ReactNode }) {
@@ -232,14 +234,14 @@ function EdgeVeil({ side, children }: { side: 'top' | 'bottom'; children: ReactN
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed inset-x-0 z-raised overflow-hidden ${top ? 'top-0 h-veil-top' : 'bottom-0 h-veil-bottom'}`}
+      className={`pointer-events-none fixed inset-x-0 z-raised overflow-hidden ${top ? 'top-(--veil-offset-top) h-veil-top' : 'bottom-0 h-veil-bottom'}`}
     >
       {/* 本文を、薄くしていく所と同じ割合でにじませる。板に近いほど強い */}
       <div
-        className={`absolute inset-0 backdrop-blur-md ${top ? 'veil-mask-top' : 'veil-mask-bottom'}`}
+        className={`absolute inset-x-0 h-dvh backdrop-blur-md ${top ? 'veil-under-top veil-mask-top' : 'bottom-0 veil-mask-bottom'}`}
       />
       <div
-        className={`absolute inset-x-0 h-dvh bg-background ${top ? 'top-0 veil-mask-top' : 'bottom-0 veil-mask-bottom'}`}
+        className={`absolute inset-x-0 h-dvh bg-background ${top ? 'veil-under-top veil-mask-top' : 'bottom-0 veil-mask-bottom'}`}
       >
         {children}
       </div>

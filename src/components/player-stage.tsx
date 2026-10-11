@@ -197,6 +197,7 @@ export function SwipeToLeave({
  */
 export function StageControls({ children, extra }: { children: ReactNode; extra?: ReactNode }) {
   const row = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(false);
 
   useEffect(() => {
@@ -205,13 +206,14 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
     let observer: IntersectionObserver | null = null;
     const watch = () => {
       observer?.disconnect();
-      // 動画（幅いっぱいの 16:9。高さは globals.css の --video-full）の下の縁より上へ出たら、隠れたとみなす
-      const top = Math.round(
-        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--video-full')),
-      );
+      // 段の上端が、帯の出る位置（動画の下に gutter を空けた所。globals.css の --stage-controls-top）まで上がってきたら出す。
+      // 前は段が動画の下に隠れきってから出していて、出るのが遅かった（2026-10-11 に本人と決めた）。段が帯の位置に着いた所で
+      // 帯に入れ替わるので、段がそのまま帯になったように見える
+      // 位置は浮いた帯そのものの top から読む（--stage-controls-top は計算前の式のまま返る）
+      const top = bar.current ? Math.round(parseFloat(getComputedStyle(bar.current).top)) : 0;
       observer = new IntersectionObserver(
-        ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < top),
-        { rootMargin: `-${top}px 0px 0px 0px` },
+        ([entry]) => setPinned(entry.intersectionRatio < 1 && entry.boundingClientRect.top < top),
+        { rootMargin: `-${top}px 0px 0px 0px`, threshold: 1 },
       );
       observer.observe(el);
     };
@@ -223,6 +225,16 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
     };
   }, []);
 
+  // 帯が出ているあいだ、画面全体に印を付ける。上の覆い（ambient.tsx の EdgeVeil）は、帯が出ているときだけ動画の下に入る
+  useEffect(() => {
+    const root = document.documentElement;
+    if (pinned) root.dataset.stageControls = '';
+    else delete root.dataset.stageControls;
+    return () => {
+      delete root.dataset.stageControls;
+    };
+  }, [pinned]);
+
   return (
     <>
       {/* 段の高さはアイコンのボタン（40px）にそろえる。共有のボタンがある画面と無い画面で段の高さが変わり、
@@ -231,6 +243,7 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
         {children}
       </div>
       <div
+        ref={bar}
         inert={!pinned}
         className={`fixed inset-x-gutter top-(--stage-controls-top) z-chrome h-stage-controls rounded-2xl border border-line/60 bg-glass shadow-float backdrop-blur-lg backdrop-saturate-150 transition-show duration-move md:hidden ${pinned ? '' : 'invisible translate-y-(--hide-up) opacity-0'}`}
       >
