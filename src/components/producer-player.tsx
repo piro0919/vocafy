@@ -1,6 +1,6 @@
 'use client';
 
-import { SongTitleText, titleLine, useSongTitle } from '@/components/display-names';
+import { SongTitleText, useSongTitle } from '@/components/display-names';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
@@ -202,7 +202,7 @@ export function ProducerPlayer({
                     <Marquee
                       active={active}
                       className="text-sm font-bold"
-                      text={titleLine(songTitle(song))}
+                      text={songTitle(song).main}
                     >
                       <SongTitleText song={song} />
                     </Marquee>

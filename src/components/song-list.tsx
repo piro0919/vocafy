@@ -17,12 +17,7 @@ import { Icon } from './icon';
 import { ICON_SM } from './button-styles';
 import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
 import { useVoiceNames } from '@/components/voice-names';
-import {
-  SongTitleText,
-  titleLine,
-  useProducerName,
-  useSongTitle,
-} from '@/components/display-names';
+import { SongTitleText, useProducerName, useSongTitle } from '@/components/display-names';
 
 /** 棚で縦に詰める行の数 */
 const SHELF_ROWS = 4;
@@ -121,7 +116,7 @@ export function SongItem({
         />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-sm font-bold">
-            <Marquee active={active} text={titleLine(title)}>
+            <Marquee active={active} text={title.main}>
               <SongTitleText song={song} />
             </Marquee>
             {active && <Bars playing={playing} />}

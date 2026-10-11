@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  SongTitleText,
-  titleLine,
-  useProducerName,
-  useSongTitle,
-} from '@/components/display-names';
+import { SongTitleText, useProducerName, useSongTitle } from '@/components/display-names';
 import { Link } from '@/i18n/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { type PointerEvent, useEffect, useRef } from 'react';
@@ -133,7 +128,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
               className="hidden aspect-video rounded object-cover sm:block"
             />
             <div className="min-w-0">
-              <Marquee className="text-sm font-bold" text={titleLine(songTitle(item))}>
+              <Marquee className="text-sm font-bold" text={songTitle(item).main}>
                 <SongTitleText song={item} />
               </Marquee>
               {/* ボカロP名と歌声。スマホは帯が狭く、前はボカロP名だけにしていたが、収まらなければ流すので歌声も出す（2026-10-12） */}

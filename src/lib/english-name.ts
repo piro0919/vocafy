@@ -4,7 +4,7 @@
  * - 漢字やひらがなを含む曲名（千本桜）は、ローマ字（Senbonzakura）を主にし、英語の訳（A Thousand Cherry Blossoms）を添える。
  *   英語の名前の多くはファンの訳で、海外のファンもローマ字で呼ぶことが多いため
  * - 片方しか無ければある方。どちらも無ければ、英語の画面でも日本語のまま
- * 日本語の曲名は、埋め込みの動画の題名と同じ曲だと分かるよう、英語の画面でもいつも小さく添える（出す側が決める）
+ * 日本語の曲名は添えない。画面の形を日本語と英語でそろえるため（2026-10-12 に本人と決めた。一度は小さく添えたが、英語の画面にだけある要素だった）
  */
 export type EnglishTitle = {
   /** 主に出す名前 */
@@ -13,8 +13,8 @@ export type EnglishTitle = {
   sub?: string;
 };
 
-/** 画面に出す曲名。main を主に出し、sub（英語の訳）と ja（日本語の曲名）を小さく添える。日本語の画面は main だけ */
-export type DisplayTitle = { main: string; sub?: string; ja?: string };
+/** 画面に出す曲名。main を出し、sub（英語の訳）は指を乗せたときに出す。日本語の画面は main だけ */
+export type DisplayTitle = { main: string; sub?: string };
 
 /** 曲名をその画面の言語で出す形にする。英語の名前の無い曲は英語の画面でも日本語のまま */
 export function displayTitle(
@@ -22,7 +22,7 @@ export function displayTitle(
   lang: 'ja' | 'en',
 ): DisplayTitle {
   if (lang === 'ja' || !song.en) return { main: song.title };
-  return { main: song.en.main, sub: song.en.sub, ja: song.title };
+  return { main: song.en.main, sub: song.en.sub };
 }
 
 /** 日本語の字（かな・漢字）を含む曲名。英字だけの曲名は英語の画面でもそのまま出す */

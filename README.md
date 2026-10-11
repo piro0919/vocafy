@@ -14,7 +14,7 @@
 - 📲 A full-screen player view on phones; pull the title down to shrink the player to a corner
 - ⌨️ Keyboard shortcuts (space, arrows, M, S, R), listed on the settings page
 - 🌗 Dark and light themes, plus a character color for the whole site
-- 🌐 Japanese and English (`/en`); English pages show songs by their romaji or English name (with the Japanese title alongside), and producers and voices by their English names
+- 🌐 Japanese and English (`/en`); English pages show songs by their romaji or English name, and producers and voices by their English names
 
 ## 🛠 Tech Stack
 

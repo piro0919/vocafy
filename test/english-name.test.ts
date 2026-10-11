@@ -39,11 +39,10 @@ describe('displayTitle', () => {
     expect(displayTitle(song, 'ja')).toEqual({ main: '千本桜' });
   });
 
-  it('英語の画面は英語の名前を主にし、日本語の曲名を添える。英語の名前の無い曲は日本語のまま', () => {
+  it('英語の画面は英語の名前にし、日本語の曲名は添えない。英語の名前の無い曲は日本語のまま', () => {
     expect(displayTitle(song, 'en')).toEqual({
       main: 'Senbonzakura',
       sub: 'A Thousand Cherry Blossoms',
-      ja: '千本桜',
     });
     expect(displayTitle({ title: '有明の月。' }, 'en')).toEqual({ main: '有明の月。' });
   });
