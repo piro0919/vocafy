@@ -334,6 +334,54 @@
 @utility gutter-x {
   margin-inline: calc(var(--spacing-gutter) - var(--page-x));
 }
+/*
+ * 右下の窓の大きさを変える引き手（dock-strip.tsx）。iPad のステージマネージャのように、窓の外側の角の丸みに沿った短い弧を、
+ * 角のすぐ外に描く（2026-10-11 に本人と決めた。角の丸みを外して斜めの線を入れる形も試したが、ほかの浮いた板の角がどれも丸いので
+ * 目立った）。ふだんは出さず、窓か帯にマウスが乗っているあいだだけ薄く出し、弧に乗せると字の色で濃くする（差し色で 24px の弧は派手すぎた）。
+ * 右に寄せた窓は左上の角、左に寄せた窓は右上の角（data-dock-arc の値）
+ */
+[data-dock-arc] {
+  --arc-gap: var(--spacing);
+  position: absolute;
+  top: calc(var(--arc-gap) * -1);
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
+  border-style: solid;
+  border-color: currentColor;
+  border-width: 0;
+  opacity: 0;
+  transition:
+    opacity var(--transition-duration-react) var(--ease-out),
+    color var(--transition-duration-react) var(--ease-out);
+}
+[data-dock-arc='left'] {
+  left: calc(var(--arc-gap) * -1);
+  border-top-width: calc(var(--spacing) * 0.5);
+  border-left-width: calc(var(--spacing) * 0.5);
+  border-top-left-radius: calc(var(--radius-2xl) + var(--arc-gap));
+}
+[data-dock-arc='right'] {
+  right: calc(var(--arc-gap) * -1);
+  border-top-width: calc(var(--spacing) * 0.5);
+  border-right-width: calc(var(--spacing) * 0.5);
+  border-top-right-radius: calc(var(--radius-2xl) + var(--arc-gap));
+}
+/* つかめる範囲は、見た目の弧より周りに広げる。広げる起点は弧の線の内側なので、線の太さの分も足す。
+   帯の高さの中に収まり、動画の枠までは届かない */
+[data-dock-arc]::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--spacing) * -2.5);
+}
+html:has([data-player-frame]:hover, [data-dock-strip]:hover) [data-dock-arc] {
+  opacity: 0.4;
+}
+/* 弧そのものに乗せたとき・引いているとき。上の「窓に乗せたとき」より強く効かせる */
+html:has([data-dock-arc]:is(:hover, :active)) [data-dock-arc]:is(:hover, :active) {
+  opacity: 0.8;
+  color: var(--foreground);
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {

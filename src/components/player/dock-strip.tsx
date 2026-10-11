@@ -10,6 +10,7 @@ import { type DockSide, savedDockSide, saveDockSide } from './player-storage';
 import { ownerHref } from './player-rules';
 import type { Owner } from './player-types';
 import { DRAG_SLOP } from '@/lib/input';
+import { resetDockSize, startDockResize, useDockSize } from './dock-size';
 
 export /**
  * 右下の窓の位置と大きさ。スマホでは下のタブと帯の上、パソコンでは帯の上。
@@ -55,6 +56,7 @@ export function DockStrip({
   useEffect(() => {
     document.documentElement.dataset.dock = savedDockSide();
   }, []);
+  useDockSize();
 
   /**
    * 帯を横に引いて、窓を左右に寄せる。右手で持つスマホでは右下の窓が親指の通り道にあるため。
@@ -136,6 +138,24 @@ export function DockStrip({
         }}
         className={`chrome-bottom ${DOCK_STRIP} ${FADE} z-chrome flex touch-pan-y items-center select-none rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 ${mode === 'dock' ? '' : HIDDEN}`}
       >
+        {/* 窓の大きさを変える引き手（パソコンだけ。dock-size.ts）。窓は画面の端の側の角が動かないので、反対の外側の角に置く。
+            右に寄せているときは左上、左に寄せているときは右上。角の丸みに沿った弧（globals.css の data-dock-arc） */}
+        <span
+          aria-hidden
+          title="大きさを変える"
+          data-dock-arc="left"
+          onPointerDown={startDockResize}
+          onDoubleClick={resetDockSize}
+          className="z-raised hidden cursor-nwse-resize text-muted md:block md:[html[data-dock=left]_&]:hidden"
+        />
+        <span
+          aria-hidden
+          title="大きさを変える"
+          data-dock-arc="right"
+          onPointerDown={startDockResize}
+          onDoubleClick={resetDockSize}
+          className="z-raised hidden cursor-nesw-resize text-muted md:[html[data-dock=left]_&]:block"
+        />
         {shown && (
           <Link
             draggable={false}
