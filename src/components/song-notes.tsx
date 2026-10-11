@@ -4,6 +4,7 @@ import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useSta
 import { MOTION } from '@/lib/motion';
 import { createPortal } from 'react-dom';
 import type { QueueItem } from '@/lib/catalog';
+import { splitUrls } from '@/lib/split-urls';
 import { FADE, HIDDEN } from './player/dock-strip';
 import { FloatingPanel } from './player/floating-panel';
 import { Icon } from './icon';
@@ -217,22 +218,20 @@ const LEAVE_WAIT_MS = 400;
 /** 取った説明文（動画ごと）。画面を移っても残し、同じ動画の説明文を取り直さない */
 const known = new Map<string, string>();
 
-const URL_RE = /(https?:\/\/[^\s<>「」（）()]+)/g;
-
 function linkify(text: string) {
-  return text.split(URL_RE).map((part, i) =>
-    i % 2 === 1 ? (
+  return splitUrls(text).map((part, i) =>
+    part.url ? (
       <a
         key={i}
-        href={part}
+        href={part.text}
         target="_blank"
         rel="noopener noreferrer"
         className="text-accent underline-offset-2 hover:underline"
       >
-        {part}
+        {part.text}
       </a>
     ) : (
-      part
+      part.text
     ),
   );
 }
