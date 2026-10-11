@@ -1,8 +1,10 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { POST as fresh } from '@/app/api/favorites/fresh/route';
 import { GET as latest } from '@/app/api/latest/[producer]/route';
 import { GET as producerCard } from '@/app/api/producer/[id]/route';
 import { GET as producerQueue } from '@/app/api/producer-queue/[producer]/route';
+import { GET as related } from '@/app/api/related/[id]/route';
+import { GET as searchDetailsRoute } from '@/app/search-index/[producer]/route';
 import type { QueueItem } from '@/lib/catalog';
 import { MAX_FAVORITES } from '@/lib/favorites-limit';
 import { seed } from './seed';
@@ -138,5 +140,50 @@ describe('/api/favorites/fresh（お気に入りの引き直し）', () => {
     ]) {
       expect((await post(body)).status).toBe(400);
     }
+  });
+});
+
+describe('/api/related/[id]（ラジオの関連曲）', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('関連曲のうち流せる曲を返し、CDN に1日置く', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          likeMatches: [{ id: 102 }, { id: 999 }],
+          tagMatches: [],
+          artistMatches: [],
+        }),
+      ),
+    );
+    const res = await related(new Request('http://localhost'), ctx({ id: '101' }) as never);
+    expect(ids((await res.json()) as QueueItem[])).toEqual([102]);
+    expect(res.headers.get('Cache-Control')).toBe(
+      'public, s-maxage=86400, stale-while-revalidate=604800',
+    );
+  });
+
+  it('番号でなければ VocaDB に聞かずに空', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await related(new Request('http://localhost'), ctx({ id: 'abc' }) as never);
+    expect(await res.json()).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('/search-index/[producer]（検索の索引の2段目）', () => {
+  async function get(producer: string) {
+    const res = await searchDetailsRoute(
+      new Request('http://localhost'),
+      ctx({ producer }) as never,
+    );
+    return { status: res.status, rows: (await res.json()) as unknown[] };
+  }
+
+  it('そのボカロPの曲を返し、番号でなければ 404', async () => {
+    expect((await get('1')).rows).toHaveLength(5);
+    expect((await get('abc')).status).toBe(404);
   });
 });
