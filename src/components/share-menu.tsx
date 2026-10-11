@@ -194,7 +194,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
  * 動画の画面の左の列は貼り付いていてスクロールでも出てこなかった。右横なら上へずらしても押したボタンを覆わない。
  * ずらすのは動画の下の端まで（動画に重ねない。YouTube の規約）。それでも入らないときは QR を縮める
  */
-function fitMenu(el: HTMLElement, qrBox: HTMLElement | null) {
+export function fitMenu(el: HTMLElement, qrBox: HTMLElement | null) {
   el.style.translate = '';
   if (qrBox) qrBox.style.width = '';
   // 板とボタンの間（ml-2）を、画面の端や動画との間にも使う
