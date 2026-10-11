@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
-import { PlaybackMode } from './player/playback-mode';
+import { PlayerStage, StagePlayButton } from './player-stage';
 import { SongShare } from './share-menu';
 import { usePlayer } from './player/player-provider';
 import { SongItem } from './song-list';
-import { useStageNotes } from './song-notes';
-import { SingerSilhouette } from './singer-silhouette';
+import { StageLayout } from './stage-layout';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
@@ -53,8 +51,6 @@ export function RadioPlayer({
     [seed.songId],
   );
   const here = useTakeOver(songs, owner);
-  // 流している曲の動画の説明文（song-notes.tsx）
-  const notes = useStageNotes(here ? current : null);
   const list = here ? queue : songs;
   // 流している並びがまだ元の曲だけで、関連曲も届いていないあいだ
   const waiting = related === null && list.length === 1;
@@ -64,43 +60,21 @@ export function RadioPlayer({
     if (here && queue.length === 1 && related) fillRadio([seed, ...related]);
   }, [here, queue.length, fillRadio, seed, related]);
 
-  // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
-  const share = <SongShare song={here ? current : null} />;
-
   return (
-    // 一覧の再生用の画面（list-player.tsx）と同じ組み立て
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
-        <PlayerStage
-          active={here}
-          cover={seed.thumb}
-          label="このラジオを再生"
-          onPlay={() => playRadio(songs, 0)}
+    <StageLayout
+      song={here ? current : null}
+      cover={seed.thumb}
+      label="このラジオを再生"
+      onPlay={() => playRadio(songs, 0)}
+      heading={<StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />}
+      play={
+        <StagePlayButton
+          playing={here && playing}
+          onClick={() => (here ? toggle() : playRadio(songs, 0))}
         />
-        <SwipeToLeave className="lg:mt-4">
-          <StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />
-        </SwipeToLeave>
-        <StageControls
-          extra={
-            <>
-              {share}
-              {notes.button}
-            </>
-          }
-        >
-          <StagePlayButton
-            playing={here && playing}
-            onClick={() => (here ? toggle() : playRadio(songs, 0))}
-          />
-          {share}
-          {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
-          {notes.button}
-          <PlaybackMode className="md:hidden" radio scroll />
-        </StageControls>
-        {notes.view}
-        <SingerSilhouette song={here ? current : null} />
-      </div>
-
+      }
+      share={<SongShare song={here ? current : null} />}
+    >
       <div className="-mx-1.5 flex flex-col gap-1">
         {/*
           自動で進むと飛ばす曲（iPad の Safari のニコニコの曲）は並べない。ラジオは流し続ける画面で、その曲は流れないため。
@@ -121,7 +95,7 @@ export function RadioPlayer({
         )}
         {waiting && <SkeletonRows count={PLACEHOLDER_ROWS - 1} />}
       </div>
-    </div>
+    </StageLayout>
   );
 }
 

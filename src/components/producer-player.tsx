@@ -6,17 +6,15 @@ import { glideWindowTo } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { FavoriteButton } from './favorite-button';
 import { Bars } from './now-playing';
-import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
+import { StagePlayButton } from './player-stage';
 import { usePlayer } from './player/player-provider';
-import { PlaybackMode } from './player/playback-mode';
 import { usePreload } from './player/use-preload';
 import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { useTakeOver } from './player/use-take-over';
 import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
-import { useStageNotes } from './song-notes';
-import { SingerSilhouette } from './singer-silhouette';
+import { StageLayout } from './stage-layout';
 import { ShareMenu } from './share-menu';
 
 /** 年の札の行のすぐ下に、どこまで来た曲をその年とみなすか（px） */
@@ -103,9 +101,6 @@ export function ProducerPlayer({
       page,
     );
 
-  // 流している曲の動画の説明文（ボタンと、動画の下の枠・全文の板）
-  const notes = useStageNotes(here ? current : null);
-
   // 共有するのは、この人の曲を流しているときはその曲、それ以外はこの人。曲つきのリンクは、曲名を題名と共有の絵に入れた住所
   // （songs/[songId]/page.tsx）。住所の元はブラウザの側で決める（作り置きのページにサーバーの住所を焼き込まない）
   const sharedSong = here ? current : linkedItem;
@@ -123,40 +118,20 @@ export function ProducerPlayer({
   );
 
   return (
-    // パソコンでは、一覧が長くても動画が隠れないよう、動画と再生ボタンの列ごと上に貼り付ける（sticky）。
-    // 貼り付く高さは、スクロールする前の位置（上の段 68px＋余白 32px）と同じにする。ずれていると、スクロールの最初の分だけ動いてから止まった
-    // スマホは画面が狭く、貼り付けると一覧が見づらくなるので、貼り付けずに縦に並べる
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
-        <PlayerStage
-          active={here}
-          cover={linkedItem?.thumb ?? cover}
-          label={linkedItem ? `「${linkedItem.title}」を再生` : 'このボカロPの曲を再生'}
-          onPlay={() => start(linkedItem?.songId)}
+    <StageLayout
+      song={here ? current : null}
+      cover={linkedItem?.thumb ?? cover}
+      label={linkedItem ? `「${linkedItem.title}」を再生` : 'このボカロPの曲を再生'}
+      onPlay={() => start(linkedItem?.songId)}
+      heading={heading}
+      play={
+        <StagePlayButton
+          playing={here && playing}
+          onClick={() => (here ? toggle() : start(linkedItem?.songId))}
         />
-        <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
-        {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <StageControls
-          extra={
-            <>
-              {share}
-              {notes.button}
-            </>
-          }
-        >
-          <StagePlayButton
-            playing={here && playing}
-            onClick={() => (here ? toggle() : start(linkedItem?.songId))}
-          />
-          {share}
-          {notes.button}
-          {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
-          <PlaybackMode className="md:hidden" radio scroll />
-        </StageControls>
-        {notes.view}
-        <SingerSilhouette song={here ? current : null} />
-      </div>
-
+      }
+      share={share}
+    >
       <div className="min-w-0">
         <YearJump songs={songs} />
         {/*
@@ -209,7 +184,7 @@ export function ProducerPlayer({
           })}
         </ol>
       </div>
-    </div>
+    </StageLayout>
   );
 }
 

@@ -2,13 +2,11 @@
 
 import { useMemo } from 'react';
 import type { QueueItem } from '@/lib/catalog';
-import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
-import { PlaybackMode } from './player/playback-mode';
+import { StagePlayButton } from './player-stage';
 import { SongShare } from './share-menu';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
-import { useStageNotes } from './song-notes';
-import { SingerSilhouette } from './singer-silhouette';
+import { StageLayout } from './stage-layout';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
 import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
@@ -46,8 +44,6 @@ export function ListPlayer({
   );
   // この一覧を流しているときに、動画をここに大きく出す
   const here = useTakeOver(songs, owner);
-  // 流している曲の動画の説明文（song-notes.tsx）
-  const notes = useStageNotes(here ? current : null);
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
   const linked = useLinkedSong();
@@ -62,40 +58,18 @@ export function ListPlayer({
   // この一覧を流しているあいだは、住所に流している曲を入れる（use-song-in-url.ts）
   useSongInUrl(here ? current : null, `/${source}/play`);
 
-  // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
-  const share = <SongShare song={here ? current : null} />;
-
   return (
-    // ボカロPの画面（producer-player.tsx）と同じ組み立て
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
-        <PlayerStage
-          active={here}
-          cover={linkedItem?.thumb ?? songs[0]?.thumb ?? null}
-          label={linkedItem ? `「${linkedItem.title}」から再生` : 'この一覧を再生'}
-          onPlay={start}
-        />
-        <SwipeToLeave className="lg:mt-4">
-          <StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />
-        </SwipeToLeave>
-        <StageControls
-          extra={
-            <>
-              {share}
-              {notes.button}
-            </>
-          }
-        >
-          <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
-          {share}
-          {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
-          {notes.button}
-          <PlaybackMode className="md:hidden" radio scroll />
-        </StageControls>
-        {notes.view}
-        <SingerSilhouette song={here ? current : null} />
-      </div>
-
+    <StageLayout
+      song={here ? current : null}
+      cover={linkedItem?.thumb ?? songs[0]?.thumb ?? null}
+      label={linkedItem ? `「${linkedItem.title}」から再生` : 'この一覧を再生'}
+      onPlay={start}
+      heading={<StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />}
+      play={
+        <StagePlayButton playing={here && playing} onClick={() => (here ? toggle() : start())} />
+      }
+      share={<SongShare song={here ? current : null} />}
+    >
       <div className="-mx-1.5">
         <VirtualSongList
           source={source}
@@ -106,6 +80,6 @@ export function ListPlayer({
           onOpen={play}
         />
       </div>
-    </div>
+    </StageLayout>
   );
 }

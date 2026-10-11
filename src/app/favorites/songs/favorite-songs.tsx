@@ -1,20 +1,13 @@
 'use client';
 
 import { Icon } from '@/components/icon';
-import {
-  PlayerStage,
-  StageControls,
-  StagePlayButton,
-  SwipeToLeave,
-} from '@/components/player-stage';
-import { PlaybackMode } from '@/components/player/playback-mode';
+import { StagePlayButton } from '@/components/player-stage';
 import { SongShare } from '@/components/share-menu';
 import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { NO_RESTORE } from '@/lib/no-restore';
 import { SortableSongList } from './sortable-song-list';
-import { useStageNotes } from '@/components/song-notes';
-import { SingerSilhouette } from '@/components/singer-silhouette';
+import { StageLayout } from '@/components/stage-layout';
 import { StageHeading } from '@/components/stage-heading';
 import { useTakeOver } from '@/components/player/use-take-over';
 
@@ -30,50 +23,28 @@ export function FavoriteSongs() {
   // お気に入りの並びのときに、動画をここに大きく出す。流している曲がお気に入りにあれば、開いたときに並びをお気に入りにする
   // （use-take-over.ts。どの画面も同じ決まり）
   const here = useTakeOver(songs, FAVORITES);
-  // 流している曲の動画の説明文（song-notes.tsx）
-  const notes = useStageNotes(here ? current : null);
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, FAVORITES);
 
-  // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
-  const share = <SongShare song={here ? current : null} />;
-
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
-        <PlayerStage
-          active={here}
-          cover={songs[0]?.thumb ?? null}
-          label="お気に入りの曲を再生"
-          onPlay={() => play()}
+    <StageLayout
+      song={here ? current : null}
+      cover={songs[0]?.thumb ?? null}
+      label="お気に入りの曲を再生"
+      onPlay={() => play()}
+      heading={
+        <StageHeading eyebrow="Favorites" title="お気に入りの曲" song={here ? current : null} />
+      }
+      play={
+        <StagePlayButton
+          playing={here && playing}
+          disabled={songs.length === 0}
+          // 読み込み直しや戻るで、ブラウザが押せる・押せないを前の状態に戻すと、サーバーの HTML と食い違う
+          {...NO_RESTORE}
+          onClick={() => (here ? toggle() : play())}
         />
-        <SwipeToLeave className="lg:mt-4">
-          <StageHeading eyebrow="Favorites" title="お気に入りの曲" song={here ? current : null} />
-        </SwipeToLeave>
-        {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}
-        <StageControls
-          extra={
-            <>
-              {share}
-              {notes.button}
-            </>
-          }
-        >
-          <StagePlayButton
-            playing={here && playing}
-            disabled={songs.length === 0}
-            // 読み込み直しや戻るで、ブラウザが押せる・押せないを前の状態に戻すと、サーバーの HTML と食い違う
-            {...NO_RESTORE}
-            onClick={() => (here ? toggle() : play())}
-          />
-          {share}
-          {/* スマホは下の帯にランダム・ループ・ラジオが入りきらないので、ここに置く */}
-          {notes.button}
-          <PlaybackMode className="md:hidden" radio scroll />
-        </StageControls>
-        {notes.view}
-        <SingerSilhouette song={here ? current : null} />
-      </div>
-
+      }
+      share={<SongShare song={here ? current : null} />}
+    >
       {songs.length === 0 ? (
         // お気に入りの画面（favorites-view.tsx）と同じく、入れ方を添える
         <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
@@ -84,7 +55,7 @@ export function FavoriteSongs() {
       ) : (
         <SortableSongList songs={songs} onOpen={(i) => play(i)} />
       )}
-    </div>
+    </StageLayout>
   );
 }
 
