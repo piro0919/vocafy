@@ -127,20 +127,35 @@ const ALL_TYPES = { ...SONG_FIELDS, songTypes: SONG_TYPES.join(',') };
 /** 1回で返る曲の数。VocaDB の上限が 100（2026-10-09 に 200 を頼んで 100 が返るのを確かめた）。前は 50 で、聞く回数が倍だった */
 const PAGE = 100;
 
-/** 評価点の高い順に、オリジナル曲を limit 曲 */
+/**
+ * 評価点の高い順に、オリジナル曲を limit 曲。VocaDB は評価点の同じ曲の順を固定しないので、評価点の順でページを送ると、
+ * 境目の同点の曲が両方のページに出たり、どちらにも出なかったりする（2026-10-12 に、評価点 559 の「シニタイちゃん」が
+ * 2ページ目と3ページ目のどちらにも無く、それが唯一の種だった すいっち が外れていた）。そこで評価点の順では limit 番目の
+ * 点数だけを読み、その点数以上の曲を、順の崩れない投稿日の順で取り直して、手元で並べる
+ */
 export async function topRatedSongs(limit: number): Promise<VdbSong[]> {
-  const songs: VdbSong[] = [];
-  for (let start = 0; songs.length < limit; start += PAGE) {
+  const { items: edge } = await get<{ items: VdbSong[] }>('/songs', {
+    ...SONG_FIELDS,
+    sort: 'RatingScore',
+    maxResults: 1,
+    start: limit - 1,
+  });
+  const minScore = edge[0]?.ratingScore ?? 0;
+  const songs = new Map<number, VdbSong>();
+  for (let start = 0; ; start += PAGE) {
     const { items } = await get<{ items: VdbSong[] }>('/songs', {
       ...SONG_FIELDS,
-      sort: 'RatingScore',
+      minScore,
+      sort: 'PublishDate',
       maxResults: PAGE,
       start,
     });
-    songs.push(...items);
+    for (const s of items) songs.set(s.id, s);
     if (items.length < PAGE) break;
   }
-  return songs.slice(0, limit);
+  return [...songs.values()]
+    .sort((a, b) => b.ratingScore - a.ratingScore || a.id - b.id)
+    .slice(0, limit);
 }
 
 /**
