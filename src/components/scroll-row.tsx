@@ -3,7 +3,7 @@
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 
 /** 端のぼかしの幅。棚（shelf.tsx）も同じ幅でぼかす（globals.css の --spacing-fade） */
-export const FADE = 'var(--spacing-fade)';
+const FADE = 'var(--spacing-fade)';
 
 /** 横にスクロールする要素の端。start は左端にいる、end は右端にいる */
 export type Edge = { start: boolean; end: boolean };
