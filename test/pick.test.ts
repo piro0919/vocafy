@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  dropSharedVideos,
   isEligible,
   isOwnVersion,
   linksOf,
   producersOf,
   sourcesOf,
+  versionVideos,
   vocalistsOf,
 } from '../scripts/lib/pick';
 import type { VdbSong, VdbWebLink } from '../scripts/lib/vocadb';
@@ -248,5 +250,35 @@ describe('linksOf', () => {
     expect(linksOf([link('NND MyList', 'http://www.nicovideo.jp/mylist/2532792')])).toEqual({
       niconico: 'https://www.nicovideo.jp/mylist/2532792',
     });
+  });
+});
+
+describe('dropSharedVideos（同じ動画は1曲にだけ使う）', () => {
+  const yt = (pvId: string) => [{ service: 'Youtube', pvType: 'Original', pvId }];
+  const original = song({ id: 1, pvs: yt('a') });
+  const older = song({ id: 2, songType: 'Remix', publishDate: '2015-01-01', pvs: yt('b') });
+  const newer = song({ id: 3, songType: 'Remix', publishDate: '2020-01-01', pvs: yt('b') });
+  const sameAsOriginal = song({
+    id: 4,
+    songType: 'Remix',
+    publishDate: '2010-01-01',
+    pvs: yt('a'),
+  });
+  const ids = (songs: { id: number }[]) => songs.map((s) => s.id);
+
+  it('出し直しの版が元の曲と同じ動画なら、版を外す（オリジナル曲が先に取る）', () => {
+    expect(ids(dropSharedVideos([sameAsOriginal, original], new Set()))).toEqual([1]);
+  });
+
+  it('出し直しの版どうしは、古いものが動画を取る。並びは渡した順のまま', () => {
+    expect(ids(dropSharedVideos([newer, original, older], new Set()))).toEqual([1, 2]);
+  });
+
+  it('DB のほかの曲がもう使っている動画の出し直しの版は外す。オリジナル曲は外さない', () => {
+    expect(ids(dropSharedVideos([original, older], new Set(['a', 'b'])))).toEqual([1]);
+  });
+
+  it('DB を引くのは出し直しの版の動画だけ', () => {
+    expect(versionVideos([original, older])).toEqual(['b']);
   });
 });

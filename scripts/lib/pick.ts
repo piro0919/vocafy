@@ -160,6 +160,41 @@ export function isOwnVersion(
   return owners !== undefined && producersOf(song).every((p) => owners.has(p.id));
 }
 
+/** その曲の本家の動画（YouTube とニコニコ） */
+function videosOf(song: VdbSong): string[] {
+  const found = sourcesOf(song);
+  return [found?.youtubeId, found?.niconicoId].filter((v) => v !== null && v !== undefined);
+}
+
+/** 出し直しの版の動画。DB のほかの曲がもう使っているかを引くのに使う（dropSharedVideos の taken） */
+export function versionVideos(songs: VdbSong[]): string[] {
+  return songs.filter((s) => s.songType !== 'Original').flatMap(videosOf);
+}
+
+/**
+ * 同じ動画は1曲にだけ使う。オリジナル曲を先に、出し直しの版は古いものから動画を取り、もう取られた動画を使う出し直しの版を外す。
+ * 出し直しの版が元の曲と同じ動画で登録されていることがある（quiz と quiz (エルゴスム ver.)）。
+ * taken は DB のほかの曲がもう使っている動画（新しく出た曲を足すだけのときは、元の曲が今回集めた曲に無いため）
+ */
+export function dropSharedVideos(songs: VdbSong[], taken: Set<string>): VdbSong[] {
+  const used = new Set(taken);
+  const order = [...songs].sort(
+    (a, b) =>
+      Number(a.songType !== 'Original') - Number(b.songType !== 'Original') ||
+      (a.publishDate ?? '').localeCompare(b.publishDate ?? ''),
+  );
+  const dropped = new Set<number>();
+  for (const s of order) {
+    const videos = videosOf(s);
+    if (s.songType !== 'Original' && videos.some((v) => used.has(v))) {
+      dropped.add(s.id);
+      continue;
+    }
+    for (const v of videos) used.add(v);
+  }
+  return songs.filter((s) => !dropped.has(s.id));
+}
+
 /** Vocafy に入れられる曲か。オリジナル曲かその出し直しで、作者と合成音声の歌声があり、本家の動画がある */
 export function isEligible(song: VdbSong): boolean {
   return (

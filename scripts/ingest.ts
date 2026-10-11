@@ -9,8 +9,10 @@ import {
   isOwnVersion,
   linksOf,
   UNKNOWN_PRODUCER,
+  dropSharedVideos,
   producersOf,
   sourcesOf,
+  versionVideos,
   vocalistsOf,
 } from './lib/pick';
 import { deadNiconico, legendVideos } from './lib/niconico';
@@ -284,28 +286,13 @@ async function main() {
       others++;
     }
   }
-  // 同じ動画は1曲にだけ使う。オリジナル曲を先に、出し直しの版は古いものから動画を取る
-  const videosOf = (s: VdbSong) =>
-    [sourcesOf(s)?.youtubeId, sourcesOf(s)?.niconicoId].filter(
-      (v) => v !== null && v !== undefined,
-    );
-  const order = [...songs.values()].sort(
-    (a, b) =>
-      Number(a.songType !== 'Original') - Number(b.songType !== 'Original') ||
-      (a.publishDate ?? '').localeCompare(b.publishDate ?? ''),
-  );
-  const taken = await videosInDb(order.filter((s) => s.songType !== 'Original').flatMap(videosOf), [
-    ...songs.keys(),
-  ]);
-  for (const s of order) {
-    const videos = videosOf(s);
-    if (s.songType !== 'Original' && videos.some((v) => taken.has(v))) {
-      songs.delete(s.id);
-      others++;
-      continue;
-    }
-    for (const v of videos) taken.add(v);
-  }
+  // 同じ動画は1曲にだけ使う（pick.ts の dropSharedVideos）。DB のほかの曲がもう使っている動画も見る
+  const candidates = [...songs.values()];
+  const taken = await videosInDb(versionVideos(candidates), [...songs.keys()]);
+  const unique = dropSharedVideos(candidates, taken);
+  others += candidates.length - unique.length;
+  songs.clear();
+  for (const s of unique) songs.set(s.id, s);
   const versions = [...songs.values()].filter((s) => s.songType !== 'Original').length;
   console.log(
     `出し直しの版: ${versions} 曲を入れ、他人のもの・元の曲が分からないもの・入れない版・動画が重なるもの ${others} 曲を外す`,
