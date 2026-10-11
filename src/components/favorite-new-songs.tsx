@@ -5,7 +5,7 @@ import type { DatedItem } from '@/lib/catalog';
 import { useFavoriteProducers } from '@/lib/favorites';
 import { useHistory } from '@/lib/history';
 import { Heading, SECTION } from './heading';
-import { SongItem, useOpenSong } from './song-list';
+import { SkeletonRows, SongItem, useOpenSong } from './song-list';
 import { ShelfArrows, useShelfScroll } from './shelf';
 import { edgeMask } from './scroll-row';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
@@ -163,15 +163,7 @@ export function FavoriteNewSongs() {
         // 読み込むあいだは、曲の行の形だけを並べて場所を取っておく。読み終えたときに下の区画が押し下がらないように
         <div aria-hidden className={SHELF}>
           {/* 読み終えたときと同じ数（多くて SONGS 曲）を並べ、高さを合わせる */}
-          {Array.from({ length: Math.min(SONGS, ids.length * PER_PRODUCER) }, (_, i) => (
-            <div key={i} className="flex items-center gap-3 p-1.5">
-              <span className="aspect-video w-thumb shrink-0 animate-pulse rounded bg-surface" />
-              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
-                <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
-              </span>
-            </div>
-          ))}
+          <SkeletonRows count={Math.min(SONGS, ids.length * PER_PRODUCER)} />
         </div>
       )}
     </section>

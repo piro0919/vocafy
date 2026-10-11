@@ -2,10 +2,9 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { HopOnHover } from '@/components/hop-on-hover';
 import { notFound } from 'next/navigation';
-import { MoreLink } from '@/components/browse-cards';
-import { Heading, YEAR_HEADING } from '@/components/heading';
+import { Heading } from '@/components/heading';
+import { PickGroups } from '@/components/pick-groups';
 import { PlayAll } from '@/components/play-all';
-import { SongList } from '@/components/song-list';
 import { type DatedItem, findVoice } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
@@ -88,22 +87,14 @@ export default async function VoicePage({ params }: PageProps<'/[lang]/voices/[i
           />
         </div>
       </div>
-      <div className="grid gap-6">
-        {[...byYear].map(([year, list]) => (
-          <section key={year}>
-            {/* 代表曲に入りきらない年だけ、その年の全曲へ行けるようにする */}
-            <div className="mb-2 flex items-center gap-3">
-              <h2 className={YEAR_HEADING}>{year}</h2>
-              {(yearTotals.get(year) ?? 0) > list.length && (
-                <div className="ml-auto">
-                  <MoreLink href={`/voices/${voice.id}/${year}`} />
-                </div>
-              )}
-            </div>
-            <SongList songs={list} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
-          </section>
-        ))}
-      </div>
+      <PickGroups
+        groups={[...byYear].map(([year, list]) => ({
+          key: year,
+          label: year,
+          songs: list,
+          more: (yearTotals.get(year) ?? 0) > list.length ? `/voices/${voice.id}/${year}` : null,
+        }))}
+      />
     </>
   );
 }

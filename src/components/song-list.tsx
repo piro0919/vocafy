@@ -163,3 +163,16 @@ export function NoAutoplay() {
     </button>
   );
 }
+
+/** 曲の行の仮の形。読み込むあいだ、曲の行と同じ高さで場所を取っておく（ラジオの画面・お気に入りのボカロPの新曲） */
+export function SkeletonRows({ count }: { count: number }) {
+  return Array.from({ length: count }, (_, i) => (
+    <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">
+      <span className="aspect-video w-thumb shrink-0 animate-pulse rounded bg-surface" />
+      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
+        <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
+      </span>
+    </div>
+  ));
+}

@@ -5,7 +5,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StagePlayButton } from './player-stage';
 import { SongShare } from './share-menu';
 import { usePlayer } from './player/player-provider';
-import { SongItem } from './song-list';
+import { SkeletonRows, SongItem } from './song-list';
 import { StageLayout } from './stage-layout';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
@@ -138,18 +138,5 @@ export function RadioLoading() {
   );
 }
 
-/** 曲の一覧の仮の行。画面を作っているあいだと、関連曲が届くまでのあいだに出す */
 /** 関連曲が届くまでに出す仮の行の数（元の曲を出しているときは、その1行を引く） */
 const PLACEHOLDER_ROWS = 12;
-
-function SkeletonRows({ count }: { count: number }) {
-  return Array.from({ length: count }, (_, i) => (
-    <div key={i} aria-hidden className="flex items-center gap-3 p-1.5">
-      <span className="aspect-video w-thumb shrink-0 animate-pulse rounded bg-surface" />
-      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="h-3.5 w-2/3 animate-pulse rounded bg-surface" />
-        <span className="h-3 w-1/2 animate-pulse rounded bg-surface/70" />
-      </span>
-    </div>
-  ));
-}

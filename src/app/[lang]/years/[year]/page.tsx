@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { MoreLink } from '@/components/browse-cards';
-import { Heading, YEAR_HEADING } from '@/components/heading';
+import { Heading } from '@/components/heading';
+import { PickGroups } from '@/components/pick-groups';
 import { PlayAll } from '@/components/play-all';
-import { SongList } from '@/components/song-list';
 import { type DatedItem, picksOfYear } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
 import { monthOf } from '@/lib/iso-date';
@@ -68,22 +67,14 @@ export default async function YearPage({ params }: PageProps<'/[lang]/years/[yea
           source={`years/${year}`}
         />
       </div>
-      <div className="grid gap-6">
-        {[...byMonth].map(([month, list]) => (
-          <section key={month}>
-            {/* 代表曲に入りきらない月だけ、その月の全曲へ行けるようにする */}
-            <div className="mb-2 flex items-center gap-3">
-              <h2 className={YEAR_HEADING}>{t.month(Number(month))}</h2>
-              {(monthTotals.get(month) ?? 0) > list.length && (
-                <div className="ml-auto">
-                  <MoreLink href={`/years/${year}/${month}`} />
-                </div>
-              )}
-            </div>
-            <SongList songs={list} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
-          </section>
-        ))}
-      </div>
+      <PickGroups
+        groups={[...byMonth].map(([month, list]) => ({
+          key: month,
+          label: t.month(Number(month)),
+          songs: list,
+          more: (monthTotals.get(month) ?? 0) > list.length ? `/years/${year}/${month}` : null,
+        }))}
+      />
     </>
   );
 }

@@ -37,14 +37,7 @@ export function createLocalFlag({
     window.dispatchEvent(new Event(event));
   }
 
-  function subscribe(onChange: () => void): () => void {
-    window.addEventListener(event, onChange);
-    window.addEventListener('storage', onChange);
-    return () => {
-      window.removeEventListener(event, onChange);
-      window.removeEventListener('storage', onChange);
-    };
-  }
+  const subscribe = subscribeTo(event);
 
   return { read, write, subscribe };
 }
@@ -84,14 +77,19 @@ export function createLocalChoice<T extends string>({
 
   const notify = () => window.dispatchEvent(new Event(event));
 
-  function subscribe(onChange: () => void): () => void {
+  const subscribe = subscribeTo(event);
+
+  return { read, save, notify, subscribe };
+}
+
+/** その合図と、ほかのタブで localStorage が変わったときの知らせ（storage）を受ける（useSyncExternalStore 用） */
+function subscribeTo(event: string) {
+  return (onChange: () => void): (() => void) => {
     window.addEventListener(event, onChange);
     window.addEventListener('storage', onChange);
     return () => {
       window.removeEventListener(event, onChange);
       window.removeEventListener('storage', onChange);
     };
-  }
-
-  return { read, save, notify, subscribe };
+  };
 }
