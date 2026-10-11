@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
+import { Eyebrow } from './eyebrow';
 
 /**
  * 見出し。上に字間を広げた小さな英字（eyebrow）を、ロゴと同じ機械的な字（Orbitron）で差し色で添え、
  * 本体は丸みのある太字にする。英字は飾りで、意味は日本語の側に持たせる（英字は読み上げない）。
  * 英字は一覧や区画の画面に付け、ボカロPや歌声の詳細の画面には付けない（顔の画像と名前で何の画面か分かり、
- * 英字の分だけ名前の横のハートが上にずれたため）
+ * 英字の分だけ名前の横のハートが上にずれたため）。英語の画面で題名と同じ言葉になる英字は出さない（eyebrow.tsx）
  */
 export function Heading({
   eyebrow,
@@ -27,12 +28,7 @@ export function Heading({
   return (
     <div>
       {eyebrow && (
-        <p
-          aria-hidden
-          className="mb-1 font-tech text-eyebrow font-black tracking-eyebrow text-accent uppercase"
-        >
-          {eyebrow}
-        </p>
+        <Eyebrow text={eyebrow} title={typeof children === 'string' ? children : undefined} />
       )}
       <Tag
         id={id}

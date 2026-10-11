@@ -262,6 +262,7 @@ pnpm dev -p 3100
   - 日本語のページだけをビルドのときに作る（`[lang]/layout.tsx` の generateStaticParams）。英語のページは開かれたときに作る。トップのデータは日付ごとの作り置き（unstable_cache）を両方の言語で使い回すので、DB を読む量は増えない
   - 作り: 住所は `src/i18n/config.ts`（localize・stripLang）。画面の移動は `next/link` と `@bprogress/next/app` を直に使わず、`src/i18n/navigation.tsx` の Link・useRouter・usePathname を使う。コードの中の住所（並びの持ち主の画面など）は言語を付けずに持ち、移るときに付ける。usePathname は言語を外した住所を返す（サーバーが中で描く `/ja/...` も外れる）。文言は使う部品の中に `defineText({ ja, en })`（`src/i18n/text.ts`）で並べ、ブラウザの部品は useText、サーバーはページの params の lang で引く。あちこちで使う言葉と訳語は `src/i18n/terms.ts`。ボカロPの英語は Producers（VocaDB と同じ。Vocaloid P は VOCALOID 以外の合成音声の曲とずれる）。訳語は Claude が決めた（本人が任せた）
   - サイトマップは両方の言語の住所を載せ、互いを hreflang で結ぶ
+  - 題名の上の小さな英字（eyebrow）は、英語の画面では題名がその言葉を含むとき出さない（2026-10-12 に本人と決めた。`eyebrow.tsx`。「SETTINGS / Settings」のように同じ言葉の繰り返しになるため）。単数・複数の違いは同じとみなす。題名と違う言葉の英字（「RESUME / When reopening」）は残す。英語用に別の英字を考える案は、30か所ほど言い換えを作ることになり無理が出るのでやめた
 
 ## 見た目（2026-10-08）
 
