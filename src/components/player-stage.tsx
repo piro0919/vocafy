@@ -75,7 +75,9 @@ export function PlayerStage({
         {on ? (
           <div
             ref={slot}
-            className="relative aspect-video w-full overflow-hidden bg-black md:rounded-2xl"
+            // 地は付けない。動画の枠が右下の窓へ移るときや戻るときに、黒い地だと置き場所の黒い箱が残って見え、そこへ
+            // 吸い込まれていくように見えた。札の地（bg-surface）はキャラの色が混ざって茶色っぽく見えた（2026-10-11 に本人が指摘）
+            className="relative aspect-video w-full overflow-hidden md:rounded-2xl"
           >
             {/* 開き直したときに戻した前の曲をまだ流していないあいだは、動画の枠を隠し、その曲の表紙と再生ボタンを出す
                 （player-resume.ts）。押すと聴いていた位置から流れる */}
