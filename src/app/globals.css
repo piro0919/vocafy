@@ -232,13 +232,11 @@
   --spacing-art-bleed: 12%;
   --spacing-art-stand: 42%;
   --spacing-voice-dot: 6%;
+  /* 上下の板の後ろの覆いの高さ（ambient.tsx の EdgeVeil）。上は覆いをずらした分（動画の画面）を引く */
+  --spacing-veil-top: calc(var(--veil-top) - var(--veil-offset-top));
+  --spacing-veil-bottom: var(--veil-bottom);
   /* 流す壁（home-sections.tsx の FlowingWall）の札の幅。札の右にすき間（gap-2）を持たせ、6枚で段の幅とすき間1つ分になる。
      札の絵の幅は止まった壁の6列と同じになる */
-  /* 上下の板の後ろの覆いの高さ（ambient.tsx の EdgeVeil）。板の手前までと、その先の透かしていく幅 */
-  --spacing-veil-top: calc(var(--veil-top) + var(--veil-reach-top) - var(--veil-offset-top));
-  --spacing-veil-bottom: calc(var(--veil-bottom) + var(--veil-reach-bottom));
-  /* 覆いで本文を透かしていく長さ。板の手前のこれだけ前から薄くし始める */
-  --spacing-veil-fade: 3rem;
   --spacing-mix-tile: calc((100% + var(--spacing) * 2) / 6);
   /* 次に流れる曲などの板の高さの上限 */
   --max-height-panel: 60dvh;
@@ -342,30 +340,27 @@
   }
 }
 
-/* 画面全体の方眼（ambient.tsx）を、左下を濃く、右上へ向かって薄くし、対角線の6割で消す（本人の指定） */
 /*
  * 上下の板の後ろの覆い（ambient.tsx の EdgeVeil）。隠しきるのは板と画面の端のすき間（gutter）だけで、そこから
- * 板の後ろを通って、板の手前の veil-fade（スクロールに合わせて伸び縮みする --veil-reach-*）の所までで透かしていく。
- * 板の後ろも隠しきると、板のすりガラスに背景しか映らず、すりガラスが活きなかった（2026-10-11 に本人が指摘）。上の覆いは画面の上から、下の覆いは画面の下から測る
+ * 板の後ろを通って、板の端までで本文をにじませながら透かす。板の外の本文はいつもそのまま見せる。
+ * 板の後ろも隠しきると、板のすりガラスに背景しか映らなかった。板の外へ 48px はみ出して薄くすると、上だけ本文が薄く見え、
+ * にじみも高く見えた（2026-10-11 に本人が指摘）。上の覆いは画面の上から、下の覆いは画面の下から測る
  */
 @utility veil-mask-top {
+  mask-image: linear-gradient(to bottom, black var(--veil-solid-top), transparent var(--veil-top));
+}
+@utility veil-mask-bottom {
   mask-image: linear-gradient(
-    to bottom,
-    black var(--veil-solid-top),
-    transparent calc(var(--veil-top) + var(--veil-reach-top))
+    to top,
+    black min(var(--spacing-gutter), var(--veil-bottom)),
+    transparent var(--veil-bottom)
   );
 }
 /* 覆いの中の写しとにじみを、覆いをずらした分（--veil-offset-top）だけ上へ戻し、画面と同じ位置に置く */
 @utility veil-under-top {
   top: calc(var(--veil-offset-top) * -1);
 }
-@utility veil-mask-bottom {
-  mask-image: linear-gradient(
-    to top,
-    black min(var(--spacing-gutter), var(--veil-bottom)),
-    transparent calc(var(--veil-bottom) + var(--veil-reach-bottom))
-  );
-}
+/* 画面全体の方眼（ambient.tsx）を、左下を濃く、右上へ向かって薄くし、対角線の6割で消す（本人の指定） */
 @utility grid-fade {
   mask-image: linear-gradient(to top right, black, transparent 60%);
 }
@@ -799,7 +794,7 @@ html[data-player='dock'] {
 
 /*
  * 上下の板の後ろの覆い（ambient.tsx の EdgeVeil）の寸法。--veil-top は上の板の下端、--veil-bottom は下の板の上端（画面の下から）。
- * 板が無いときはどちらも 0 で、透かしていく幅（--veil-fade-*）も 0 にして覆いを消す。
+ * 板が無いときはどちらも 0 で、覆いを消す。--veil-solid-top は上で隠しきる所の下端、--veil-offset-top は覆いの始まり。
  * 上はパソコンでは上の段がいつも出ている。スマホは上の帯が出ているとき（下へスクロールして隠れているとき・動画の画面では無い）。
  * 下はパソコンでは再生の帯が出ているとき。スマホはタブか再生の帯のどちらかが出ているとき。板が隠れる動きに合わせて縮める
  */
@@ -813,93 +808,31 @@ html[data-player='dock'] {
   inherits: true;
   initial-value: 0px;
 }
-@property --veil-fade-top {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0px;
-}
-@property --veil-fade-bottom {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0px;
-}
 @property --veil-solid-top {
   syntax: '<length>';
   inherits: true;
   initial-value: 0px;
 }
-@property --veil-scrolled-top {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0px;
-}
-@property --veil-scrolled-bottom {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0px;
-}
-/*
- * 透かしていく長さは、スクロールした分だけ伸ばす。ページの一番上では上の覆いが題名を薄くしないよう 0 から始め、
- * veil-fade だけ送ったところで目いっぱいにする。下はページの終わりの veil-fade 手前から縮め、最後の行を薄くしない。
- * スクロールに結び付けた動き（animation-timeline）なので、時間の長さは持たない。対応していないブラウザ（Firefox）は、
- * 動きの終わりの値のまま（上はいつも目いっぱい、下はいつも 0）
- */
-@keyframes veil-scroll-top {
-  from {
-    --veil-scrolled-top: 0px;
-  }
-  to {
-    --veil-scrolled-top: var(--veil-length);
-  }
-}
-@keyframes veil-scroll-bottom {
-  from {
-    --veil-scrolled-bottom: var(--veil-length);
-  }
-  to {
-    --veil-scrolled-bottom: 0px;
-  }
-}
 :root {
-  /* 透かしていく長さ。スマホは画面が低いので、棚の端のぼかしと同じ fade の長さに縮める */
-  --veil-length: var(--spacing-veil-fade);
   --veil-top: calc(var(--spacing-gutter) + var(--spacing-header));
-  /* 隠しきる所の下端と、覆いの始まり。ふだんは画面の上端から板までのすき間だけを隠す */
   --veil-solid-top: min(var(--spacing-gutter), var(--veil-top));
   --veil-offset-top: 0px;
-  --veil-fade-top: var(--veil-length);
   --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now));
-  --veil-fade-bottom: var(--veil-length);
-  --veil-reach-top: min(var(--veil-fade-top), var(--veil-scrolled-top));
-  --veil-reach-bottom: min(var(--veil-fade-bottom), var(--veil-scrolled-bottom));
-  animation:
-    veil-scroll-top linear both,
-    veil-scroll-bottom linear both;
-  animation-timeline: scroll(root), scroll(root);
-  animation-range:
-    0 var(--veil-length),
-    calc(100% - var(--veil-length)) 100%;
   transition:
     --veil-top var(--transition-duration-move) var(--ease-out),
     --veil-solid-top var(--transition-duration-move) var(--ease-out),
-    --veil-fade-top var(--transition-duration-move) var(--ease-out),
-    --veil-bottom var(--transition-duration-move) var(--ease-out),
-    --veil-fade-bottom var(--transition-duration-move) var(--ease-out);
+    --veil-bottom var(--transition-duration-move) var(--ease-out);
 }
 html:is([data-player='slot'], [data-player='dock']) {
   --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now) + var(--spacing-bar));
 }
 @variant max-md {
-  :root {
-    --veil-length: var(--spacing-fade);
-  }
   :root:is([data-chrome='hidden'], [data-watch]) {
     --veil-top: 0px;
-    --veil-fade-top: 0px;
   }
   /* 動画の画面では、動画の下に操作の帯（player-stage.tsx の StageControls。帯が data-stage-controls を付ける）が
      出ているときだけ覆う。いつも覆うと、帯の出ていない画面の頭で、動画のすぐ下の本文まで薄くなった（2026-10-11 に本人が指摘）。
-     覆い方はほかの板と同じで、動画と帯のすき間を隠しきり、帯の後ろからその先 fade の長さで透かす。
+     覆い方はほかの板と同じで、動画と帯のすき間を隠しきり、帯の後ろで透かす。
      帯が出ていないあいだも始まりを動画の下端に置いておき、帯が出たら下へ伸ばす */
   :root[data-watch] {
     --veil-offset-top: var(--video-full);
@@ -909,17 +842,14 @@ html:is([data-player='slot'], [data-player='dock']) {
   :root[data-watch][data-stage-controls] {
     --veil-solid-top: var(--stage-controls-top);
     --veil-top: calc(var(--stage-controls-top) + var(--spacing-stage-controls));
-    --veil-fade-top: var(--veil-length);
   }
   :root[data-chrome='hidden']:not([data-player='slot'], [data-player='dock']) {
     --veil-bottom: 0px;
-    --veil-fade-bottom: 0px;
   }
 }
 @variant md {
   :root:not([data-player='slot'], [data-player='dock']) {
     --veil-bottom: 0px;
-    --veil-fade-bottom: 0px;
   }
 }
 
