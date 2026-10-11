@@ -59,7 +59,7 @@ pnpm dev -p 3100
 - **本番の DB への取り込み（手で）**: `vercel env pull <ファイル> --environment production --scope kkweb` で接続先を取り、`DATABASE_URL_UNPOOLED` の値を `DATABASE_URL` にして `pnpm exec tsx scripts/migrate.ts` と `scripts/ingest.ts` を走らせる。取り込みは表ごとに1回で書くので、書く時間は短い（200 曲の種で 6 秒ほど）。VocaDB の返事が手元に残っていれば、取りに行く時間もかからない
   - **取り込んだら、本番を配備し直す**（`vercel redeploy vocafy.kkweb.io --target production --scope kkweb`）。ページは時間では作り直さず、配備ごとに作り置くので、配備し直さないと新しい曲が出ない。Vercel は新しい配備で作り置きを捨てる（[ISR の資料](https://vercel.com/docs/incremental-static-regeneration)「each new deployment uses its own ISR cache」）
 - **表を変えるとき**: `db/migrations/` に番号の続きでファイルを足す。本番に当て済みのファイルは書き換えない
-- 検査は `pnpm typecheck` / `lint` / `format:check` / `knip` / `test` / `test:e2e`。E2E は本番のビルドを立ち上げ、手元の DB を読む。CI は Postgres を立てて `db/fixture.sql`（DECO＊27 の4曲）を入れる
+- 検査は `pnpm typecheck` / `lint` / `format:check` / `knip` / `test` / `test:db` / `test:e2e`。`test:db` は catalog.ts の問い合わせを確かめる。手元の Postgres（`pnpm db:up`）の中にテスト用の DB（vocafy_test）を毎回作り直し、ファイルごとに自分のデータを入れる（`test/db/`）。取り込んだ台帳の DB には触らない。E2E は本番のビルドを立ち上げ、手元の DB を読む。CI は Postgres を立てて `db/fixture.sql`（DECO＊27 の4曲）を入れる
 
 ## 公開の構成
 
