@@ -79,3 +79,39 @@ test('サイトカラーとミニプレーヤーの位置は、選ぶとすぐ�
   await card('初音ミク').click();
   await expect(html).not.toHaveAttribute('data-voice', /.+/);
 });
+
+test('共有の板に送り先が並び、QRコードに切り替えて戻れる', async ({ page, isMobile }) => {
+  // 指の端末では、板を出さずに端末の共有の窓を開く
+  test.skip(isMobile, 'マウスの端末だけの板');
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: /を共有$/ }).click();
+  const menu = page.getByRole('menu');
+  const x = menu.getByRole('menuitem', { name: 'X' });
+  await expect(x).toHaveAttribute('href', /^https:\/\/x\.com\/intent\/post\?.*hashtags=Vocafy/);
+  await expect(x).toHaveAttribute('href', /producers%2F45/);
+  await expect(menu.getByRole('menuitem', { name: 'リンクをコピー' })).toBeVisible();
+  await menu.getByRole('menuitem', { name: 'QRコード' }).click();
+  await expect(menu.getByRole('img', { name: /QR コード$/ })).toBeVisible();
+  await menu.getByRole('button', { name: '共有の一覧に戻る' }).click();
+  await expect(x).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+});
+
+test('スリープタイマーを選ぶと残りが出て、切ると元に戻る', async ({ page }) => {
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+  const timer = page
+    .getByRole('button', { name: /^スリープタイマー/ })
+    .locator('visible=true')
+    .first();
+  await timer.click();
+  const panel = page.getByRole('dialog', { name: 'スリープタイマー' });
+  await panel.getByRole('button', { name: '30分' }).click();
+  await expect(panel).toBeHidden();
+  await expect(timer).toHaveAccessibleName(/あと(30|29)分で止まります/);
+  await timer.click();
+  await panel.getByRole('button', { name: 'タイマーを切る' }).click();
+  await expect(timer).toHaveAccessibleName('スリープタイマー');
+});
