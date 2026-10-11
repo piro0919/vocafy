@@ -68,9 +68,11 @@ export function OnThisDay({
           type="button"
           data-preload={hero.service === 'niconico' ? hero.videoId : undefined}
           onClick={() => open(hero)}
-          className="group flex min-w-0 flex-col gap-3 self-start text-left sm:flex-row sm:items-end lg:flex-col lg:items-stretch"
+          // 押せるのは表紙と文字だけ。タブレットの幅では表紙の横に文字を下ぞろえで置くので、ボタンの四角のうち文字の上と右が空く。
+          // そこを押しても流れないよう、ボタン自体は押せなくし、中の表紙と文字で受ける（押した操作はボタンまで伝わる）
+          className="group pointer-events-none flex min-w-0 flex-col gap-3 self-start text-left sm:flex-row sm:items-end lg:flex-col lg:items-stretch"
         >
-          <span className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-surface shadow-lift sm:w-1/2 lg:w-full">
+          <span className="pointer-events-auto relative block aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-surface shadow-lift sm:w-1/2 lg:w-full">
             <FadeImage
               src={hero.thumb}
               alt=""
@@ -83,7 +85,7 @@ export function OnThisDay({
               <Icon name={heroActive && playing ? 'pause' : 'play'} />
             </span>
           </span>
-          <span className="min-w-0">
+          <span className="pointer-events-auto min-w-0">
             <span className="block font-tech text-xs font-black tracking-label text-accent">
               {/* 右の一覧と同じ形。同じ日の曲は年だけ、前後の日から補った曲は月日も（今のデータでは0曲の日は無い） */}
               {sameDay(hero.publishedOn)
