@@ -2,7 +2,7 @@
 
 import { Link } from '@/i18n/navigation';
 import { useRouter } from '@/i18n/navigation';
-import { useEffect, useRef } from 'react';
+import { type PointerEvent, useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { leave } from '@/lib/leave';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -281,6 +281,12 @@ function Progress({
     const r = el.getBoundingClientRect();
     return Math.min(1, Math.max(0, (clientX - r.left) / r.width));
   };
+  /** 指の位置を飛び先にして、線と飛び先の時間を描く */
+  const track = (e: PointerEvent<HTMLElement>) => {
+    dragging.current = ratioAt(e.currentTarget, e.clientX);
+    paint(dragging.current);
+    showBubble(dragging.current);
+  };
   const current = now(time, playing);
 
   return (
@@ -294,15 +300,10 @@ function Progress({
       aria-valuetext={`${clock(current)} / ${clock(time.duration)}`}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
-        dragging.current = ratioAt(e.currentTarget, e.clientX);
-        paint(dragging.current);
-        showBubble(dragging.current);
+        track(e);
       }}
       onPointerMove={(e) => {
-        if (dragging.current === null) return;
-        dragging.current = ratioAt(e.currentTarget, e.clientX);
-        paint(dragging.current);
-        showBubble(dragging.current);
+        if (dragging.current !== null) track(e);
       }}
       onPointerUp={(e) => {
         if (dragging.current === null) return;
