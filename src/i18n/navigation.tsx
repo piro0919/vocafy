@@ -6,6 +6,7 @@ import { usePathname as useNextPathname } from 'next/navigation';
 import { type ComponentProps, useMemo } from 'react';
 import { langOfPath, localize, stripLang, type Lang } from './config';
 import { startNavigation } from '@/lib/pending-navigation';
+import { markReplace } from '@/lib/leave';
 
 /**
  * 画面の移動は、頭に言語の付かない住所（`/producers/45`）で書き、ここでいまの言語の住所にする。
@@ -53,6 +54,7 @@ export function useRouter() {
       },
       replace: (href: string, ...rest: Rest<typeof router.replace>) => {
         startNavigation();
+        markReplace(stripLang(href.split(/[?#]/)[0] || '/'), stripLang(location.pathname));
         router.replace(to(href), ...rest);
       },
       prefetch: (href: string, ...rest: Rest<typeof router.prefetch>) =>
