@@ -1,5 +1,5 @@
 import { Link } from '@/i18n/navigation';
-import { PAGE_SIZE } from '@/lib/catalog';
+import { PAGE_SIZE } from '@/lib/page-size';
 import { Icon } from './icon';
 import { ARROW } from './button-styles';
 import { DEFAULT_LANG, type Lang } from '@/i18n/config';

@@ -368,8 +368,6 @@ export const years = cache(async (): Promise<{ year: number; count: number }[]> 
   return rows;
 });
 
-export { PAGE_SIZE };
-
 /** 一覧の1ページと、全体の曲数。ページが範囲の外なら songs は空で total は 0 */
 export type Paged = { songs: DatedItem[]; total: number };
 

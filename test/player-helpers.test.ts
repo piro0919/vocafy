@@ -149,3 +149,35 @@ describe('isHomePath（トップの画面か）', () => {
     expect(isHomePath('/homes')).toBe(false);
   });
 });
+
+describe('pageOf（住所の末尾のページ番号）', () => {
+  it('番号が無ければ1ページ目、2以上の番号はそのページ', async () => {
+    const { pageOf } = await import('@/components/pager');
+    expect(pageOf(undefined)).toBe(1);
+    expect(pageOf([])).toBe(1);
+    expect(pageOf(['2'])).toBe(2);
+    expect(pageOf(['35'])).toBe(35);
+  });
+
+  it('1 と書いた住所・数字でないもの・先頭が 0・段が多いものは無いページ', async () => {
+    const { pageOf } = await import('@/components/pager');
+    for (const segments of [['1'], ['0'], ['02'], ['x'], ['2', '3'], ['1.5']]) {
+      expect(pageOf(segments)).toBeNull();
+    }
+  });
+});
+
+describe('singerOfVocalists（色を変えるキャラ）', () => {
+  it('先に名前の出てくる、色のあるキャラ', async () => {
+    const { singerOfVocalists } = await import('@/components/theme/voice');
+    expect(singerOfVocalists('初音ミク・鏡音リン')).toBe('初音ミク');
+    expect(singerOfVocalists('歌手不明・重音テト')).toBe('重音テト');
+  });
+
+  it('色のあるキャラがいなければ null（表にある名前でも、継いだ性質の名前は拾わない）', async () => {
+    const { singerOfVocalists } = await import('@/components/theme/voice');
+    expect(singerOfVocalists('歌手不明')).toBeNull();
+    expect(singerOfVocalists('')).toBeNull();
+    expect(singerOfVocalists('toString')).toBeNull();
+  });
+});
