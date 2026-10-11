@@ -23,13 +23,13 @@ import { useVoiceNames } from '@/components/voice-names';
 const TEXT = defineText({
   ja: {
     title: 'サイトカラー',
-    random: '開くたびに、選んだ色から変える',
-    follow: '歌っているキャラの色に変える',
+    random: 'アクセスするたびにランダムで変える',
+    follow: '再生中は、歌っているキャラの色にする',
   },
   en: {
     title: 'Site color',
-    random: 'Switch among the chosen colors on each visit',
-    follow: "Match the singing character's color",
+    random: 'Randomize on each visit',
+    follow: "Use the singer's color while playing",
   },
 });
 
