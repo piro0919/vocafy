@@ -235,8 +235,10 @@
   /* 流す壁（home-sections.tsx の FlowingWall）の札の幅。札の右にすき間（gap-2）を持たせ、6枚で段の幅とすき間1つ分になる。
      札の絵の幅は止まった壁の6列と同じになる */
   /* 上下の板の後ろの覆いの高さ（ambient.tsx の EdgeVeil）。板の手前までと、その先の透かしていく幅 */
-  --spacing-veil-top: calc(var(--veil-top) + var(--veil-fade-top));
-  --spacing-veil-bottom: calc(var(--veil-bottom) + var(--veil-fade-bottom));
+  --spacing-veil-top: calc(var(--veil-top) + var(--veil-reach-top));
+  --spacing-veil-bottom: calc(var(--veil-bottom) + var(--veil-reach-bottom));
+  /* 覆いで本文を透かしていく長さ。板の手前のこれだけ前から薄くし始める */
+  --spacing-veil-fade: 3rem;
   --spacing-mix-tile: calc((100% + var(--spacing) * 2) / 6);
   /* 次に流れる曲などの板の高さの上限 */
   --max-height-panel: 60dvh;
@@ -335,21 +337,22 @@
 
 /* 画面全体の方眼（ambient.tsx）を、左下を濃く、右上へ向かって薄くし、対角線の6割で消す（本人の指定） */
 /*
- * 上下の板の後ろの覆い（ambient.tsx の EdgeVeil）。板の手前（--veil-top・--veil-bottom）までは隠しきり、
- * その先の fade の幅で透かしていく。上の覆いは画面の上から、下の覆いは画面の下から測る
+ * 上下の板の後ろの覆い（ambient.tsx の EdgeVeil）。隠しきるのは板と画面の端のすき間（gutter）だけで、そこから
+ * 板の後ろを通って、板の手前の veil-fade（スクロールに合わせて伸び縮みする --veil-reach-*）の所までで透かしていく。
+ * 板の後ろも隠しきると、板のすりガラスに背景しか映らず、すりガラスが活きなかった（2026-10-11 に本人が指摘）。上の覆いは画面の上から、下の覆いは画面の下から測る
  */
 @utility veil-mask-top {
   mask-image: linear-gradient(
     to bottom,
-    black var(--veil-top),
-    transparent calc(var(--veil-top) + var(--veil-fade-top))
+    black min(var(--spacing-gutter), var(--veil-top)),
+    transparent calc(var(--veil-top) + var(--veil-reach-top))
   );
 }
 @utility veil-mask-bottom {
   mask-image: linear-gradient(
     to top,
-    black var(--veil-bottom),
-    transparent calc(var(--veil-bottom) + var(--veil-fade-bottom))
+    black min(var(--spacing-gutter), var(--veil-bottom)),
+    transparent calc(var(--veil-bottom) + var(--veil-reach-bottom))
   );
 }
 @utility grid-fade {
@@ -809,11 +812,52 @@ html[data-player='dock'] {
   inherits: true;
   initial-value: 0px;
 }
+@property --veil-scrolled-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --veil-scrolled-bottom {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+/*
+ * 透かしていく長さは、スクロールした分だけ伸ばす。ページの一番上では上の覆いが題名を薄くしないよう 0 から始め、
+ * veil-fade だけ送ったところで目いっぱいにする。下はページの終わりの veil-fade 手前から縮め、最後の行を薄くしない。
+ * スクロールに結び付けた動き（animation-timeline）なので、時間の長さは持たない。対応していないブラウザ（Firefox）は、
+ * 動きの終わりの値のまま（上はいつも目いっぱい、下はいつも 0）
+ */
+@keyframes veil-scroll-top {
+  from {
+    --veil-scrolled-top: 0px;
+  }
+  to {
+    --veil-scrolled-top: var(--spacing-veil-fade);
+  }
+}
+@keyframes veil-scroll-bottom {
+  from {
+    --veil-scrolled-bottom: var(--spacing-veil-fade);
+  }
+  to {
+    --veil-scrolled-bottom: 0px;
+  }
+}
 :root {
   --veil-top: calc(var(--spacing-gutter) + var(--spacing-header));
-  --veil-fade-top: var(--spacing-fade);
+  --veil-fade-top: var(--spacing-veil-fade);
   --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now));
-  --veil-fade-bottom: var(--spacing-fade);
+  --veil-fade-bottom: var(--spacing-veil-fade);
+  --veil-reach-top: min(var(--veil-fade-top), var(--veil-scrolled-top));
+  --veil-reach-bottom: min(var(--veil-fade-bottom), var(--veil-scrolled-bottom));
+  animation:
+    veil-scroll-top linear both,
+    veil-scroll-bottom linear both;
+  animation-timeline: scroll(root), scroll(root);
+  animation-range:
+    0 var(--spacing-veil-fade),
+    calc(100% - var(--spacing-veil-fade)) 100%;
   transition:
     --veil-top var(--transition-duration-move) var(--ease-out),
     --veil-fade-top var(--transition-duration-move) var(--ease-out),

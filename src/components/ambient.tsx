@@ -222,8 +222,8 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
 
 /**
  * 上下の浮いた板（上の段・上の帯、下のタブ・再生の帯）の後ろで、本文を背景に溶かす覆い（2026-10-11 に本人と決めた）。
- * 板と画面の端のすき間を本文が通ると細切れに見えたので、板の手前までは背景だけを見せ、その先の fade の幅で本文を
- * 少しずつぼかしながら薄くする。薄くするのは、背景の写しを上に重ねて少しずつ透かす形。背景は画面に固定されているので、
+ * 板と画面の端のすき間を本文が通ると細切れに見えたので、板と画面の端のすき間だけは背景だけを見せ、そこから板の後ろを通って板の手前の veil-fade（48px）の所までで本文を
+ * 少しずつにじませながら薄くする。薄くするのは、背景の写しを上に重ねて少しずつ透かす形。背景は画面に固定されているので、
  * 写しは元とぴったり重なる。高さは板が出ているかで変わる（globals.css の --veil-top・--veil-bottom）。
  * 本文の中で手前に出したもの（z-raised）より上、板より下。動画の枠は本文の外の重なりにあるので、この覆いは動画に重ならない（YouTube の規約）
  */
@@ -234,6 +234,7 @@ function EdgeVeil({ side, children }: { side: 'top' | 'bottom'; children: ReactN
       aria-hidden
       className={`pointer-events-none fixed inset-x-0 z-raised overflow-hidden ${top ? 'top-0 h-veil-top' : 'bottom-0 h-veil-bottom'}`}
     >
+      {/* 本文を、薄くしていく所と同じ割合でにじませる。板に近いほど強い */}
       <div
         className={`absolute inset-0 backdrop-blur-md ${top ? 'veil-mask-top' : 'veil-mask-bottom'}`}
       />
