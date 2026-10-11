@@ -291,6 +291,7 @@
   --animate-heart-pop: heart-pop var(--transition-duration-move) var(--ease-out);
   --animate-heart-unpop: heart-unpop var(--transition-duration-move) var(--ease-out);
   --animate-heart-note: heart-note var(--transition-duration-move) var(--ease-out) forwards;
+  --animate-hop: hop var(--transition-duration-move) var(--ease-out);
   /* 繰り返す動きは片道をどれかの長さにする（漂いも片道が drift）。一周は行きと帰りで2倍。行って戻るので、漂いと同じく ease-in-out。
      再生中の印の棒は move（slow では一周 2.4秒になり、だらけて音に合って見えなかった）、読み込み中の札の明滅は slow */
   --animate-eq: eq calc(var(--transition-duration-move) * 2) ease-in-out infinite;
@@ -593,6 +594,24 @@ body {
   transition:
     --accent var(--transition-duration-slow) var(--ease-out),
     --miku var(--transition-duration-slow) var(--ease-out);
+}
+
+/*
+ * キャラの絵の札が1回跳ねる（browse-cards.tsx の CharacterFace）。指を乗せたときと、トップの歌声の区画が画面に入ったとき（character-hop.tsx）。
+ * 画面に入ったときは、左の列から順に少しずつ遅らせて跳ねる。遅れは列の順（--hop-order）ごとに react の半分
+ */
+@keyframes hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-12%);
+  }
+}
+[data-hop] [data-hop-target] {
+  animation: var(--animate-hop);
+  animation-delay: calc(var(--hop-order, 0) * var(--transition-duration-react) / 2);
 }
 
 /* サイトカラーを変えたときのフェード（voice.ts の setVoice）。ほかの所では View Transitions を使っていない */

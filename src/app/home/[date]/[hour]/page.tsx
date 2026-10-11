@@ -1,6 +1,7 @@
 import type { WebSite, WithContext } from 'schema-dts';
 import { AmbientSource } from '@/components/ambient';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
+import { CharacterHop } from '@/components/character-hop';
 import { FavoriteNewSongs } from '@/components/favorite-new-songs';
 import { MixWall, OnThisDay } from '@/components/home-sections';
 import { PlayAllPill } from '@/components/play-all';
@@ -111,7 +112,7 @@ export default async function Home({ params }: PageProps<'/home/[date]/[hour]'>)
             <MoreLink href="/voices" />
           </div>
         </div>
-        <ul className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-y-5 lg:grid-cols-6">
+        <CharacterHop className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-y-5 lg:grid-cols-6">
           {voiceList
             .flatMap((v) => {
               const art = voiceArt(v.id);
@@ -132,7 +133,7 @@ export default async function Home({ params }: PageProps<'/home/[date]/[hour]'>)
                 <CharacterCard {...v} />
               </li>
             ))}
-        </ul>
+        </CharacterHop>
       </section>
 
       <div className="mt-6 sm:mt-10">
