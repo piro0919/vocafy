@@ -41,7 +41,13 @@ function firstShown<T extends HTMLElement>(selector: string): T | undefined {
 }
 
 export function PlayerKeys() {
-  const player = usePlayer();
+  const current = usePlayer();
+  // キーの受け口は付けたままにし、そのときのプレイヤーの状態を読む。状態をそのまま見張ると、流しているあいだは
+  // 再生位置が 0.5 秒ごとに変わるので、そのたびに受け口を付け直していた
+  const playerRef = useRef(current);
+  useEffect(() => {
+    playerRef.current = current;
+  }, [current]);
   const [helpOpen, setHelpOpen] = useState(false);
   // 板は初めて開くまで描かない（読み込んだ直後のサーバーの HTML と食い違わせない）。一度描いたら、閉じる動きのために置いたままにする
   const [helpMounted, setHelpMounted] = useState(false);
@@ -51,6 +57,7 @@ export function PlayerKeys() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const player = playerRef.current;
       if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target instanceof HTMLElement ? e.target : null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -152,7 +159,7 @@ export function PlayerKeys() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [player, helpOpen]);
+  }, [helpOpen]);
 
   // 板は次に流れる曲と同じ外枠で、動画に重ねない置き場所に出す（YouTube の規約）
   if (!helpMounted) return null;
