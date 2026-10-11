@@ -13,6 +13,7 @@ import { hasSignInHint } from '@/lib/auth-client';
  *
  * 形は shadcn の Tooltip（小さな吹き出し）で、地はほかの浮いた板と同じすりガラス。濃い地（文字色の反転）は、暗い画面で白く浮いた。
  * 矢印は、すりガラスに重ねると重なった所だけ濃くなるので付けない。
+ * パソコンの幅では ⓘ の右に出す。下に出すと、乗せたカーソルが字に重なった。スマホは右に入らないので下
  * マウスは乗せると出て、離すと消える。指の端末には乗せる操作が無いので、押しても出し入れでき、外を押すか Esc で閉じる
  */
 export function SignInInfo() {
@@ -65,7 +66,7 @@ export function SignInInfo() {
         id={id}
         role="tooltip"
         data-shown={open}
-        className="pointer-events-none absolute top-full left-1/2 z-overlay mt-1 w-max max-w-64 -translate-x-1/2 sm:max-w-none rounded-lg border border-line/60 bg-glass px-3 py-1.5 text-xs font-bold text-foreground opacity-0 shadow-float backdrop-blur-lg backdrop-saturate-150 transition-opacity duration-react data-[shown=true]:opacity-100"
+        className="pointer-events-none absolute top-full left-1/2 z-overlay mt-1 w-max max-w-64 -translate-x-1/2 sm:top-1/2 sm:left-full sm:mt-0 sm:ml-1 sm:max-w-none sm:translate-x-0 sm:-translate-y-1/2 rounded-lg border border-line/60 bg-glass px-3 py-1.5 text-xs font-bold text-foreground opacity-0 shadow-float backdrop-blur-lg backdrop-saturate-150 transition-opacity duration-react data-[shown=true]:opacity-100"
       >
         {/* 狭い幅では「、」で折る（文の途中で折れないよう、2つに分けて塊にする） */}
         <span className="inline-block">ログインすると、</span>
