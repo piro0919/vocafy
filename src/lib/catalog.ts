@@ -728,12 +728,15 @@ export async function relatedSongs(songId: number): Promise<QueueItem[]> {
   for (let i = 0; i < Math.max(...lists.map((l) => l.length)); i++) {
     for (const l of lists) if (l[i] && !ids.includes(l[i].id)) ids.push(l[i].id);
   }
-  if (ids.length === 0) return [];
-  const { rows } = await db().query<QueueRow>(`${QUEUE_SELECT} and s.id = any($1)`, [ids]);
+  return songsByIds(ids);
+}
+
+/** 引いた行を ids の順に並べる。見つからなかった id は落とす */
+function inOrder<T extends { id: number }>(ids: number[], rows: T[]): T[] {
   const byId = new Map(rows.map((r) => [r.id, r]));
   return ids.flatMap((id) => {
     const r = byId.get(id);
-    return r ? [toItem(r)] : [];
+    return r ? [r] : [];
   });
 }
 
@@ -741,11 +744,7 @@ export async function relatedSongs(songId: number): Promise<QueueItem[]> {
 export async function songsByIds(ids: number[]): Promise<QueueItem[]> {
   if (ids.length === 0) return [];
   const { rows } = await db().query<QueueRow>(`${QUEUE_SELECT} and s.id = any($1)`, [ids]);
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  return ids.flatMap((id) => {
-    const r = byId.get(id);
-    return r ? [toItem(r)] : [];
-  });
+  return inOrder(ids, rows).map(toItem);
 }
 
 /** id で引いたボカロPの名前・画像・本人の場所。動画の下に流している曲のボカロPを出すとき（/api/producer/[id]） */
@@ -771,9 +770,5 @@ export async function producersByIds(
     'select id, name, picture from producer where id = any($1)',
     [ids],
   );
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  return ids.flatMap((id) => {
-    const r = byId.get(id);
-    return r ? [r] : [];
-  });
+  return inOrder(ids, rows);
 }
