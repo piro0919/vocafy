@@ -91,6 +91,49 @@ test('ボカロPをお気に入りに入れると、お気に入りの画面に�
   await expect(page.getByText('お気に入りはまだありません')).toBeVisible();
 });
 
+test('お気に入りの曲は、行をつかんで並べ替えられ、ただ押せば流れる', async ({ page, isMobile }) => {
+  // 行のどこでもつかめるのはマウスの端末だけ（指の端末は取っ手だけで、曲の行のハートも出さない）
+  test.skip(isMobile, 'マウスの端末だけの動き');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/producers/45');
+  // 曲の行のハートは、指を乗せた行にだけ出る
+  for (const i of [0, 1, 2]) {
+    const row = page.locator('ol > li').nth(i);
+    await row.hover();
+    await row.getByRole('button', { name: /をお気に入りに入れる/ }).click();
+  }
+  await page.goto('/favorites/songs');
+  const handles = page.getByRole('button', { name: /を並べ替える$/ });
+  await expect(handles).toHaveCount(3);
+  const order = () =>
+    page.evaluate(() =>
+      (JSON.parse(localStorage.getItem('vocafy-favorites') ?? '[]') as { songId: number }[]).map(
+        (s) => s.songId,
+      ),
+    );
+  const [a, b, c] = await order();
+  // パソコンは行のどこでもつかめる（取っ手より左の、行の真ん中あたりを押す）
+  const top = (await handles.nth(0).boundingBox())!;
+  const bottom = (await handles.nth(2).boundingBox())!;
+  const x = top.x - 300;
+  await page.mouse.move(x, top.y + top.height / 2);
+  await page.mouse.down();
+  for (let y = top.y + top.height / 2; y <= bottom.y + bottom.height / 2 + 5; y += 4) {
+    await page.mouse.move(x, y);
+    // つかんだ行が付いてくるのは描き直しのあと。一度に動かすと、並びの入れ替えが追いつかない
+    await page.waitForTimeout(16);
+  }
+  await page.mouse.up();
+  await expect.poll(order).toEqual([b, c, a]);
+  // つかんで動かしただけでは流れない
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'none');
+  // 置いた直後に押すと流れなかった（理由は確かめていない。並べ替えの部品が引きずりの続きとして扱っているとみている）。
+  // 人が押し直すくらいの間を空ける
+  await page.waitForTimeout(500);
+  await page.mouse.click(x, top.y + top.height / 2);
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+});
+
 test('年の札から、その年の曲が並ぶ画面へ', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: /^2016/ }).click();
