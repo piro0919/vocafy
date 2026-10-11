@@ -15,6 +15,7 @@ describe('キャラの表', () => {
   });
 
   it('サイトカラーの9人の絵と色は、絵と色の表と同じ', () => {
+    expect(VOICES).toHaveLength(9);
     for (const v of VOICES) {
       expect({ name: v.label, art: voiceArtIdByName(v.label), color: COLORS[v.label] }).toEqual({
         name: v.label,

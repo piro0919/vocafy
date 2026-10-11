@@ -26,7 +26,9 @@ describe('colorsOf（表紙の色）', () => {
   });
 
   it('文字が読めるよう、鮮やかさは65%まで、明るさは30〜45%に収める', () => {
-    for (const [h, s, l] of colorsOf(pixels([255, 255, 0, 10], [40, 255, 40, 10]))!.map(hsl)) {
+    const colors = colorsOf(pixels([255, 255, 0, 10], [40, 255, 40, 10]))!.map(hsl);
+    expect(colors).toHaveLength(2);
+    for (const [h, s, l] of colors) {
       expect(h).toBeGreaterThanOrEqual(0);
       expect(s).toBeLessThanOrEqual(65);
       expect(l).toBeGreaterThanOrEqual(30);

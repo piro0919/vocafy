@@ -165,6 +165,7 @@ describe('見た目の決まり', () => {
       join(import.meta.dirname, '..', 'node_modules', 'tailwindcss', 'theme.css'),
       'utf8',
     );
+    expect(Object.keys(BREAKPOINTS)).not.toHaveLength(0);
     for (const [name, value] of Object.entries(BREAKPOINTS)) {
       expect(theme).toContain(`--breakpoint-${name}: ${value};`);
     }

@@ -45,6 +45,7 @@ describe('検索の索引', () => {
 
   it('2段目は、1段目でそのボカロPの曲が出てくる順と同じ（何番目かで引く）', async () => {
     const index = await searchIndex();
+    expect(index.producers).not.toHaveLength(0);
     for (const [p, [id]] of index.producers.entries()) {
       const titles = index.songs.filter(([, i]) => i === p).map(([title]) => title);
       const details = await searchDetails(id);
