@@ -1,4 +1,5 @@
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { staleIds } from './check-cache';
 
 /**
  * ニコニコのスナップショット検索 API（https://site.nicovideo.jp/search-api-docs/snapshot）。鍵は要らない。
@@ -92,11 +93,7 @@ export async function deadNiconico(ids: string[]): Promise<Set<string>> {
   } catch {
     // まだ確かめていない
   }
-  const fresh = Date.now() - CHECK_AGAIN_DAYS * 24 * 60 * 60 * 1000;
-  const todo = [...new Set(ids)].filter((id) => {
-    const hit = cache[id];
-    return !hit || Date.parse(hit.at) < fresh;
-  });
+  const todo = staleIds(ids, cache, CHECK_AGAIN_DAYS);
   if (todo.length > 0)
     console.log(`ニコニコの埋め込みを確かめます: ${todo.length} 本（1 秒に 1 本）`);
   for (const [i, id] of todo.entries()) {

@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { staleIds } from './check-cache';
 
 /**
  * YouTube の動画が、まだ埋め込んで流せるかを確かめる。鍵の要らない oEmbed（https://www.youtube.com/oembed）に問い合わせ、
@@ -39,11 +40,7 @@ async function check(id: string): Promise<boolean | null> {
 /** 流せない YouTube の動画の ID */
 export async function deadYouTube(ids: string[]): Promise<Set<string>> {
   const cache = await readCache();
-  const fresh = Date.now() - CHECK_AGAIN_DAYS * 24 * 60 * 60 * 1000;
-  const todo = ids.filter((id) => {
-    const hit = cache[id];
-    return !hit || Date.parse(hit.at) < fresh;
-  });
+  const todo = staleIds(ids, cache, CHECK_AGAIN_DAYS);
   if (todo.length > 0) console.log(`YouTube の動画を確かめます: ${todo.length} 本`);
 
   let next = 0;
@@ -79,11 +76,7 @@ export async function viewCounts(ids: string[], key: string): Promise<Map<string
   } catch {
     // まだ聞いていない
   }
-  const fresh = Date.now() - VIEWS_AGAIN_DAYS * 24 * 60 * 60 * 1000;
-  const todo = [...new Set(ids)].filter((id) => {
-    const hit = cache[id];
-    return !hit || Date.parse(hit.at) < fresh;
-  });
+  const todo = staleIds(ids, cache, VIEWS_AGAIN_DAYS);
   if (todo.length > 0) console.log(`YouTube の再生数を聞きます: ${todo.length} 本`);
   for (let i = 0; i < todo.length; i += 50) {
     const batch = todo.slice(i, i + 50);

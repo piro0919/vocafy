@@ -85,10 +85,16 @@ async function fetchWithRetry(url: string): Promise<Response> {
     const wait = last + INTERVAL - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     last = Date.now();
-    const res = await fetch(url, { headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' } });
     const minutes = RETRY_MINUTES[attempt];
-    if ((res.status !== 429 && res.status < 500) || minutes === undefined) return res;
-    console.log(`  VocaDB ${res.status}。${minutes} 分待って聞き直します`);
+    // つながらなかったとき（接続が切れた・名前を引けない）も、混み合いと同じく待って聞き直す。前はそのまま落ちていた
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Vocafy (https://vocafy.kkweb.io)' },
+    }).catch((error: unknown) => {
+      if (minutes === undefined) throw error;
+      return null;
+    });
+    if (res && ((res.status !== 429 && res.status < 500) || minutes === undefined)) return res;
+    console.log(`  VocaDB ${res?.status ?? 'につながりません'}。${minutes} 分待って聞き直します`);
     await new Promise((r) => setTimeout(r, minutes * 60 * 1000));
   }
 }
