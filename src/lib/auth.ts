@@ -1,6 +1,6 @@
 import 'server-only';
 import { betterAuth } from 'better-auth';
-import pg from 'pg';
+import { db } from './db';
 import { env } from '@/env';
 
 /** セッションを Cookie に控えておく秒数（そのあいだは DB に聞かない） */
@@ -22,7 +22,7 @@ function createAuth() {
   }
   return betterAuth({
     baseURL: env.BETTER_AUTH_URL,
-    database: new pg.Pool({ connectionString: env.DATABASE_URL, max: 2 }),
+    database: db(),
     secret: BETTER_AUTH_SECRET,
     socialProviders: {
       google: { clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET },

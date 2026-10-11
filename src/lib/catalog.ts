@@ -2,9 +2,8 @@
 import 'server-only';
 import { PAGE_SIZE } from './page-size';
 import { createHash } from 'node:crypto';
-import pg from 'pg';
 import { cache } from 'react';
-import { env } from '@/env';
+import { db } from './db';
 import { thumbOf } from './thumb';
 import { monthOf, today, yearOf } from './iso-date';
 
@@ -44,13 +43,6 @@ export type Producer = { id: number; name: string; picture: string | null; songC
 /** ボカロPの本人の場所。無いサービスの鍵は無い（scripts/lib/pick.ts の linksOf） */
 export type ProducerLinks = Partial<Record<'x' | 'youtube' | 'niconico' | 'website', string>>;
 
-let pool: pg.Pool | undefined;
-
-/** 初めて使うときに作る。読み込みの時点で作ると、DATABASE_URL の無い型の確かめなどが落ちる */
-function db(): pg.Pool {
-  pool ??= new pg.Pool({ connectionString: env.DATABASE_URL, max: 3 });
-  return pool;
-}
 
 type SongRow = {
   id: number;

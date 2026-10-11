@@ -1,6 +1,5 @@
 import 'server-only';
-import pg from 'pg';
-import { env } from '@/env';
+import { db } from './db';
 import { producersByIds, songsByIds } from './catalog';
 
 /**
@@ -8,12 +7,6 @@ import { producersByIds, songsByIds } from './catalog';
  * 表には id と足した時刻だけを持ち、出すときに台帳から今の曲の情報を引く（ブラウザに残す写しと違って古くならない）。
  * 曲だけは手で並べ替えられるので、並びの位置（position。0008）も持つ
  */
-let pool: pg.Pool | undefined;
-
-function db(): pg.Pool {
-  pool ??= new pg.Pool({ connectionString: env.DATABASE_URL, max: 1 });
-  return pool;
-}
 
 export type Kind = 'song' | 'producer';
 

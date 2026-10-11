@@ -1,7 +1,6 @@
 // DB に書くのはサーバーだけ
 import 'server-only';
-import pg from 'pg';
-import { env } from '@/env';
+import { db } from './db';
 import type { Service } from './video-id';
 
 /** oEmbed が、動画が流せないときに返す状態（非公開・埋め込み不可・削除） */
@@ -52,16 +51,13 @@ export async function isPlayable(service: Service, id: string): Promise<boolean 
   }
 }
 
-let pool: pg.Pool | undefined;
-
 /**
  * 流せない動画を記録し、その動画を使っていた曲を直す。YouTube が流せなければ、ニコニコに本家がある曲は
  * ニコニコに切り替え、無ければ曲ごと外す。ニコニコが流せなければ、YouTube の無い曲を外す。
  * 直した曲の作者（ボカロP）の id を返す。その人の画面を作り直すため
  */
 export async function markUnplayable(service: Service, id: string): Promise<number[]> {
-  pool ??= new pg.Pool({ connectionString: env.DATABASE_URL, max: 1 });
-  const client = await pool.connect();
+  const client = await db().connect();
   try {
     await client.query('begin');
     await client.query(
