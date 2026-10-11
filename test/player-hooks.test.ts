@@ -335,3 +335,61 @@ describe('usePreload（見えているニコニコの曲の行を先読みさせ
     expect(observed).toEqual([]);
   });
 });
+
+describe('useSleepTimer（スリープタイマー）', () => {
+  const MINUTE = 60_000;
+  const SLEEP_FADE = 3000;
+  let calls: string[];
+  const engine = () =>
+    ({
+      pause: () => calls.push('pause'),
+      setVolume: (v: number) => calls.push(`volume:${v}`),
+    }) as unknown as import('@/components/player/engine').Engine;
+
+  beforeEach(() => {
+    calls = [];
+  });
+
+  async function setup(sound = { volume: 60, muted: false }) {
+    const { useSleepTimer } = await import('@/components/player/use-sleep-timer');
+    return renderHook(() => useSleepTimer({ current: engine() }, { current: sound }));
+  }
+
+  it('時間が来たら3秒かけて絞って一時停止し、音量を元に戻して、タイマーを消す', async () => {
+    const { result } = await setup();
+    act(() => result.current.setSleep(15));
+    expect(result.current.sleep?.kind).toBe('at');
+    act(() => vi.advanceTimersByTime(15 * MINUTE));
+    expect(calls).not.toContain('pause');
+    act(() => vi.advanceTimersByTime(SLEEP_FADE));
+    expect(calls.slice(-2)).toEqual(['pause', 'volume:60']);
+    expect(result.current.sleep).toBeNull();
+    expect(result.current.sleepRef.current).toBeNull();
+  });
+
+  it('絞っている途中で切ったら、止めずに音量を戻す', async () => {
+    const { result } = await setup();
+    act(() => result.current.setSleep(15));
+    act(() => vi.advanceTimersByTime(15 * MINUTE + SLEEP_FADE / 2));
+    act(() => result.current.setSleep(null));
+    act(() => vi.advanceTimersByTime(SLEEP_FADE));
+    expect(calls).not.toContain('pause');
+    expect(calls.at(-1)).toBe('volume:60');
+  });
+
+  it('消音のときは絞らずにすぐ止める', async () => {
+    const { result } = await setup({ volume: 60, muted: true });
+    act(() => result.current.setSleep(30));
+    act(() => vi.advanceTimersByTime(30 * MINUTE));
+    expect(calls).toEqual(['pause']);
+    expect(result.current.sleep).toBeNull();
+  });
+
+  it('「この曲が終わったら」は時計を使わない（止めるのは曲の終わりの provider）', async () => {
+    const { result } = await setup();
+    act(() => result.current.setSleep('end'));
+    expect(result.current.sleepRef.current).toEqual({ kind: 'end' });
+    act(() => vi.advanceTimersByTime(120 * MINUTE));
+    expect(calls).toEqual([]);
+  });
+});
