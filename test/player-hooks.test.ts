@@ -16,6 +16,7 @@ const { useSlot } = await import('@/components/player/use-slot');
 const { useResumeWriter } = await import('@/components/player/use-resume-writer');
 const { useWakeLock } = await import('@/components/player/use-wake-lock');
 const { useTakeOver } = await import('@/components/player/use-take-over');
+const { usePreload } = await import('@/components/player/use-preload');
 
 const song = (songId: number, producerId = 1): QueueItem => ({
   songId,
@@ -256,5 +257,81 @@ describe('useTakeOver（動画を大きく出す画面の引き継ぎ）', () =>
     set({ holdingSlot: true });
     renderHook(() => useTakeOver(items, page));
     expect(takeOver).not.toHaveBeenCalled();
+  });
+});
+
+describe('usePreload（見えているニコニコの曲の行を先読みさせる）', () => {
+  type Callback = (entries: { target: Element; isIntersecting: boolean }[]) => void;
+  let observed: Element[];
+  let fire: Callback;
+  let disconnected: boolean;
+  let preload: ReturnType<typeof vi.fn<(id: string) => () => void>>;
+  let releases: Record<string, ReturnType<typeof vi.fn<() => void>>>;
+
+  beforeEach(() => {
+    observed = [];
+    disconnected = false;
+    releases = {};
+    preload = vi.fn((id: string) => (releases[id] = vi.fn<() => void>()));
+    player.value = { preload };
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: Callback) {
+          fire = callback;
+        }
+        observe(el: Element) {
+          observed.push(el);
+        }
+        disconnect() {
+          disconnected = true;
+        }
+      },
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  function list() {
+    const root = document.createElement('ul');
+    root.innerHTML = '<li data-preload="sm1"></li><li></li><li data-preload="sm2"></li>';
+    return root;
+  }
+
+  it('data-preload の行だけを見張り、見えたら先読みさせ、外れたら手放す', () => {
+    const root = list();
+    renderHook(() => usePreload({ current: root }, 'a'));
+    expect(observed).toHaveLength(2);
+    const [a, b] = observed;
+    act(() =>
+      fire([
+        { target: a, isIntersecting: true },
+        { target: b, isIntersecting: true },
+      ]),
+    );
+    expect(preload.mock.calls.map((c) => c[0])).toEqual(['sm1', 'sm2']);
+    // 見えたままもう一度届いても、二重に頼まない
+    act(() => fire([{ target: a, isIntersecting: true }]));
+    expect(preload).toHaveBeenCalledTimes(2);
+    act(() => fire([{ target: a, isIntersecting: false }]));
+    expect(releases.sm1).toHaveBeenCalledTimes(1);
+  });
+
+  it('外したら見張りをやめ、見えていた行をすべて手放す', () => {
+    const root = list();
+    const { unmount } = renderHook(() => usePreload({ current: root }, 'a'));
+    act(() => fire([{ target: observed[1], isIntersecting: true }]));
+    unmount();
+    expect(disconnected).toBe(true);
+    expect(releases.sm2).toHaveBeenCalledTimes(1);
+  });
+
+  it('行そのものが data-preload を持つときも見張る。持つ行が無ければ見張らない', () => {
+    const row = document.createElement('div');
+    row.dataset.preload = 'sm9';
+    renderHook(() => usePreload({ current: row }, 'a'));
+    expect(observed).toEqual([row]);
+    observed = [];
+    renderHook(() => usePreload({ current: document.createElement('div') }, 'b'));
+    expect(observed).toEqual([]);
   });
 });
