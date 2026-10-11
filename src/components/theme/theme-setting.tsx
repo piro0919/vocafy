@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { Heading } from '../heading';
+import { RadioOptions, SettingSection } from '../setting-controls';
 import { readThemePref, setThemePref, subscribeThemePref, type ThemePref } from './theme';
 
 const OPTIONS: { value: ThemePref; label: string }[] = [
@@ -14,31 +14,17 @@ const OPTIONS: { value: ThemePref; label: string }[] = [
 export function ThemeSetting() {
   const pref = useSyncExternalStore(subscribeThemePref, readThemePref, () => 'system' as const);
   return (
-    // 見出しはほかの画面の区画と同じ部品。ラジオの組の名前は、見出しを aria-labelledby で指す
-    <section>
-      <div className="mb-3">
-        <Heading id="theme-setting" eyebrow="Theme">
-          テーマ
-        </Heading>
-      </div>
-      <div role="radiogroup" aria-labelledby="theme-setting" className="grid gap-1">
-        {OPTIONS.map((o) => (
-          <label
-            key={o.value}
-            className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-hover"
-          >
-            <input
-              type="radio"
-              name="theme"
-              value={o.value}
-              checked={pref === o.value}
-              onChange={() => setThemePref(o.value)}
-              className="size-4 accent-accent"
-            />
-            {o.label}
-          </label>
-        ))}
-      </div>
-    </section>
+    // 設定の画面の一番上の区画
+    <SettingSection eyebrow="Theme" title="テーマ" first>
+      {(id) => (
+        <RadioOptions
+          name="theme"
+          labelledBy={id}
+          options={OPTIONS}
+          value={pref}
+          onChange={setThemePref}
+        />
+      )}
+    </SettingSection>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { isMouseDevice, mixFlowEnabled, setMixFlowEnabled, subscribeMixFlow } from '@/lib/mix-flow';
-import { Heading, SECTION } from './heading';
+import { CheckRow, SettingSection } from './setting-controls';
 
 /**
  * 設定の画面の「トップの動き」。きょうの出会いの壁を流すかを切り替える（2026-10-11 に本人と決めた）。
@@ -14,20 +14,10 @@ export function MixFlowSetting() {
   const on = useSyncExternalStore(subscribeMixFlow, mixFlowEnabled, () => true);
   if (!shown) return null;
   return (
-    <section className={SECTION}>
-      <div className="mb-3">
-        <Heading eyebrow="Motion">トップの動き</Heading>
-      </div>
-      {/* 行の形は、開き直したときの切り替えと同じ */}
-      <label className="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-hover sm:max-w-sm">
-        <input
-          type="checkbox"
-          checked={on}
-          onChange={() => setMixFlowEnabled(!on)}
-          className="mt-1 size-4 shrink-0 accent-accent"
-        />
-        <span>きょうの出会いを流す</span>
-      </label>
-    </section>
+    <SettingSection eyebrow="Motion" title="トップの動き">
+      <CheckRow checked={on} onChange={setMixFlowEnabled}>
+        きょうの出会いを流す
+      </CheckRow>
+    </SettingSection>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { Heading, SECTION } from '../heading';
+import { RadioOptions, SettingSection } from '../setting-controls';
 import {
   type RightEdge,
   rightEdge,
@@ -36,30 +36,16 @@ export function SwipeBackSetting() {
     if (value !== 'off') setRightEdge(value);
   };
   return (
-    <section className={SECTION}>
-      <div className="mb-3">
-        <Heading id="swipe-setting" eyebrow="Swipe">
-          スワイプ
-        </Heading>
-      </div>
-      <div role="radiogroup" aria-labelledby="swipe-setting" className="grid gap-1">
-        {OPTIONS.map((o) => (
-          <label
-            key={o.value}
-            className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-hover"
-          >
-            <input
-              type="radio"
-              name="swipe"
-              value={o.value}
-              checked={choice === o.value}
-              onChange={() => choose(o.value)}
-              className="size-4 accent-accent"
-            />
-            {o.label}
-          </label>
-        ))}
-      </div>
-    </section>
+    <SettingSection eyebrow="Swipe" title="スワイプ">
+      {(id) => (
+        <RadioOptions
+          name="swipe"
+          labelledBy={id}
+          options={OPTIONS}
+          value={choice}
+          onChange={choose}
+        />
+      )}
+    </SettingSection>
   );
 }

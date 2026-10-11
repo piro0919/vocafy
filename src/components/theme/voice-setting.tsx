@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { CharacterFace } from '../browse-cards';
 import { Heading, SECTION } from '../heading';
+import { CheckRow } from '../setting-controls';
 import {
   readFollowVoice,
   readVoice,
@@ -52,16 +53,9 @@ export function VoiceSetting() {
           </label>
         ))}
       </div>
-      {/* 行の形は、スワイプで戻るの「使う」と同じ */}
-      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 transition-colors duration-react hover:bg-hover sm:max-w-sm">
-        <input
-          type="checkbox"
-          checked={follow}
-          onChange={() => setFollowVoice(!follow)}
-          className="mt-1 size-4 shrink-0 accent-accent"
-        />
-        <span>歌っているキャラの色に変える</span>
-      </label>
+      <CheckRow checked={follow} onChange={setFollowVoice} className="mt-4">
+        歌っているキャラの色に変える
+      </CheckRow>
     </section>
   );
 }
