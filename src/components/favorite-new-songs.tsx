@@ -112,8 +112,19 @@ export function FavoriteNewSongs() {
       el.dispatchEvent(new Event('scroll'));
     };
     fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
+    // 画面の大きさを変えているあいだは resize が続けて届く。測るたびに画面の配置を計算し直させるので、1コマに1回にする
+    let frame = 0;
+    const onResize = () => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        fit();
+      });
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', onResize);
+    };
     // track は描くたびに同じものが返る
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songs]);

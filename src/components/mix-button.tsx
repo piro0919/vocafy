@@ -6,6 +6,7 @@ import type { QueueItem } from '@/lib/catalog';
 import { PRIMARY_ICON } from './button-styles';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
+import { today } from '@/lib/iso-date';
 
 /**
  * パソコンの上の段の、ログインの左のサイコロ（2026-10-11 に本人と決めた。ログインと同じ塗りの丸いボタン）。どの画面からでも、トップのきょうの出会いを
@@ -18,10 +19,6 @@ export function MixButton() {
   const router = useRouter();
   const songs = useRef<{ date: string; promise: Promise<QueueItem[]> } | null>(null);
 
-  // トップと同じく日本の日付で決める（iso-date.ts の today）
-  const date = () =>
-    new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
-
   const load = (day: string) => {
     if (songs.current?.date !== day) {
       const promise = fetch(`/api/list/mix/${day}/1`)
@@ -33,7 +30,7 @@ export function MixButton() {
   };
 
   const onClick = async () => {
-    const day = date();
+    const day = today();
     const source = `mix/${day}`;
     if (current !== null && owner.kind === 'list' && owner.source === source) {
       router.push(`/${source}/play`);
@@ -53,8 +50,8 @@ export function MixButton() {
     <button
       type="button"
       onClick={onClick}
-      onPointerEnter={() => void load(date())}
-      onFocus={() => void load(date())}
+      onPointerEnter={() => void load(today())}
+      onFocus={() => void load(today())}
       aria-label="きょうの出会いを再生"
       title="きょうの出会いを再生"
       className={PRIMARY_ICON}
