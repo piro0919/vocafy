@@ -28,6 +28,18 @@ const DIGITS = 10;
 /** 見えているボタンを押して動かすキー（大文字で引く）と、そのボタンの aria-keyshortcuts */
 const KEY_BUTTONS: Record<string, string> = { H: 'H', Q: 'Q', A: 'A' };
 
+/**
+ * 当てはまる要素のうち、画面に見えている最初のもの。隠した帯の中（inert）は見えていないとみなす。
+ * checkVisibility は Safari 17.4 から。無いブラウザでは、箱を持つか（display: none とその中は持たない）と visibility で見る
+ */
+function firstShown<T extends HTMLElement>(selector: string): T | undefined {
+  return [...document.querySelectorAll<T>(selector)].find((el) => {
+    if (el.closest('[inert]')) return false;
+    if (typeof el.checkVisibility === 'function') return el.checkVisibility();
+    return el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+  });
+}
+
 export function PlayerKeys() {
   const player = usePlayer();
   const [helpOpen, setHelpOpen] = useState(false);
@@ -58,9 +70,7 @@ export function PlayerKeys() {
       }
       if (e.key === '/') {
         // 見えている検索欄へ移る（パソコンの上の段。スマホは虫めがねを押すまで欄が無い）
-        const field = [...document.querySelectorAll<HTMLInputElement>('input[type="search"]')].find(
-          (input) => input.offsetParent !== null,
-        );
+        const field = firstShown<HTMLInputElement>('input[type="search"]');
         if (!field) return;
         e.preventDefault();
         field.focus();
@@ -78,9 +88,7 @@ export function PlayerKeys() {
       }
       const shortcut = KEY_BUTTONS[e.key.toUpperCase()];
       if (shortcut) {
-        const button = [
-          ...document.querySelectorAll<HTMLElement>(`[aria-keyshortcuts="${shortcut}"]`),
-        ].find((el) => !el.closest('[inert]') && el.checkVisibility());
+        const button = firstShown<HTMLElement>(`[aria-keyshortcuts="${shortcut}"]`);
         if (!button) return;
         e.preventDefault();
         button.click();
