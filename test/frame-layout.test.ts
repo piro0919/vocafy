@@ -145,10 +145,22 @@ describe('形が変わるときの動き', () => {
     view.rerender({ mode: 'dock', slot: null });
     const started = animations.length;
     expect(started).toBe(1);
-    vi.advanceTimersByTime(50);
+    // 1コマも描かないうちに戻る
     view.rerender({ mode: 'slot', slot });
     expect(animations[0].cancel).toHaveBeenCalled();
     expect(animations).toHaveLength(started);
+  });
+
+  it('右下の窓で2コマ描いたあとなら一瞬ではなく、置き場所へ戻る動きを付ける', () => {
+    const slot = slotAt(rect(80, 20, 640, 360));
+    const view = setup({ mode: 'slot', slot });
+    vi.advanceTimersByTime(1000);
+    view.rerender({ mode: 'dock', slot: null });
+    // 偽の時計では、1コマはおよそ16ミリ秒
+    vi.advanceTimersByTime(40);
+    view.rerender({ mode: 'slot', slot });
+    expect(animations[0].cancel).not.toHaveBeenCalled();
+    expect(animations).toHaveLength(2);
   });
 
   it('動きを減らす設定の人には、動きを付けない', () => {

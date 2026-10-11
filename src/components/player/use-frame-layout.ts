@@ -2,8 +2,11 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';
 import { DOCK_SIDE_EVENT } from './player-storage';
 
-/** 右下の窓の形になってからこれより早く別の形に替わったら、一瞬だけだったとみなす（ミリ秒） */
-const FLASH_MS = 100;
+/**
+ * 右下の窓の形になってから、画面を描くのがこの回数に届く前に別の形に替わったら、一瞬だけだったとみなす。
+ * 前は 100 ミリ秒で決めていたが、遅い端末では1コマも長く、時間で決めると外れうる（2026-10-12 に描いた回数に替えた）
+ */
+const FLASH_FRAMES = 2;
 
 /** プレイヤーの形。none は何も流していない（か置き場所を待っている）、slot は画面の置き場所、dock は右下の窓 */
 export type FrameMode = 'none' | 'slot' | 'dock';
@@ -18,8 +21,9 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
   // 動かすのは見た目の transform だけで、iframe そのものは動かさない
   const lastBox = useRef<DOMRect | null>(null);
   const lastMode = useRef(mode);
-  // 前の形になった時刻と、その前の形。一瞬（1フレームほど）しか続かなかった形は、無かったものとして扱う
-  const lastModeAt = useRef(0);
+  // 前の形のあいだに画面を描いた回数（FLASH_FRAMES まで数える）と、その前の形。一瞬しか続かなかった形は、無かったものとして扱う
+  const framesInMode = useRef(FLASH_FRAMES);
+  const counting = useRef(0);
   const beforeLast = useRef<FrameMode>(mode);
 
   // ボカロPの画面では、プレイヤーを画面に固定し、置き場所の位置と大きさに合わせ続ける。
@@ -91,7 +95,7 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
     // ボカロPの画面からお気に入りの曲の画面へ戻ったとき（戻った画面が並びを取り戻すまで）。その一瞬は無かったものとして、
     // その前の形から移ったとみなす。一瞬のあいだに始めた移る動きも取り消す。取り消さないと、右下の窓へ向けたずれを大きな
     // 置き場所の位置に当てたまま動き、画面の左上の外から入ってくるように見えた（2026-10-11）
-    const flash = lastMode.current === 'dock' && performance.now() - lastModeAt.current < FLASH_MS;
+    const flash = lastMode.current === 'dock' && framesInMode.current < FLASH_FRAMES;
     if (flash && mode !== 'dock') for (const animation of el.getAnimations()) animation.cancel();
     const previous = flash ? beforeLast.current : lastMode.current;
     const moved = previous !== mode && previous !== 'none' && mode !== 'none';
@@ -112,8 +116,15 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
       );
     }
     if (lastMode.current !== mode) {
-      lastModeAt.current = performance.now();
       beforeLast.current = previous;
+      // 新しい形のあいだに画面を描いた回数を数え直す
+      cancelAnimationFrame(counting.current);
+      framesInMode.current = 0;
+      const tick = () => {
+        framesInMode.current += 1;
+        if (framesInMode.current < FLASH_FRAMES) counting.current = requestAnimationFrame(tick);
+      };
+      counting.current = requestAnimationFrame(tick);
     }
     lastMode.current = mode;
     lastBox.current = to;
@@ -122,6 +133,9 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
     // 位置の決まっていない（ページの左下の）箱を測ってしまう
     return cleanup;
   }, [mode, slot]);
+
+  // 外したら、描いた回数を数える時計も止める
+  useEffect(() => () => cancelAnimationFrame(counting.current), []);
 
   // 右下のプレイヤーが本文の最後を隠さないよう、本文の下の余白を変えるための印
   useEffect(() => {

@@ -168,11 +168,31 @@ describe('動画の画面から戻る（leave）', () => {
   });
 
   it('いきなりこの画面に来たときは、サイトの外へ戻さずトップへ', () => {
+    stubWindow(false);
     const r = router();
     setNavigationDepth(0);
     leave(r as unknown as Parameters<typeof leave>[0]);
     expect(r.push).toHaveBeenCalledWith('/');
     expect(r.back).not.toHaveBeenCalled();
+    Reflect.deleteProperty(globalThis, 'window');
+  });
+
+  it('Navigation API があれば、canGoBack で決め、時間の保険は使わない', () => {
+    vi.useFakeTimers();
+    for (const canGoBack of [true, false]) {
+      Object.assign(globalThis, {
+        window: Object.assign(new EventTarget(), { navigation: { canGoBack } }),
+      });
+      const r = router();
+      // 数えた値とは食い違っていても、canGoBack に従う
+      setNavigationDepth(canGoBack ? 0 : 5);
+      leave(r as unknown as Parameters<typeof leave>[0]);
+      vi.runAllTimers();
+      expect(r.back).toHaveBeenCalledTimes(canGoBack ? 1 : 0);
+      expect(r.push).toHaveBeenCalledTimes(canGoBack ? 0 : 1);
+    }
+    vi.useRealTimers();
+    Reflect.deleteProperty(globalThis, 'window');
   });
 });
 
