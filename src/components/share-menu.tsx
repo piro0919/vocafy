@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { toast } from 'sonner';
 import { ICON, ICON_SM } from './button-styles';
 import { Icon, type IconName } from './icon';
 import { QrCode } from './qr-code';
+import { useClientValue } from '@/lib/client-value';
 
 /** 共有の文に付けるハッシュタグ。ボカロPの名前は付けない（記号入りの名前でタグが切れ、追う人もいない） */
 const HASHTAG = 'Vocafy';
@@ -195,8 +196,6 @@ function fitMenu(el: HTMLElement, qrBox: HTMLElement | null) {
   if (left > 0 && qrBox) qrBox.style.width = `${qrBox.getBoundingClientRect().width - left}px`;
 }
 
-const noSubscribe = () => () => {};
-
 /**
  * 流している曲の共有のボタン。お気に入りの曲・一覧の再生用・ラジオの画面の「再生」の段に置く（2026-10-11 に本人と決めた）。
  * 送るのはボカロPの画面と同じ、曲名を題名と共有の絵に入れた住所（/producers/45/songs/曲の id）。並びそのものは送らない
@@ -204,11 +203,7 @@ const noSubscribe = () => () => {};
  */
 export function SongShare({ song }: { song: QueueItem | null }) {
   // 住所の元はブラウザの側で決める（作り置きのページにサーバーの住所を焼き込まない）
-  const origin = useSyncExternalStore(
-    noSubscribe,
-    () => window.location.origin,
-    () => '',
-  );
+  const origin = useClientValue(() => window.location.origin, '');
   if (!song) return null;
   return (
     <ShareMenu

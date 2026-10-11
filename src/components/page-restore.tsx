@@ -4,17 +4,10 @@ import { useRouter } from '@bprogress/next/app';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { readLastPage, saveLastPage } from './player/player-resume';
+import { isStandaloneApp } from '@/lib/standalone';
 
 /** このタブで一度でも開いたか（sessionStorage）。アプリを開き直すと消えるので、開いた最初の1回だけを見分けられる */
 const LAUNCHED_KEY = 'vocafy-launched';
-
-/** ホーム画面に置いたアプリとして開いているか（iPhone・iPad は navigator.standalone、ほかは display-mode） */
-function isApp(): boolean {
-  return (
-    matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
 
 /**
  * アプリを開いたときに、前回見ていた画面から始める（2026-10-11 に本人と決めた）。アプリはいつもトップから開くので、
@@ -34,7 +27,7 @@ export function PageRestore() {
     } catch {
       return;
     }
-    if (!first || location.pathname !== '/' || !isApp()) return;
+    if (!first || location.pathname !== '/' || !isStandaloneApp()) return;
     const last = readLastPage();
     if (last && last !== '/') router.replace(last);
   }, [router]);

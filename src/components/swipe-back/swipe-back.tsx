@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Icon } from '../icon';
 import {
-  isIosStandalone,
   type RightEdge,
   rightEdge,
   subscribeSwipeBack,
   swipeBackEnabled,
 } from './swipe-back-store';
 import { DRAG_SLOP } from '@/lib/input';
+import { isIosStandalone } from '@/lib/standalone';
 
 /** 端のこの幅から始めたときだけ受ける */
 const EDGE = 24;

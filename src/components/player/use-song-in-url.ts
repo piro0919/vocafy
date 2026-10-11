@@ -1,5 +1,6 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import type { QueueItem } from '@/lib/catalog';
+import { useClientValue } from '@/lib/client-value';
 
 /** 住所の ?song= の曲の id。無いか形が違えば null */
 export function songParam(search: string): number | null {
@@ -7,8 +8,6 @@ export function songParam(search: string): number | null {
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
-/** 住所は画面の中では変わらないので、見張らない */
-const noSubscribe = () => () => {};
 const readSong = () => songParam(window.location.search);
 
 /**
@@ -16,7 +15,7 @@ const readSong = () => songParam(window.location.search);
  * ブラウザで読む（サーバーで読むと開くたびに作り直しになり、DB を起こす）
  */
 export function useLinkedSong(): number | null {
-  return useSyncExternalStore(noSubscribe, readSong, () => null);
+  return useClientValue(readSong, null);
 }
 
 /**

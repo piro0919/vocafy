@@ -9,7 +9,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react';
 import { toast } from 'sonner';
 import { isAppleDevice } from '@/lib/apple-device';
@@ -56,6 +55,7 @@ import { useSleepTimer } from './use-sleep-timer';
 import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { TIMING } from '@/lib/timing';
+import { useClientValue } from '@/lib/client-value';
 
 export type { Owner, PlaybackTime, Repeat, Sleep } from './player-types';
 
@@ -83,7 +83,6 @@ const UPCOMING_LIMIT = 10;
  * その人の曲を流している間だけ、画面内の置き場所（slot）に重ねて大きく出す。
  * iframe を DOM の中で動かすと読み込み直しになり再生が止まるので、要素は動かさず位置だけ合わせる
  */
-const noSubscribe = () => () => {};
 
 /** 開発用: ?mock-niconico-blocked で、ニコニコの曲が止められたあと（iPad の Safari）の状態から始める */
 function mockNiconicoBlocked(): boolean {
@@ -178,7 +177,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 自動で進む先のニコニコの曲を飛ばしているか（画面に出す。次に流れる曲の板で薄くする）。最初に飛ばしたときだけ知らせる
   const [skipping, setSkipsNiconico] = useState(false);
   // 開発用の切り替えは、サーバーで描いた形と食い違わないよう、ページの準備ができてから効かせる
-  const mocked = useSyncExternalStore(noSubscribe, mockNiconicoBlocked, () => false);
+  const mocked = useClientValue(mockNiconicoBlocked, false);
   const skipsNiconico = skipping || mocked;
   const skipNoticed = useRef(false);
   const noteSkip = useCallback((item: QueueItem | undefined) => {

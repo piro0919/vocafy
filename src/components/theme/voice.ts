@@ -2,6 +2,8 @@
 
 import { COLORS } from '@/lib/voice-color';
 import { VOICE_KEY } from './theme-script';
+import { vocalistNames } from '@/lib/vocalist-names';
+import { prefersReducedMotion } from '@/lib/motion';
 
 /**
  * 画面の色を合わせるキャラ。miku は data-voice を付けない（globals.css の既定の色が初音ミク）。
@@ -59,10 +61,7 @@ export function setVoice(voice: Voice) {
   // 色は画面じゅうで一度に変わるので、前と後の画面を重ねてフェードさせる（View Transitions）。
   // そのあいだは画面を写真にして重ねるため、流している動画の絵が一瞬止まって見える（音は止まらない）。
   // 対応していないブラウザと、動きを減らす設定の人には、いままでどおり一瞬で切り替える
-  if (
-    !document.startViewTransition ||
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  ) {
+  if (!document.startViewTransition || prefersReducedMotion()) {
     apply();
     return;
   }
@@ -97,8 +96,8 @@ export function setFollowVoice(on: boolean) {
 
 /** 曲の歌声（「初音ミク・鏡音リン」の形）のうち、先に名前の出てくる、色のあるキャラ（voice-color.ts）。いなければ null */
 export function singerOfVocalists(vocalists: string): string | null {
-  for (const name of vocalists.split('・')) {
-    if (Object.hasOwn(COLORS, name.trim())) return name.trim();
+  for (const name of vocalistNames(vocalists)) {
+    if (Object.hasOwn(COLORS, name)) return name;
   }
   return null;
 }

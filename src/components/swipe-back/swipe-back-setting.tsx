@@ -3,7 +3,6 @@
 import { useSyncExternalStore } from 'react';
 import { Heading, SECTION } from '../heading';
 import {
-  isIosStandalone,
   type RightEdge,
   rightEdge,
   setRightEdge,
@@ -11,8 +10,8 @@ import {
   subscribeSwipeBack,
   swipeBackEnabled,
 } from './swipe-back-store';
-
-const noop = () => () => {};
+import { useClientValue } from '@/lib/client-value';
+import { isIosStandalone } from '@/lib/standalone';
 
 type Choice = 'off' | RightEdge;
 
@@ -27,7 +26,7 @@ const OPTIONS: { value: Choice; label: string }[] = [
  * Android はシステムの戻る操作が効く）。はじめは使わない。左端はいつも戻る。テーマと同じく1つの組から選ぶ
  */
 export function SwipeBackSetting() {
-  const shown = useSyncExternalStore(noop, isIosStandalone, () => false);
+  const shown = useClientValue(isIosStandalone, false);
   const on = useSyncExternalStore(subscribeSwipeBack, swipeBackEnabled, () => false);
   const right = useSyncExternalStore(subscribeSwipeBack, rightEdge, (): RightEdge => 'back');
   if (!shown) return null;

@@ -25,11 +25,6 @@ const forward = createLocalFlag({
 
 export type RightEdge = 'back' | 'forward';
 
-/** iPhone・iPad でホーム画面から開いているか。navigator.standalone は iOS・iPadOS の Safari だけにある */
-export function isIosStandalone(): boolean {
-  return (navigator as Navigator & { standalone?: boolean }).standalone === true;
-}
-
 export const swipeBackEnabled = enabled.read;
 export const setSwipeBack = enabled.write;
 

@@ -1,13 +1,14 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { type ReactNode, useState, useSyncExternalStore } from 'react';
+import { type ReactNode, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePwa } from 'use-pwa';
 import { isAppleDevice } from '@/lib/apple-device';
 import { Icon } from './icon';
 import { ICON, PILL } from './button-styles';
 import { Heading, SECTION } from './heading';
+import { useClientValue } from '@/lib/client-value';
 
 /** 案内の板を出すまで待つ時間（ミリ秒）。押してすぐ出すと、押した操作の続きで閉じることがある */
 const PROMPT_DELAY_MS = 100;
@@ -28,11 +29,7 @@ function useInstall(): {
   const { canInstall, install, isInstalled } = usePwa();
   const [open, setOpen] = useState(false);
   // 端末の判定は window を見る。サーバー側では決まらないので、載ってから読む
-  const isApple = useSyncExternalStore(
-    () => () => {},
-    isAppleDevice,
-    () => false,
-  );
+  const isApple = useClientValue(isAppleDevice, false);
 
   return {
     available: !isInstalled && (canInstall || isApple),

@@ -2,11 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useId, useSyncExternalStore } from 'react';
+import { useId } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { setSignedIn } from '@/lib/favorites';
 import { ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
+import { useClientValue } from '@/lib/client-value';
 
 function LoginButton() {
   return (
@@ -82,10 +83,6 @@ function SessionAccount() {
  * ログインしたことのない端末（ほとんどの人）はセッションを聞きに行かず、ログインのボタンだけを出す（auth-client.ts の印）
  */
 export function AccountButton() {
-  const hinted = useSyncExternalStore(
-    () => () => {},
-    hasSignInHint,
-    () => false,
-  );
+  const hinted = useClientValue(hasSignInHint, false);
   return hinted ? <SessionAccount /> : <LoginButton />;
 }

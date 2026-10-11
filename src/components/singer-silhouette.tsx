@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { MOTION } from '@/lib/motion';
 import type { QueueItem } from '@/lib/catalog';
 import { voiceArtByName } from '@/lib/voice-art';
+import { vocalistNames } from '@/lib/vocalist-names';
 
 /**
  * 動画を大きく出す画面の、一覧の右下に置く、歌っているキャラの影絵。スマホは小さめにして、再生の帯の上に置く。
@@ -75,9 +76,8 @@ const SEP = '|';
 
 /** 曲の歌声（「初音ミク・鏡音リン」の形）のうち、絵のあるキャラの絵を、名前の出てくる順に SEP でつないだもの */
 function artsOf(vocalists: string): string {
-  const arts = vocalists
-    .split('・')
-    .map((name) => voiceArtByName(name.trim()))
+  const arts = vocalistNames(vocalists)
+    .map((name) => voiceArtByName(name))
     .filter((art): art is string => art !== null);
   return [...new Set(arts)].join(SEP);
 }

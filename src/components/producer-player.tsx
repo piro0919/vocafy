@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { QueueItem, Song } from '@/lib/catalog';
 import { glideWindowTo } from '@/lib/motion';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -16,6 +16,7 @@ import { useTakeOver } from './player/use-take-over';
 import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
 import { StageLayout } from './stage-layout';
 import { ShareMenu } from './share-menu';
+import { useClientValue } from '@/lib/client-value';
 
 /** 年の札の行のすぐ下に、どこまで来た曲をその年とみなすか（px） */
 const YEAR_LINE_GAP = 8;
@@ -104,11 +105,7 @@ export function ProducerPlayer({
   // 共有するのは、この人の曲を流しているときはその曲、それ以外はこの人。曲つきのリンクは、曲名を題名と共有の絵に入れた住所
   // （songs/[songId]/page.tsx）。住所の元はブラウザの側で決める（作り置きのページにサーバーの住所を焼き込まない）
   const sharedSong = here ? current : linkedItem;
-  const origin = useSyncExternalStore(
-    noSubscribe,
-    () => window.location.origin,
-    () => '',
-  );
+  const origin = useClientValue(() => window.location.origin, '');
   const share = (
     <ShareMenu
       url={`${origin}/producers/${producerId}${sharedSong ? `/songs/${sharedSong.songId}` : ''}`}
@@ -187,9 +184,6 @@ export function ProducerPlayer({
     </StageLayout>
   );
 }
-
-/** 住所の元は画面の中では変わらないので、見張らない */
-const noSubscribe = () => () => {};
 
 /** これより曲の多い人だけ、一覧の上に年の札を出す */
 const YEAR_JUMP_MIN = 100;
