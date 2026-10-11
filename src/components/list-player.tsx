@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useMemo } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PlayerStage, StageControls, StagePlayButton, SwipeToLeave } from './player-stage';
 import { PlaybackMode } from './player/playback-mode';
@@ -11,15 +11,7 @@ import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
-
-/** 住所は画面の中では変わらないので、見張らない */
-const noSubscribe = () => () => {};
-
-/** 住所の ?song= の曲の id。無ければ null */
-function linkedSong(): number | null {
-  const id = Number(new URLSearchParams(window.location.search).get('song'));
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
+import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
 
 /**
  * 一覧（年・日付・歌声の年）の再生用の画面。ボカロPの画面と同じく、左（スマホは上）に大きなプレイヤーの
@@ -58,7 +50,7 @@ export function ListPlayer({
   const notes = useStageNotes(here ? current : null);
 
   // 共有されたり読み込み直したりした住所の曲。1ページ目にあれば、そこから流す
-  const linked = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  const linked = useLinkedSong();
   const linkedAt = linked ? songs.findIndex((s) => s.songId === linked) : -1;
   const linkedItem = !here && linkedAt >= 0 ? songs[linkedAt] : undefined;
 
@@ -67,19 +59,8 @@ export function ListPlayer({
   // 住所の曲（共有されたり読み込み直したりしたとき）が一覧にあれば、そこから流す。無ければ先頭から
   const start = () => play({ number: 1, songs }, Math.max(0, linkedAt));
 
-  // この一覧を流しているあいだは、住所に流している曲を入れる。曲が変わるたびに履歴を増やさずに書き換える
-  useEffect(() => {
-    // ラジオのときは入れない（この一覧の住所に、一覧に無い曲を指させない）
-    if (!here || !current) return;
-    const url = new URL(window.location.href);
-    // ほかの画面へ移る途中（住所がもうこの画面のものでない）は書き換えない
-    if (url.pathname !== `/${source}/play`) return;
-    if (url.searchParams.get('song') === String(current.songId)) return;
-    url.searchParams.set('song', String(current.songId));
-    // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
-    // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
-    window.history.replaceState(null, '', url);
-  }, [here, current, source]);
+  // この一覧を流しているあいだは、住所に流している曲を入れる（use-song-in-url.ts）
+  useSongInUrl(here ? current : null, `/${source}/play`);
 
   // 流している曲の共有（share-menu.tsx）。ボカロPの画面と同じ並び（再生・共有・説明文）
   const share = <SongShare song={here ? current : null} />;

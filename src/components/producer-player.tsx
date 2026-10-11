@@ -14,6 +14,7 @@ import { NoAutoplay } from './song-list';
 import { Marquee } from './marquee';
 import { ScrollRow } from './scroll-row';
 import { useTakeOver } from './player/use-take-over';
+import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
 import { useStageNotes } from './song-notes';
 import { SingerSilhouette } from './singer-silhouette';
 import { ShareMenu } from './share-menu';
@@ -62,25 +63,12 @@ export function ProducerPlayer({
   const list = useRef<HTMLOListElement>(null);
   usePreload(list, songs);
 
-  // 共有されたリンク（?song=曲の id）で来たときの曲。ページは作り置きなので、住所の ?song= はサーバーでは読まずブラウザで読む
-  // （サーバーで読むと開くたびに作り直しになり、DB を起こす）。開いただけでは流さない（ブラウザが押す操作の無い再生を止めるため）。
-  // その曲を一覧で目立たせ、大きな再生ボタンをその曲からにする
-  // この人の曲を流しているあいだは、住所に流している曲を入れる（?song=曲の id）。読み込み直したときや、
-  // 住所をそのまま写して送ったときに、共有のリンクと同じくその曲から流せる。曲が変わるたびに履歴を増やさずに書き換える
-  useEffect(() => {
-    // ラジオで別の人の曲を流しているときは入れない（この人の画面の住所に、ほかの人の曲を指させない）
-    if (!here || !current) return;
-    const url = new URL(window.location.href);
-    // ほかの画面へ移る途中（住所がもうこの画面のものでない）は書き換えない
-    if (url.pathname !== `/producers/${producerId}`) return;
-    if (url.searchParams.get('song') === String(current.songId)) return;
-    url.searchParams.set('song', String(current.songId));
-    // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
-    // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
-    window.history.replaceState(null, '', url);
-  }, [here, current, producerId]);
+  // この人の曲を流しているあいだは、住所に流している曲を入れる（use-song-in-url.ts）
+  useSongInUrl(here ? current : null, `/producers/${producerId}`);
 
-  const fromQuery = useSyncExternalStore(noSubscribe, linkedSong, () => null);
+  // 共有されたリンク（?song=曲の id）で来たときの曲。開いただけでは流さない（ブラウザが押す操作の無い再生を止めるため）。
+  // その曲を一覧で目立たせ、大きな再生ボタンをその曲からにする
+  const fromQuery = useLinkedSong();
   const linked = linkedSongId ?? fromQuery;
   // その曲の行までスクロールするのは、開いたときの1回だけ。流しているあいだは住所の曲が曲ごとに変わるが、そのたびには動かさない
   const scrolledToLinked = useRef(false);
@@ -225,14 +213,8 @@ export function ProducerPlayer({
   );
 }
 
-/** 住所は画面の中では変わらないので、見張らない */
+/** 住所の元は画面の中では変わらないので、見張らない */
 const noSubscribe = () => () => {};
-
-/** 住所の ?song= の曲の id。無ければ null */
-function linkedSong(): number | null {
-  const id = Number(new URLSearchParams(window.location.search).get('song'));
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
 
 /** これより曲の多い人だけ、一覧の上に年の札を出す */
 const YEAR_JUMP_MIN = 100;
