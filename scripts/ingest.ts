@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { scriptEnv } from './lib/env';
+import { isDropped, tooManyDead, withoutDead } from './lib/dead';
 import type { ProducerLinks } from '../src/lib/catalog';
 import {
   EXTRA_PRODUCERS,
@@ -333,49 +334,33 @@ async function main() {
 
   // YouTube で消えた・埋め込めない動画は使わない。ニコニコに本家があればニコニコで流し、無ければその曲を外す。
   // VocaDB の登録は、YouTube の側で動画が消えてもそのまま残っていることがある（--dry では確かめない）
-  const dead = await deadYouTube(all.flatMap((s) => sourcesOf(s)?.youtubeId ?? []));
+  const checkedDead = await deadYouTube(all.flatMap((s) => sourcesOf(s)?.youtubeId ?? []));
   // 再生中に流せないと分かった動画（API が確かめて unplayable の表に書いたもの）も使わない
   const reported = await readUnplayable();
-  for (const id of reported.youtube) dead.add(id);
+  const dead = new Set([...checkedDead, ...reported.youtube]);
   const sources = new Map(
-    all.map((s) => {
-      const found = sourcesOf(s)!;
-      return [
-        s.id,
-        {
-          ...found,
-          youtubeId: found.youtubeId && dead.has(found.youtubeId) ? null : found.youtubeId,
-          niconicoId:
-            found.niconicoId && reported.niconico.has(found.niconicoId) ? null : found.niconicoId,
-        },
-      ];
-    }),
+    all.map((s) => [
+      s.id,
+      withoutDead(sourcesOf(s)!, { youtube: dead, niconico: reported.niconico }),
+    ]),
   );
   // YouTube で流せない曲は、ニコニコの埋め込みのページも確かめる。センシティブ扱いの動画と消えた動画は、
   // VocaDB に残っていても流せない（--dry では確かめない）
   const deadNico = await deadNiconico(
     [...sources.values()].flatMap((s) => (!s.youtubeId && s.niconicoId ? [s.niconicoId] : [])),
   );
-  for (const found of sources.values())
-    if (found.niconicoId && deadNico.has(found.niconicoId)) found.niconicoId = null;
-  const dropped = all.filter((s) => {
-    const found = sources.get(s.id)!;
-    return !found.youtubeId && !found.niconicoId;
-  });
+  for (const [id, found] of sources)
+    sources.set(id, withoutDead(found, { youtube: new Set(), niconico: deadNico }));
+  const dropped = all.filter((s) => isDropped(sources.get(s.id)!));
   const kept = all.filter((s) => !dropped.includes(s));
   console.log(
     `流せない動画: YouTube ${dead.size} 本・ニコニコ ${deadNico.size} 本（外す ${dropped.length} 曲。ほかは YouTube からニコニコに切り替え）`,
   );
-  if (deadNico.size > MAX_DEAD_NICONICO) {
-    throw new Error(
-      `ニコニコで流せない動画が ${MAX_DEAD_NICONICO} 本を超えたので書きません。data/raw/niconico/embed.json を確かめてください`,
-    );
-  }
-  if (dead.size > MAX_DEAD) {
-    throw new Error(
-      `YouTube で流せない動画が ${MAX_DEAD} 本を超えたので書きません。data/raw/youtube/oembed.json を確かめてください`,
-    );
-  }
+  const stop = tooManyDead(
+    { youtube: checkedDead.size, niconico: deadNico.size },
+    { youtube: MAX_DEAD, niconico: MAX_DEAD_NICONICO },
+  );
+  if (stop) throw new Error(stop);
 
   // 画像とリンクは全曲を取ったボカロPの分だけ取りに行く。合作の相手は名前だけ
   const pictures = new Map<number, string | null>();
