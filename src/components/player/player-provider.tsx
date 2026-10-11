@@ -397,6 +397,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     (items: QueueItem[], at: number, nextOwner: Owner) => {
       keepAwake();
       setResumable(false);
+      // 戻した前の曲を流さずに別の曲を押したとき、その曲が前の曲の続きの位置から始まらないように消す（続きから流すときは resume が戻す）
+      resumeAt.current = null;
       // 一時停止の前に絞っている途中なら、やめる。同じプレイヤーで次の曲を流すので、そのままだと次の曲が止まる
       if (pauseFade.current) clearTimeout(pauseFade.current);
       pauseFade.current = null;
