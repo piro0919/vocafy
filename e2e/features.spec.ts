@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * 再生の周りの機能（キーボード操作・次に流れる曲・履歴・設定）。台帳は CI では db/fixture.sql（DECO＊27 の4曲）。
