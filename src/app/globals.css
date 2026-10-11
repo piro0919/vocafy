@@ -328,6 +328,13 @@
 }
 
 /* 横に送る棚などの、スクロールバーを見せない入れ物。続きは端のぼかしと矢印で見せる */
+/*
+ * 本文の中に置いた浮いた板（年の札など）を、画面に固定した浮いた板（上の帯・操作の帯・タブ）と同じく、
+ * 画面の端から gutter の位置まで広げる。本文の左右の余白（page-x）との差だけ外へ出す
+ */
+@utility gutter-x {
+  margin-inline: calc(var(--spacing-gutter) - var(--page-x));
+}
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {
