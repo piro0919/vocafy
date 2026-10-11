@@ -23,7 +23,7 @@ import { createYouTubeEngine } from './youtube';
 import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
 import { DOCK, DockStrip, FADE, HIDDEN } from './dock-strip';
-import { clearResume, readResume, saveResume } from './player-resume';
+import { clearResume, readResume } from './player-resume';
 import { FadeImage } from '../fade-image';
 import { Icon } from '../icon';
 import { COVER_PLAY } from '../button-styles';
@@ -50,7 +50,6 @@ import type {
   PlayerContext,
   QueueOwner,
   Repeat,
-  Sleep,
 } from './player-types';
 import {
   afterEnded,
@@ -62,11 +61,13 @@ import {
   settledOwner,
   skipsAutoNiconico,
 } from './player-rules';
-import { FADE_OUT_MS, FADE_STEPS, faded, fadeOut, PAUSE_WAIT_MS } from './fade';
+import { FADE_OUT_MS, FADE_STEPS, fadeOut, PAUSE_WAIT_MS } from './fade';
 import { useFrameLayout } from './use-frame-layout';
+import { useResumeWriter } from './use-resume-writer';
+import { useSleepTimer } from './use-sleep-timer';
 import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
-import { MINUTE_MS, TIMING } from '@/lib/timing';
+import { TIMING } from '@/lib/timing';
 
 export type { ListSource, Owner, PlaybackTime, Repeat, Sleep } from './player-types';
 
@@ -86,12 +87,6 @@ const UPCOMING_LIMIT = 10;
 
 /** ラジオで足せる関連曲を探すときに、関連曲を聞く曲の数の上限 */
 const RADIO_TRIES = 6;
-
-/** 流しているあいだ、どこまで聴いたかを残す間隔（ミリ秒） */
-const SAVE_EVERY_MS = 5000;
-
-/** スリープタイマーで止めるときに、音を絞りきるまでの長さ（ミリ秒）。眠りかけの耳に急に切れないよう、曲を替えるときより長く */
-const SLEEP_FADE_MS = 3000;
 
 /**
  * ページを移っても再生が続く、全ページ共通のプレイヤー。ルートのレイアウトに1つだけ置く。
@@ -577,65 +572,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (isNearEnd(position, cursor.current.order)) fetchMore();
   }, [owner, queue, position, fetchMore]);
 
-  // スリープタイマー。onEnded（作ったときの関数を持ち続ける）から読むので、ref にも持つ
-  const [sleep, setSleepState] = useState<Sleep | null>(null);
-  const sleepRef = useRef<Sleep | null>(null);
-  const setSleep = useCallback((value: number | 'end' | null) => {
-    const from = Date.now();
-    const next: Sleep | null =
-      value === null
-        ? null
-        : value === 'end'
-          ? { kind: 'end' }
-          : { kind: 'at', at: from + value * MINUTE_MS, from };
-    sleepRef.current = next;
-    setSleepState(next);
-  }, []);
-  // 時刻で止めるタイマー。時間が来たら SLEEP_FADE_MS かけて音を絞ってから一時停止し、音量を元に戻しておく
-  // （次に再生を押したときは、いつもの音量で鳴る）
-  useEffect(() => {
-    if (sleep?.kind !== 'at') return;
-    let fadeTimer: ReturnType<typeof setTimeout> | undefined;
-    // 絞っている途中で切られたとき（タイマーを切る・入れ直す）に、音量を戻すための控え
-    let restore: (() => void) | null = null;
-    const timer = setTimeout(
-      () => {
-        // 状態（sleep）を消すのは止め終えてから。先に消すと、このエフェクトの後片付けが走って、絞っている途中の時計まで止まった
-        const done = () => {
-          sleepRef.current = null;
-          setSleepState(null);
-        };
-        const p = player.current;
-        const { volume, muted } = soundRef.current ?? { volume: 100, muted: false };
-        if (!p || muted || volume === 0) {
-          p?.pause();
-          done();
-          return;
-        }
-        let step = 0;
-        restore = () => p.setVolume(volume);
-        const tick = () => {
-          step += 1;
-          if (step > FADE_STEPS) {
-            restore = null;
-            p.pause();
-            p.setVolume(volume);
-            done();
-            return;
-          }
-          p.setVolume(faded(volume, step));
-          fadeTimer = setTimeout(tick, SLEEP_FADE_MS / FADE_STEPS);
-        };
-        tick();
-      },
-      Math.max(0, sleep.at - Date.now()),
-    );
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(fadeTimer);
-      restore?.();
-    };
-  }, [sleep]);
+  // スリープタイマー（use-sleep-timer.ts）
+  const { sleep, sleepRef, setSleep } = useSleepTimer(player, soundRef);
 
   useEffect(() => {
     // 曲が終わったら、ループが1曲なら頭から、そうでなければ流す順の次の曲へ（最後なら先頭に戻る）
@@ -643,8 +581,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // スリープタイマーが「この曲が終わったら」なら、次へ進まずに止める（曲は終わったところで止まっている）
       const action = afterEnded(sleepRef.current, playbackRef.current?.repeat);
       if (action === 'stop') {
-        sleepRef.current = null;
-        setSleepState(null);
+        setSleep(null);
         // 曲が終わったときは「止まった」の知らせが来ないので、流していない表示にここで切り替える
         setPlaying(false);
         return;
@@ -657,7 +594,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       autoNext.current = true;
       next(1);
     };
-  }, [next]);
+  }, [next, setSleep, sleepRef]);
 
   const toggleShuffle = useCallback(() => {
     const now = playbackRef.current ?? savedPlayback();
@@ -851,8 +788,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     clearResume();
     setResumable(false);
     resumeAt.current = null;
-    sleepRef.current = null;
-    setSleepState(null);
+    setSleep(null);
     setOwner(LOOSE);
     clearMore();
     clearTimeout(fadeTimer.current);
@@ -872,7 +808,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     commit(EMPTY_CURSOR);
     setPlaying(false);
     setLoading(false);
-  }, [clearMore, drop, commit, setOwner]);
+  }, [clearMore, drop, commit, setOwner, setSleep]);
 
   // 再生中は時刻を拾う。間は帯の側で補ってなめらかに進める
   useEffect(() => {
@@ -909,38 +845,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     resumeAt.current = at;
   }, [load]);
 
-  // 流しているあいだ、並びとどこまで聴いたかを残す。曲や並びが替わったときと、数秒ごと（時刻を拾うたび。SAVE_EVERY_MS で間引く）、
-  // ページを離れるとき。戻したまま流していないあいだは、残したものをそのまま使う
-  const lastSaved = useRef(0);
-  const writeResume = useCallback(() => {
-    const { queue: q, index: i } = cursor.current;
-    if (q.length === 0) return;
+  // 流しているあいだ、並びとどこまで聴いたかを残す（use-resume-writer.ts）
+  const resumeSnapshot = useCallback(() => {
+    const { queue: q, index: i, order } = cursor.current;
+    if (q.length === 0) return null;
     const t = player.current?.time();
-    saveResume({
+    return {
       queue: q,
       index: i,
-      order: cursor.current.order,
+      order,
       position: t?.current ?? 0,
       duration: t?.duration ?? 0,
       owner: settledOwner(ownerRef.current, q[i]),
-    });
-    lastSaved.current = performance.now();
-  }, []);
-  useEffect(() => {
-    if (resumable || queue.length === 0) return;
-    writeResume();
-  }, [resumable, queue, index, owner, writeResume]);
-  useEffect(() => {
-    if (resumable || !playing) return;
-    if (performance.now() - lastSaved.current > SAVE_EVERY_MS) writeResume();
-  }, [time, resumable, playing, writeResume]);
-  useEffect(() => {
-    const onHide = () => {
-      if (!resumable && cursor.current.queue.length > 0) writeResume();
     };
-    window.addEventListener('pagehide', onHide);
-    return () => window.removeEventListener('pagehide', onHide);
-  }, [resumable, writeResume]);
+  }, []);
+  useResumeWriter(resumeSnapshot, { resumable, playing, time, queue, index, owner });
 
   const current = queue[index] ?? null;
   useWakeLock(playing);

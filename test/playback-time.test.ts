@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { clock, now } from '@/components/player/playback-time';
+import { sleepOf } from '@/components/player/use-sleep-timer';
 
 describe('clock', () => {
   it('分:秒にし、秒は2桁にそろえる', () => {
@@ -28,5 +29,16 @@ describe('now', () => {
   it('曲の長さを越えない。長さが分からないあいだ（0）は越えても止めない', () => {
     expect(now(time, true, 1_000_000)).toBe(200);
     expect(now({ ...time, duration: 0 }, true, 6000)).toBe(15);
+  });
+});
+
+describe('sleepOf（スリープタイマーの値）', () => {
+  it('分を選んだら、入れた時刻からその分あとに止める', () => {
+    expect(sleepOf(15, 1000)).toEqual({ kind: 'at', at: 1000 + 15 * 60_000, from: 1000 });
+  });
+
+  it('「この曲が終わったら」と、切る', () => {
+    expect(sleepOf('end', 1000)).toEqual({ kind: 'end' });
+    expect(sleepOf(null, 1000)).toBeNull();
   });
 });
