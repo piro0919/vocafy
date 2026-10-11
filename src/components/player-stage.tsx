@@ -9,24 +9,18 @@ import {
   useRef,
   useState,
 } from 'react';
-import { FadeImage } from './fade-image';
+import { CoverPlayButton, RESUME_TEXT } from './cover-play-button';
 import { Icon } from './icon';
 import { PlaybackMode } from './player/playback-mode';
 import { usePlayer } from './player/player-provider';
 import { leave } from '@/lib/leave';
-import { COVER_PLAY, PRIMARY } from './button-styles';
+import { PRIMARY } from './button-styles';
 import { below } from '@/lib/breakpoints';
 import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
 import { DRAG_SLOP } from '@/lib/input';
 import { GLASS_PANEL } from '@/components/surface-styles';
-import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
 import { TERMS } from '@/i18n/terms';
-
-const TEXT = defineText({
-  ja: { resume: (title: string) => `「${title}」の続きを再生` },
-  en: { resume: (title: string) => `Resume “${title}”` },
-});
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -53,7 +47,7 @@ export function PlayerStage({
   onPlay: () => void;
 }) {
   const { setSlot, holdingSlot, resumable, resume, current } = usePlayer();
-  const t = useText(TEXT);
+  const t = useText(RESUME_TEXT);
   const slot = useRef<HTMLDivElement>(null);
   // 画面を移るあいだ（holdSlot）は、動画を出していた置き場所は、この画面の持ち主でなくなっても出し続ける
   const [wasOn, setWasOn] = useState(active);
@@ -97,47 +91,25 @@ export function PlayerStage({
             {/* 開き直したときに戻した前の曲をまだ流していないあいだは、動画の枠を隠し、その曲の表紙と再生ボタンを出す
                 （player-resume.ts）。押すと聴いていた位置から流れる */}
             {resumable && current && (
-              <button
-                type="button"
+              <CoverPlayButton
+                cover={current.thumb}
+                label={t.resume(current.title)}
                 onClick={resume}
-                aria-label={t.resume(current.title)}
-                className="group absolute inset-0 block"
-              >
-                <FadeImage
-                  src={current.thumb}
-                  alt=""
-                  fill
-                  loading="eager"
-                  sizes={RESPONSIVE_SIZES.stage}
-                  className="object-cover"
-                />
-                <span className={`absolute top-1/2 left-1/2 size-16 -translate-1/2 ${COVER_PLAY}`}>
-                  <Icon name="play" className="size-9" />
-                </span>
-              </button>
+                sizes={RESPONSIVE_SIZES.stage}
+                eager
+                className="absolute inset-0 block"
+              />
             )}
           </div>
         ) : (
-          <button
-            type="button"
+          <CoverPlayButton
+            cover={cover}
+            label={label}
             onClick={onPlay}
-            aria-label={label}
-            className="group relative block aspect-video w-full overflow-hidden bg-surface md:rounded-2xl"
-          >
-            {cover && (
-              <FadeImage
-                src={cover}
-                alt=""
-                fill
-                loading="eager"
-                sizes={RESPONSIVE_SIZES.stage}
-                className="object-cover"
-              />
-            )}
-            <span className={`absolute top-1/2 left-1/2 size-16 -translate-1/2 ${COVER_PLAY}`}>
-              <Icon name="play" className="size-9" />
-            </span>
-          </button>
+            sizes={RESPONSIVE_SIZES.stage}
+            eager
+            className="relative block aspect-video w-full overflow-hidden bg-surface md:rounded-2xl"
+          />
         )}
       </div>
     </>

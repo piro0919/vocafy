@@ -23,9 +23,7 @@ import { PlayerKeys } from './player-keys';
 import { useWakeLock } from './use-wake-lock';
 import { DOCK, DockStrip, FADE, HIDDEN } from './dock-strip';
 import { clearResume, readResume } from './player-resume';
-import { FadeImage } from '../fade-image';
-import { Icon } from '../icon';
-import { COVER_PLAY } from '../button-styles';
+import { CoverPlayButton, RESUME_TEXT } from '../cover-play-button';
 import {
   appendItems,
   type Cursor,
@@ -62,11 +60,9 @@ import { useText } from '@/i18n/navigation';
 const TEXT = defineText({
   ja: {
     skipped: (title: string) => `${title}をスキップしました`,
-    resume: (title: string) => `「${title}」の続きを再生`,
   },
   en: {
     skipped: (title: string) => `Skipped ${title}`,
-    resume: (title: string) => `Resume “${title}”`,
   },
 });
 
@@ -119,6 +115,7 @@ function mockNiconicoBlocked(): boolean {
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const t = useText(TEXT);
+  const resumeText = useText(RESUME_TEXT);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -145,6 +142,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 置き場所を待つのは、右下の窓がまだ出ていないときだけ。出ているのに待つと、窓が下へずれて消えてから
   // 大きな置き場所にふわっと出た。出たまま待てば、置き場所ができたときに右下から大きく移る（use-frame-layout.ts）
   const waits = useCallback(() => modeRef.current !== 'dock', []);
+  /** 移る先の画面の置き場所ができるまで、右下の窓を出さずに待つ（右下の窓がもう出ているなら待たない） */
+  const awaitSlot = useCallback(() => waitForSlot(waits()), [waitForSlot, waits]);
   // プレイヤーの枠。置き場所か右下の窓に合わせ続ける（use-frame-layout.ts）
   const frame = useFrameLayout(mode, slot);
   // 残しておいた音量は、最初に曲を流したときに読む（サーバーでは localStorage を読めず、帯も曲を流すまで出ない）
@@ -156,6 +155,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     shuffle: false,
   });
   const playbackRef = useRef<{ repeat: Repeat; shuffle: boolean } | null>(null);
+  /** 残しておいた音量・ループ・ランダムを読む。最初に曲を流すときに1回だけ（前の曲を戻すときは、開いたときの effect で読む） */
+  const loadSettings = useCallback(() => {
+    if (!soundRef.current) {
+      soundRef.current = savedVolume();
+      setSound(soundRef.current);
+    }
+    if (!playbackRef.current) {
+      playbackRef.current = savedPlayback();
+      setPlayback(playbackRef.current);
+    }
+  }, []);
   const [position, setPosition] = useState(0);
   // 並びと流す順（queue-state.ts）。プレイヤーの知らせは作ったときの関数を持ち続けるので、state と別に ref にも持つ
   const cursor = useRef<Cursor>(EMPTY_CURSOR);
@@ -214,6 +224,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toast(t.skipped(item.title));
     },
     [t],
+  );
+
+  /** 自動で進んだ先のニコニコの曲を飛ばして、次の曲へ自動で進む */
+  const skipAhead = useCallback(
+    (item: QueueItem | undefined) => {
+      noteSkip(item);
+      skipped.current += 1;
+      autoNext.current = true;
+      nextRef.current(1);
+    },
+    [noteSkip],
   );
 
   // 一時停止の前に音量を絞っている途中なら、その時計
@@ -290,10 +311,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             length: q.length,
           });
           if (skip) {
-            noteSkip(q[i]);
-            skipped.current += 1;
-            autoNext.current = true;
-            nextRef.current(1);
+            skipAhead(q[i]);
             return;
           }
           setPlaying(false);
@@ -332,7 +350,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       boxes.current.set(engine, box);
       return engine;
     },
-    [frame, noteSkip, rise],
+    [frame, skipAhead, rise],
   );
 
   // iPad・iPhone で、見えているニコニコの曲の埋め込みを先に読み込んでおく（niconico-pool.ts）。ほかの端末では作らない
@@ -389,16 +407,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       autoNext.current = false;
       setOwner(nextOwner);
       waitForSlot(nextOwner.kind === 'pending' && waits());
-      if (!soundRef.current) {
-        soundRef.current = savedVolume();
-        setSound(soundRef.current);
-      }
-      if (!playbackRef.current) {
-        playbackRef.current = savedPlayback();
-        setPlayback(playbackRef.current);
-      }
+      loadSettings();
       // 新しい並びなら流す順を作り直す。同じ並びの中で曲を移るだけなら、流す順はそのまま
-      commit(moveTo(cursor.current, items, at, playbackRef.current.shuffle));
+      commit(moveTo(cursor.current, items, at, playbackRef.current?.shuffle ?? false));
       setLoading(true);
       setTime({ current: 0, duration: 0, at: performance.now() });
       const { service, videoId } = items[at];
@@ -412,10 +423,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       });
       if (!auto.current || service !== 'niconico') skipped.current = 0;
       else if (skip) {
-        noteSkip(items[at]);
-        skipped.current += 1;
-        autoNext.current = true;
-        nextRef.current(1);
+        skipAhead(items[at]);
         return;
       }
       const sound = soundRef.current ?? { volume: 100, muted: false };
@@ -492,7 +500,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         },
       });
     },
-    [waitForSlot, waits, drop, spawn, primeParked, noteSkip, commit, setOwner],
+    [waitForSlot, waits, drop, spawn, primeParked, skipAhead, commit, setOwner, loadSettings],
   );
 
   /** 一覧の続きのページやラジオの関連曲を後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける */
@@ -580,10 +588,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       load(items, at, { kind: 'list', source });
       if (moving) {
         // 一覧の再生用の画面へ移る途中。曲の一覧から押してボカロPの画面へ移るとき（pending）と同じく、置き場所を待つ
-        waitForSlot(waits());
+        awaitSlot();
       }
     },
-    [load, waitForSlot, waits],
+    [load, awaitSlot],
   );
 
   // ラジオを始める前に流していた並び。ラジオをやめたら、ここへ戻す
@@ -606,14 +614,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // ラジオの画面へ移る途中。一覧の再生用の画面へ移るとき（playAll の moving）と同じく、置き場所を待つ（waitForSlot）
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, radio);
-        waitForSlot(waits());
+        awaitSlot();
         return;
       }
       commit(restart([seed], 0, false));
       setOwner(radio);
-      waitForSlot(waits());
+      awaitSlot();
     },
-    [load, rememberBeforeRadio, commit, setOwner, waitForSlot, waits],
+    [load, rememberBeforeRadio, commit, setOwner, awaitSlot],
   );
 
   const playRadio = useCallback(
@@ -805,7 +813,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         load(items, start, nextOwner);
         // 移る先の画面の置き場所ができるまで待つ（playAll の moving と同じ）。待たないと、移るまでの一瞬だけ右下の窓に出て、
         // 着いてから大きな置き場所へ移る動きが見えた
-        if (moving) waitForSlot(waits());
+        if (moving) awaitSlot();
       },
       takeOver,
       playAll,
@@ -912,8 +920,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       rise,
       resumable,
       resume,
-      waitForSlot,
-      waits,
+      awaitSlot,
       queue,
       index,
       current,
@@ -965,23 +972,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         {/* 戻した前の曲をまだ流していないあいだ、右下の窓の場所に、その曲の表紙と再生ボタンを出す（動画の枠は隠している）。
           持ち主の画面では、その画面の大きな動画の場所に出す（player-stage.tsx） */}
         {resumable && mode === 'dock' && current && (
-          <button
-            type="button"
+          <CoverPlayButton
+            cover={current.thumb}
+            label={resumeText.resume(current.title)}
             onClick={resume}
-            aria-label={t.resume(current.title)}
-            className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
-          >
-            <FadeImage
-              src={current.thumb}
-              alt=""
-              fill
-              sizes={`${IMAGE_SIZES.dockWide}px`}
-              className="object-cover"
-            />
-            <span className={`absolute top-1/2 left-1/2 size-14 -translate-1/2 ${COVER_PLAY}`}>
-              <Icon name="play" className="size-8" />
-            </span>
-          </button>
+            sizes={`${IMAGE_SIZES.dockWide}px`}
+            small
+            className={`chrome-bottom ${DOCK} z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
+          />
         )}
         {/* 置き場所を待つあいだもプレイヤーの帯は出す（流し始めたことが分かるように） */}
         <PlayerBar item={shown} open={queue.length > 0} />
