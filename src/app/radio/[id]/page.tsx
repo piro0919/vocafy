@@ -28,7 +28,7 @@ export default async function RadioPage({ params }: PageProps<'/radio/[id]'>) {
   const [seed] = await songsByIds([id]);
   if (!seed) notFound();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <RadioPlayer seed={seed} eyebrow="Radio" title={`${seed.title}のラジオ`} />
     </div>
   );

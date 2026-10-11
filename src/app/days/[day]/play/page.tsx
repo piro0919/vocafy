@@ -25,7 +25,7 @@ export default async function DayPlayPage({ params }: PageProps<'/days/[day]/pla
   const playlist = await playlistOfDay(day);
   if (playlist.songs.length === 0) notFound();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <ListPlayer
         source={`days/${day}`}
         songs={playlist.songs}

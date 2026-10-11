@@ -22,7 +22,7 @@ export default async function MixPlayPage({ params }: PageProps<'/mix/[date]/pla
   const songs = await dailyMix(date, MIX_SIZE);
   if (songs.length === 0) notFound();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <ListPlayer source={`mix/${date}`} songs={songs} eyebrow="Daily Mix" title="きょうの出会い" />
     </div>
   );

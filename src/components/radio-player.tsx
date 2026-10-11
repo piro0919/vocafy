@@ -107,9 +107,9 @@ export function RadioPlayer({
 export function RadioLoading() {
   const { current, owner } = usePlayer();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
-        <div className="contents lg:sticky lg:top-(--content-top) lg:block">
+        <div className="contents lg:sticky lg:top-(--stage-top) lg:block">
           <PlayerStage
             active={current !== null && owner.kind === 'radio'}
             cover={current?.thumb ?? null}

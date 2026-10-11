@@ -32,7 +32,7 @@ export default async function VoiceYearPlayPage({ params }: PageProps<'/voices/[
   const playlist = await playlistOfVoiceYear(voice.id, Number(year));
   if (playlist.songs.length === 0) notFound();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <ListPlayer
         source={`voices/${voice.id}/${year}`}
         songs={playlist.songs}

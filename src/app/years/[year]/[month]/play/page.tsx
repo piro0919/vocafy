@@ -26,7 +26,7 @@ export default async function MonthPlayPage({ params }: PageProps<'/years/[year]
   const playlist = await playlistOfMonth(Number(year), month);
   if (playlist.songs.length === 0) notFound();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <ListPlayer
         source={`years/${year}/${month}`}
         songs={playlist.songs}

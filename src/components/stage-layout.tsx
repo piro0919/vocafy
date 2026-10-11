@@ -44,7 +44,7 @@ export function StageLayout({
   const notes = useStageNotes(song);
   return (
     <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
-      <div className="contents lg:sticky lg:top-(--content-top) lg:block">
+      <div className="contents lg:sticky lg:top-(--stage-top) lg:block">
         <PlayerStage active={song !== null} cover={cover} label={label} onPlay={onPlay} />
         <SwipeToLeave className="lg:mt-4">{heading}</SwipeToLeave>
         {/* 名前とボタンは一続きのものなので、ほかの部品のあいだ（24px）より詰める */}

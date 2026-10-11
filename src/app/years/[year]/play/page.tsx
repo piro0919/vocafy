@@ -23,7 +23,7 @@ export default async function YearPlayPage({ params }: PageProps<'/years/[year]/
   const { songs } = await picksOfYear(Number(year));
   if (songs.length === 0) notFound();
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <ListPlayer
         source={`years/${year}`}
         songs={songs}

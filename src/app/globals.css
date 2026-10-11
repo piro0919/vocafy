@@ -815,12 +815,14 @@ html[data-player='dock'] {
   );
 }
 /*
- * 画面の上からの位置。パソコンの上の段の下（gutter・段・gutter）と、本文の始まり。
+ * 画面の上からの位置。パソコンの上の段の下（gutter・段・gutter）と、動画を大きく出す画面の左の列。
  * スマホの詳細画面では動画を画面の幅で上に固定する（高さは幅の 9/16）ので、その下に操作の帯（player-stage.tsx）、さらにその下に年の札（producer-player.tsx）を貼る
  */
 :root {
   --below-header: calc(var(--spacing-gutter) * 2 + var(--spacing-header));
-  --content-top: calc(var(--below-header) + var(--spacing-content-top));
+  /* 動画を大きく出す画面の左の列の、スクロールする前の位置。上の段（gutter・段）、本文の上の余白（main）、その画面の上の余白（pt-content-top）。
+     列はここに貼り付ける。ずれていると、スクロールの最初の分だけ動いてから止まる */
+  --stage-top: calc(var(--spacing-gutter) + var(--spacing-header) + var(--spacing-content-top) * 2);
   --video-full: calc(100vw * 9 / 16);
   --stage-controls-top: calc(var(--video-full) + var(--spacing-gutter));
   --below-stage-controls: calc(

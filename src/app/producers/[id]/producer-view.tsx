@@ -36,7 +36,7 @@ export function ProducerView({
   };
 
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <JsonLd data={jsonLd} />
       <AmbientSource image={cover} />
       <ProducerPlayer

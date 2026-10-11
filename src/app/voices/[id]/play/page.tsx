@@ -26,7 +26,7 @@ export default async function VoicePlayPage({ params }: PageProps<'/voices/[id]/
   if (!found || found.songs.length === 0) notFound();
   const { voice, songs } = found;
   return (
-    <div className="pt-4">
+    <div className="pt-content-top">
       <ListPlayer
         source={`voices/${voice.id}`}
         songs={songs}
