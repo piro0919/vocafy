@@ -220,6 +220,10 @@
   --spacing-stage-controls: 2.5rem;
   /* 横に送る棚の、続きがある側の端のぼかしの幅。送ったときに止まる位置も、ぼかしにかからないようこの内側にする */
   --spacing-fade: 24px;
+  /* パソコンの上の段の検索欄の幅（header-search.tsx） */
+  --spacing-search: 20rem;
+  /* パソコンの広い幅では、詳細画面の動画の列（grid-cols-stage の 3fr、列の間は gap-6）と同じ幅にして、右端をそろえる */
+  --spacing-search-stage: calc((100% - var(--spacing) * 6) * 3 / 5);
   /* 一覧の小さな表紙の幅 */
   --spacing-thumb: 85px;
   /* 本文の最後の下の余白 */
@@ -319,6 +323,13 @@
 }
 @utility page-x {
   padding-inline: var(--page-x);
+}
+/*
+ * パソコンの上の段の板の中の左右の余白。板の外の gutter と合わせて page-x になるようにし、検索欄の左端とログインの右端を
+ * 本文の左右の端にそろえる
+ */
+@utility header-x {
+  padding-inline: calc(var(--page-x) - var(--spacing-gutter));
 }
 @utility bleed-x {
   margin-inline: calc(var(--page-x) * -1);
