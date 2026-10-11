@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { today } from '@/lib/iso-date';
+import { hourInJapan, today } from '@/lib/iso-date';
 
 /**
- * トップ（`/`）に来た人に、日本のきょうの日付のページ（`app/home/[date]`）を返す。住所は `/` のまま。
- * 中身が日付だけで決まるので、日付ごとのページを作り置き、0時を過ぎたら次の日のページへ切り替える。
+ * トップ（`/`）に来た人に、日本のいまの日付と時のページ（`app/home/[date]/[hour]`）を返す。住所は `/` のまま。
+ * 中身は日付と時（大きな1曲だけが時で替わる）で決まるので、そのページを作り置き、時が進んだら次のページへ切り替える。
  * `/home/日付` を直に開かれたら `/` へ送る。昔の日付のページを外から作らせないため
  */
 export function proxy(request: NextRequest) {
@@ -12,7 +12,7 @@ export function proxy(request: NextRequest) {
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
-  url.pathname = `/home/${today()}`;
+  url.pathname = `/home/${today()}/${hourInJapan()}`;
   return NextResponse.rewrite(url);
 }
 

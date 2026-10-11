@@ -256,18 +256,23 @@ function hash(text: string): number {
 
 /** きょうの日付の曲が少ない日に、前後に広げる日数の上限 */
 const DAY_REACH = 3;
-/** きょうの日付の大きな1曲を選ぶ、その日の評価点の上位の曲数 */
-const HERO_POOL = 3;
+/** きょうの日付の大きな1曲の枠の数。1時間に1枠で、1日で一周する */
+const HERO_SLOTS = 24;
+/** 大きな1曲の枠のうち、その日の評価点の上位 HERO_POPULAR_POOL 曲から選ぶ枠の数（残りはその日の全曲から） */
+const HERO_POPULAR = 8;
+const HERO_POPULAR_POOL = 24;
 
 /**
  * きょうと同じ月日に投稿された曲。曲の少ない日は、前後の日へ1日ずつ広げて min 曲に届くまで補う（3日まで）。
  * 月日の近さは、うるう年の 2000 年に置いて測る（2月29日の曲も拾える）。並びは近い日から、同じ日の中は新しい年から。
  *
- * 大きく見せる1曲（hero）は、きょうと同じ月日の曲のうち評価点の上位3曲から、日ごとに決まった1曲を選ぶ。
- * 順位は画面に出さないが、初めて来た人が知っている曲に出会いやすいよう、選び方にだけ人気を混ぜる（2026-10-09 に決めた）
+ * 大きく見せる1曲（hero）は1時間ごとに替える（2026-10-11 に本人と決めた）。heroes はその日の24枠の並びで、
+ * 何時にどれを出すかはトップが決める。24枠のうち8枠はその日の評価点の上位24曲から、残りの16枠はその日の全曲から選び、
+ * 日付で決まる順に混ぜる。知られていない曲も出しつつ、知っている曲にも出会えるようにする（きょうの出会いの MIX_POPULAR と同じ考え）。
+ * 曲が24曲に満たない日（2月29日の18曲だけ）は、全曲を並べて一周したら頭に戻る
  */
 export const onThisDay = cache(
-  async (date: string, min: number): Promise<{ hero?: DatedItem; rest: DatedItem[] }> => {
+  async (date: string, min: number): Promise<{ heroes: DatedItem[]; songs: DatedItem[] }> => {
     const { rows } = await db().query<QueueRow & { distance: number }>(
       `select * from (
        select q.*, least(abs(d.doy - t.doy), 366 - abs(d.doy - t.doy)) as distance
@@ -289,14 +294,17 @@ export const onThisDay = cache(
       ) ?? DAY_REACH;
     const within = rows.filter((r) => r.distance <= reach);
     const exact = within.filter((r) => r.distance === 0);
-    const candidates = (exact.length > 0 ? exact : within)
-      .toSorted((a, b) => b.rating_score - a.rating_score || a.id - b.id)
-      .slice(0, HERO_POOL);
-    const hero = candidates[hash(date) % Math.max(1, candidates.length)];
-    return {
-      hero: hero && toItem(hero),
-      rest: within.filter((r) => r !== hero).map(toItem),
-    };
+    const shuffle = <T extends { id: number }>(list: T[]) =>
+      list.toSorted((a, b) => hash(`${date}${a.id}`) - hash(`${date}${b.id}`));
+    const pool = (exact.length > 0 ? exact : within).toSorted(
+      (a, b) => b.rating_score - a.rating_score || a.id - b.id,
+    );
+    const popular = shuffle(pool.slice(0, HERO_POPULAR_POOL)).slice(0, HERO_POPULAR);
+    const others = shuffle(pool.filter((r) => !popular.includes(r))).slice(
+      0,
+      HERO_SLOTS - popular.length,
+    );
+    return { heroes: shuffle([...popular, ...others]).map(toItem), songs: within.map(toItem) };
   },
 );
 

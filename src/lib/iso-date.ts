@@ -19,3 +19,14 @@ export const dateOf = (iso: string) => iso.slice(DATE.start, DATE.end);
 export function today(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
 }
+
+/** 日本の時刻のいまの時（0〜23）。トップの大きな1曲を1時間ごとに替えるのに proxy.ts が使う */
+export function hourInJapan(): number {
+  return Number(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Tokyo',
+      hour: 'numeric',
+      hourCycle: 'h23',
+    }).format(new Date()),
+  );
+}
