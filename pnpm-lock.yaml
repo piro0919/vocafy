@@ -76,8 +76,8 @@ importers:
         specifier: ^0.15.1
         version: 0.15.1
       '@piro0919/eslint-config':
-        specifier: github:piro0919/eslint-config#v1.0.0
-        version: https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)
+        specifier: github:piro0919/eslint-config#v1.1.0
+        version: https://codeload.github.com/piro0919/eslint-config/tar.gz/d2927b7c3cd5a7a1eaa23dd5611ef7e1fe0a7be4(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
@@ -1207,9 +1207,9 @@ packages:
   '@paulirish/trace_engine@0.0.53':
     resolution: {integrity: sha512-PUl/vlfo08Oj804VI5nDPeSk9vyslnBlVzDDwFt8SUVxY8+KdGMkra/vrXjEEHe8gb7+RqVTfOIlGw0nyrEelA==}
 
-  '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543':
-    resolution: {gitHosted: true, integrity: sha512-Jy9gxrIkBtJF8ZL/L5L0grG6Ht+1oNM8HCPvyUwR8TMJlcnZW90+1GVdIglAY/v+PW7tZJh8TwhinIFVY0Hz2g==, tarball: https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543}
-    version: 1.0.0
+  '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/d2927b7c3cd5a7a1eaa23dd5611ef7e1fe0a7be4':
+    resolution: {gitHosted: true, integrity: sha512-TgB6I0MWj6pjyKWEMupks28j3dg6bsaMY03da/hUClPJQeitoUIC1IbPsNh6dwQNA2/vmKFuB3GJddMFRNn/ew==, tarball: https://codeload.github.com/piro0919/eslint-config/tar.gz/d2927b7c3cd5a7a1eaa23dd5611ef7e1fe0a7be4}
+    version: 1.1.0
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
       tailwindcss: ^4.0.0
@@ -5862,7 +5862,7 @@ snapshots:
       legacy-javascript: 0.0.3
       third-party-web: 0.30.0
 
-  '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/6f2b5e61367daa759c9035d8ea59a7c014abc543(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)':
+  '@piro0919/eslint-config@https://codeload.github.com/piro0919/eslint-config/tar.gz/d2927b7c3cd5a7a1eaa23dd5611ef7e1fe0a7be4(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)':
     dependencies:
       eslint: 9.39.5(jiti@2.7.0)
       eslint-plugin-tailwindcss: 4.4.0(eslint@9.39.5(jiti@2.7.0))(tailwindcss@4.3.3)(typescript@5.9.3)
