@@ -37,7 +37,12 @@ export function PlayerKeys() {
 
       if (e.key === '?') {
         e.preventDefault();
-        if (!helpOpen) opener.current = document.activeElement as HTMLElement | null;
+        // フォーカスがどこにも無い（body）ときは持たない。body を開いたボタンとして渡すと、どこを押しても板の外と見なされず閉じない
+        if (!helpOpen) {
+          const active = document.activeElement;
+          opener.current =
+            active instanceof HTMLElement && active !== document.body ? active : null;
+        }
         setHelpMounted(true);
         setHelpOpen((open) => !open);
         return;
