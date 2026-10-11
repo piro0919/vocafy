@@ -22,8 +22,8 @@ export function FloatingPanel({
 }: {
   open: boolean;
   onClose: () => void;
-  /** 開いたボタン。閉じたらここにフォーカスを戻す */
-  trigger: RefObject<HTMLButtonElement | null>;
+  /** 開いたボタン。閉じたらここにフォーカスを戻す（キーで開いたときは、開く前にフォーカスのあった所） */
+  trigger: RefObject<HTMLElement | null>;
   /** 板の見出し。読み上げの名前と、閉じるボタンの名前（「◯◯を閉じる」）にも使う */
   title: string;
   /** 開いたときに中身を整える（次に流れる曲は、並びの先頭までスクロールを戻す） */

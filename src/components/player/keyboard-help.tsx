@@ -1,6 +1,6 @@
 import { Heading, SECTION } from '../heading';
 
-/** 設定の画面に載せる、プレイヤーのキー操作の一覧（player-keys.tsx と同じ割り当て）。キーボードのないスマホでは出さない */
+/** キー操作の一覧（player-keys.tsx と同じ割り当て）。設定の画面と、? で開く板の両方に出す */
 const KEYS: [string, string][] = [
   ['Space', '再生・一時停止'],
   ['← / →', '5秒戻る・進む'],
@@ -9,26 +9,35 @@ const KEYS: [string, string][] = [
   ['M', '消音'],
   ['S', 'ランダム再生'],
   ['R', 'ループ'],
+  ['/', '検索'],
+  ['?', 'キーボード操作の一覧'],
 ];
 
+export function KeyList() {
+  return (
+    <dl className="grid grid-cols-keys gap-x-6 gap-y-2 px-3 text-sm">
+      {KEYS.map(([key, label]) => (
+        <div key={key} className="contents">
+          <dt>
+            <kbd className="rounded border border-line/60 bg-surface px-1.5 py-0.5 font-sans text-xs">
+              {key}
+            </kbd>
+          </dt>
+          <dd className="text-muted">{label}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** 設定の画面に載せる一覧。キーボードのないスマホでは出さない */
 export function KeyboardHelp() {
   return (
     <section className={`hidden md:block ${SECTION}`}>
       <div className="mb-3">
         <Heading eyebrow="Keyboard">キーボード操作</Heading>
       </div>
-      <dl className="grid grid-cols-keys gap-x-6 gap-y-2 px-3 text-sm">
-        {KEYS.map(([key, label]) => (
-          <div key={key} className="contents">
-            <dt>
-              <kbd className="rounded border border-line/60 bg-surface px-1.5 py-0.5 font-sans text-xs">
-                {key}
-              </kbd>
-            </dt>
-            <dd className="text-muted">{label}</dd>
-          </div>
-        ))}
-      </dl>
+      <KeyList />
     </section>
   );
 }
