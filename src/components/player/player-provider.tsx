@@ -27,7 +27,21 @@ import { clearResume, readResume, saveResume } from './player-resume';
 import { FadeImage } from '../fade-image';
 import { Icon } from '../icon';
 import { COVER_PLAY } from '../button-styles';
-import { buildOrder } from './play-order';
+import {
+  appendItems,
+  type Cursor,
+  EMPTY_CURSOR,
+  firstMore,
+  followingPage,
+  freshItems,
+  isNearEnd,
+  moveTo,
+  radioSeeds,
+  restart,
+  stepFrom,
+  upcomingOf,
+  withOrder,
+} from './queue-state';
 import { savedPlayback, savedVolume, savePlayback, saveVolume } from './player-storage';
 import type {
   ListSource,
@@ -141,8 +155,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     shuffle: false,
   });
   const playbackRef = useRef<{ repeat: Repeat; shuffle: boolean } | null>(null);
-  // 流す順（順番待ちの何番目を、どの順で流すか）と、いまその何番目にいるか
-  const order = useRef<number[]>([]);
   // 「すべて再生」で流している一覧の続き。ほかの並びに替えたら消す
   const more = useRef<ListSource | null>(null);
   const [listSource, setListSource] = useState<string | null>(null);
@@ -157,7 +169,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setListSource(null);
   }, []);
   const [position, setPosition] = useState(0);
-  const positionRef = useRef(0);
+  // 並びと流す順（queue-state.ts）。プレイヤーの知らせは作ったときの関数を持ち続けるので、state と別に ref にも持つ
+  const cursor = useRef<Cursor>(EMPTY_CURSOR);
+  const commit = useCallback((next: Cursor) => {
+    cursor.current = next;
+    setQueue(next.queue);
+    setIndex(next.index);
+    setPosition(next.position);
+  }, []);
 
   const player = useRef<Engine | null>(null);
   // ニコニコの曲を流すあいだ、止めて隠しておく YouTube のプレイヤー。プレイヤーごとの入れ物（枠の中の div）
@@ -169,8 +188,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     engine.destroy();
     boxes.current.get(engine)?.remove();
   }, []);
-  // プレイヤーの知らせは作ったときの関数を持ち続けるので、今の順番待ちは ref にも持つ
-  const state = useRef({ queue, index });
   // 曲が終わったときの処理。load から自分自身を呼ぶことになるので、ref を通して呼ぶ
   const onEnded = useRef(() => {});
   // いま音が出ているか。曲を替えるときに、絞ってから切るかを決める
@@ -274,7 +291,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         onBlocked: () => {
           sounding.current = false;
           setLoading(false);
-          const { queue: q, index: i } = state.current;
+          const { queue: q, index: i } = cursor.current;
           if (auto.current && q[i]?.service === 'niconico' && skipped.current < q.length) {
             noteSkip(q[i]);
             skipped.current += 1;
@@ -337,7 +354,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (!pool.current && isAppleDevice())
         pool.current = createNiconicoPool(
           () => frame.current,
-          () => state.current.queue[state.current.index]?.videoId,
+          () => cursor.current.queue[cursor.current.index]?.videoId,
         );
       return pool.current?.want(videoId) ?? (() => {});
     },
@@ -384,14 +401,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPlayback(playbackRef.current);
       }
       // 新しい並びなら流す順を作り直す。同じ並びの中で曲を移るだけなら、流す順はそのまま
-      if (items !== state.current.queue) {
-        order.current = buildOrder(items.length, at, playbackRef.current.shuffle);
-      }
-      positionRef.current = Math.max(0, order.current.indexOf(at));
-      setPosition(positionRef.current);
-      state.current = { queue: items, index: at };
-      setQueue(items);
-      setIndex(at);
+      commit(moveTo(cursor.current, items, at, playbackRef.current.shuffle));
       setLoading(true);
       setTime({ current: 0, duration: 0, at: performance.now() });
       const { service, videoId } = items[at];
@@ -485,18 +495,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       };
       tick();
     },
-    [waitForSlot, waits, drop, spawn, primeParked, noteSkip],
+    [waitForSlot, waits, drop, spawn, primeParked, noteSkip, commit],
   );
 
-  /** 一覧の続きのページを後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける（ランダムなら混ぜて） */
-  const append = useCallback((items: QueueItem[]) => {
-    const { queue: q, index: at } = state.current;
-    const added = buildOrder(items.length, 0, playbackRef.current?.shuffle ?? false);
-    order.current = [...order.current, ...added.map((i) => q.length + i)];
-    const next = [...q, ...items];
-    state.current = { queue: next, index: at };
-    setQueue(next);
-  }, []);
+  /** 一覧の続きのページやラジオの関連曲を後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける */
+  const append = useCallback(
+    (items: QueueItem[]) =>
+      commit(appendItems(cursor.current, items, playbackRef.current?.shuffle ?? false)),
+    [commit],
+  );
 
   const fetchingMore = useRef(false);
   /** 一覧の次のページを取りに行って後ろに足す。取りに行っている途中なら何もしない */
@@ -504,7 +511,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const m = more.current;
     if (!m || fetchingMore.current) return;
     fetchingMore.current = true;
-    const q = state.current.queue;
+    const q = cursor.current.queue;
     fetch(`/api/list/${m.source}/${m.next}`)
       .then((res) =>
         res.ok
@@ -513,11 +520,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       )
       .then((items) => {
         // 待っているあいだに別の並びに替わっていたら、足さない
-        if (more.current !== m || state.current.queue !== q) return;
-        const next = (m.next % m.last) + 1;
-        more.current = next === m.start ? null : { ...m, next };
-        const have = new Set(q.map((s) => s.songId));
-        const fresh = items.filter((s) => !have.has(s.songId));
+        if (more.current !== m || cursor.current.queue !== q) return;
+        more.current = followingPage(m);
+        const fresh = freshItems(q, items);
         if (fresh.length > 0) append(fresh);
       })
       .catch(() => {
@@ -541,28 +546,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
    */
   const next = useCallback(
     (dir: 1 | -1) => {
-      const { queue: q } = state.current;
-      if (q.length === 0) return;
-      let pos = positionRef.current + dir;
-      if (pos < 0) return;
-      if (pos >= order.current.length) {
-        // 「すべて再生」の一覧にまだ続きのページがあれば、届くのを待ってから進む
-        if (more.current) {
-          advanceAfterMore.current = true;
-          advanceAuto.current = autoNext.current;
-          autoNext.current = false;
-          fetchMore();
-          return;
-        }
-        const shuffle = playbackRef.current?.shuffle ?? false;
-        order.current = buildOrder(
-          q.length,
-          shuffle ? Math.floor(Math.random() * q.length) : 0,
-          shuffle,
-        );
-        pos = 0;
+      const step = stepFrom(cursor.current, dir, {
+        hasMore: more.current !== null,
+        shuffle: playbackRef.current?.shuffle ?? false,
+      });
+      if (step.kind === 'stay') return;
+      // 「すべて再生」の一覧にまだ続きのページがあれば、届くのを待ってから進む
+      if (step.kind === 'more') {
+        advanceAfterMore.current = true;
+        advanceAuto.current = autoNext.current;
+        autoNext.current = false;
+        fetchMore();
+        return;
       }
-      load(q, order.current[pos], contextRef.current);
+      // 流す順を作り直したとき（最後の曲の次）は、それを入れてから流す。load は同じ並びなら流す順をそのまま使う
+      cursor.current = { ...cursor.current, order: step.order };
+      load(cursor.current.queue, step.index, contextRef.current);
     },
     [load, fetchMore],
   );
@@ -574,7 +573,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 「すべて再生」で流す順の終わりが近づいたら（残り1曲まで）、一覧の次のページを取りに行って後ろに足す
   useEffect(() => {
     if (more.current?.source !== listSource || queue.length === 0) return;
-    if (position >= order.current.length - 2) fetchMore();
+    if (isNearEnd(position, cursor.current.order)) fetchMore();
   }, [listSource, queue, position, fetchMore]);
 
   // スリープタイマー。onEnded（作ったときの関数を持ち続ける）から読むので、ref にも持つ
@@ -665,11 +664,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setPlayback(value);
     savePlayback(value);
     // いまの曲を起点に、流す順を作り直す
-    const { queue: q, index: i } = state.current;
-    order.current = buildOrder(q.length, i, value.shuffle);
-    positionRef.current = Math.max(0, order.current.indexOf(i));
-    setPosition(positionRef.current);
-  }, []);
+    commit(restart(cursor.current.queue, cursor.current.index, value.shuffle));
+  }, [commit]);
 
   const toggleRepeat = useCallback(() => {
     const now = playbackRef.current ?? savedPlayback();
@@ -679,28 +675,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     savePlayback(value);
   }, []);
 
-  const adopt = useCallback((items: QueueItem[], at: number) => {
-    order.current = buildOrder(items.length, at, playbackRef.current?.shuffle ?? false);
-    positionRef.current = Math.max(0, order.current.indexOf(at));
-    setPosition(positionRef.current);
-    state.current = { queue: items, index: at };
-    setContext('list');
-    setRadioHome(null);
-    setQueue(items);
-    setIndex(at);
-  }, []);
-
-  /**
-   * ラジオの並びを後ろに伸ばす。items はいまの並びに曲を足したもの。いまの曲と流してきた順はそのままで、
-   * 足した曲を流す順の後ろに付ける（ランダムなら混ぜて。append と同じ）
-   */
-  const extend = useCallback((items: QueueItem[]) => {
-    const { queue: q, index: at } = state.current;
-    const added = buildOrder(items.length - q.length, 0, playbackRef.current?.shuffle ?? false);
-    order.current = [...order.current, ...added.map((i) => q.length + i)];
-    state.current = { queue: items, index: at };
-    setQueue(items);
-  }, []);
+  const adopt = useCallback(
+    (items: QueueItem[], at: number) => {
+      commit(restart(items, at, playbackRef.current?.shuffle ?? false));
+      setContext('list');
+      setRadioHome(null);
+    },
+    [commit],
+  );
 
   const playAll = useCallback(
     (
@@ -713,8 +695,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         // 一覧の再生用の画面へ移る途中。曲の一覧から押してボカロPの画面へ移るとき（pending）と同じく、置き場所を待つ
         waitForSlot(waits());
       }
-      const next = (source.start % source.last) + 1;
-      more.current = next === source.start ? null : { ...source, next };
+      more.current = firstMore(source);
       setListSource(source.source);
     },
     [load, waitForSlot, waits],
@@ -728,21 +709,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     listSource: string | null;
     more: ListSource | null;
   } | null>(null);
+  // ラジオの中で押し直したとき（いまの曲から始め直す）は、ラジオの前の並びを上書きしない
+  const rememberBeforeRadio = useCallback(() => {
+    if (contextRef.current === 'radio') return;
+    beforeRadio.current = {
+      queue: cursor.current.queue,
+      index: cursor.current.index,
+      context: contextRef.current,
+      listSource,
+      more: more.current,
+    };
+  }, [listSource]);
 
   const startRadio = useCallback(
     (seed: QueueItem) => {
-      // ラジオの中で押し直したとき（いまの曲から始め直す）は、ラジオの前の並びを上書きしない
-      if (contextRef.current !== 'radio') {
-        beforeRadio.current = {
-          ...state.current,
-          context: contextRef.current,
-          listSource,
-          more: more.current,
-        };
-      }
+      rememberBeforeRadio();
       clearMore();
       const home = `/radio/${seed.songId}`;
-      const { queue: q, index: i } = state.current;
+      const { queue: q, index: i } = cursor.current;
       // ラジオの画面へ移る途中。一覧の再生用の画面へ移るとき（playAll の moving）と同じく、置き場所を待つ（waitForSlot）
       if (q[i]?.songId !== seed.songId) {
         load([seed], 0, 'radio');
@@ -750,53 +734,39 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         waitForSlot(waits());
         return;
       }
-      // 関連曲を足すときに、待っているあいだに並びが替わっていないかを同じ配列かどうかで見るので、1つの配列を使い回す
-      const items = [seed];
-      order.current = [0];
-      positionRef.current = 0;
-      setPosition(0);
-      state.current = { queue: items, index: 0 };
-      setQueue(items);
-      setIndex(0);
+      commit(restart([seed], 0, false));
       setContext('radio');
       setRadioHome(home);
       waitForSlot(waits());
     },
-    [load, clearMore, listSource, waitForSlot, waits],
+    [load, clearMore, rememberBeforeRadio, commit, waitForSlot, waits],
   );
 
   const playRadio = useCallback(
     (items: QueueItem[], at: number) => {
       if (items.length === 0) return;
-      if (contextRef.current !== 'radio') {
-        beforeRadio.current = {
-          ...state.current,
-          context: contextRef.current,
-          listSource,
-          more: more.current,
-        };
-      }
+      rememberBeforeRadio();
       clearMore();
       load(items, at, 'radio');
       setRadioHome(`/radio/${items[0].songId}`);
     },
-    [load, clearMore, listSource],
+    [load, clearMore, rememberBeforeRadio],
   );
 
   const fillRadio = useCallback(
     (items: QueueItem[]) => {
-      const { queue: q } = state.current;
+      const { queue: q } = cursor.current;
       if (contextRef.current !== 'radio' || q.length !== 1 || items[0]?.songId !== q[0].songId) {
         return;
       }
-      extend([q[0], ...items.slice(1)]);
+      append(items.slice(1));
     },
-    [extend],
+    [append],
   );
 
   const stopRadio = useCallback(
     (moving: boolean) => {
-      const { queue: q, index: i } = state.current;
+      const { queue: q, index: i } = cursor.current;
       const now = q[i];
       const before = beforeRadio.current;
       beforeRadio.current = null;
@@ -832,7 +802,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           .catch(() => [])
           .then((songs) => {
             // 待っているあいだに別の並びに替わっていたら、差し替えない
-            if (state.current.queue !== items) return;
+            if (cursor.current.queue !== items) return;
             const at = songs.findIndex((s) => s.songId === now.songId);
             if (at >= 0) adopt(songs, at);
           });
@@ -849,8 +819,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       adopt(items, at);
       if (owner.kind === 'favorites') setContext('favorites');
       if (owner.kind === 'list') {
-        const next = (owner.source.start % owner.source.last) + 1;
-        more.current = next === owner.source.start ? null : { ...owner.source, next };
+        more.current = firstMore(owner.source);
         setListSource(owner.source.source);
       }
       if (owner.kind === 'radio') {
@@ -862,7 +831,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const followProducer = useCallback(() => {
-    const { queue: q, index: i } = state.current;
+    const { queue: q, index: i } = cursor.current;
     const now = q[i];
     if (!now) return;
     clearMore();
@@ -881,25 +850,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 先頭に戻っていた。関連曲の答えは CDN に置いてあるので、さかのぼっても DB はほぼ起きない
   const extending = useRef(false);
   useEffect(() => {
-    if (context !== 'radio' || queue.length === 0 || position < order.current.length - 2) return;
+    if (context !== 'radio' || queue.length === 0 || !isNearEnd(position, cursor.current.order)) {
+      return;
+    }
     if (extending.current) return;
     extending.current = true;
-    const seeds = [queue[index], ...queue.filter((_, i) => i !== index).toReversed()].slice(
-      0,
-      RADIO_TRIES,
-    );
+    const seeds = radioSeeds(queue, index, RADIO_TRIES);
     void (async () => {
       try {
         for (const seed of seeds) {
           const res = await fetch(`/api/related/${seed.songId}`).catch(() => null);
           const items = res?.ok ? ((await res.json()) as QueueItem[]) : [];
-          const { queue: q } = state.current;
           // 待っているあいだに別の並びに替わっていたら、足さない
-          if (q !== queue) return;
-          const have = new Set(q.map((s) => s.songId));
-          const fresh = items.filter((s) => !have.has(s.songId));
+          if (cursor.current.queue !== queue) return;
+          const fresh = freshItems(queue, items);
           if (fresh.length > 0) {
-            extend([...q, ...fresh]);
+            append(fresh);
             return;
           }
         }
@@ -907,7 +873,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         extending.current = false;
       }
     })();
-  }, [context, index, position, queue, extend]);
+  }, [context, index, position, queue, append]);
 
   const close = useCallback(() => {
     clearResume();
@@ -931,12 +897,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     player.current = null;
     drop(parked.current);
     parked.current = null;
-    state.current = { queue: [], index: 0 };
-    setQueue([]);
-    setIndex(0);
+    commit(EMPTY_CURSOR);
     setPlaying(false);
     setLoading(false);
-  }, [clearMore, drop]);
+  }, [clearMore, drop, commit]);
 
   // 再生中は時刻を拾う。間は帯の側で補ってなめらかに進める
   useEffect(() => {
@@ -956,23 +920,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setSound(soundRef.current);
     playbackRef.current = savedPlayback();
     setPlayback(playbackRef.current);
-    order.current = saved.order;
-    positionRef.current = Math.max(0, saved.order.indexOf(saved.index));
-    setPosition(positionRef.current);
-    state.current = { queue: saved.queue, index: saved.index };
-    setQueue(saved.queue);
-    setIndex(saved.index);
+    commit(withOrder(saved.queue, saved.index, saved.order));
     setContext(saved.context);
     setListSource(saved.listSource);
     setRadioHome(saved.radioHome);
     resumeAt.current = saved.position;
     setTime({ current: saved.position, duration: saved.duration, at: performance.now() });
     setResumable(true);
-  }, []);
+  }, [commit]);
 
   /** 戻した前の曲を、聴いていた位置から流す（再生を押したとき） */
   const resume = useCallback(() => {
-    const { queue: q, index: i } = state.current;
+    const { queue: q, index: i } = cursor.current;
     if (!q[i]) return;
     const at = resumeAt.current;
     load(q, i, contextRef.current === 'pending' ? 'list' : contextRef.current);
@@ -990,13 +949,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [listSource, radioHome]);
   const lastSaved = useRef(0);
   const writeResume = useCallback(() => {
-    const { queue: q, index: i } = state.current;
+    const { queue: q, index: i } = cursor.current;
     if (q.length === 0) return;
     const t = player.current?.time();
     saveResume({
       queue: q,
       index: i,
-      order: order.current,
+      order: cursor.current.order,
       position: t?.current ?? 0,
       duration: t?.duration ?? 0,
       context: contextRef.current === 'pending' ? 'list' : contextRef.current,
@@ -1015,7 +974,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [time, resumable, playing, writeResume]);
   useEffect(() => {
     const onHide = () => {
-      if (!resumable && state.current.queue.length > 0) writeResume();
+      if (!resumable && cursor.current.queue.length > 0) writeResume();
     };
     window.addEventListener('pagehide', onHide);
     return () => window.removeEventListener('pagehide', onHide);
@@ -1060,16 +1019,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       followProducer,
       // ループ（全体）なら、並びの最後のあとは先頭に戻って続くので、先頭からいまの曲の手前までも続けて並べる
       upcoming: () =>
-        [
-          ...order.current.slice(position + 1),
-          ...(playback.repeat === 'all' && context !== 'radio'
-            ? order.current.slice(0, position)
-            : []),
-        ]
-          .slice(0, UPCOMING_LIMIT)
-          .flatMap((i) => (queue[i] ? [{ item: queue[i], index: i }] : [])),
+        upcomingOf(
+          cursor.current,
+          playback.repeat === 'all' && context !== 'radio',
+          UPCOMING_LIMIT,
+        ),
       jumpTo: (i) => {
-        const { queue: q } = state.current;
+        const { queue: q } = cursor.current;
         if (q[i]) load(q, i, contextRef.current);
       },
       resumable,
@@ -1118,7 +1074,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           tick();
           return;
         }
-        if (p?.service === 'niconico') primeParked(state.current.queue);
+        if (p?.service === 'niconico') primeParked(cursor.current.queue);
         p?.play();
       },
       step,
