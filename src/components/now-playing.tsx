@@ -19,7 +19,7 @@ export function NowPlaying({ producerId }: { producerId: number }) {
   return <Bars playing={playing} />;
 }
 
-/** 再生中の印。一時停止中は止める */
+/** 再生中の印。棒ごとに1周の3分の1ずつずらし、伸びる山が左から右へ流れる。一時停止中は止める */
 export function Bars({ playing }: { playing: boolean }) {
   const t = useText(TEXT);
   return (
@@ -30,7 +30,7 @@ export function Bars({ playing }: { playing: boolean }) {
           className="w-0.5 origin-bottom animate-eq rounded-full bg-accent"
           style={{
             height: '100%',
-            animationDelay: `calc(var(--transition-duration-move) * ${-i})`,
+            animationDelay: `calc(var(--transition-duration-move) * ${-i} * 2 / 3)`,
             animationPlayState: playing ? 'running' : 'paused',
           }}
         />
