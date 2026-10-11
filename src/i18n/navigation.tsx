@@ -5,7 +5,7 @@ import NextLink from 'next/link';
 import { usePathname as useNextPathname } from 'next/navigation';
 import { type ComponentProps, useMemo } from 'react';
 import { langOfPath, localize, stripLang, type Lang } from './config';
-import { startNavigation } from '@/lib/pending-navigation';
+import { startNavigationTo } from '@/lib/pending-navigation';
 import { markReplace } from '@/lib/leave';
 
 /**
@@ -29,10 +29,25 @@ export function useLocalize(): (path: string) => string {
   return useMemo(() => (path: string) => localize(path, lang), [lang]);
 }
 
-/** next/link の代わり。href を、いまの言語の住所にする */
-export function Link({ href, ...props }: ComponentProps<typeof NextLink>) {
+/**
+ * next/link の代わり。href を、いまの言語の住所にする。押してサイトの中の別の画面へ移るときは、住所が変わるまで移動中の印を付ける
+ * （pending-navigation.ts。印が無いと、曲の替わり目に押したときに曲の住所の書き換えで移動が取り消されうる）。
+ * 新しいタブで開く押し方（修飾キー・中ボタン・target）では付けない
+ */
+export function Link({ href, onClick, ...props }: ComponentProps<typeof NextLink>) {
   const to = useLocalize();
-  return <NextLink href={typeof href === 'string' ? to(href) : href} {...props} />;
+  return (
+    <NextLink
+      href={typeof href === 'string' ? to(href) : href}
+      onClick={(e) => {
+        onClick?.(e);
+        const plain =
+          e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !props.target;
+        if (!e.defaultPrevented && plain && typeof href === 'string') startNavigationTo(href);
+      }}
+      {...props}
+    />
+  );
 }
 
 /** 先頭の引数（住所）を除いた引数 */
@@ -49,11 +64,11 @@ export function useRouter() {
     () => ({
       ...router,
       push: (href: string, ...rest: Rest<typeof router.push>) => {
-        startNavigation();
+        startNavigationTo(href);
         router.push(to(href), ...rest);
       },
       replace: (href: string, ...rest: Rest<typeof router.replace>) => {
-        startNavigation();
+        startNavigationTo(href);
         markReplace(stripLang(href.split(/[?#]/)[0] || '/'), stripLang(location.pathname));
         router.replace(to(href), ...rest);
       },

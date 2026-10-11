@@ -2,7 +2,12 @@
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QueueItem } from '@/lib/catalog';
-import { endNavigation, startNavigation } from '@/lib/pending-navigation';
+import {
+  endNavigation,
+  navigationPending,
+  startNavigation,
+  startNavigationTo,
+} from '@/lib/pending-navigation';
 
 // vitest の globals を使っていないので、描いた部品はテストごとに自分で片付ける（残すと受け口が重なる）
 afterEach(cleanup);
@@ -70,6 +75,25 @@ describe('useSongInUrl（流している曲を住所に入れる）', () => {
     renderHook(() => useSongInUrl(song(1), '/producers/45'));
     expect(window.location.search).toBe('?song=1');
     vi.useRealTimers();
+  });
+});
+
+describe('startNavigationTo（移動中の印を付ける）', () => {
+  it('住所の変わる移動だけ印を付ける。言語の付いた住所でも、言語を外して比べる', () => {
+    startNavigationTo('/years');
+    expect(navigationPending()).toBe(true);
+    endNavigation();
+    startNavigationTo('/en/years?q=1');
+    expect(navigationPending()).toBe(true);
+    endNavigation();
+  });
+
+  it('同じ画面の中の移動（検索の ?q= など）と、サイトの外の住所では付けない', () => {
+    startNavigationTo('/producers/45?song=3');
+    startNavigationTo('/en/producers/45');
+    startNavigationTo('https://example.com/');
+    startNavigationTo('//example.com/');
+    expect(navigationPending()).toBe(false);
   });
 });
 
