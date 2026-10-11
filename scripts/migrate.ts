@@ -1,6 +1,7 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { scriptEnv } from './lib/env';
+import { MIGRATIONS_DIR, readMigrationNames } from './lib/migrations';
 
 /**
  * db/migrations/ を DB に当てる。どれを当てたかは schema_migrations 表に残す（comic-time と同じ作り）。
@@ -11,16 +12,6 @@ import { scriptEnv } from './lib/env';
  * 当てる先は DATABASE_URL。1本ずつトランザクションで包むので、途中で失敗したファイルは何も残さない。
  * 2本が同時に走っても、advisory lock で後の方が待ち、同じものを二度当てない
  */
-const dir = new URL('../db/migrations/', import.meta.url);
-
-/** db/migrations/ のファイル名から、番号順の名前の一覧へ。.sql は落とす */
-function migrationNames(files: string[]): string[] {
-  return files
-    .filter((file) => /^\d{4}_[a-z0-9_]+\.sql$/.test(file))
-    .map((file) => file.replace(/\.sql$/, ''))
-    .toSorted();
-}
-
 async function main() {
   const check = process.argv.includes('--check');
   const pool = new pg.Pool({ connectionString: scriptEnv('DATABASE_URL') });
@@ -28,7 +19,7 @@ async function main() {
     await pool.query(
       'create table if not exists schema_migrations (name text primary key, applied_at timestamptz not null default now())',
     );
-    const names = migrationNames(await readdir(dir));
+    const names = await readMigrationNames();
     const { rows } = await pool.query<{ name: string }>('select name from schema_migrations');
     const applied = new Set(rows.map((r) => r.name));
     const pending = names.filter((name) => !applied.has(name));
@@ -42,7 +33,7 @@ async function main() {
     }
 
     for (const name of pending) {
-      const body = await readFile(new URL(`${name}.sql`, dir), 'utf8');
+      const body = await readFile(new URL(`${name}.sql`, MIGRATIONS_DIR), 'utf8');
       const client = await pool.connect();
       try {
         await client.query('begin');

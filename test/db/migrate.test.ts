@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process';
-import { readdir } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { readMigrationNames } from '../../scripts/lib/migrations';
 import { adminUrl } from './urls';
 
 /**
@@ -42,10 +42,7 @@ let names: string[];
 beforeAll(async () => {
   await admin(`drop database if exists ${DB} with (force)`);
   await admin(`create database ${DB}`);
-  names = (await readdir('db/migrations'))
-    .filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f))
-    .map((f) => f.replace(/\.sql$/, ''))
-    .toSorted();
+  names = await readMigrationNames();
 }, 60_000);
 afterAll(() => admin(`drop database if exists ${DB} with (force)`));
 

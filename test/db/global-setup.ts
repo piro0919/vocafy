@@ -1,5 +1,6 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import { MIGRATIONS_DIR, readMigrationNames } from '../../scripts/lib/migrations';
 import { adminUrl, TEST_DB, testUrl } from './urls';
 
 /**
@@ -16,12 +17,13 @@ export default async function setup() {
     await admin.end();
   }
 
-  const dir = new URL('../../db/migrations/', import.meta.url);
-  const files = (await readdir(dir)).filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f)).toSorted();
+  const names = await readMigrationNames();
   const client = new pg.Client({ connectionString: testUrl });
   await client.connect();
   try {
-    for (const file of files) await client.query(await readFile(new URL(file, dir), 'utf8'));
+    for (const name of names) {
+      await client.query(await readFile(new URL(`${name}.sql`, MIGRATIONS_DIR), 'utf8'));
+    }
   } finally {
     await client.end();
   }
