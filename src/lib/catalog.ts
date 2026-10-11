@@ -357,20 +357,15 @@ export { PAGE_SIZE };
 export type Paged = { songs: DatedItem[]; total: number };
 
 /**
- * 流せる曲の一覧を、page ページ目（1 から）だけ読む。where は QUEUE_SELECT に続ける条件、
- * order は q（QUEUE_SELECT の結果）の列で書く。params の後ろに、件数と読み飛ばす数を足して渡す
+ * 流せる曲の一覧を、新しい順に page ページ目（1 から）だけ読む。where は QUEUE_SELECT に続ける条件。
+ * params の後ろに、件数と読み飛ばす数を足して渡す
  */
-async function paged(
-  where: string,
-  order: string,
-  params: unknown[],
-  page: number,
-): Promise<Paged> {
+async function paged(where: string, params: unknown[], page: number): Promise<Paged> {
   if (!Number.isSafeInteger(page) || page < 1) return { songs: [], total: 0 };
   const n = params.length;
   const { rows } = await db().query<QueueRow & { total: number }>(
     `select q.*, count(*) over ()::int as total from (${QUEUE_SELECT} ${where}) q
-     order by ${order} limit $${n + 1} offset $${n + 2}`,
+     order by q.published_on desc, q.id limit $${n + 1} offset $${n + 2}`,
     [...params, PAGE_SIZE, (page - 1) * PAGE_SIZE],
   );
   return { songs: rows.map(toItem), total: rows[0]?.total ?? 0 };
@@ -427,6 +422,33 @@ async function playlist(where: string, params: unknown[], first: Paged): Promise
 const MONTH_WHERE = "and to_char(s.published_on, 'YYYY-MM') = $1";
 const DAY_WHERE = "and to_char(s.published_on, 'MM-DD') = $1";
 
+/** 投稿日（YYYY-MM-DD）の頭の何文字で区切るか。年は4文字、月は7文字 */
+const GROUP = { year: 4, month: 7 } as const;
+
+/**
+ * 代表曲。投稿日を年か月で区切り、区切りごとに評価点の上位 limit 曲を選ぶ（年の画面と歌声の画面）。
+ * where は QUEUE_SELECT に続ける条件で、params の後ろに limit を足して渡す。order は選んだ曲の並べ方（r の列で書く）。
+ * 区切りの中の全曲の数（group_total）も返す（「すべて表示」を出すかに使う）
+ */
+async function topPerGroup(
+  where: string,
+  params: unknown[],
+  { group, limit, order }: { group: number; limit: number; order: string },
+) {
+  const { rows } = await db().query<QueueRow & { group_total: number }>(
+    `select * from (
+       select q.*, row_number() over (
+         partition by left(q.published_on, ${group}) order by q.rating_score desc, q.id) as rank,
+         count(*) over (partition by left(q.published_on, ${group}))::int as group_total
+       from (${QUEUE_SELECT} ${where}) q
+     ) r
+     where rank <= $${params.length + 1}
+     order by ${order}`,
+    [...params, limit],
+  );
+  return rows;
+}
+
 /** 年の画面に、1か月あたり出す代表曲の数 */
 const PICKS_PER_MONTH = 5;
 
@@ -438,18 +460,12 @@ const PICKS_PER_MONTH = 5;
 export const picksOfYear = cache(
   async (year: number): Promise<{ songs: DatedItem[]; monthTotals: Map<string, number> }> => {
     if (!Number.isSafeInteger(year)) return { songs: [], monthTotals: new Map() };
-    const { rows } = await db().query<QueueRow & { month_total: number }>(
-      `select * from (
-         select q.*, row_number() over (
-           partition by left(q.published_on, 7) order by q.rating_score desc, q.id) as rank,
-           count(*) over (partition by left(q.published_on, 7))::int as month_total
-         from (${QUEUE_SELECT} and extract(year from s.published_on) = $1) q
-       ) r
-       where rank <= $2
-       order by published_on desc, id`,
-      [year, PICKS_PER_MONTH],
-    );
-    const monthTotals = new Map(rows.map((r) => [monthOf(r.published_on ?? ''), r.month_total]));
+    const rows = await topPerGroup('and extract(year from s.published_on) = $1', [year], {
+      group: GROUP.month,
+      limit: PICKS_PER_MONTH,
+      order: 'published_on desc, id',
+    });
+    const monthTotals = new Map(rows.map((r) => [monthOf(r.published_on ?? ''), r.group_total]));
     return { songs: rows.map(toItem), monthTotals };
   },
 );
@@ -461,7 +477,7 @@ export const MONTH = /^(0[1-9]|1[0-2])$/;
 export const songsOfMonth = cache(
   async (year: number, month: string, page: number): Promise<Paged> => {
     if (!Number.isSafeInteger(year) || !MONTH.test(month)) return { songs: [], total: 0 };
-    return paged(MONTH_WHERE, 'q.published_on desc, q.id', [`${year}-${month}`], page);
+    return paged(MONTH_WHERE, [`${year}-${month}`], page);
   },
 );
 
@@ -477,7 +493,7 @@ const MONTH_DAY = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 /** その月日（MM-DD）に投稿された流せる曲。どの年の曲も含めて、新しい順 */
 export const songsOfDay = cache(async (monthDay: string, page: number): Promise<Paged> => {
   if (!MONTH_DAY.test(monthDay)) return { songs: [], total: 0 };
-  return paged(DAY_WHERE, 'q.published_on desc, q.id', [monthDay], page);
+  return paged(DAY_WHERE, [monthDay], page);
 });
 
 /** その月日に流す曲（Playlist）。日付の画面・その再生用の画面・トップのきょうの日付の曲の「再生」 */
@@ -529,18 +545,12 @@ export const findVoice = cache(
     if (!Number.isSafeInteger(id)) return;
     const voice = (await voices()).find((v) => v.id === id);
     if (!voice) return;
-    const { rows } = await db().query<QueueRow & { year_total: number }>(
-      `select * from (
-         select q.*, row_number() over (
-           partition by left(q.published_on, 4) order by q.rating_score desc, q.id) as rank,
-           count(*) over (partition by left(q.published_on, 4))::int as year_total
-         from (${QUEUE_SELECT} and ${SUNG_BY}) q
-       ) r
-       where rank <= $2
-       order by left(published_on, 4) desc nulls last, rank`,
-      [id, PICKS_PER_YEAR],
-    );
-    const yearTotals = new Map(rows.map((r) => [yearOf(r.published_on ?? ''), r.year_total]));
+    const rows = await topPerGroup(`and ${SUNG_BY}`, [id], {
+      group: GROUP.year,
+      limit: PICKS_PER_YEAR,
+      order: `left(published_on, ${GROUP.year}) desc nulls last, rank`,
+    });
+    const yearTotals = new Map(rows.map((r) => [yearOf(r.published_on ?? ''), r.group_total]));
     return { voice, songs: rows.map(toItem), yearTotals };
   },
 );
@@ -549,7 +559,7 @@ export const findVoice = cache(
 export const songsOfVoiceYear = cache(
   async (id: number, year: number, page: number): Promise<Paged> => {
     if (!Number.isSafeInteger(id) || !Number.isSafeInteger(year)) return { songs: [], total: 0 };
-    return paged(VOICE_YEAR_WHERE, 'q.published_on desc, q.id', [id, year], page);
+    return paged(VOICE_YEAR_WHERE, [id, year], page);
   },
 );
 
