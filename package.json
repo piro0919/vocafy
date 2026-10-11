@@ -63,6 +63,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-hollow-tests": "0.3.0",
     "happy-dom": "^20.14.5",
     "knip": "^6.39.0",
     "lefthook": "^2.1.16",

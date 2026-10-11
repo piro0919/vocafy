@@ -5,5 +5,8 @@ allowBuilds:
   unrs-resolver: false
 
 # 出てから3日たっていない版は入れない（Renovate の共通設定と同じ待ち）。乗っ取られた版は
-# たいてい数時間から数日で取り下げられる。単位は分
+# たいてい数時間から数日で取り下げられる。単位は分。持ち主が自分で出している包みは待たない（鯉魂と同じ、2026-10-12）
 minimumReleaseAge: 4320
+minimumReleaseAgeExclude:
+  - eslint-plugin-hollow-tests
+  - use-pwa

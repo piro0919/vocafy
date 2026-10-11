@@ -111,6 +111,9 @@ importers:
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.5(jiti@2.7.0))
+      eslint-plugin-hollow-tests:
+        specifier: 0.3.0
+        version: 0.3.0(eslint@9.39.5(jiti@2.7.0))
       happy-dom:
         specifier: ^20.14.5
         version: 20.14.5
@@ -2651,6 +2654,11 @@ packages:
         optional: true
       eslint-import-resolver-webpack:
         optional: true
+
+  eslint-plugin-hollow-tests@0.3.0:
+    resolution: {integrity: sha512-MroAM2/aZqixNkQENqCTCRm/6z7dN6kUYtFIRoud0/eo/oCKw8pOU+q4GekUHJI9FCqkah/eOFE4JTAS8vc7nQ==}
+    peerDependencies:
+      eslint: '>=10.11.0'
 
   eslint-plugin-import@2.32.0:
     resolution: {integrity: sha512-whOE1HFo/qJDyX4SnXzP4N6zOWn79WhnCUY/iDR0mPfQZO8wcYE4JClzI2oZrhBnnMUCBCHZhO6VQyoBU95mZA==}
@@ -7264,6 +7272,10 @@ snapshots:
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
+
+  eslint-plugin-hollow-tests@0.3.0(eslint@9.39.5(jiti@2.7.0)):
+    dependencies:
+      eslint: 9.39.5(jiti@2.7.0)
 
   eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.71.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0)):
     dependencies:

@@ -4,6 +4,7 @@ import nextTs from 'eslint-config-next/typescript';
 import prettier from 'eslint-config-prettier';
 import magicNumbers from '@piro0919/eslint-config';
 import tailwind from '@piro0919/eslint-config/tailwind';
+import hollowTests from 'eslint-plugin-hollow-tests';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -41,6 +42,8 @@ const eslintConfig = defineConfig([
       'src/app/\\[lang\\]/producers/\\[id\\]/og.tsx',
     ],
   }),
+  // 何も確かめずに通るテスト（確かめる文が無い・条件の中にしか無い）を落とす（eslint-plugin-hollow-tests、2026-10-12）
+  { ...hollowTests.configs.recommended, files: ['test/**/*.{ts,tsx}', 'e2e/**/*.ts'] },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
