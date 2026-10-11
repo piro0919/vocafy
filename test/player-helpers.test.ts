@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildOrder } from '@/components/player/play-order';
 import { isHomePath } from '@/lib/home-path';
-import { leave, setNavigationDepth } from '@/lib/leave';
+import { arrivedByReplace, leave, markReplace, setNavigationDepth } from '@/lib/leave';
+import { producerName } from '@/lib/producer-name';
 import { dayTitle, monthTitle, voiceYearTitle, withPickup } from '@/lib/list-titles';
 import { frameOf, smallThumbOf, thumbOf } from '@/lib/thumb';
 import { voiceName, voiceNamesText } from '@/lib/voice-name';
@@ -241,5 +242,28 @@ describe('artworkOf（Vocafy Visualizer に送る表紙の候補）', () => {
     const { artworkOf } = await import('@/components/visualizer/artwork');
     const thumb = 'https://nicovideo.cdn.nimg.jp/thumbnails/1961633/1961633';
     expect(artworkOf({ service: 'niconico', videoId: 'sm1', thumb })).toEqual([thumb]);
+  });
+});
+
+describe('置き換えで移った先（markReplace・arrivedByReplace）', () => {
+  it('置き換えで移る先に着いたら一度だけ当たり、印を外す', () => {
+    markReplace('/producers/45', '/');
+    expect(arrivedByReplace('/years')).toBe(false);
+    expect(arrivedByReplace('/producers/45')).toBe(true);
+    expect(arrivedByReplace('/producers/45')).toBe(false);
+  });
+
+  it('住所の変わらない置き換え（検索の ?q=）は覚えない', () => {
+    markReplace('/search', '/search');
+    expect(arrivedByReplace('/search')).toBe(false);
+  });
+});
+
+describe('producerName（英語の画面のボカロPの名前）', () => {
+  it('英語の名前の表にあればそれ、無ければ日本語のまま。日本語の画面（null）はそのまま', () => {
+    const names = { 45: 'DECO*27' };
+    expect(producerName(45, 'ＤＥＣＯ＊２７', names)).toBe('DECO*27');
+    expect(producerName(7, 'ハチ', names)).toBe('ハチ');
+    expect(producerName(45, 'ＤＥＣＯ＊２７', null)).toBe('ＤＥＣＯ＊２７');
   });
 });
