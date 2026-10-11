@@ -43,7 +43,6 @@ export type Producer = { id: number; name: string; picture: string | null; songC
 /** ボカロPの本人の場所。無いサービスの鍵は無い（scripts/lib/pick.ts の linksOf） */
 export type ProducerLinks = Partial<Record<'x' | 'youtube' | 'niconico' | 'website', string>>;
 
-
 type SongRow = {
   id: number;
   name: string;
