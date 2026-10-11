@@ -115,3 +115,39 @@ test('スリープタイマーを選ぶと残りが出て、切ると元に戻�
   await panel.getByRole('button', { name: 'タイマーを切る' }).click();
   await expect(timer).toHaveAccessibleName('スリープタイマー');
 });
+
+test('開き直すと、前の曲が止まった状態で戻り、押すとその曲から流れる', async ({ page }) => {
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  await expect(page).toHaveURL(/song=\d+/);
+  await page.reload();
+  // 勝手には流さない。プレイヤーを作らず、その曲の表紙と再生ボタンを、持ち主の画面なら大きな動画の場所に出す
+  const resume = page.getByRole('button', { name: /の続きを再生$/ }).first();
+  await expect(resume).toBeVisible();
+  await expect(page.locator('[data-player-frame] iframe')).toHaveCount(0);
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
+  await resume.click();
+  await expect(page.locator('[data-player-frame] iframe')).toHaveCount(1);
+});
+
+test('持ち主でない画面で開き直したときは、右下の窓の場所に戻す', async ({ page }) => {
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  await expect(page).toHaveURL(/song=\d+/);
+  await page.goto('/years');
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'dock');
+  await page.reload();
+  await expect(page.getByRole('button', { name: /の続きを再生$/ }).first()).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-player', 'dock');
+});
+
+test('設定で「前回の続きから始める」を切ると、開き直しても戻さない', async ({ page }) => {
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  await expect(page).toHaveURL(/song=\d+/);
+  await page.goto('/settings');
+  await page.getByText('前回の続きから始める').click();
+  await page.goto('/producers/45');
+  await expect(page.getByRole('button', { name: 'このボカロPの曲を再生' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /の続きを再生$/ })).toHaveCount(0);
+});
