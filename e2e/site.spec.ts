@@ -158,7 +158,9 @@ test('動画を縮めると、サイトの中から来たなら前の画面へ�
   await page.waitForURL(/producers\/\d+/);
   await leave.click();
   await expect(page).toHaveURL(/\/years\/2016$/);
-  // 共有のリンクを同じタブで開いた人。「戻る」にすると外のページへ出てしまう（leave.ts）
+  // 共有のリンクを同じタブで開いた人。「戻る」にすると外のページへ出てしまう（leave.ts）。
+  // 開き直すと前半で流した曲が「前回の続き」として戻り、同じボカロPの画面だと再生ボタンが「続きを再生」になるので、控えを消しておく
+  await page.evaluate(() => localStorage.removeItem('vocafy-resume'));
   await page.setContent(`<a id="share" href="${baseURL}/producers/45">共有のリンク</a>`);
   await page.click('#share');
   await page.waitForURL(/producers\/45/);
