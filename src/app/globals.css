@@ -232,6 +232,9 @@
   --spacing-art-bleed: 12%;
   --spacing-art-stand: 42%;
   --spacing-voice-dot: 6%;
+  /* 流す壁（home-sections.tsx の FlowingWall）の札の幅。札の右にすき間（gap-2）を持たせ、6枚で段の幅とすき間1つ分になる。
+     札の絵の幅は止まった壁の6列と同じになる */
+  --spacing-mix-tile: calc((100% + var(--spacing) * 2) / 6);
   /* 次に流れる曲などの板の高さの上限 */
   --max-height-panel: 60dvh;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { DatedItem } from '@/lib/catalog';
 import { FadeImage } from './fade-image';
 import { Heading } from './heading';
@@ -12,7 +12,9 @@ import { usePreload } from './player/use-preload';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { SongItem, useOpenSong } from './song-list';
 import { COVER_PLAY } from './button-styles';
+import { isAppleDevice } from '@/lib/apple-device';
 import { atLeast } from '@/lib/breakpoints';
+import { LINEAR } from '@/lib/motion';
 import { dateOf, monthDayOf, yearOf } from '@/lib/iso-date';
 
 /**
@@ -141,47 +143,197 @@ export function OnThisDay({
  * （2026-10-11。スマホの4段は多く見え、一度は 9 曲に減らしたが、ほかの棚と同じく横に送る形にした）
  */
 export function MixWall({ songs }: { songs: DatedItem[] }) {
-  const { current, playing } = usePlayer();
-  const open = useOpenSong();
+  const flowing = useSyncExternalStore(subscribeFlowing, canFlow, () => false);
+  return flowing ? <FlowingWall songs={songs} /> : <StaticWall songs={songs} />;
+}
+
+/** 流す壁にする端末か。パソコンの幅で、マウスで指せて、動きを減らす設定でない。iPad はトラックパッドでもマウスの端末に見えるので外す */
+const FLOW_QUERY = `${atLeast('lg')} and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)`;
+const canFlow = () => window.matchMedia(FLOW_QUERY).matches && !isAppleDevice();
+const subscribeFlowing = (onChange: () => void) => {
+  const query = window.matchMedia(FLOW_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+};
+
+/** いままでの壁。パソコンは6列×3段で止まったまま、パソコンより狭い幅は3段のまま列を横に送る（ほかの棚と同じ） */
+function StaticWall({ songs }: { songs: DatedItem[] }) {
   // ニコニコの曲の表紙が見えているあいだ、埋め込みを先に読み込んでおく（iPad・iPhone だけ）
   const { track: wall, edge, update } = useShelfScroll<HTMLDivElement>();
   usePreload(wall, songs);
   return (
-    // パソコンより狭い幅は、3段のまま列を横に送る（ほかの棚と同じ）。一度に見えるのは3〜4列と、次の列の端
+    // 一度に見えるのは3〜4列と、次の列の端
     <div
       ref={wall}
       onScroll={update}
       style={{ maskImage: edgeMask(edge) }}
       className="bleed-x grid auto-cols-mix grid-flow-col grid-rows-3 gap-1.5 overflow-x-auto no-scrollbar snap-x sm:auto-cols-mix-sm sm:gap-2 lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:overflow-visible lg:px-0"
     >
-      {songs.map((song) => {
-        const active = current?.songId === song.songId;
-        return (
-          <button
-            key={song.songId}
-            type="button"
-            aria-label={`${song.title}（${song.producerName}）`}
-            title={song.title}
-            data-preload={song.service === 'niconico' ? song.videoId : undefined}
-            onClick={() => open(song)}
-            className={`group relative aspect-video overflow-hidden rounded-xl bg-surface transition duration-react active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} snap-start`}
-          >
-            <FadeImage
-              src={song.thumb}
-              alt=""
-              fill
-              sizes={`${atLeast('lg')} 16vw, ${atLeast('sm')} 25vw, 33vw`}
-              className="object-cover group-hover:scale-105"
-            />
-            <span
-              className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-react ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-            >
-              <span className="min-w-0 truncate">{song.title}</span>
-              {active && <Bars playing={playing} />}
-            </span>
-          </button>
-        );
-      })}
+      {songs.map((song) => (
+        <MixTile key={song.songId} song={song} className="snap-start" />
+      ))}
     </div>
+  );
+}
+
+/** 流す壁の1段の曲数。パソコンの止まった壁の1段と同じ */
+const FLOW_COLUMNS = 6;
+const FLOW_MASK = edgeMask({ start: false, end: false });
+/** 流す速さ（1秒あたりの px）。流れる曲名（marquee.tsx）と同じく、時間でなく目で追える速さで決める */
+const FLOW_SPEED = 20;
+
+/**
+ * 流す壁（2026-10-11 に本人と決めた）。パソコンの止まった壁と同じ6曲ずつの3段を、段ごとに左右交互にゆっくり流し続ける。
+ * 各段は同じ6曲を2周分並べ、1周分（6枚と6つのすき間）ずれたら頭に戻してつなぐ。流し始めの絵は止まった壁と同じなので、
+ * 開いたあとに切り替わっても位置は跳ばない。押し間違えないよう、マウスが乗っている間・フォーカスがある間は止め、
+ * 画面の外にあるときとタブを裏に回したときも止める。2周目は読み上げとキーボードから隠す（同じ曲が2回読まれないように）。
+ * inert で隠すと、2周目が画面に出ているあいだマウスでも押せなくなるので、aria-hidden と tabIndex で隠す
+ */
+function FlowingWall({ songs }: { songs: DatedItem[] }) {
+  const wall = useRef<HTMLDivElement>(null);
+  const rows = Array.from({ length: Math.ceil(songs.length / FLOW_COLUMNS) }, (_, i) =>
+    songs.slice(i * FLOW_COLUMNS, (i + 1) * FLOW_COLUMNS),
+  );
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [shown, setShown] = useState(true);
+  const animations = useRef<Animation[]>([]);
+  const running = !hovered && !focused && visible && shown;
+
+  // 段ごとに流す。幅が変わったら、進んだ割合を保ったまま流し直す
+  useEffect(() => {
+    const root = wall.current;
+    if (!root) return;
+    const start = () => {
+      const progress = animations.current.map((a) => {
+        const { progress: p } = a.effect?.getComputedTiming() ?? {};
+        return p ?? 0;
+      });
+      for (const a of animations.current) a.cancel();
+      const tracks = [...root.querySelectorAll<HTMLElement>('[data-flow-track]')];
+      animations.current = tracks.map((track, i) => {
+        // 1周分の長さ。札の幅は（段の幅＋すき間）÷6 で、札の右にすき間を持つので、6枚で段の幅＋すき間になる
+        const gap =
+          parseFloat(getComputedStyle(track.firstElementChild ?? track).paddingRight) || 0;
+        const distance = track.clientWidth + gap;
+        const frames = [
+          { transform: 'translateX(0)' },
+          { transform: `translateX(-${distance}px)` },
+        ];
+        const animation = track.animate(i % 2 === 0 ? frames : frames.toReversed(), {
+          duration: (distance / FLOW_SPEED) * 1000,
+          iterations: Infinity,
+          easing: LINEAR,
+        });
+        if (animation.effect)
+          animation.currentTime = (progress[i] ?? 0) * (distance / FLOW_SPEED) * 1000;
+        return animation;
+      });
+    };
+    start();
+    const resize = new ResizeObserver(start);
+    resize.observe(root);
+    return () => {
+      resize.disconnect();
+      for (const a of animations.current) a.cancel();
+      animations.current = [];
+    };
+  }, [songs]);
+
+  useEffect(() => {
+    for (const a of animations.current) {
+      if (running) a.play();
+      else a.pause();
+    }
+  }, [running]);
+
+  useEffect(() => {
+    const root = wall.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(([entry]) =>
+      setVisible(entry?.isIntersecting ?? false),
+    );
+    observer.observe(root);
+    const onVisibility = () => setShown(document.visibilityState === 'visible');
+    onVisibility();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={wall}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
+      }}
+      className="flex flex-col gap-2"
+    >
+      {rows.map((row, i) => (
+        // 両端は、続きのある棚と同じくぼかす（流れ続けるので、どちらの端にもいつも続きがある）
+        <div key={row[0]?.songId ?? i} style={{ maskImage: FLOW_MASK }} className="overflow-hidden">
+          <div data-flow-track className="flex">
+            {[0, 1].map((lap) =>
+              row.map((song) => (
+                <div
+                  key={`${lap}-${song.songId}`}
+                  aria-hidden={lap === 1 || undefined}
+                  className="w-mix-tile shrink-0 pr-2"
+                >
+                  <MixTile song={song} className="w-full" copy={lap === 1} />
+                </div>
+              )),
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 壁の1枚。押すとその曲のボカロPの画面へ移って流す */
+function MixTile({
+  song,
+  className,
+  copy = false,
+}: {
+  song: DatedItem;
+  className: string;
+  /** 流す壁の2周目。キーボードで止まらない */
+  copy?: boolean;
+}) {
+  const { current, playing } = usePlayer();
+  const open = useOpenSong();
+  const active = current?.songId === song.songId;
+  return (
+    <button
+      type="button"
+      aria-label={`${song.title}（${song.producerName}）`}
+      title={song.title}
+      tabIndex={copy ? -1 : undefined}
+      data-preload={song.service === 'niconico' ? song.videoId : undefined}
+      onClick={() => open(song)}
+      className={`group relative block aspect-video overflow-hidden rounded-xl bg-surface transition duration-react active:scale-95 ${active ? 'ring-2 ring-miku ring-offset-2 ring-offset-background' : ''} ${className}`}
+    >
+      <FadeImage
+        src={song.thumb}
+        alt=""
+        fill
+        sizes={`${atLeast('lg')} 16vw, ${atLeast('sm')} 25vw, 33vw`}
+        className="object-cover group-hover:scale-105"
+      />
+      <span
+        className={`absolute inset-x-0 bottom-0 flex items-center gap-1 bg-linear-to-t from-black/75 to-transparent px-2 pt-5 pb-1.5 text-left text-xs font-bold text-white transition-opacity duration-react ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+      >
+        <span className="min-w-0 truncate">{song.title}</span>
+        {active && <Bars playing={playing} />}
+      </span>
+    </button>
   );
 }
