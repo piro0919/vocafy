@@ -231,8 +231,11 @@ const toItem = (r: QueueRow): DatedItem => ({
   publishedOn: r.published_on ?? '',
 });
 
-/** 1人のボカロPの新しい曲として読む数（トップのお気に入りのボカロPの新曲の棚。/api/latest/[producer]） */
-const LATEST_PER_PRODUCER = 6;
+/**
+ * 1人のボカロPの新しい曲として読む数（トップのお気に入りのボカロPの新曲の棚。/api/latest/[producer]）。
+ * 棚で1人がこれより多く並ばないよう、ここで切る（最近たくさん出した1人が棚を埋めないように。2026-10-11 に本人と決めた）
+ */
+const LATEST_PER_PRODUCER = 3;
 
 /** そのボカロPが作者に入っている流せる曲を、新しい順に LATEST_PER_PRODUCER 曲 */
 export const latestOfProducer = cache(async (id: number): Promise<DatedItem[]> => {

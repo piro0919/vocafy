@@ -1,26 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DatedItem } from '@/lib/catalog';
 import { useFavoriteProducers } from '@/lib/favorites';
+import { useHistory } from '@/lib/history';
 import { Heading, SECTION } from './heading';
 import { SongItem, useOpenSong } from './song-list';
 import { edgeMask, ShelfArrows, useShelfScroll } from './shelf';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
+import { atLeast } from '@/lib/breakpoints';
 
 /** 新しい曲を読むボカロPの数（お気に入りに足した新しい順） */
 const PRODUCERS = 12;
-/** 棚に出す曲の数 */
-const SONGS = 12;
-/** 1人のボカロPから読む曲の数（/api/latest/[producer] が返す数） */
-const PER_PRODUCER = 6;
 /**
- * 棚の並べ方。どの幅でも3曲ずつの列にして横に送る（きょうの日付の曲の右側と同じ列の幅）。
+ * 棚に出す曲の数。2行に並べて横に送る。1人あたりは PER_PRODUCER 曲までなので、お気に入りのボカロPが少ない人は
+ * もっと少なくなる（2026-10-11 に本人と決めた。前は1人6曲・全体12曲で、最近たくさん出した1人が棚を埋めた）
+ */
+const SONGS = 18;
+/** 棚の行の数（SHELF の grid-rows-2） */
+const ROWS = 2;
+/** パソコンで列を棚の幅いっぱいに広げるとき、上限の幅の何倍まで広げてよいか */
+const STRETCH_LIMIT = 1.25;
+/** 1人のボカロPから読む曲の数（/api/latest/[producer] が返す数。catalog.ts の LATEST_PER_PRODUCER） */
+const PER_PRODUCER = 3;
+/**
+ * 棚の並べ方。どの幅でも2行に並べて横に送る（列の幅はきょうの日付の曲の右側と同じ）。
  * パソコンで格子にしていたころは、列を幅いっぱいに伸ばすと曲名と右端のハートのあいだが大きく空き、列の幅に上限を付けると
  * 棚の右が空いた（2026-10-11 に本人と決めた）
  */
 const SHELF =
-  'bleed-x grid auto-cols-day grid-flow-col grid-rows-3 content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm lg:mx-0 lg:auto-cols-day-lg lg:scroll-px-fade lg:px-0';
+  'bleed-x grid auto-cols-day grid-flow-col grid-rows-2 content-start gap-x-3 gap-y-1 overflow-x-auto no-scrollbar snap-x sm:auto-cols-day-sm lg:mx-0 lg:auto-cols-day-lg lg:scroll-px-fade lg:px-0';
 
 /**
  * トップの「お気に入りのボカロPの新曲」。お気に入りに入れたボカロPの新しい曲を、投稿の新しい順に混ぜて並べる。
@@ -60,21 +69,66 @@ export function FavoriteNewSongs() {
     };
   }, [key]);
 
-  const songs = loaded?.key === key ? loaded.songs : null;
+  // もう聴いた曲（このブラウザの視聴履歴にある曲）は後ろへ回す。並びは、聴いていない曲の新しい順、そのあとに聴いた曲の
+  // 新しい順。新しい順のままだと毎週の取り込みまで並びが変わらず、来るたびに同じ曲が先頭にあった（2026-10-11 に本人と決めた）。
+  // 棚に出す曲（新しい SONGS 曲）は変えず、並びだけを変える
+  const history = useHistory();
+  const fetched = loaded?.key === key ? loaded.songs : null;
+  const songs = useMemo(() => {
+    if (!fetched) return null;
+    const heard = new Set(history.map((s) => s.songId));
+    return [
+      ...fetched.filter((s) => !heard.has(s.songId)),
+      ...fetched.filter((s) => heard.has(s.songId)),
+    ];
+  }, [fetched, history]);
+
+  // パソコンでは、列を棚の幅いっぱいに割り付ける。列の幅の上限（auto-cols-day-lg）で何列入るかを決め、その列数で
+  // 棚の幅をちょうど割る。端が中途半端に切れる列を出さず、矢印でちょうど1画面ずつ送れる（2026-10-11 に本人と決めた）。
+  // 列の数は CSS だけでは割り出せないので、上限の幅の列を一度置いて測る。スマホは次の列の端を見せる今の形のまま。
+  // 棚は読み終えてから出るので、列の幅と送れるか（矢印を出すか）は、読み終えたときと幅が変わったときに測り直す
+  useEffect(() => {
+    if (!songs) return;
+    const wide = window.matchMedia(atLeast('lg'));
+    const fit = () => {
+      const el = track.current;
+      if (!el) return;
+      el.style.gridAutoColumns = '';
+      const column = el.firstElementChild?.getBoundingClientRect().width ?? 0;
+      if (wide.matches && column > 0) {
+        const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+        // 入る列の数と、曲で埋まる列の数の少ない方で割る。入る数で割ると、曲が少ないときに右の列が空いた
+        const columns = Math.min(
+          Math.ceil((el.clientWidth + gap) / (column + gap)),
+          Math.ceil(el.children.length / ROWS),
+        );
+        const width = (el.clientWidth - (columns - 1) * gap) / columns;
+        // 曲が少なく1列が広がりすぎるときは、上限の幅のまま左に寄せる（行が長いと曲名と右端のあいだが空く）
+        if (width <= column * STRETCH_LIMIT) el.style.gridAutoColumns = `${width}px`;
+      }
+      update();
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+    // track と update は描くたびに作り直されるが、中身は同じ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songs]);
   // お気に入りのボカロPがいない人、読み終えて曲が無かった人には出さない
   if (!key || songs?.length === 0) return null;
   return (
     <section className={SECTION} aria-busy={!songs}>
       <div className="mb-3 flex items-end gap-3">
         <Heading eyebrow="From Your Favorites">お気に入りのボカロPの新曲</Heading>
-        {songs && (
+        {/* 曲が棚に収まって送る必要が無いときは、矢印を出さない */}
+        {songs && !(edge.start && edge.end) && (
           <div className="ml-auto flex items-center gap-2">
             <ShelfArrows edge={edge} page={page} />
           </div>
         )}
       </div>
       {songs ? (
-        // 3曲ずつの列にして横に送る（きょうの日付の曲と同じ形）。スマホで12曲を縦に並べると棚だけで画面1枚半になり、
+        // 2行に並べて横に送る（きょうの日付の曲と同じ形）。スマホで12曲を縦に並べると棚だけで画面1枚半になり、
         // 下のきょうの出会いがずっと下に押し出された（2026-10-11）
         <ul ref={track} onScroll={update} style={{ maskImage: edgeMask(edge) }} className={SHELF}>
           {songs.map((song, i) => (
