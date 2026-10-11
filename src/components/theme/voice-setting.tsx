@@ -24,12 +24,12 @@ const TEXT = defineText({
   ja: {
     title: 'サイトカラー',
     random: 'アクセスするたびにランダムで変える',
-    follow: '再生中は、歌っているキャラの色にする',
+    follow: '再生中は、歌っているキャラに合わせる',
   },
   en: {
     title: 'Site color',
     random: 'Randomize on each visit',
-    follow: "Use the singer's color while playing",
+    follow: 'Match the singer while playing',
   },
 });
 
