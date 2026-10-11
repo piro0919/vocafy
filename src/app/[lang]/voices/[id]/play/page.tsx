@@ -5,6 +5,7 @@ import { findVoice } from '@/lib/catalog';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { voiceName } from '@/lib/voice-name';
+import { voiceNamesFor } from '@/lib/voice-names';
 
 const TEXT = defineText({
   ja: { title: (name: string) => `${name}の代表曲` },
@@ -25,7 +26,10 @@ export async function generateMetadata({
   if (!found || found.songs.length === 0) notFound();
   const lang = await langOf(params);
   const t = TEXT[lang];
-  return { title: t.title(voiceName(found.voice.name, lang)), robots: { index: false } };
+  return {
+    title: t.title(voiceName(found.voice.name, await voiceNamesFor(lang))),
+    robots: { index: false },
+  };
 }
 
 /**
@@ -44,7 +48,7 @@ export default async function VoicePlayPage({ params }: PageProps<'/[lang]/voice
         source={`voices/${voice.id}`}
         songs={songs}
         eyebrow="Voice"
-        title={t.title(voiceName(voice.name, lang))}
+        title={t.title(voiceName(voice.name, await voiceNamesFor(lang)))}
       />
     </div>
   );

@@ -26,7 +26,7 @@ import { TIMING } from '@/lib/timing';
 import { useText } from '@/i18n/navigation';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
-import { useVoiceNames } from '@/lib/use-voice-name';
+import { useVoiceNames } from '@/components/voice-names';
 
 const TEXT = defineText({
   ja: {

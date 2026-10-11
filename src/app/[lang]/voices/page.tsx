@@ -9,6 +9,7 @@ import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
 import { voiceName } from '@/lib/voice-name';
+import { voiceNamesFor } from '@/lib/voice-names';
 
 const TEXT = defineText({
   ja: { characters: 'キャラクター', libraries: '歌声ライブラリ' },
@@ -32,6 +33,7 @@ export const revalidate = false;
  */
 export default async function VoicesPage({ params }: PageProps<'/[lang]/voices'>) {
   const lang = await langOf(params);
+  const names = await voiceNamesFor(lang);
   const t = TEXT[lang];
   const list = await voices();
   const characters = list.flatMap((v) => {
@@ -71,7 +73,7 @@ export default async function VoicesPage({ params }: PageProps<'/[lang]/voices'>
                 href={`/voices/${v.id}`}
                 className="flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs transition duration-react hover:bg-hover-accent active:scale-95"
               >
-                <span className="truncate font-bold">{voiceName(v.name, lang)}</span>
+                <span className="truncate font-bold">{voiceName(v.name, names)}</span>
                 <span className="shrink-0 text-xs text-muted">
                   {TERMS[lang].songs(formatCount(v.songCount))}
                 </span>

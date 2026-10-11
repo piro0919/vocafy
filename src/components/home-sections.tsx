@@ -19,7 +19,7 @@ import { LINEAR } from '@/lib/motion';
 import { dayLabel } from '@/lib/iso-date';
 import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
-import { useVoiceNames } from '@/lib/use-voice-name';
+import { useVoiceNames } from '@/components/voice-names';
 
 const TEXT = defineText({
   ja: { tile: (title: string, producer: string) => `${title}（${producer}）` },

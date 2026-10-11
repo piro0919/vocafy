@@ -27,6 +27,8 @@ import { ThemeWatcher } from '@/components/theme/theme-watcher';
 import { SITE_URL } from '@/lib/site';
 import { DEFAULT_LANG, isLang } from '@/i18n/config';
 import { LangRedirect } from '@/i18n/lang-choice';
+import { VoiceNamesProvider } from '@/components/voice-names';
+import { voiceNamesFor } from '@/lib/voice-names';
 import { defineText } from '@/i18n/text';
 import { notFound } from 'next/navigation';
 import '../globals.css';
@@ -93,6 +95,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children, params }: LayoutProps<'/[lang]'>) {
   const { lang } = await params;
   if (!isLang(lang)) notFound();
+  const voiceNames = await voiceNamesFor(lang);
   return (
     // data-theme はページを描く前に themeScript が付けるので、サーバーの出力と食い違ってよい
     <html
@@ -109,54 +112,56 @@ export default async function RootLayout({ children, params }: LayoutProps<'/[la
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full font-sans">
-        <Progress>
-          <PlayerProvider>
-            {/*
+        <VoiceNamesProvider names={voiceNames}>
+          <Progress>
+            <PlayerProvider>
+              {/*
               画面の上部の色の背景（ambient.tsx）が、ヘッダーの下とサイドバーの後ろまで回り込むよう、
               画面全体のこの枠を基準にする
             */}
-            <div className="relative isolate flex min-h-dvh">
-              <AmbientProvider>
-                <Sidebar />
-                <div className="flex min-w-0 flex-1 flex-col md:pl-sidebar">
-                  <Header>
-                    <HeaderBar />
-                  </Header>
-                  {/*
+              <div className="relative isolate flex min-h-dvh">
+                <AmbientProvider>
+                  <Sidebar />
+                  <div className="flex min-w-0 flex-1 flex-col md:pl-sidebar">
+                    <Header>
+                      <HeaderBar />
+                    </Header>
+                    {/*
                     パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。ログインの左に、きょうの出会いを流すサイコロ。
                     左のメニューと同じく、画面の端から離した角丸の板として画面の上に留める
                   */}
-                  <div className="sticky top-0 z-header hidden px-gutter pt-gutter md:block">
-                    <div
-                      className={`${GLASS_PANEL} flex h-header items-center justify-between gap-4 header-x`}
-                    >
-                      <Suspense fallback={<HeaderSearchFallback />}>
-                        <HeaderSearch />
-                      </Suspense>
-                      <div className="flex items-center gap-2">
-                        <MixButton />
-                        <AccountButton />
+                    <div className="sticky top-0 z-header hidden px-gutter pt-gutter md:block">
+                      <div
+                        className={`${GLASS_PANEL} flex h-header items-center justify-between gap-4 header-x`}
+                      >
+                        <Suspense fallback={<HeaderSearchFallback />}>
+                          <HeaderSearch />
+                        </Suspense>
+                        <div className="flex items-center gap-2">
+                          <MixButton />
+                          <AccountButton />
+                        </div>
                       </div>
                     </div>
+                    <main className="page-x flex-1 md:pt-content-top">{children}</main>
+                    <SiteFooter />
                   </div>
-                  <main className="page-x flex-1 md:pt-content-top">{children}</main>
-                  <SiteFooter />
-                </div>
-              </AmbientProvider>
-            </div>
-            <MobileTabs />
-            <HistoryRecorder />
-            <SongTitle />
-            <NavigationDepth />
-            {/* 住所の ?以降を読むので、Suspense で包む（作り置きのページを壊さないため） */}
-            <Suspense fallback={null}>
-              <PageRestore />
-            </Suspense>
-            <VoiceFollower />
-            <VisualizerLink />
-            <LangRedirect />
-          </PlayerProvider>
-        </Progress>
+                </AmbientProvider>
+              </div>
+              <MobileTabs />
+              <HistoryRecorder />
+              <SongTitle />
+              <NavigationDepth />
+              {/* 住所の ?以降を読むので、Suspense で包む（作り置きのページを壊さないため） */}
+              <Suspense fallback={null}>
+                <PageRestore />
+              </Suspense>
+              <VoiceFollower />
+              <VisualizerLink />
+              <LangRedirect />
+            </PlayerProvider>
+          </Progress>
+        </VoiceNamesProvider>
         <Toaster />
         <ThemeWatcher />
         <AccountSync />

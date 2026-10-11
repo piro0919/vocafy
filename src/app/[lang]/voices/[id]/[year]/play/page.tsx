@@ -6,6 +6,7 @@ import { playlistOfVoiceYear, voices } from '@/lib/catalog';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { voiceName } from '@/lib/voice-name';
+import { voiceNamesFor } from '@/lib/voice-names';
 
 const TEXT = defineText({
   ja: { title: (name: string, year: string) => `${name}の${year}年の曲` },
@@ -33,7 +34,10 @@ export async function generateMetadata({
   if ((await playlistOfVoiceYear(voice.id, Number(year))).songs.length === 0) notFound();
   const lang = await langOf(params);
   const t = TEXT[lang];
-  return { title: t.title(voiceName(voice.name, lang), year), robots: { index: false } };
+  return {
+    title: t.title(voiceName(voice.name, await voiceNamesFor(lang)), year),
+    robots: { index: false },
+  };
 }
 
 /** その歌声（キャラ）のその年の曲の再生用の画面（list-player.tsx）。歌声の年の画面の「すべて再生」から */
@@ -54,7 +58,7 @@ export default async function VoiceYearPlayPage({
         songs={playlist.songs}
         // 全曲から選んだ100曲を流すときは、小さな英字に PICKUP を添える（「2026 PICKUP」。2026-10-11 に本人と決めた）
         eyebrow={withPickup(String(year), playlist.pickup)}
-        title={t.title(voiceName(voice.name, lang), year)}
+        title={t.title(voiceName(voice.name, await voiceNamesFor(lang)), year)}
       />
     </div>
   );

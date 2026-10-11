@@ -13,7 +13,7 @@ import { DRAG_SLOP } from '@/lib/input';
 import { resetDockSize, startDockResize, useDockSize } from './dock-size';
 import { GLASS } from '@/components/surface-styles';
 import { defineText } from '@/i18n/text';
-import { useVoiceNames } from '@/lib/use-voice-name';
+import { useVoiceNames } from '@/components/voice-names';
 
 const TEXT = defineText({
   ja: { resize: '大きさを変える', close: 'プレイヤーを閉じる' },

@@ -14,6 +14,7 @@ import { yearOf } from '@/lib/iso-date';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { voiceName } from '@/lib/voice-name';
+import { voiceNamesFor } from '@/lib/voice-names';
 
 const TEXT = defineText({
   ja: { picks: (shown: string, total: string) => `${shown}曲（全${total}曲）` },
@@ -34,7 +35,7 @@ export async function generateMetadata({
   const { id } = await params;
   const found = await findVoice(Number(id));
   if (!found || found.songs.length === 0) notFound();
-  return { title: voiceName(found.voice.name, await langOf(params)) };
+  return { title: voiceName(found.voice.name, await voiceNamesFor(await langOf(params))) };
 }
 
 /**
@@ -77,7 +78,7 @@ export default async function VoicePage({ params }: PageProps<'/[lang]/voices/[i
         )}
         <div>
           <Heading as="h1" size="page">
-            {voiceName(voice.name, lang)}
+            {voiceName(voice.name, await voiceNamesFor(lang))}
           </Heading>
           {/* 流すのは代表曲だけ。全曲（1万曲を超える歌声もある）を年の新しい順に流すと、画面の見せ方と食い違う */}
           <PlayAll

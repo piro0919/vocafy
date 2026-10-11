@@ -7,7 +7,7 @@ import { FadeImage } from './fade-image';
 import { HopOnHover } from './hop-on-hover';
 import { formatCount } from '@/lib/format';
 import { PILL } from './button-styles';
-import { useVoiceNames } from '@/lib/use-voice-name';
+import { useVoiceNames } from '@/components/voice-names';
 
 type VoiceProps = { id: number; name: string; songCount: number };
 

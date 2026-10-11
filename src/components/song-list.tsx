@@ -16,7 +16,7 @@ import { Marquee } from './marquee';
 import { Icon } from './icon';
 import { ICON_SM } from './button-styles';
 import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
-import { useVoiceNames } from '@/lib/use-voice-name';
+import { useVoiceNames } from '@/components/voice-names';
 
 /** 棚で縦に詰める行の数 */
 const SHELF_ROWS = 4;
