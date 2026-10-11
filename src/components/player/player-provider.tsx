@@ -36,7 +36,6 @@ import {
   freshItems,
   isNearEnd,
   moveTo,
-  radioSeeds,
   restart,
   stepFrom,
   upcomingOf,
@@ -63,6 +62,7 @@ import {
 } from './player-rules';
 import { FADE_OUT_MS, FADE_STEPS, fadeOut, PAUSE_WAIT_MS } from './fade';
 import { useFrameLayout } from './use-frame-layout';
+import { useRadioExtension } from './use-radio-extension';
 import { useResumeWriter } from './use-resume-writer';
 import { useSleepTimer } from './use-sleep-timer';
 import { useSlot } from './use-slot';
@@ -84,9 +84,6 @@ export function usePlayer(): PlayerContext {
  * （100曲まで出していたら多すぎると言われた）
  */
 const UPCOMING_LIMIT = 10;
-
-/** ラジオで足せる関連曲を探すときに、関連曲を聞く曲の数の上限 */
-const RADIO_TRIES = 6;
 
 /**
  * ページを移っても再生が続く、全ページ共通のプレイヤー。ルートのレイアウトに1つだけ置く。
@@ -749,40 +746,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     holdSlot();
   }, [adopt, clearMore, holdSlot]);
 
-  // ラジオで流す順の終わりが近づいたら（残り1曲まで）、いまの曲の関連曲のうち、まだ並びに無いものを後ろに足す。
-  // いまの曲の関連曲がどれも並びに入っているとき（ラジオの画面で一覧の最後の曲を押したときなど）は、並びの後ろの曲から
-  // 順にさかのぼって、足せる曲が見つかるまで RADIO_TRIES 曲まで試す。足さないと次に流れる曲が空になり、最後の曲のあとは
-  // 先頭に戻っていた。関連曲の答えは CDN に置いてあるので、さかのぼっても DB はほぼ起きない
-  const extending = useRef(false);
-  useEffect(() => {
-    if (
-      owner.kind !== 'radio' ||
-      queue.length === 0 ||
-      !isNearEnd(position, cursor.current.order)
-    ) {
-      return;
-    }
-    if (extending.current) return;
-    extending.current = true;
-    const seeds = radioSeeds(queue, index, RADIO_TRIES);
-    void (async () => {
-      try {
-        for (const seed of seeds) {
-          const res = await fetch(`/api/related/${seed.songId}`).catch(() => null);
-          const items = res?.ok ? ((await res.json()) as QueueItem[]) : [];
-          // 待っているあいだに別の並びに替わっていたら、足さない
-          if (cursor.current.queue !== queue) return;
-          const fresh = freshItems(queue, items);
-          if (fresh.length > 0) {
-            append(fresh);
-            return;
-          }
-        }
-      } finally {
-        extending.current = false;
-      }
-    })();
-  }, [owner, index, position, queue, append]);
+  // ラジオの並びを関連曲で伸ばす（use-radio-extension.ts）
+  useRadioExtension({ active: owner.kind === 'radio', queue, index, position, cursor, append });
 
   const close = useCallback(() => {
     clearResume();
