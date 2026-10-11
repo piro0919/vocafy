@@ -1,6 +1,7 @@
 // DB を読むのはサーバーだけ。ブラウザ側の部品から値として読み込むとビルドで止まるよう、サーバー専用にする（型だけの読み込みは構わない）
 import 'server-only';
 import { PAGE_SIZE } from './page-size';
+import { createHash } from 'node:crypto';
 import pg from 'pg';
 import { cache } from 'react';
 import { env } from '@/env';
@@ -244,14 +245,21 @@ export const latestOfProducer = cache(async (id: number): Promise<DatedItem[]> =
   return rows.map(toItem);
 });
 
-/** hash の掛ける数（文字列の hash でよく使う素数） */
-const HASH_PRIME = 31;
-
-/** 文字列から決まる 0 以上の整数。日ごとに決まった選び方をするのに使う */
+/**
+ * 文字列から決まる 0 以上の整数。日ごとに決まった選び方をするのに使う。md5 の頭の4バイト（SQL で md5 で選ぶのと同じ考え）。
+ * 前は31倍して文字を足すだけの作りで、日付を頭に付けても日付の分はどの曲にも同じだけ足されるので、同じ桁数の曲の id は
+ * 日付によらず id の順に並び、混ざっていなかった（2026-10-11 に test/db/on-this-day.test.ts で分かった）
+ */
 function hash(text: string): number {
-  let h = 0;
-  for (const c of text) h = (h * HASH_PRIME + c.charCodeAt(0)) >>> 0;
-  return h;
+  return createHash('md5').update(text).digest().readUInt32BE(0);
+}
+
+/** 日付で決まる順に混ぜる。同じ日なら同じ順 */
+function shuffleOn<T extends { id: number }>(date: string, list: T[]): T[] {
+  return list
+    .map((item) => ({ item, key: hash(`${date}${item.id}`) }))
+    .toSorted((a, b) => a.key - b.key)
+    .map(({ item }) => item);
 }
 
 /** きょうの日付の曲が少ない日に、前後に広げる日数の上限 */
@@ -294,8 +302,7 @@ export const onThisDay = cache(
       ) ?? DAY_REACH;
     const within = rows.filter((r) => r.distance <= reach);
     const exact = within.filter((r) => r.distance === 0);
-    const shuffle = <T extends { id: number }>(list: T[]) =>
-      list.toSorted((a, b) => hash(`${date}${a.id}`) - hash(`${date}${b.id}`));
+    const shuffle = <T extends { id: number }>(list: T[]) => shuffleOn(date, list);
     const pool = (exact.length > 0 ? exact : within).toSorted(
       (a, b) => b.rating_score - a.rating_score || a.id - b.id,
     );
@@ -337,9 +344,7 @@ export const dailyMix = cache(async (date: string, limit: number): Promise<Dated
     `${QUEUE_SELECT} and not (s.id = any($2::int[])) order by md5(s.id::text || $1), s.id limit $3`,
     [date, picked, limit - picked.length],
   );
-  return [...popular.rows, ...rest.rows]
-    .toSorted((a, b) => hash(`${date}${a.id}`) - hash(`${date}${b.id}`))
-    .map(toItem);
+  return shuffleOn(date, [...popular.rows, ...rest.rows]).map(toItem);
 });
 
 /** 投稿された年と、その年の流せる曲の数。新しい年から */
