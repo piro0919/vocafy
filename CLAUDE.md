@@ -306,6 +306,6 @@ pnpm dev -p 3100
 
 プレイヤー（`src/components/player/`）、詳細画面の動画の置き場所（`player-stage.tsx`）、テーマ、スワイプで戻る、キーボード操作は Janify のまま。YouTube の規約まわり（200×200 以上で常に見せる、上に何も重ねない）の考え方も同じ。経緯は Janify の CLAUDE.md にある。
 
-プレイヤーは役目ごとにファイルを分けた（2026-10-10）。並びと再生とラジオと一覧の続きは `player-provider.tsx`、型は `player-types.ts`、音量・ループ・ランダムの保存は `player-storage.ts`、流す順は `play-order.ts`、並びと流す順の計算は `queue-state.ts`、状態だけで決まる分かれ道（持ち主の判定・ラジオをやめたとき・ニコニコの曲を飛ばすか・曲が終わったとき）は `player-rules.ts`（2026-10-11。どちらもテストがある）、置き場所を待つ・持ち続ける処理は `use-slot.ts`、動画の枠を置き場所と右下の窓に合わせて移す処理は `use-frame-layout.ts`、右下の窓の帯は `dock-strip.tsx`。Janify の同じ部分は1つのファイルのままなので、Janify から直しを移すときは、この対応で場所を探す。
+プレイヤーは役目ごとにファイルを分けた（2026-10-10）。並びと再生とラジオと一覧の続きは `player-provider.tsx`、型は `player-types.ts`、音量・ループ・ランダムの保存は `player-storage.ts`、流す順は `play-order.ts`、並びと流す順の計算は `queue-state.ts`、状態だけで決まる分かれ道（持ち主の判定・ラジオをやめたとき・ニコニコの曲を飛ばすか・曲が終わったとき）は `player-rules.ts`（2026-10-11。どちらもテストがある）、置き場所を待つ・持ち続ける処理は `use-slot.ts`、動画の枠を置き場所と右下の窓に合わせて移す処理は `use-frame-layout.ts`、右下の窓の帯は `dock-strip.tsx`、曲の切り替えと一時停止で音量を絞る処理は `fade.ts`、再生位置の補いと表示は `playback-time.ts`。動画を大きく出す4つの画面の左の列は `src/components/stage-layout.tsx`。localStorage の並びは `src/lib/local-list.ts`、入・切の設定は `src/lib/local-flag.ts` から作る（2026-10-11）。Janify の同じ部分は1つのファイルのままなので、Janify から直しを移すときは、この対応で場所を探す。
 
 Janify で直したことは、手で移す。共通部分の切り出しは、両方の形が落ち着いてから考える。
