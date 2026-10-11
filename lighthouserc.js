@@ -1,10 +1,10 @@
 /**
- * 手元で走らせる速度と品質の計測（koidamashii・comic-time と同じ形）。
- * `pnpm lighthouse` で本番ビルドを立ち上げ、主な4画面を3回ずつ測る。
- * 結果は .lighthouseci に書き出すだけで、どこへも送らない。
+ * 速度と品質の計測（koidamashii・comic-time と同じ形）。CI（ci.yml の lighthouse）でも手元でも、
+ * `pnpm lighthouse` で本番ビルドを立ち上げ、トップ・ボカロPの一覧・ボカロPの画面を3回ずつ測る。
+ * 結果は .lighthouseci に書き出すだけで、どこへも送らない（CI は artifact に上げる）。
  *
- * 検索・ライブラリ・設定の画面は検索エンジンに載せない（noindex）ので、SEO の採点が必ず落ちる。測らない。
- * アルバムとアーティストの id は Notion のページの id で、書き出し直しても変わらない
+ * お気に入り・履歴・設定・再生用の画面は検索エンジンに載せない（noindex）ので、SEO の採点が必ず落ちる。測らない。
+ * ボカロPの 45 は DECO＊27 で、CI の小さな台帳（db/fixture.sql）にもいる
  */
 const port = 3200;
 const base = `http://localhost:${port}`;
