@@ -29,7 +29,7 @@ export async function seed(data: SeedData) {
   const client = new pg.Client({ connectionString: testUrl });
   await client.connect();
   try {
-    await client.query('truncate song, producer, vocalist, unplayable cascade');
+    await client.query('truncate song, producer, vocalist, unplayable, "user" cascade');
     const producers = data.producers ?? [{ id: DEFAULT_PRODUCER }];
     await client.query(
       `insert into producer (id, name, complete)
@@ -78,6 +78,31 @@ export async function seed(data: SeedData) {
         ),
       ],
     );
+  } finally {
+    await client.end();
+  }
+}
+
+/** ログインした人を足す（お気に入りの表は人の表を指す） */
+export async function addUser(id: string) {
+  const client = new pg.Client({ connectionString: testUrl });
+  await client.connect();
+  try {
+    await client.query(
+      `insert into "user" (id, name, email, "emailVerified") values ($1, $1, $1 || '@example.com', true)`,
+      [id],
+    );
+  } finally {
+    await client.end();
+  }
+}
+
+/** テストの中で表を直に読む */
+export async function query<T extends pg.QueryResultRow>(text: string, params: unknown[] = []) {
+  const client = new pg.Client({ connectionString: testUrl });
+  await client.connect();
+  try {
+    return (await client.query<T>(text, params)).rows;
   } finally {
     await client.end();
   }
