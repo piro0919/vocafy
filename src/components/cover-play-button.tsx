@@ -38,6 +38,8 @@ export function CoverPlayButton({
           alt=""
           fill
           loading={eager ? 'eager' : undefined}
+          // eager は詳細画面の大きな表紙だけで、その画面の LCP になる
+          fetchPriority={eager ? 'high' : undefined}
           sizes={sizes}
           className="object-cover"
         />

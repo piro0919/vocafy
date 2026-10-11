@@ -17,11 +17,14 @@ const isVideoThumb = (src: ImageProps['src']) =>
  * 読み込めたらふわっと出す画像。読み込んだ順にいきなり現れるのを避ける。
  * 先に読み込み終わっていて onLoad が来ないこともあるので、出したときにも確かめる。
  * 指を乗せたときの拡大（group-hover:scale）も同じ指定で動かす。使う側で transition を足しても、
- * Tailwind の並びで transition-opacity が後に来て勝ち、拡大が一瞬で切り替わっていた
+ * Tailwind の並びで transition-opacity が後に来て勝ち、拡大が一瞬で切り替わっていた。
+ * 最初に見える画像（loading="eager"）はフェードさせず、初めから見せる（2026-10-12）。透明なあいだの画像は
+ * Chrome が LCP に数えないので、JavaScript が動いて読み込みを見届けるまで LCP が決まらず、本番の Lighthouse で
+ * トップの LCP が 10 秒を超えていた
  */
 export function FadeImage({ className = '', alt, unoptimized, ...props }: ImageProps) {
   const ref = useRef<HTMLImageElement>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(props.loading === 'eager');
 
   useEffect(() => {
     if (ref.current?.complete) setLoaded(true);

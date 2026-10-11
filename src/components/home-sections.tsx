@@ -88,6 +88,8 @@ export function OnThisDay({
               fill
               sizes={RESPONSIVE_SIZES.hero}
               loading="eager"
+              // トップの LCP になる画像
+              fetchPriority="high"
               className="object-cover group-hover:scale-103"
             />
             <span className={`absolute right-3 bottom-3 size-12 ${COVER_PLAY}`}>
