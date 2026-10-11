@@ -47,14 +47,23 @@ declare global {
 }
 
 let apiReady: Promise<YTNamespace> | undefined;
+/**
+ * YouTube の仕組み（iframe_api）を読み込む。読み込めなかったとき（広告ブロックなどで止められたとき）は失敗にし、次に呼んだときに
+ * 読み込み直す。前は失敗しても待ち続け、帯の再生ボタンが読み込み中のまま固まった（2026-10-12 に止めて確かめた）
+ */
 function loadYouTubeApi(): Promise<YTNamespace> {
-  apiReady ??= new Promise((resolve) => {
+  apiReady ??= new Promise<YTNamespace>((resolve, reject) => {
     if (window.YT?.Player) return resolve(window.YT);
     window.onYouTubeIframeAPIReady = () => {
       if (window.YT) resolve(window.YT);
     };
     const script = document.createElement('script');
     script.src = 'https://www.youtube.com/iframe_api';
+    script.onerror = () => {
+      script.remove();
+      apiReady = undefined;
+      reject(new Error('YouTube の仕組みを読み込めませんでした'));
+    };
     document.head.append(script);
   });
   return apiReady;
@@ -87,7 +96,21 @@ export function createYouTubeEngine(
     if (!sound.muted) player?.unMute();
   };
 
-  void loadYouTubeApi().then((YT) => {
+  // 仕組みを読み込めなかったか。読み込めなければ帯を ▶ に戻し、次に流そうとしたとき（play・load）に読み込み直す
+  let failed = false;
+  const init = () =>
+    loadYouTubeApi().then(build, () => {
+      if (destroyed) return;
+      failed = true;
+      events.onBlocked();
+    });
+  const retry = () => {
+    if (!failed) return;
+    failed = false;
+    void init();
+  };
+
+  const build = (YT: YTNamespace) => {
     if (destroyed) return;
     const el = document.createElement('div');
     container.replaceChildren(el);
@@ -149,7 +172,8 @@ export function createYouTubeEngine(
         },
       },
     });
-  });
+  };
+  void init();
 
   return {
     service: 'youtube',
@@ -157,6 +181,7 @@ export function createYouTubeEngine(
       if (priming) endPrime();
       latest = id;
       wantPlay = true;
+      retry();
       // 前の動画を止めてから次の動画を頼む。止めずに頼むと、次の動画が届くまで前の動画が鳴り続け、
       // 曲を替えた直後に前の曲の音が一瞬聞こえた。止めても知らせ（onStateChange）は一時停止にならない
       player?.stopVideo();
@@ -164,6 +189,7 @@ export function createYouTubeEngine(
     },
     play: () => {
       wantPlay = true;
+      retry();
       player?.playVideo();
     },
     pause: () => {
