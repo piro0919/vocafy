@@ -43,7 +43,7 @@ const OPTIONS: { value: Lang; label: string }[] = [
   { value: 'en', label: 'English' },
 ];
 
-/** 設定の画面の言語の選択。選ぶと残して、いまの画面のその言語の住所へ移る */
+/** 設定の画面の言語の選択。読めない言語の画面からも見つけられるよう、一番上に置く。選ぶと残して、いまの画面のその言語の住所へ移る */
 export function LangSetting() {
   const lang = useLang();
   const router = useProgressRouter();
@@ -53,7 +53,7 @@ export function LangSetting() {
     router.push(sameScreenIn(next));
   };
   return (
-    <SettingSection eyebrow="Language" title={lang === 'en' ? 'Language' : '言語'}>
+    <SettingSection eyebrow="Language" title={lang === 'en' ? 'Language' : '言語'} first>
       {(id) => (
         <RadioOptions
           name="lang"

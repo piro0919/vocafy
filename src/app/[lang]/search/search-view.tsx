@@ -23,6 +23,34 @@ import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { TIMING } from '@/lib/timing';
+import { useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: {
+    recent: '最近の検索',
+    clear: '検索履歴を削除',
+    cleared: '検索履歴を削除しました',
+    undo: '元に戻す',
+    failed: '索引を読めませんでした。開き直してください。',
+    loading: '読み込んでいます…',
+    noResults: (q: string) => `「${q}」に当てはまる曲は見つかりませんでした。`,
+    songs: '曲',
+    firstOf: (shown: string, total: string) => `${shown}曲（全${total}曲）`,
+  },
+  en: {
+    recent: 'Recent searches',
+    clear: 'Clear searches',
+    cleared: 'Searches cleared',
+    undo: 'Undo',
+    failed: 'Couldn’t load the search index. Please reload the page.',
+    loading: 'Loading…',
+    noResults: (q: string) => `No results for “${q}”.`,
+    songs: 'Songs',
+    firstOf: (shown: string, total: string) => `${shown} of ${total} songs`,
+  },
+});
 
 /** 一度に出す曲の数。それより多く当たったときは、言葉を足して絞ってもらう */
 const SONG_LIMIT = 100;
@@ -65,6 +93,8 @@ export function SearchView() {
   }, []);
 
   const recent = useRecentSearches();
+  const t = useText(TEXT);
+  const terms = useText(TERMS);
   const query = normalize(text);
   const found = useMemo(() => {
     if (!index || !query) return null;
@@ -147,21 +177,21 @@ export function SearchView() {
       {!query && recent.length > 0 && (
         <section data-recent className="mt-6">
           <div className="mb-3 flex items-end gap-3">
-            <Heading eyebrow="Recent">最近の検索</Heading>
+            <Heading eyebrow="Recent">{t.recent}</Heading>
             {/* 履歴の画面の「履歴を削除」と同じく、確かめずにすぐ消し、知らせの「元に戻す」で戻せるようにする */}
             <button
               type="button"
               onClick={() => {
                 const removed = recent;
                 clearRecentSearches();
-                toast('検索履歴を削除しました', {
+                toast(t.cleared, {
                   duration: TIMING.undoToast,
-                  action: { label: '元に戻す', onClick: () => restoreRecentSearches(removed) },
+                  action: { label: t.undo, onClick: () => restoreRecentSearches(removed) },
                 });
               }}
               className={`${PILL} ml-auto`}
             >
-              検索履歴を削除
+              {t.clear}
             </button>
           </div>
           <ul className="flex flex-wrap gap-2">
@@ -184,21 +214,17 @@ export function SearchView() {
         </section>
       )}
 
-      {failed && (
-        <p className="mt-6 text-sm text-muted">索引を読めませんでした。開き直してください。</p>
-      )}
-      {!failed && query && !index && <p className="mt-6 text-sm text-muted">読み込んでいます…</p>}
+      {failed && <p className="mt-6 text-sm text-muted">{t.failed}</p>}
+      {!failed && query && !index && <p className="mt-6 text-sm text-muted">{t.loading}</p>}
 
       {found && found.producers.length + found.songs.length + found.voices.length === 0 && (
-        <p className="mt-6 text-sm text-muted">
-          「{text.trim()}」に当てはまる曲は見つかりませんでした。
-        </p>
+        <p className="mt-6 text-sm text-muted">{t.noResults(text.trim())}</p>
       )}
 
       {found && found.producers.length > 0 && (
         <section className="mt-6">
           <div className="mb-3">
-            <Heading eyebrow="Producers">ボカロP</Heading>
+            <Heading eyebrow="Producers">{terms.producers}</Heading>
           </div>
           <ul className="flex flex-wrap gap-2">
             {found.producers.slice(0, PRODUCER_LIMIT).map((p) => (
@@ -220,7 +246,7 @@ export function SearchView() {
                   )}
                   {p.name}
                   <span className="text-xs font-normal text-muted">
-                    {formatCount(p.songCount)}曲
+                    {terms.songs(formatCount(p.songCount))}
                   </span>
                 </Link>
               </li>
@@ -232,7 +258,7 @@ export function SearchView() {
       {found && found.voices.length > 0 && (
         <section className={SECTION}>
           <div className="mb-3">
-            <Heading eyebrow="Voices">歌声</Heading>
+            <Heading eyebrow="Voices">{terms.voices}</Heading>
           </div>
           <ul className="flex flex-wrap gap-2">
             {found.voices.slice(0, VOICE_LIMIT).map((v) => {
@@ -250,7 +276,7 @@ export function SearchView() {
                     )}
                     {v.name}
                     <span className="text-xs font-normal text-muted">
-                      {formatCount(v.songCount)}曲
+                      {terms.songs(formatCount(v.songCount))}
                     </span>
                   </Link>
                 </li>
@@ -263,17 +289,17 @@ export function SearchView() {
       {found && found.songs.length > 0 && (
         <section className={SECTION}>
           <div className="mb-3">
-            <Heading eyebrow="Songs">曲</Heading>
+            <Heading eyebrow="Songs">{t.songs}</Heading>
           </div>
           <p className="-mt-1 mb-3 text-sm text-muted">
             {found.songs.length > SONG_LIMIT
-              ? `${SONG_LIMIT}曲（全${formatCount(found.songs.length)}曲）`
-              : `${formatCount(found.songs.length)}曲`}
+              ? t.firstOf(formatCount(SONG_LIMIT), formatCount(found.songs.length))
+              : terms.songs(formatCount(found.songs.length))}
           </p>
           {items ? (
             <SongList songs={items} className="grid gap-1 md:grid-cols-2 xl:grid-cols-3" />
           ) : (
-            <p className="text-sm text-muted">読み込んでいます…</p>
+            <p className="text-sm text-muted">{t.loading}</p>
           )}
         </section>
       )}

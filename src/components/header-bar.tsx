@@ -1,7 +1,9 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
-import { usePathname, useRouter } from '@/i18n/navigation';
+import { usePathname, useRouter, useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
 import { Suspense, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { loadIndex } from '@/lib/search-index';
@@ -11,6 +13,8 @@ import { Icon } from './icon';
 import { InstallButton } from './install-app';
 import { Logo } from './nav';
 import { ICON } from './button-styles';
+
+const TEXT = defineText({ ja: { back: '戻る' }, en: { back: 'Back' } });
 
 const ICON_BUTTON = `grid ${ICON} text-muted hover:text-foreground`;
 
@@ -27,6 +31,8 @@ export function HeaderBar() {
   const input = useRef<HTMLInputElement>(null);
   // 虫めがねを押してから検索の画面に移りきるまでも、帯を検索欄にしておく
   const [opening, setOpening] = useState(false);
+  const t = useText(TEXT);
+  const term = useText(TERMS);
   if (opening && pathname === '/search') setOpening(false);
 
   // 検索の画面では、帯を ← と検索欄に変える（YouTube のアプリと同じ）
@@ -35,7 +41,7 @@ export function HeaderBar() {
       <div className="flex w-full items-center gap-1 md:hidden">
         <button
           type="button"
-          aria-label="戻る"
+          aria-label={t.back}
           className={ICON_BUTTON}
           onClick={() => {
             if (openedFromSite) router.back({ showProgress: false });
@@ -67,7 +73,7 @@ export function HeaderBar() {
         */}
       <button
         type="button"
-        aria-label="検索"
+        aria-label={term.search}
         className={ICON_BUTTON}
         onPointerDown={() => void loadIndex().catch(() => {})}
         onClick={() => {
@@ -80,7 +86,7 @@ export function HeaderBar() {
         <Icon name="search" className="size-5" />
       </button>
       {/* スマホは左のメニューが出ないので、設定への入口を上の帯の右端に置く（YouTube Music のアプリと同じ） */}
-      <Link href="/settings" aria-label="設定" className={ICON_BUTTON}>
+      <Link href="/settings" aria-label={term.settings} className={ICON_BUTTON}>
         <Icon name="settings" className="size-5" />
       </Link>
       {/* ログインは右端に置く（YouTube と同じ） */}

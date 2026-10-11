@@ -1,7 +1,21 @@
-/** 「10-09」→「10月9日」。日付の一覧の画面と、その再生用の画面（/play）で同じものを使う */
-export function dayLabel(day: string): string {
+import type { Lang } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: { bornOn: (label: string) => `${label}に生まれた曲` },
+  en: { bornOn: (label: string) => `Born on ${label}` },
+});
+
+/** 「10-09」→「10月9日」（英語は「October 9」）。日付の一覧の画面と、その再生用の画面（/play）で同じものを使う */
+function dayLabel(day: string, lang: Lang): string {
   const [m, d] = day.split('-').map(Number);
-  return `${m}月${d}日`;
+  return TERMS[lang].monthDay(m, d);
+}
+
+/** 日付の一覧の題名。「10月9日に生まれた曲」（英語は「Born on October 9」）。トップのきょうの日付の曲の区画にも使う */
+export function dayTitle(day: string, lang: Lang): string {
+  return TEXT[lang].bornOn(dayLabel(day, lang));
 }
 
 /**

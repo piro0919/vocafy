@@ -11,6 +11,13 @@ import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
 import { formatCount } from '@/lib/format';
 import { yearOf } from '@/lib/iso-date';
+import { langOf } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+
+const TEXT = defineText({
+  ja: { picks: (shown: string, total: string) => `${shown}曲（全${total}曲）` },
+  en: { picks: (shown: string, total: string) => `${shown} of ${total} songs` },
+});
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 // 歌声の画面はビルドのときには作らず、最初に開かれたときに作って残す
@@ -39,6 +46,7 @@ export default async function VoicePage({ params }: PageProps<'/[lang]/voices/[i
   const { voice, songs, yearTotals } = found;
   const byYear = Map.groupBy(songs, (s: DatedItem) => yearOf(s.publishedOn));
   const art = voiceArt(voice.id);
+  const t = TEXT[await langOf(params)];
   return (
     <>
       <div className="flex items-end gap-4 pt-4 pb-4 sm:pb-6">
@@ -71,7 +79,7 @@ export default async function VoicePage({ params }: PageProps<'/[lang]/voices/[i
           {/* 流すのは代表曲だけ。全曲（1万曲を超える歌声もある）を年の新しい順に流すと、画面の見せ方と食い違う */}
           <PlayAll
             songs={songs}
-            count={`${songs.length}曲（全${formatCount(voice.songCount)}曲）`}
+            count={t.picks(formatCount(songs.length), formatCount(voice.songCount))}
             source={`voices/${voice.id}`}
           />
         </div>

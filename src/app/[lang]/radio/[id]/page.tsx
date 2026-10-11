@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { RadioPlayer } from '@/components/radio-player';
 import { songsByIds } from '@/lib/catalog';
+import { langOf } from '@/i18n/config';
+import { TERMS } from '@/i18n/terms';
 
 // 一覧の画面と同じく、次の配備まで作ったページを使い回す。ビルドのときには作らず、最初に開かれたときに作る
 export const revalidate = false;
@@ -15,7 +17,8 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/radio/[id]'>): Promise<Metadata> {
   const { id } = await params;
   const [seed] = await songsByIds([Number(id)]);
-  return { title: seed ? `${seed.title}のラジオ` : 'ラジオ', robots: { index: false } };
+  const t = TERMS[await langOf(params)];
+  return { title: seed ? t.radioOf(seed.title) : t.radio, robots: { index: false } };
 }
 
 /**
@@ -29,9 +32,10 @@ export default async function RadioPage({ params }: PageProps<'/[lang]/radio/[id
   if (!Number.isSafeInteger(id)) notFound();
   const [seed] = await songsByIds([id]);
   if (!seed) notFound();
+  const t = TERMS[await langOf(params)];
   return (
     <div className="pt-content-top">
-      <RadioPlayer seed={seed} eyebrow="Radio" title={`${seed.title}のラジオ`} />
+      <RadioPlayer seed={seed} eyebrow="Radio" title={t.radioOf(seed.title)} />
     </div>
   );
 }

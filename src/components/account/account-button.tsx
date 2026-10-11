@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
+import { Link, useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
 import { useId } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { clearLocalFavorites, setSignedIn } from '@/lib/favorites';
@@ -10,10 +12,13 @@ import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { useClientValue } from '@/lib/client-value';
 import { GLASS_PANEL, MENU_ROW } from '@/components/surface-styles';
 
+const TEXT = defineText({ ja: { account: 'アカウント' }, en: { account: 'Account' } });
+
 function LoginButton() {
+  const term = useText(TERMS);
   return (
     <button type="button" onClick={() => signIn()} className={PRIMARY_TEXT}>
-      ログイン
+      {term.signIn}
     </button>
   );
 }
@@ -22,17 +27,14 @@ function LoginButton() {
 function SessionAccount() {
   const { data, isPending } = authClient.useSession();
   const id = useId();
+  const t = useText(TEXT);
+  const term = useText(TERMS);
   const user = data?.user;
   if (isPending) return <span className="size-9 shrink-0" />;
   if (!user) return <LoginButton />;
   return (
     <>
-      <button
-        type="button"
-        popoverTarget={id}
-        aria-label="アカウント"
-        className={`grid ${ICON_SM}`}
-      >
+      <button type="button" popoverTarget={id} aria-label={t.account} className={`grid ${ICON_SM}`}>
         {user.image ? (
           <Image
             src={user.image}
@@ -62,7 +64,7 @@ function SessionAccount() {
           onClick={() => document.getElementById(id)?.hidePopover()}
           className={`block ${MENU_ROW}`}
         >
-          設定
+          {term.settings}
         </Link>
         <button
           type="button"
@@ -75,7 +77,7 @@ function SessionAccount() {
           }}
           className={`block w-full ${MENU_ROW}`}
         >
-          ログアウト
+          {term.signOut}
         </button>
       </div>
     </>

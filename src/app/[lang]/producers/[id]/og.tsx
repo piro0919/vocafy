@@ -2,6 +2,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
+import type { Lang } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
 import type { findProducer, Song } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
 import { voiceArtIdByName } from '@/lib/voice-art';
@@ -12,6 +14,12 @@ export { OG_SIZE };
 
 const icon = `data:image/png;base64,${await readFile(join(process.cwd(), 'src/app/icon.png'), 'base64')}`;
 const logoMark = `data:image/png;base64,${await readFile(join(process.cwd(), 'public/logo-mark.png'), 'base64')}`;
+
+/** 名前の下に添える文。曲名・ボカロP名はどちらの言語でもそのまま出す */
+const TEXT = defineText({
+  ja: { listen: (n: string) => `${n}曲を、まとめて聴ける。` },
+  en: { listen: (n: string) => (n === '1' ? 'Listen to 1 song.' : `Listen to all ${n} songs.`) },
+});
 
 type Art = { src: string; width: number; height: number };
 
@@ -92,14 +100,14 @@ async function niconicoCover(thumb: string): Promise<string | null> {
  * ロゴは右上（X は大きな画像のカードの左下にサイトの住所を重ねるので、左下を避ける）
  */
 export async function producerImage(
+  lang: Lang,
   found: Awaited<ReturnType<typeof findProducer>>,
   song?: Pick<Song, 'title' | 'youtubeId' | 'niconicoThumb' | 'vocalists'>,
 ) {
   const name = found?.producer.name ?? 'Vocafy';
   const picture = found?.producer.picture ?? null;
-  const count = `${formatCount(found?.songs.length ?? 0)}曲`;
   const big = song?.title ?? name;
-  const sub = song ? name : `${count}を、まとめて聴ける。`;
+  const sub = song ? name : TEXT[lang].listen(formatCount(found?.songs.length ?? 0));
   const eyebrow = song ? 'SONG' : 'PRODUCER';
   // 表紙・影絵・フォントは互いに待たないので、まとめて取りに行く（前は表紙と影絵を読み終えてからフォントを取っていた）
   const [cover, singers, display, body, tech] = await Promise.all([

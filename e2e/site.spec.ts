@@ -220,3 +220,37 @@ test('無いボカロPは 404', async ({ page }) => {
   const res = await page.goto('/producers/123456789');
   expect(res?.status()).toBe(404);
 });
+
+test('英語の住所では英語の画面が出て、中のリンクも英語の住所へ移る', async ({ page }) => {
+  await page.goto('/en');
+  await expect(page.getByRole('heading', { name: 'Daily Mix' })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await page.goto('/en/producers');
+  const first = page.locator('[data-index] a').first();
+  await expect(first).toHaveAttribute('href', /^\/en\/producers\/\d+$/);
+});
+
+test('設定で English を選ぶと英語の同じ画面へ移り、日本語の住所を開いても英語へ移る', async ({
+  page,
+}) => {
+  await page.goto('/settings');
+  await page.getByRole('radio', { name: 'English' }).click();
+  await expect(page).toHaveURL(/\/en\/settings$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  // 共有された日本語のリンクを開いた形
+  await page.goto('/years');
+  await expect(page).toHaveURL(/\/en\/years$/);
+  // 日本語に戻すと、もう英語へは移らない
+  await page.goto('/en/settings');
+  await page.getByRole('radio', { name: '日本語' }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await page.goto('/years');
+  await page.waitForTimeout(1000);
+  await expect(page).toHaveURL(/\/years$/);
+});
+
+test('中の住所（/ja/...）を開くと、頭に言語の付かない住所へ送る', async ({ page }) => {
+  await page.goto('/ja/years');
+  await expect(page).toHaveURL(/\/years$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+});

@@ -1,6 +1,13 @@
 'use client';
 
 import { usePlayer } from './player/player-provider';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { playing: '再生中' },
+  en: { playing: 'Now playing' },
+});
 
 /**
  * いま流している曲がこのボカロPのものなら、題名の横に揺れる棒を出す。
@@ -14,8 +21,9 @@ export function NowPlaying({ producerId }: { producerId: number }) {
 
 /** 再生中の印。一時停止中は止める */
 export function Bars({ playing }: { playing: boolean }) {
+  const t = useText(TEXT);
   return (
-    <span aria-label="再生中" className="inline-flex h-3 shrink-0 items-end gap-0.5">
+    <span aria-label={t.playing} className="inline-flex h-3 shrink-0 items-end gap-0.5">
       {[0, 1, 2].map((i) => (
         <span
           key={i}

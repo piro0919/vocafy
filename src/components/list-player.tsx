@@ -10,6 +10,19 @@ import { StageLayout } from './stage-layout';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
 import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: {
+    playFrom: (title: string) => `「${title}」から再生`,
+    playList: 'この一覧を再生',
+  },
+  en: {
+    playFrom: (title: string) => `Play from “${title}”`,
+    playList: 'Play this list',
+  },
+});
 
 /**
  * 一覧（年・日付・歌声の年）の再生用の画面。ボカロPの画面と同じく、左（スマホは上）に大きなプレイヤーの
@@ -34,6 +47,7 @@ export function ListPlayer({
   songs: QueueItem[];
 }) {
   const { current, playing, playAll, toggle } = usePlayer();
+  const t = useText(TEXT);
   // 流している曲がこの一覧にあれば、開いたときに並びをこの一覧にする（use-take-over.ts。どの画面も同じ決まり）。
   // 流すのは songs だけ（多くても PICKUP_SIZE 曲で、1ページに収まる）
   const owner = useMemo(() => ({ kind: 'list' as const, source }), [source]);
@@ -57,7 +71,7 @@ export function ListPlayer({
     <StageLayout
       song={here ? current : null}
       cover={linkedItem?.thumb ?? songs[0]?.thumb ?? null}
-      label={linkedItem ? `「${linkedItem.title}」から再生` : 'この一覧を再生'}
+      label={linkedItem ? t.playFrom(linkedItem.title) : t.playList}
       onPlay={start}
       heading={<StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />}
       play={

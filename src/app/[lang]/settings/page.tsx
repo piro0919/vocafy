@@ -10,17 +10,26 @@ import { VoiceSetting } from '@/components/theme/voice-setting';
 import { Heading } from '@/components/heading';
 import { SupportLink } from '@/components/support-link';
 import { VisualizerSetting } from '@/components/visualizer/visualizer-setting';
+import { langOf } from '@/i18n/config';
+import { LangSetting } from '@/i18n/lang-choice';
+import { TERMS } from '@/i18n/terms';
 
-export const metadata: Metadata = { title: '設定', robots: { index: false } };
+export async function generateMetadata({
+  params,
+}: PageProps<'/[lang]/settings'>): Promise<Metadata> {
+  return { title: TERMS[await langOf(params)].settings, robots: { index: false } };
+}
 
-export default function SettingsPage() {
+export default async function SettingsPage({ params }: PageProps<'/[lang]/settings'>) {
+  const t = TERMS[await langOf(params)];
   return (
     <div className="max-w-xl">
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow="Settings">
-          設定
+          {t.settings}
         </Heading>
       </div>
+      <LangSetting />
       <ThemeSetting />
       <VoiceSetting />
       <DockSetting />

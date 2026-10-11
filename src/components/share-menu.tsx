@@ -8,6 +8,27 @@ import { Icon, type IconName } from './icon';
 import { QrCode } from './qr-code';
 import { useClientValue } from '@/lib/client-value';
 import { GLASS_PANEL, MENU_ROW } from '@/components/surface-styles';
+import { defineText } from '@/i18n/text';
+import { useLocalize, useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: {
+    back: '共有の一覧に戻る',
+    qr: 'QRコード',
+    qrOf: (text: string) => `${text} の QR コード`,
+    copyLink: 'リンクをコピー',
+    copied: 'リンクをコピーしました',
+    shareSong: 'この曲を共有',
+  },
+  en: {
+    back: 'Back to share options',
+    qr: 'QR code',
+    qrOf: (text: string) => `QR code for ${text}`,
+    copyLink: 'Copy link',
+    copied: 'Link copied',
+    shareSong: 'Share this song',
+  },
+});
 
 /** 共有の文に付けるハッシュタグ。ボカロPの名前は付けない（記号入りの名前でタグが切れ、追う人もいない） */
 const HASHTAG = 'Vocafy';
@@ -19,6 +40,7 @@ const HASHTAG = 'Vocafy';
  * 文には #Vocafy を付ける（2026-10-11）。LINE とリンクをコピーは住所だけ
  */
 export function ShareMenu({ url, text, label }: { url: string; text: string; label: string }) {
+  const t = useText(TEXT);
   const [open, setOpen] = useState(false);
   // 板の中身を送り先から QR に差し替えているか
   const [qr, setQr] = useState(false);
@@ -110,33 +132,33 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
               <div className="flex items-center pb-1">
                 <button
                   type="button"
-                  aria-label="共有の一覧に戻る"
+                  aria-label={t.back}
                   autoFocus
                   onClick={() => setQr(false)}
                   className={`grid ${ICON_SM} text-muted hover:text-foreground`}
                 >
                   <Icon name="left" className="size-4" />
                 </button>
-                <span className="text-sm font-bold">QRコード</span>
+                <span className="text-sm font-bold">{t.qr}</span>
               </div>
               <div ref={qrBox} className="mx-auto">
-                <QrCode value={url} label={`${text} の QR コード`} />
+                <QrCode value={url} label={t.qrOf(text)} />
               </div>
             </>
           ) : (
             <>
-              {targets.map((t) => (
+              {targets.map((target) => (
                 <a
-                  key={t.name}
+                  key={target.name}
                   role="menuitem"
-                  href={t.href}
+                  href={target.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
                   className={row}
                 >
-                  <Icon name={t.icon} className="size-5" />
-                  {t.name}
+                  <Icon name={target.icon} className="size-5" />
+                  {target.name}
                 </a>
               ))}
               <button
@@ -145,17 +167,17 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
                 onClick={async () => {
                   setOpen(false);
                   await navigator.clipboard.writeText(url);
-                  toast('リンクをコピーしました');
+                  toast(t.copied);
                 }}
                 className={row}
               >
                 <Icon name="share" className="size-5" />
-                リンクをコピー
+                {t.copyLink}
               </button>
               {/* パソコンで聴いている曲をスマホで開く・隣の人に読み取ってもらうためのもの。スマホは端末の共有の窓を出すので、ここに来ない */}
               <button type="button" role="menuitem" onClick={() => setQr(true)} className={row}>
                 <Icon name="qr" className="size-5" />
-                QRコード
+                {t.qr}
               </button>
             </>
           )}
@@ -204,12 +226,14 @@ function fitMenu(el: HTMLElement, qrBox: HTMLElement | null) {
 export function SongShare({ song }: { song: QueueItem | null }) {
   // 住所の元はブラウザの側で決める（作り置きのページにサーバーの住所を焼き込まない）
   const origin = useClientValue(() => window.location.origin, '');
+  const to = useLocalize();
+  const t = useText(TEXT);
   if (!song) return null;
   return (
     <ShareMenu
-      url={`${origin}/producers/${song.producerId}/songs/${song.songId}`}
+      url={`${origin}${to(`/producers/${song.producerId}/songs/${song.songId}`)}`}
       text={`${song.title} - ${song.producerName}`}
-      label="この曲を共有"
+      label={t.shareSong}
     />
   );
 }

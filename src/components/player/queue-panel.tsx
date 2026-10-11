@@ -4,6 +4,8 @@ import { type RefObject, useCallback, useRef } from 'react';
 import { SongItem } from '../song-list';
 import { FloatingPanel } from './floating-panel';
 import { usePlayer } from './player-provider';
+import { useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
 
 /**
  * 次に流れる曲（順番待ち）。流す順（ランダムなら混ぜたあとの順）で並べ、押すとその曲へ飛ぶ。
@@ -19,6 +21,7 @@ export function QueuePanel({
   trigger: RefObject<HTMLButtonElement | null>;
 }) {
   const { current, upcoming, jumpTo, skipsNiconico } = usePlayer();
+  const terms = useText(TERMS);
   // 閉じているあいだは並びを作らない（曲が変わるたびに組み直さない）
   const items = open ? upcoming() : [];
   const list = useRef<HTMLDivElement>(null);
@@ -29,7 +32,7 @@ export function QueuePanel({
       open={open}
       onClose={onClose}
       trigger={trigger}
-      title="次に流れる曲"
+      title={terms.upNext}
       onOpened={toTop}
     >
       {current && (

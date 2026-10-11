@@ -3,11 +3,15 @@
 import { useSyncExternalStore } from 'react';
 import { RadioOptions, SettingSection } from '../setting-controls';
 import { type DockSide, savedDockSide, saveDockSide, subscribeDockSide } from './player-storage';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
 
-const OPTIONS: { value: DockSide; label: string }[] = [
-  { value: 'right', label: '右' },
-  { value: 'left', label: '左' },
-];
+const TEXT = defineText({
+  ja: { title: 'ミニプレーヤーの位置', right: '右', left: '左' },
+  en: { title: 'Mini player position', right: 'Right', left: 'Left' },
+});
+
+const SIDES: DockSide[] = ['right', 'left'];
 
 /**
  * 設定の画面の「ミニプレーヤーの位置」。ほかの画面で流しているときの小さな窓を、右と左のどちらに出すか。
@@ -15,13 +19,14 @@ const OPTIONS: { value: DockSide; label: string }[] = [
  */
 export function DockSetting() {
   const side = useSyncExternalStore(subscribeDockSide, savedDockSide, (): DockSide => 'right');
+  const t = useText(TEXT);
   return (
-    <SettingSection eyebrow="Player" title="ミニプレーヤーの位置">
+    <SettingSection eyebrow="Player" title={t.title}>
       {(id) => (
         <RadioOptions
           name="dock"
           labelledBy={id}
-          options={OPTIONS}
+          options={SIDES.map((value) => ({ value, label: t[value] }))}
           value={side}
           onChange={saveDockSide}
         />

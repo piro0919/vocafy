@@ -1,11 +1,17 @@
 'use client';
 
-import { usePathname, useRouter } from '@/i18n/navigation';
+import { usePathname, useRouter, useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
 import { useSearchParams } from 'next/navigation';
 import { type Ref, useEffect, useRef, useState } from 'react';
 import { loadIndex } from '@/lib/search-index';
 import { Icon } from './icon';
 import { TIMING } from '@/lib/timing';
+
+const TEXT = defineText({
+  ja: { placeholder: '曲名・ボカロP・歌声', label: '曲名・ボカロP・歌声の名前で探す' },
+  en: { placeholder: 'Songs, producers, voices', label: 'Search songs, producers, and voices' },
+});
 
 const BOX =
   'flex h-10 w-full items-center gap-2 rounded-full border border-line/60 bg-glass px-4 focus-within:border-accent-line';
@@ -19,6 +25,7 @@ type FieldProps = {
 };
 
 function Field({ value, onChange, mobile, inputRef }: FieldProps) {
+  const t = useText(TEXT);
   return (
     <label className={mobile ? BOX : `${BOX} max-w-search lg:max-w-search-stage`}>
       <Icon name="search" className="size-5 shrink-0 text-muted" />
@@ -35,8 +42,8 @@ function Field({ value, onChange, mobile, inputRef }: FieldProps) {
         readOnly={!onChange}
         // 押した時点で検索の索引を読み始める。打ち終わって検索の画面へ移るころには読み終わっている
         onFocus={() => void loadIndex().catch(() => {})}
-        placeholder="曲名・ボカロP・歌声"
-        aria-label="曲名・ボカロP・歌声の名前で探す"
+        placeholder={t.placeholder}
+        aria-label={t.label}
         className={`h-full min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted ${mobile ? 'text-base' : 'text-sm'}`}
       />
     </label>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
@@ -41,11 +42,12 @@ export function PlayAll({
   pickup?: boolean;
 }) {
   const { here, playing, start, toggle } = usePlayAll(songs, source);
+  const t = useText(TERMS);
   return (
     <div className="mt-3 flex items-center gap-3">
       <button type="button" onClick={() => (here ? toggle() : start())} className={PRIMARY}>
         <Icon name={here && playing ? 'pause' : pickup ? 'shuffle' : 'play'} className="size-5" />
-        {here && playing ? '一時停止' : pickup ? 'ピックアップ' : '再生'}
+        {here && playing ? t.pause : pickup ? t.pickup : t.play}
       </button>
       {/* 折り返すのは空きの位置だけ。字の間で折ると「（全11,002曲）」の「曲）」だけが次の行に落ちた */}
       <p className="text-sm text-muted [word-break:keep-all]">{count}</p>
@@ -69,6 +71,7 @@ export function PlayAllPill({
   pickup?: boolean;
 }) {
   const { here, start, router } = usePlayAll(songs, source);
+  const t = useText(TERMS);
   return (
     <button
       type="button"
@@ -76,7 +79,7 @@ export function PlayAllPill({
       className={PRIMARY}
     >
       <Icon name={pickup ? 'shuffle' : 'play'} className="size-5" />
-      {pickup ? 'ピックアップ' : '再生'}
+      {pickup ? t.pickup : t.play}
     </button>
   );
 }

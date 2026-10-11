@@ -52,3 +52,8 @@ export function useRouter() {
     [router, to],
   );
 }
+
+/** 部品の文言（text.ts の defineText で作った組）から、いまの言語の分を引く */
+export function useText<T>(text: Record<Lang, T>): T {
+  return text[useLang()];
+}

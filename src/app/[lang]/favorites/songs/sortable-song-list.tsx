@@ -27,6 +27,29 @@ import type { QueueItem } from '@/lib/catalog';
 import { moveFavoriteSong } from '@/lib/favorites';
 import { ICON_SM } from '@/components/button-styles';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
+import { useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
+
+const TEXT = defineText({
+  ja: {
+    picked: (title: string, place: number) => `${title}をつかみました。いまは${place}番目です`,
+    moving: (title: string, place: number) => `${title}を${place}番目へ`,
+    dropped: (title: string, place: number) => `${title}を${place}番目に置きました`,
+    restored: (title: string) => `${title}を元の位置に戻しました`,
+    instructions:
+      '並べ替えるには、Space か Enter でつかみ、上下の矢印で動かして、もう一度 Space か Enter で置きます。Escape でやめます',
+    reorder: (title: string) => `${title}を並べ替える`,
+  },
+  en: {
+    picked: (title: string, place: number) => `Picked up ${title}. It is at position ${place}`,
+    moving: (title: string, place: number) => `${title} moved to position ${place}`,
+    dropped: (title: string, place: number) => `${title} dropped at position ${place}`,
+    restored: (title: string) => `${title} returned to its original position`,
+    instructions:
+      'To reorder, press Space or Enter to pick up, use the up and down arrows to move, then press Space or Enter again to drop. Press Escape to cancel',
+    reorder: (title: string) => `Reorder ${title}`,
+  },
+});
 
 /**
  * お気に入りの曲の一覧。好きな順に並べ替えられる。
@@ -48,18 +71,16 @@ export function SortableSongList({
     useSensor(TouchSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  const t = useText(TEXT);
   const titleOf = (id: string | number) => songs.find((s) => s.songId === id)?.title ?? '';
   const placeOf = (id: string | number) => songs.findIndex((s) => s.songId === id) + 1;
   const announcements: Announcements = {
-    onDragStart: ({ active }) =>
-      `${titleOf(active.id)}をつかみました。いまは${placeOf(active.id)}番目です`,
+    onDragStart: ({ active }) => t.picked(titleOf(active.id), placeOf(active.id)),
     onDragOver: ({ active, over }) =>
-      over ? `${titleOf(active.id)}を${placeOf(over.id)}番目へ` : undefined,
+      over ? t.moving(titleOf(active.id), placeOf(over.id)) : undefined,
     onDragEnd: ({ active, over }) =>
-      over
-        ? `${titleOf(active.id)}を${placeOf(over.id)}番目に置きました`
-        : `${titleOf(active.id)}を元の位置に戻しました`,
-    onDragCancel: ({ active }) => `${titleOf(active.id)}を元の位置に戻しました`,
+      over ? t.dropped(titleOf(active.id), placeOf(over.id)) : t.restored(titleOf(active.id)),
+    onDragCancel: ({ active }) => t.restored(titleOf(active.id)),
   };
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (over && active.id !== over.id) moveFavoriteSong(Number(active.id), Number(over.id));
@@ -75,8 +96,7 @@ export function SortableSongList({
       accessibility={{
         announcements,
         screenReaderInstructions: {
-          draggable:
-            '並べ替えるには、Space か Enter でつかみ、上下の矢印で動かして、もう一度 Space か Enter で置きます。Escape でやめます',
+          draggable: t.instructions,
         },
       }}
       onDragEnd={onDragEnd}
@@ -119,6 +139,7 @@ function SortableSong({
     // 並びが動く速さと曲線をほかの動きにそろえる（dnd-kit の既定は 250ms の ease）
     transition: { duration: MOTION.move, easing: EASE_OUT },
   });
+  const t = useText(TEXT);
   // dnd-kit は受け口を Function の表で返すので、置き場所ごとに1つずつ取り出す
   const on = (name: 'onMouseDown' | 'onTouchStart' | 'onKeyDown') =>
     listeners?.[name] as ((event: SyntheticEvent) => void) | undefined;
@@ -145,7 +166,7 @@ function SortableSong({
             {...attributes}
             onTouchStart={on('onTouchStart')}
             onKeyDown={on('onKeyDown')}
-            aria-label={`${song.title}を並べ替える`}
+            aria-label={t.reorder(song.title)}
             className={`grid ${ICON_SM} touch-none text-muted hover:text-foreground ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           >
             <Icon name="grip" className="size-5" />

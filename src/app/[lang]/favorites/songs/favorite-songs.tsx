@@ -10,6 +10,22 @@ import { SortableSongList } from './sortable-song-list';
 import { StageLayout } from '@/components/stage-layout';
 import { StageHeading } from '@/components/stage-heading';
 import { useTakeOver } from '@/components/player/use-take-over';
+import { useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: {
+    play: 'お気に入りの曲を再生',
+    emptyBefore: 'お気に入りの曲はまだありません。曲の',
+    emptyAfter: 'で追加できます。',
+  },
+  en: {
+    play: 'Play favorite songs',
+    emptyBefore: 'No favorite songs yet. Use',
+    emptyAfter: 'on a song to add it.',
+  },
+});
 
 /**
  * お気に入りの曲の画面（Janify と同じ）。お気に入りの曲を1本の並びとして扱い、ボカロPの画面と同じく
@@ -23,16 +39,22 @@ export function FavoriteSongs() {
   // お気に入りの並びのときに、動画をここに大きく出す。流している曲がお気に入りにあれば、開いたときに並びをお気に入りにする
   // （use-take-over.ts。どの画面も同じ決まり）
   const here = useTakeOver(songs, FAVORITES);
+  const t = useText(TEXT);
+  const terms = useText(TERMS);
   const play = (at = 0) => songs.length > 0 && playQueue(songs, at, FAVORITES);
 
   return (
     <StageLayout
       song={here ? current : null}
       cover={songs[0]?.thumb ?? null}
-      label="お気に入りの曲を再生"
+      label={t.play}
       onPlay={() => play()}
       heading={
-        <StageHeading eyebrow="Favorites" title="お気に入りの曲" song={here ? current : null} />
+        <StageHeading
+          eyebrow="Favorites"
+          title={terms.favoriteSongs}
+          song={here ? current : null}
+        />
       }
       play={
         <StagePlayButton
@@ -48,9 +70,9 @@ export function FavoriteSongs() {
       {songs.length === 0 ? (
         // お気に入りの画面（favorites-view.tsx）と同じく、入れ方を添える
         <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
-          お気に入りの曲はまだありません。曲の
+          {t.emptyBefore}
           <Icon name="heart" className="size-4" />
-          で追加できます。
+          {t.emptyAfter}
         </p>
       ) : (
         <SortableSongList songs={songs} onOpen={(i) => play(i)} />

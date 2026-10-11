@@ -10,6 +10,29 @@ import { sidebarRow } from './surface-styles';
 import { ICON, PILL } from './button-styles';
 import { Heading, SECTION } from './heading';
 import { useClientValue } from '@/lib/client-value';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: {
+    app: 'アプリ',
+    addToHome: 'ホーム画面に追加',
+    install: 'アプリをインストール',
+    installLabel: 'アプリをホーム画面に追加',
+    guideDescription: 'ホーム画面から Vocafy をすばやく開けます。',
+    guideShare: '共有ボタンをタップ',
+    guideAdd: '「ホーム画面に追加」をタップ',
+  },
+  en: {
+    app: 'App',
+    addToHome: 'Add to Home Screen',
+    install: 'Install app',
+    installLabel: 'Add the app to your Home Screen',
+    guideDescription: 'Open Vocafy quickly from your Home Screen.',
+    guideShare: 'Tap the Share button',
+    guideAdd: 'Tap "Add to Home Screen"',
+  },
+});
 
 /** 案内の板を出すまで待つ時間（ミリ秒）。押してすぐ出すと、押した操作の続きで閉じることがある */
 const PROMPT_DELAY_MS = 100;
@@ -31,6 +54,7 @@ function useInstall(): {
   const [open, setOpen] = useState(false);
   // 端末の判定は window を見る。サーバー側では決まらないので、載ってから読む
   const isApple = useClientValue(isAppleDevice, false);
+  const t = useText(TEXT);
 
   return {
     available: !isInstalled && (canInstall || isApple),
@@ -42,10 +66,10 @@ function useInstall(): {
               isShown={open}
               onClose={() => setOpen(false)}
               appIconPath="/apple-icon.png"
-              copyTitle="ホーム画面に追加"
-              copyDescription="ホーム画面から Vocafy をすばやく開けます。"
-              copyShareStep="共有ボタンをタップ"
-              copyAddToHomeScreenStep="「ホーム画面に追加」をタップ"
+              copyTitle={t.addToHome}
+              copyDescription={t.guideDescription}
+              copyShareStep={t.guideShare}
+              copyAddToHomeScreenStep={t.guideAdd}
               delay={PROMPT_DELAY_MS}
             />,
             document.body,
@@ -57,14 +81,15 @@ function useInstall(): {
 /** 設定の画面の「アプリ」の欄。追加できる端末で、まだ入れていないときだけ出す */
 export function InstallApp() {
   const { available, start, guide } = useInstall();
+  const t = useText(TEXT);
   if (!available) return null;
   return (
     <section className={SECTION}>
       <div className="mb-3">
-        <Heading eyebrow="App">アプリ</Heading>
+        <Heading eyebrow="App">{t.app}</Heading>
       </div>
       <button type="button" onClick={start} className={PILL}>
-        ホーム画面に追加
+        {t.addToHome}
       </button>
       {guide}
     </section>
@@ -77,6 +102,7 @@ export function InstallApp() {
  */
 export function InstallButton({ className = '', menu }: { className?: string; menu?: boolean }) {
   const { available, start, guide } = useInstall();
+  const t = useText(TEXT);
   if (!available) return null;
   if (menu) {
     return (
@@ -87,7 +113,7 @@ export function InstallButton({ className = '', menu }: { className?: string; me
           className={`${sidebarRow(false)} w-full ${className}`}
         >
           <Icon name="install" />
-          アプリをインストール
+          {t.install}
         </button>
         {guide}
       </>
@@ -97,12 +123,12 @@ export function InstallButton({ className = '', menu }: { className?: string; me
     <>
       <button
         type="button"
-        aria-label="アプリをホーム画面に追加"
+        aria-label={t.installLabel}
         onClick={start}
         className={`grid ${ICON} text-muted hover:text-foreground md:flex md:size-auto md:gap-1.5 md:border md:border-line/60 md:bg-glass md:px-3.5 md:py-2 md:text-sm md:font-bold md:text-foreground md:hover:bg-hover ${className}`}
       >
         <Icon name="install" className="size-5" />
-        <span className="hidden whitespace-nowrap md:inline">アプリ</span>
+        <span className="hidden whitespace-nowrap md:inline">{t.app}</span>
       </button>
       {guide}
     </>

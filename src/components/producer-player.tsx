@@ -18,6 +18,28 @@ import { StageLayout } from './stage-layout';
 import { ShareMenu } from './share-menu';
 import { useClientValue } from '@/lib/client-value';
 import { GLASS } from '@/components/surface-styles';
+import { defineText } from '@/i18n/text';
+import { useLocalize, useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: {
+    shareSong: 'この曲を共有',
+    shareProducer: 'このボカロPを共有',
+    playSong: (title: string) => `「${title}」を再生`,
+    playProducer: 'このボカロPの曲を再生',
+    unplayable: 'この曲は本家の動画の情報が足りず、再生できません',
+    jumpToYear: '年ごとに移動',
+  },
+  en: {
+    shareSong: 'Share this song',
+    shareProducer: 'Share this producer',
+    playSong: (title: string) => `Play “${title}”`,
+    playProducer: "Play this producer's songs",
+    unplayable: "Can't play this song: details of the original video are missing",
+    jumpToYear: 'Jump to year',
+  },
+});
 
 /** 年の札の行のすぐ下に、どこまで来た曲をその年とみなすか（px） */
 const YEAR_LINE_GAP = 8;
@@ -52,6 +74,9 @@ export function ProducerPlayer({
   cover: string | null;
 }) {
   const { current, playing, owner, playQueue, takeOver, toggle, skipsNiconico } = usePlayer();
+  const t = useText(TEXT);
+  const terms = useText(TERMS);
+  const to = useLocalize();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
   // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の一覧に
   // あれば、開いたときに並びをこの人の曲に切り替える（use-take-over.ts。どの画面も同じ決まり）
@@ -109,9 +134,9 @@ export function ProducerPlayer({
   const origin = useClientValue(() => window.location.origin, '');
   const share = (
     <ShareMenu
-      url={`${origin}/producers/${producerId}${sharedSong ? `/songs/${sharedSong.songId}` : ''}`}
+      url={`${origin}${to(`/producers/${producerId}${sharedSong ? `/songs/${sharedSong.songId}` : ''}`)}`}
       text={sharedSong ? `${sharedSong.title} - ${producerName}` : producerName}
-      label={sharedSong ? 'この曲を共有' : 'このボカロPを共有'}
+      label={sharedSong ? t.shareSong : t.shareProducer}
     />
   );
 
@@ -119,7 +144,7 @@ export function ProducerPlayer({
     <StageLayout
       song={here ? current : null}
       cover={linkedItem?.thumb ?? cover}
-      label={linkedItem ? `「${linkedItem.title}」を再生` : 'このボカロPの曲を再生'}
+      label={linkedItem ? t.playSong(linkedItem.title) : t.playProducer}
       onPlay={() => start(linkedItem?.songId)}
       heading={heading}
       play={
@@ -157,7 +182,7 @@ export function ProducerPlayer({
                   type="button"
                   disabled={!item}
                   {...NO_RESTORE}
-                  title={item ? undefined : 'この曲は本家の動画の情報が足りず、再生できません'}
+                  title={item ? undefined : t.unplayable}
                   onClick={() => item && start(song.id)}
                   className="flex min-w-0 flex-1 items-center gap-4 px-3 py-2 text-left disabled:cursor-default disabled:text-muted/50"
                 >
@@ -171,7 +196,7 @@ export function ProducerPlayer({
                     </Marquee>
                     <span className="block truncate text-xs text-muted">
                       {song.vocalists.join('・')}
-                      {song.year && ` ・ ${song.year}年`}
+                      {song.year && ` ・ ${terms.year(song.year)}`}
                     </span>
                   </span>
                 </button>
@@ -201,6 +226,7 @@ function YearJump({ songs }: { songs: Song[] }) {
     ),
   ];
   const show = songs.length > YEAR_JUMP_MIN && firsts.length >= 2;
+  const t = useText(TEXT);
   const bar = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<number | null>(null);
   // 札を押して送っているあいだと、送り終えたあとは、自分でスクロールし直すまで押した年を目立たせ続ける。
@@ -277,7 +303,7 @@ function YearJump({ songs }: { songs: Song[] }) {
       className={`${GLASS} sticky top-(--below-stage-controls) z-header mb-3 max-md:gutter-x rounded-full p-1 shadow-float md:top-(--below-header) lg:top-(--stage-top)`}
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
-      <ScrollRow label="年ごとに移動" className="gap-1">
+      <ScrollRow label={t.jumpToYear} className="gap-1">
         {firsts.map(([year, id]) => (
           <button
             key={year}

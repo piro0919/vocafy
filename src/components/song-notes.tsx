@@ -9,6 +9,13 @@ import { FADE, HIDDEN } from './player/dock-strip';
 import { FloatingPanel } from './player/floating-panel';
 import { Icon } from './icon';
 import { ICON } from './button-styles';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { notes: '説明文' },
+  en: { notes: 'Description' },
+});
 
 /**
  * 流している曲の動画の説明文。パソコンのボカロPの画面の、動画の列の下に出す。
@@ -34,6 +41,7 @@ function SongNotes({
   /** 説明文を出しているかを知らせる。出していないあいだは、帯のボタンを出さない */
   onAvailable: (available: boolean) => void;
 }) {
+  const t = useText(TEXT);
   const key = song ? `${song.service}/${song.videoId}` : null;
   const [notes, setNotes] = useState<{ key: string; text: string } | null>(null);
   // 前に取った説明文（ほかの画面で取ったものも）。届くのを待たずに出す
@@ -180,7 +188,7 @@ function SongNotes({
       {createPortal(
         // 外枠は次に流れる曲の板と同じ（floating-panel.tsx）。置き場所・見出し・出入りの動き・閉じ方をそろえる。
         // 初めは動画の下から画面の下までを覆う板を書き起こしていて、ほかの板とばらばらだった
-        <FloatingPanel open={open} onClose={close} trigger={trigger} title="説明文">
+        <FloatingPanel open={open} onClose={close} trigger={trigger} title={t.notes}>
           <div
             ref={sheetBody}
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 text-sm break-words whitespace-pre-line"
@@ -242,6 +250,7 @@ function linkify(text: string, niconico: boolean) {
  * view は動画の下の枠と全文の板。song はその画面で動画を大きく出しているときの曲（出していなければ null）
  */
 export function useStageNotes(song: QueueItem | null) {
+  const t = useText(TEXT);
   const [open, setOpen] = useState(false);
   const [available, setAvailable] = useState(false);
   // 板を開いたボタン（「再生」の段か、動画の下の帯）。閉じたらそこにフォーカスを戻す
@@ -253,8 +262,8 @@ export function useStageNotes(song: QueueItem | null) {
         trigger.current = e.currentTarget;
         setOpen((o) => !o);
       }}
-      aria-label="説明文"
-      title="説明文"
+      aria-label={t.notes}
+      title={t.notes}
       className={`grid ${ICON} text-muted hover:text-foreground lg:hidden`}
     >
       <Icon name="notes" className="size-5" />

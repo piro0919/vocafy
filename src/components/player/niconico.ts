@@ -1,5 +1,5 @@
 import type { Engine, EngineEvents, Sound } from './engine';
-import type { Preloaded } from './niconico-pool';
+import { niconicoFrameTitle, type Preloaded } from './niconico-pool';
 import { reportUnplayable } from './report';
 
 /** 埋め込みが statusChange で知らせる再生の状態の番号 */
@@ -105,7 +105,7 @@ export function createNiconicoEngine(
     //   流したあと画面を移ると、埋め込みが読み込み直されて1曲目が出て、playerId も合わず止まった（2026-10-09）
     const next = document.createElement('iframe');
     next.allow = 'autoplay; fullscreen';
-    next.title = 'ニコニコ動画のプレイヤー';
+    next.title = niconicoFrameTitle();
     next.src = `${ORIGIN}/watch/${encodeURIComponent(id)}?jsapi=1&playerId=${playerId}`;
     container.replaceChildren(next);
     iframe = next;

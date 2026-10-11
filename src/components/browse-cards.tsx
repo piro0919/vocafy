@@ -1,4 +1,7 @@
-import { Link } from '@/i18n/navigation';
+'use client';
+
+import { Link, useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
 import { voiceColor } from '@/lib/voice-color';
 import { FadeImage } from './fade-image';
 import { HopOnHover } from './hop-on-hover';
@@ -14,13 +17,14 @@ type VoiceProps = { id: number; name: string; songCount: number };
  * 絵は元から 400px の webp なので、Vercel の画像変換は通さない
  */
 export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: string }) {
+  const t = useText(TERMS);
   return (
     <Link
       href={`/voices/${id}`}
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
       className="group relative flex h-full flex-col transition duration-react active:scale-95"
     >
-      <CharacterFace name={name} sub={`${formatCount(songCount)}曲`} art={art} />
+      <CharacterFace name={name} sub={t.songs(formatCount(songCount))} art={art} />
     </Link>
   );
 }
@@ -84,22 +88,24 @@ export function YearCard({
   count: number;
   className?: string;
 }) {
+  const t = useText(TERMS);
   return (
     <Link
       href={`/years/${year}`}
       className={`flex flex-col items-start rounded-2xl border border-line/60 bg-glass px-4 py-3 transition duration-react hover:border-accent-line hover:bg-hover-accent active:scale-95 ${className}`}
     >
       <span className="font-tech text-2xl font-black text-accent sm:text-3xl">{year}</span>
-      <span className="mt-1 text-xs text-muted">{formatCount(count)}曲</span>
+      <span className="mt-1 text-xs text-muted">{t.songs(formatCount(count))}</span>
     </Link>
   );
 }
 
 /** 見出しの右に置く「すべて表示」 */
 export function MoreLink({ href }: { href: string }) {
+  const t = useText(TERMS);
   return (
     <Link href={href} className={PILL}>
-      すべて表示
+      {t.showAll}
     </Link>
   );
 }

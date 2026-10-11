@@ -5,6 +5,19 @@ import { type FavoriteProducer, useFavoriteProducers, useFavorites } from '@/lib
 import { type CSSProperties, useState } from 'react';
 import { Icon } from './icon';
 import { ICON, ICON_SM } from './button-styles';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: {
+    add: (name: string) => `${name}をお気に入りに入れる`,
+    remove: (name: string) => `${name}をお気に入りから外す`,
+  },
+  en: {
+    add: (name: string) => `Add ${name} to Favorites`,
+    remove: (name: string) => `Remove ${name} from Favorites`,
+  },
+});
 
 /**
  * 舞い散る音符。向き（度。0 が真上）と傾きと形。ハートの周りに6つ、一周に等しく散らし、八分音符と連桁の音符を交互に置く。輪を重ねていたころは6つでは派手すぎて3つに減らしたが、輪を外したので一周に戻した。
@@ -92,6 +105,7 @@ export function FavoriteButton({
 }) {
   const { has, toggle } = useFavorites();
   const on = has(song.songId);
+  const t = useText(TEXT);
   const [beat, setBeat] = useState(0);
   const shown =
     quiet && !on
@@ -100,7 +114,7 @@ export function FavoriteButton({
   return (
     <button
       type="button"
-      aria-label={on ? `${song.title}をお気に入りから外す` : `${song.title}をお気に入りに入れる`}
+      aria-label={on ? t.remove(song.title) : t.add(song.title)}
       aria-pressed={on}
       aria-keyshortcuts={keyshortcuts}
       onClick={(e) => {
@@ -119,13 +133,12 @@ export function FavoriteButton({
 export function FavoriteProducerButton({ producer }: { producer: FavoriteProducer }) {
   const { has, toggle } = useFavoriteProducers();
   const on = has(producer.id);
+  const t = useText(TEXT);
   const [beat, setBeat] = useState(0);
   return (
     <button
       type="button"
-      aria-label={
-        on ? `${producer.name}をお気に入りから外す` : `${producer.name}をお気に入りに入れる`
-      }
+      aria-label={on ? t.remove(producer.name) : t.add(producer.name)}
       aria-pressed={on}
       onClick={() => {
         toggle(producer);

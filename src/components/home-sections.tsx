@@ -17,6 +17,13 @@ import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
 import { canFlow, subscribeMixFlow } from '@/lib/mix-flow';
 import { LINEAR } from '@/lib/motion';
 import { dayLabel } from '@/lib/iso-date';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { tile: (title: string, producer: string) => `${title}（${producer}）` },
+  en: { tile: (title: string, producer: string) => `${title} (${producer})` },
+});
 
 /**
  * きょうの日付の曲。1曲を大きく見せ、残りを横に小さく並べる。
@@ -291,11 +298,12 @@ function MixTile({
 }) {
   const { current, playing } = usePlayer();
   const open = useOpenSong();
+  const t = useText(TEXT);
   const active = current?.songId === song.songId;
   return (
     <button
       type="button"
-      aria-label={`${song.title}（${song.producerName}）`}
+      aria-label={t.tile(song.title, song.producerName)}
       title={song.title}
       tabIndex={copy ? -1 : undefined}
       data-preload={song.service === 'niconico' ? song.videoId : undefined}

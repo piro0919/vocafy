@@ -56,6 +56,19 @@ import { useSlot } from './use-slot';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { TIMING } from '@/lib/timing';
 import { useClientValue } from '@/lib/client-value';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: {
+    skipped: (title: string) => `${title}をスキップしました`,
+    resume: (title: string) => `「${title}」の続きを再生`,
+  },
+  en: {
+    skipped: (title: string) => `Skipped ${title}`,
+    resume: (title: string) => `Resume “${title}”`,
+  },
+});
 
 export type { Owner, PlaybackTime, Repeat, Sleep } from './player-types';
 
@@ -105,6 +118,7 @@ function mockNiconicoBlocked(): boolean {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const t = useText(TEXT);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -191,13 +205,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const mocked = useClientValue(mockNiconicoBlocked, false);
   const skipsNiconico = skipping || mocked;
   const skipNoticed = useRef(false);
-  const noteSkip = useCallback((item: QueueItem | undefined) => {
-    niconicoBlocked.current = true;
-    setSkipsNiconico(true);
-    if (skipNoticed.current || !item) return;
-    skipNoticed.current = true;
-    toast(`${item.title}をスキップしました`);
-  }, []);
+  const noteSkip = useCallback(
+    (item: QueueItem | undefined) => {
+      niconicoBlocked.current = true;
+      setSkipsNiconico(true);
+      if (skipNoticed.current || !item) return;
+      skipNoticed.current = true;
+      toast(t.skipped(item.title));
+    },
+    [t],
+  );
 
   // 一時停止の前に音量を絞っている途中なら、その時計
   const pauseFade = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -951,7 +968,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={resume}
-            aria-label={`「${current.title}」の続きを再生`}
+            aria-label={t.resume(current.title)}
             className={`chrome-bottom ${DOCK} group z-chrome overflow-hidden rounded-b-2xl bg-black shadow-dock ring-1 ring-line/60 dark:shadow-dock-dark`}
           >
             <FadeImage

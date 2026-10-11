@@ -1,3 +1,4 @@
+import { langOf } from '@/i18n/config';
 import { findProducer } from '@/lib/catalog';
 import { OG_SIZE, producerImage } from './og';
 
@@ -15,6 +16,10 @@ export function generateStaticParams() {
 }
 
 /** ボカロPの画面を共有したときの絵（og.tsx） */
-export default async function OpengraphImage({ params }: { params: Promise<{ id: string }> }) {
-  return producerImage(await findProducer(Number((await params).id)));
+export default async function OpengraphImage({
+  params,
+}: {
+  params: Promise<{ lang: string; id: string }>;
+}) {
+  return producerImage(await langOf(params), await findProducer(Number((await params).id)));
 }

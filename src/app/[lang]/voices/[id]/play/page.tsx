@@ -2,6 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ListPlayer } from '@/components/list-player';
 import { findVoice } from '@/lib/catalog';
+import { langOf } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+
+const TEXT = defineText({
+  ja: { title: (name: string) => `${name}の代表曲` },
+  en: { title: (name: string) => `Best of ${name}` },
+});
 
 // 一覧の画面と同じく、次の配備まで作ったページを使い回す。ビルドのときには作らず、最初に開かれたときに作る
 export const revalidate = false;
@@ -14,7 +21,8 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/voices/[id]/play'>): Promise<Metadata> {
   const found = await findVoice(Number((await params).id));
-  return { title: found && `${found.voice.name}の代表曲`, robots: { index: false } };
+  const t = TEXT[await langOf(params)];
+  return { title: found && t.title(found.voice.name), robots: { index: false } };
 }
 
 /**
@@ -25,13 +33,14 @@ export default async function VoicePlayPage({ params }: PageProps<'/[lang]/voice
   const found = await findVoice(Number((await params).id));
   if (!found || found.songs.length === 0) notFound();
   const { voice, songs } = found;
+  const t = TEXT[await langOf(params)];
   return (
     <div className="pt-content-top">
       <ListPlayer
         source={`voices/${voice.id}`}
         songs={songs}
         eyebrow="Voice"
-        title={`${voice.name}の代表曲`}
+        title={t.title(voice.name)}
       />
     </div>
   );

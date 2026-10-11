@@ -19,6 +19,14 @@ import { below } from '@/lib/breakpoints';
 import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
 import { DRAG_SLOP } from '@/lib/input';
 import { GLASS_PANEL } from '@/components/surface-styles';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: { resume: (title: string) => `「${title}」の続きを再生` },
+  en: { resume: (title: string) => `Resume “${title}”` },
+});
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -45,6 +53,7 @@ export function PlayerStage({
   onPlay: () => void;
 }) {
   const { setSlot, holdingSlot, resumable, resume, current } = usePlayer();
+  const t = useText(TEXT);
   const slot = useRef<HTMLDivElement>(null);
   // 画面を移るあいだ（holdSlot）は、動画を出していた置き場所は、この画面の持ち主でなくなっても出し続ける
   const [wasOn, setWasOn] = useState(active);
@@ -91,7 +100,7 @@ export function PlayerStage({
               <button
                 type="button"
                 onClick={resume}
-                aria-label={`「${current.title}」の続きを再生`}
+                aria-label={t.resume(current.title)}
                 className="group absolute inset-0 block"
               >
                 <FadeImage
@@ -283,7 +292,8 @@ export function StagePlayButton({
   playing: boolean;
   onClick: () => void;
 } & Omit<ComponentProps<'button'>, 'onClick' | 'className' | 'type'>) {
-  const label = playing ? '一時停止' : '再生';
+  const terms = useText(TERMS);
+  const label = playing ? terms.pause : terms.play;
   return (
     <button
       type="button"

@@ -1,3 +1,4 @@
+import { langOf } from '@/i18n/config';
 import { findProducer } from '@/lib/catalog';
 import { OG_SIZE, producerImage } from '../../og';
 
@@ -16,10 +17,11 @@ export function generateStaticParams() {
 export default async function OpengraphImage({
   params,
 }: {
-  params: Promise<{ id: string; songId: string }>;
+  params: Promise<{ lang: string; id: string; songId: string }>;
 }) {
+  const lang = await langOf(params);
   const { id, songId } = await params;
   const found = await findProducer(Number(id));
   const song = found?.songs.find((s) => s.id === Number(songId));
-  return producerImage(found, song);
+  return producerImage(lang, found, song);
 }

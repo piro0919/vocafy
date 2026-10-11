@@ -10,6 +10,13 @@ import { StageLayout } from './stage-layout';
 import { StageHeading } from './stage-heading';
 import { useTakeOver } from './player/use-take-over';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { play: 'このラジオを再生' },
+  en: { play: 'Play this radio' },
+});
 
 /**
  * ラジオの画面。一覧の再生用の画面（list-player.tsx）と同じく、左（スマホは上）に大きなプレイヤーの置き場所、右に一覧。
@@ -29,6 +36,7 @@ export function RadioPlayer({
 }) {
   const { current, playing, queue, playRadio, fillRadio, jumpTo, toggle, skipsNiconico } =
     usePlayer();
+  const t = useText(TEXT);
   // 届くまでは null。取れなかったときは空にして、元の曲だけのラジオにする
   const [related, setRelated] = useState<QueueItem[] | null>(null);
   useEffect(() => {
@@ -64,7 +72,7 @@ export function RadioPlayer({
     <StageLayout
       song={here ? current : null}
       cover={seed.thumb}
-      label="このラジオを再生"
+      label={t.play}
       onPlay={() => playRadio(songs, 0)}
       heading={<StageHeading eyebrow={eyebrow} title={title} song={here ? current : null} />}
       play={
@@ -106,6 +114,7 @@ export function RadioPlayer({
  */
 export function RadioLoading() {
   const { current, owner } = usePlayer();
+  const t = useText(TEXT);
   return (
     <div className="pt-content-top">
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-stage lg:gap-6 lg:items-start">
@@ -113,7 +122,7 @@ export function RadioLoading() {
           <PlayerStage
             active={current !== null && owner.kind === 'radio'}
             cover={current?.thumb ?? null}
-            label="このラジオを再生"
+            label={t.play}
             onPlay={() => {}}
           />
           <div aria-hidden className="flex flex-col gap-2 lg:mt-4">

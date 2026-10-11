@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FloatingPanel } from './floating-panel';
-import { KeyList } from './keyboard-help';
+import { KeyList, useKeyboardTitle } from './keyboard-help';
 import { now } from './playback-time';
 import { usePlaybackTime, usePlayer } from './player-provider';
 import { LONG_SEEK_STEP, SEEK_STEP, VOLUME_STEP } from '@/lib/input';
@@ -52,6 +52,7 @@ export function PlayerKeys() {
     timeRef.current = time;
   }, [current, time]);
   const [helpOpen, setHelpOpen] = useState(false);
+  const helpTitle = useKeyboardTitle();
   // 板は初めて開くまで描かない（読み込んだ直後のサーバーの HTML と食い違わせない）。一度描いたら、閉じる動きのために置いたままにする
   const [helpMounted, setHelpMounted] = useState(false);
   // 板を閉じたら、開く前にフォーカスのあった所へ戻す
@@ -167,7 +168,7 @@ export function PlayerKeys() {
   // 板は次に流れる曲と同じ外枠で、動画に重ねない置き場所に出す（YouTube の規約）
   if (!helpMounted) return null;
   return createPortal(
-    <FloatingPanel open={helpOpen} onClose={closeHelp} trigger={opener} title="キーボード操作">
+    <FloatingPanel open={helpOpen} onClose={closeHelp} trigger={opener} title={helpTitle}>
       <div className="min-h-0 overflow-y-auto pt-1 pb-3">
         <KeyList />
       </div>

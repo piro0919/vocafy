@@ -5,9 +5,17 @@ import { Pager, pageOf } from '@/components/pager';
 import { PlayAll } from '@/components/play-all';
 import { SongList } from '@/components/song-list';
 import { type DatedItem, playlistOfDay, songsOfDay } from '@/lib/catalog';
-import { dayLabel } from '@/lib/list-titles';
+import { dayTitle } from '@/lib/list-titles';
+import { langOf } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
 import { formatCount } from '@/lib/format';
 import { yearOf } from '@/lib/iso-date';
+
+const TEXT = defineText({
+  ja: { page: (n: number) => `（${n}ページ目）` },
+  en: { page: (n: number) => ` (page ${n})` },
+});
 
 // 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
 // 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
@@ -22,7 +30,8 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/days/[day]/[[...page]]'>): Promise<Metadata> {
   const { day, page } = await params;
   const n = pageOf(page);
-  return { title: `${dayLabel(day)}に生まれた曲${n && n > 1 ? `（${n}ページ目）` : ''}` };
+  const lang = await langOf(params);
+  return { title: `${dayTitle(day, lang)}${n && n > 1 ? TEXT[lang].page(n) : ''}` };
 }
 
 /**
@@ -37,17 +46,18 @@ export default async function DayPage({ params }: PageProps<'/[lang]/days/[day]/
   const { songs, total } = await songsOfDay(day, page);
   if (songs.length === 0) notFound();
   const playlist = await playlistOfDay(day);
+  const lang = await langOf(params);
   const byYear = Map.groupBy(songs, (s: DatedItem) => yearOf(s.publishedOn));
   return (
     <>
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow="On This Day">
-          {dayLabel(day)}に生まれた曲
+          {dayTitle(day, lang)}
         </Heading>
         <PlayAll
           songs={playlist.songs}
           // 一覧の画面には全曲が並ぶので、曲数は全曲の数だけ（「100曲（全313曲）」だと100曲しか並んでいないように読めた）
-          count={`${formatCount(playlist.total)}曲`}
+          count={TERMS[lang].songs(formatCount(playlist.total))}
           source={`days/${day}`}
           pickup={playlist.pickup}
         />
@@ -60,7 +70,7 @@ export default async function DayPage({ params }: PageProps<'/[lang]/days/[day]/
           </section>
         ))}
       </div>
-      <Pager base={`/days/${day}`} page={page} total={total} />
+      <Pager base={`/days/${day}`} page={page} total={total} lang={lang} />
     </>
   );
 }

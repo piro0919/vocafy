@@ -7,6 +7,13 @@ import { Icon } from './icon';
 import { Heading, SECTION } from './heading';
 import { edgeMask, useScrollEdges } from './scroll-row';
 import { ARROW } from './button-styles';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { previous: '前へ', next: '次へ' },
+  en: { previous: 'Previous', next: 'Next' },
+});
 
 /**
  * 横に流す帯の送り方（年代の棚と、トップのきょうの日付の曲の列で使う）。帯の要素に track を付ける。
@@ -84,12 +91,13 @@ export function ShelfArrows({
   edge: { start: boolean; end: boolean };
   page: (dir: 1 | -1) => void;
 }) {
+  const t = useText(TEXT);
   return (
     <>
-      <ArrowButton label="前へ" disabled={edge.start} onClick={() => page(-1)}>
+      <ArrowButton label={t.previous} disabled={edge.start} onClick={() => page(-1)}>
         <Icon name="left" className="size-5" />
       </ArrowButton>
-      <ArrowButton label="次へ" disabled={edge.end} onClick={() => page(1)}>
+      <ArrowButton label={t.next} disabled={edge.end} onClick={() => page(1)}>
         <Icon name="right" className="size-5" />
       </ArrowButton>
     </>

@@ -4,6 +4,13 @@ import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
 import { ICON_SM } from '../button-styles';
 import { Icon } from '../icon';
 import { GLASS_PANEL } from '@/components/surface-styles';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { close: (title: string) => `${title}を閉じる` },
+  en: { close: (title: string) => `Close ${title}` },
+});
 
 /**
  * 再生の帯のボタンから開く板（次に流れる曲・スリープタイマー）の外枠。
@@ -31,6 +38,7 @@ export function FloatingPanel({
   onOpened?: () => void;
   children: ReactNode;
 }) {
+  const t = useText(TEXT);
   const panel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,7 +89,7 @@ export function FloatingPanel({
         <h2 className="min-w-0 flex-1 font-display text-base">{title}</h2>
         <button
           type="button"
-          aria-label={`${title}を閉じる`}
+          aria-label={t.close(title)}
           onClick={onClose}
           className={`grid ${ICON_SM} text-muted hover:text-foreground`}
         >

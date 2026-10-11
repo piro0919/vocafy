@@ -1,20 +1,24 @@
 'use client';
 
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
-import { usePathname } from '@/i18n/navigation';
+import { Link, usePathname, useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
 import { Icon, type IconName } from './icon';
 import { InstallButton } from './install-app';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { GLASS_PANEL, sidebarRow } from '@/components/surface-styles';
 import { isHomePath } from '@/lib/home-path';
 
-const ITEMS: { href: string; label: string; icon: IconName }[] = [
-  { href: '/', label: 'ホーム', icon: 'home' },
-  { href: '/producers', label: 'ボカロP', icon: 'artist' },
-  { href: '/voices', label: '歌声', icon: 'voice' },
-  { href: '/years', label: '年代', icon: 'year' },
-  { href: '/favorites', label: 'お気に入り', icon: 'favorites' },
+type Words = (typeof TERMS)['ja'];
+/** 文字列の言葉の名前（関数の言葉を除く） */
+type Term = { [K in keyof Words]: Words[K] extends string ? K : never }[keyof Words];
+
+const ITEMS: { href: string; label: Term; icon: IconName }[] = [
+  { href: '/', label: 'home', icon: 'home' },
+  { href: '/producers', label: 'producers', icon: 'artist' },
+  { href: '/voices', label: 'voices', icon: 'voice' },
+  { href: '/years', label: 'years', icon: 'year' },
+  { href: '/favorites', label: 'favorites', icon: 'favorites' },
 ];
 
 /**
@@ -22,7 +26,7 @@ const ITEMS: { href: string; label: string; icon: IconName }[] = [
  */
 const SIDEBAR_ITEMS = [
   ...ITEMS,
-  { href: '/history', label: '履歴', icon: 'history' },
+  { href: '/history', label: 'history', icon: 'history' },
 ] satisfies typeof ITEMS;
 
 function useActive() {
@@ -32,8 +36,9 @@ function useActive() {
 
 /** ロゴ。開いたときに一度だけ、マウスを載せるともう一度、きらめきが字の上を走る（globals.css の .logo） */
 export function Logo({ compact }: { compact?: boolean }) {
+  const t = useText(TERMS);
   return (
-    <Link href="/" aria-label="Vocafy ホーム" className="flex items-center gap-2">
+    <Link href="/" aria-label={`Vocafy ${t.home}`} className="flex items-center gap-2">
       {/*
         アプリのアイコンと同じ影絵を、地のタイル無しで添える。タイルに入れたままだと 28px では人物が潰れるので、
         人物だけを切り出した絵（src/assets/icon-source.png から切り出した public/logo-mark.png）を大きめに置く
@@ -64,6 +69,7 @@ export function Logo({ compact }: { compact?: boolean }) {
  */
 export function Sidebar() {
   const active = useActive();
+  const t = useText(TERMS);
   return (
     <nav className="fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
       <div className={`${GLASS_PANEL} flex flex-1 flex-col gap-1 px-3 pt-4`}>
@@ -73,7 +79,7 @@ export function Sidebar() {
         {SIDEBAR_ITEMS.map((item) => (
           <Link key={item.href} href={item.href} className={sidebarRow(active(item.href))}>
             <Icon name={item.icon} />
-            {item.label}
+            {t[item.label]}
           </Link>
         ))}
         {/* YouTube と同じく、設定は左のメニューの下の方に置く */}
@@ -82,7 +88,7 @@ export function Sidebar() {
           <InstallButton menu />
           <Link href="/settings" className={sidebarRow(active('/settings'))}>
             <Icon name="settings" />
-            設定
+            {t.settings}
           </Link>
         </div>
       </div>
@@ -96,6 +102,7 @@ export function Sidebar() {
  */
 export function MobileTabs() {
   const active = useActive();
+  const t = useText(TERMS);
   return (
     <nav
       className={`${GLASS_PANEL} chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 md:hidden`}
@@ -109,7 +116,7 @@ export function MobileTabs() {
           }`}
         >
           <Icon name={item.icon} className="size-5" />
-          {item.label}
+          {t[item.label]}
         </Link>
       ))}
     </nav>

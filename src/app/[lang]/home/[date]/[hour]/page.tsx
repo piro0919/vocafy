@@ -14,6 +14,9 @@ import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, voices, years } from '@/l
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
 import { hourInJapan, monthDayOf, today } from '@/lib/iso-date';
+import { dayTitle } from '@/lib/list-titles';
+import { langOf } from '@/i18n/config';
+import { TERMS } from '@/i18n/terms';
 
 /** サイトそのものの情報 */
 const jsonLd: WithContext<WebSite> = {
@@ -68,12 +71,13 @@ const ON_THIS_DAY_MIN = 8;
  */
 export default async function Home({ params }: PageProps<'/[lang]/home/[date]/[hour]'>) {
   const { date, hour } = await params;
+  const lang = await langOf(params);
+  const t = TERMS[lang];
   if (!DATE.test(date) || !HOUR.test(hour)) notFound();
   const [[day, dayList, mix], [voiceList, yearList]] = await Promise.all([dayOf(date), browseOf()]);
   // 1時間に1枠。24枠に満たない日は一周したら頭に戻る
   const hero = day.heroes.at(Number(hour) % Math.max(1, day.heroes.length));
   const rest = day.songs.filter((song) => song.songId !== hero?.songId);
-  const [month, dayOfMonth] = monthDayOf(date).split('-').map(Number);
 
   return (
     <>
@@ -83,7 +87,7 @@ export default async function Home({ params }: PageProps<'/[lang]/home/[date]/[h
 
       {hero && (
         <OnThisDay
-          title={`${month}月${dayOfMonth}日に生まれた曲`}
+          title={dayTitle(monthDayOf(date), lang)}
           playlist={{
             songs: dayList.songs,
             source: `days/${monthDayOf(date)}`,
@@ -101,7 +105,7 @@ export default async function Home({ params }: PageProps<'/[lang]/home/[date]/[h
       <section className={SECTION}>
         {/* 「再生」で18曲を通して流す（再生用の画面へ移る）。壁の曲を押したときは、その曲のボカロPの画面へ移る */}
         <div className="mb-3 flex items-end gap-3">
-          <Heading eyebrow="Daily Mix">きょうの出会い</Heading>
+          <Heading eyebrow="Daily Mix">{t.dailyMix}</Heading>
           <div className="ml-auto">
             <PlayAllPill songs={mix} source={`mix/${date}`} />
           </div>
@@ -113,7 +117,7 @@ export default async function Home({ params }: PageProps<'/[lang]/home/[date]/[h
           スマホの幅では 3 列 × 3 段、4 列の幅では 4 段までにする（縦に長くなりすぎる） */}
       <section className={SECTION}>
         <div className="mb-3 flex items-end gap-3">
-          <Heading eyebrow="Voices">歌声</Heading>
+          <Heading eyebrow="Voices">{t.voices}</Heading>
           <div className="ml-auto">
             <MoreLink href="/voices" />
           </div>
@@ -143,7 +147,7 @@ export default async function Home({ params }: PageProps<'/[lang]/home/[date]/[h
       </section>
 
       <div className="mt-6 sm:mt-10">
-        <Shelf title="年代" eyebrow="Years">
+        <Shelf title={t.years} eyebrow="Years">
           {/* Orbitron は数字ごとに幅が違い、札の幅がそろわないので、幅を決め打ちにする（一番広い年でも収まる幅） */}
           {yearList.map((y) => (
             <YearCard

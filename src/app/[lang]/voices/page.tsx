@@ -5,8 +5,18 @@ import { Heading, SECTION } from '@/components/heading';
 import { voices } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
+import { langOf } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
 
-export const metadata: Metadata = { title: '歌声' };
+const TEXT = defineText({
+  ja: { characters: 'キャラクター', libraries: '歌声ライブラリ' },
+  en: { characters: 'Characters', libraries: 'Voice libraries' },
+});
+
+export async function generateMetadata({ params }: PageProps<'/[lang]/voices'>): Promise<Metadata> {
+  return { title: TERMS[await langOf(params)].voices };
+}
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
 export const revalidate = false;
@@ -19,7 +29,9 @@ export const revalidate = false;
  * 歌声ライブラリは、すべて同じ札にする。20 曲以上の札を大きくしていたが、曲の多い順なので先頭に集まっていて並びだけで重さが分かり、
  * 先頭の 11 件だけ形が違うと区切りの無い段に見えた
  */
-export default async function VoicesPage() {
+export default async function VoicesPage({ params }: PageProps<'/[lang]/voices'>) {
+  const lang = await langOf(params);
+  const t = TEXT[lang];
   const list = await voices();
   const characters = list.flatMap((v) => {
     const art = voiceArt(v.id);
@@ -30,13 +42,13 @@ export default async function VoicesPage() {
     <>
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow="Voices">
-          歌声
+          {TERMS[lang].voices}
         </Heading>
       </div>
 
       <section>
         <div className="mb-3">
-          <Heading eyebrow="Characters">キャラクター</Heading>
+          <Heading eyebrow="Characters">{t.characters}</Heading>
         </div>
         <ul className="grid grid-cols-3 gap-x-2.5 gap-y-3 sm:grid-cols-6 sm:gap-y-4 lg:grid-cols-8">
           {characters.map((v) => (
@@ -49,7 +61,7 @@ export default async function VoicesPage() {
 
       <section className={SECTION}>
         <div className="mb-3">
-          <Heading eyebrow="Libraries">歌声ライブラリ</Heading>
+          <Heading eyebrow="Libraries">{t.libraries}</Heading>
         </div>
         <ul className="flex flex-wrap gap-1.5">
           {libraries.map((v) => (
@@ -59,7 +71,9 @@ export default async function VoicesPage() {
                 className="flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs transition duration-react hover:bg-hover-accent active:scale-95"
               >
                 <span className="truncate font-bold">{v.name}</span>
-                <span className="shrink-0 text-xs text-muted">{formatCount(v.songCount)}曲</span>
+                <span className="shrink-0 text-xs text-muted">
+                  {TERMS[lang].songs(formatCount(v.songCount))}
+                </span>
               </Link>
             </li>
           ))}

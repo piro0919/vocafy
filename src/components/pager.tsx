@@ -2,6 +2,13 @@ import { Link } from '@/i18n/navigation';
 import { PAGE_SIZE } from '@/lib/catalog';
 import { Icon } from './icon';
 import { ARROW } from './button-styles';
+import { DEFAULT_LANG, type Lang } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+
+const TEXT = defineText({
+  ja: { pages: 'ページ', previous: '前のページ', next: '次のページ' },
+  en: { pages: 'Pages', previous: 'Previous page', next: 'Next page' },
+});
 
 /**
  * 住所の末尾のページ番号。/years/2010 は 1 ページ目、/years/2010/2 は 2 ページ目。
@@ -27,21 +34,25 @@ export function Pager({
   total,
   size = PAGE_SIZE,
   href = (p) => hrefOf(base, p),
+  lang = DEFAULT_LANG,
 }: {
   base: string;
   page: number;
   total: number;
   size?: number;
   href?: (page: number) => string;
+  /** 画面の言語（ページの params の lang） */
+  lang?: Lang;
 }) {
+  const t = TEXT[lang];
   const last = Math.ceil(total / size);
   if (last <= 1) return null;
   const pages = Array.from({ length: last }, (_, i) => i + 1);
   const arrow = `grid ${ARROW}`;
   return (
-    <nav aria-label="ページ" className="mt-8 flex flex-wrap items-center justify-center gap-2">
+    <nav aria-label={t.pages} className="mt-8 flex flex-wrap items-center justify-center gap-2">
       {page > 1 && (
-        <Link href={href(page - 1)} aria-label="前のページ" className={arrow}>
+        <Link href={href(page - 1)} aria-label={t.previous} className={arrow}>
           <Icon name="left" className="size-5" />
         </Link>
       )}
@@ -58,7 +69,7 @@ export function Pager({
         </Link>
       ))}
       {page < last && (
-        <Link href={href(page + 1)} aria-label="次のページ" className={arrow}>
+        <Link href={href(page + 1)} aria-label={t.next} className={arrow}>
           <Icon name="right" className="size-5" />
         </Link>
       )}

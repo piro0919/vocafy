@@ -1,3 +1,6 @@
+import { langOfPath } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+
 /**
  * iPad・iPhone で、画面に見えているニコニコの曲の埋め込みを、隠して先に読み込んでおく。
  * iPad の Safari は、押す操作の無い再生を止める。ニコニコの埋め込みは曲ごとに作り直すので、押してから作ると読み込みを待つあいだに
@@ -10,6 +13,16 @@
  * 一番多くなるのは、iPad で昔の年の月の全曲（2段組み）を開いたときで、20〜30 になりうる。iPad のメモリがどこまで耐えるかは測っていない
  */
 const ORIGIN = 'https://embed.nicovideo.jp';
+
+const TEXT = defineText({
+  ja: { title: 'ニコニコ動画のプレイヤー' },
+  en: { title: 'Niconico video player' },
+});
+
+/** 埋め込みの読み上げの名前。React の外で作るので、いまの住所から言語を読む */
+export function niconicoFrameTitle(): string {
+  return TEXT[langOfPath(location.pathname)].title;
+}
 
 export type Preloaded = {
   videoId: string;
@@ -61,7 +74,7 @@ export function createNiconicoPool(
         box.hidden = true;
         const iframe = document.createElement('iframe');
         iframe.allow = 'autoplay; fullscreen';
-        iframe.title = 'ニコニコ動画のプレイヤー';
+        iframe.title = niconicoFrameTitle();
         iframe.src = `${ORIGIN}/watch/${encodeURIComponent(videoId)}?jsapi=1&playerId=${playerId}`;
         box.append(iframe);
         container.append(box);

@@ -10,6 +10,13 @@ import { ShelfArrows, useShelfScroll } from './shelf';
 import { edgeMask } from './scroll-row';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
 import { atLeast } from '@/lib/breakpoints';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { title: 'お気に入りのボカロPの新曲' },
+  en: { title: 'New from your producers' },
+});
 
 /** 新しい曲を読むボカロPの数（お気に入りに足した新しい順） */
 const PRODUCERS = 12;
@@ -41,6 +48,7 @@ const SHELF =
 export function FavoriteNewSongs() {
   const { items: producers } = useFavoriteProducers();
   const open = useOpenSong();
+  const t = useText(TEXT);
   const ids = producers.slice(0, PRODUCERS).map((p) => p.id);
   const key = ids.join(',');
   const [loaded, setLoaded] = useState<{ key: string; songs: DatedItem[] } | null>(null);
@@ -133,7 +141,7 @@ export function FavoriteNewSongs() {
   return (
     <section className={SECTION} aria-busy={!songs}>
       <div className="mb-3 flex items-end gap-3">
-        <Heading eyebrow="From Your Favorites">お気に入りのボカロPの新曲</Heading>
+        <Heading eyebrow="From Your Favorites">{t.title}</Heading>
         {/* 曲が棚に収まって送る必要が無いときは、矢印を出さない */}
         {songs && !(edge.start && edge.end) && (
           <div className="ml-auto flex items-center gap-2">

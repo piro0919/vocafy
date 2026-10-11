@@ -1,6 +1,6 @@
 'use client';
 
-import { Link } from '@/i18n/navigation';
+import { Link, useText } from '@/i18n/navigation';
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { EASE_OUT, MOTION, prefersReducedMotion } from '@/lib/motion';
@@ -12,6 +12,12 @@ import type { Owner } from './player-types';
 import { DRAG_SLOP } from '@/lib/input';
 import { resetDockSize, startDockResize, useDockSize } from './dock-size';
 import { GLASS } from '@/components/surface-styles';
+import { defineText } from '@/i18n/text';
+
+const TEXT = defineText({
+  ja: { resize: '大きさを変える', close: 'プレイヤーを閉じる' },
+  en: { resize: 'Resize', close: 'Close player' },
+});
 
 export /**
  * 右下の窓の位置と大きさ。スマホでは下のタブと帯の上、パソコンでは帯の上。
@@ -50,6 +56,7 @@ export function DockStrip({
   owner: Owner;
   onClose: () => void;
 }) {
+  const t = useText(TEXT);
   const strip = useRef<HTMLDivElement>(null);
   // 引いたあとの「押した」を、帯の行き先へのリンクに渡さない
   const dragged = useRef(false);
@@ -143,7 +150,7 @@ export function DockStrip({
             右に寄せているときは左上、左に寄せているときは右上。角の丸みに沿った弧（globals.css の data-dock-arc） */}
         <span
           aria-hidden
-          title="大きさを変える"
+          title={t.resize}
           data-dock-arc="left"
           onPointerDown={startDockResize}
           onDoubleClick={resetDockSize}
@@ -151,7 +158,7 @@ export function DockStrip({
         />
         <span
           aria-hidden
-          title="大きさを変える"
+          title={t.resize}
           data-dock-arc="right"
           onPointerDown={startDockResize}
           onDoubleClick={resetDockSize}
@@ -176,7 +183,7 @@ export function DockStrip({
         {/* 窓だけ消して音を流し続けることはできない（プレイヤーは見えている必要がある）ので、下の帯の × と同じく再生ごと止める */}
         <button
           type="button"
-          aria-label="プレイヤーを閉じる"
+          aria-label={t.close}
           onClick={onClose}
           className="grid h-full w-9 shrink-0 place-items-center text-muted transition duration-react hover:text-foreground active:scale-95"
         >

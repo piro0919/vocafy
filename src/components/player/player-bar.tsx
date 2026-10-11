@@ -18,6 +18,34 @@ import { clock, now } from './playback-time';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { SEEK_STEP } from '@/lib/input';
 import { GLASS } from '@/components/surface-styles';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: {
+    prev: '前の曲',
+    next: '次の曲',
+    loading: '読み込んでいます…',
+    mute: '消音',
+    unmute: '消音を解除',
+    volume: '音量',
+    close: 'プレイヤーを閉じる',
+    shrink: '動画を縮めて前の画面に戻る',
+    position: '再生位置',
+  },
+  en: {
+    prev: 'Previous',
+    next: 'Next',
+    loading: 'Loading…',
+    mute: 'Mute',
+    unmute: 'Unmute',
+    volume: 'Volume',
+    close: 'Close player',
+    shrink: 'Minimize video and go back',
+    position: 'Seek',
+  },
+});
 
 /** 音量のアイコンを、小さい音の形にする境目（0〜100） */
 const VOLUME_LOW = 50;
@@ -47,6 +75,8 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
   } = usePlayer();
   const time = usePlaybackTime();
   const router = useRouter();
+  const t = useText(TEXT);
+  const terms = useText(TERMS);
 
   return (
     <div
@@ -61,11 +91,11 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
 
       <div className="relative flex h-full items-center gap-3 px-3 sm:gap-4 sm:px-4">
         <div className="flex items-center sm:gap-1">
-          <BarButton label="前の曲" disabled={!hasPrev} onClick={() => step(-1)}>
+          <BarButton label={t.prev} disabled={!hasPrev} onClick={() => step(-1)}>
             <Icon name="prev" />
           </BarButton>
           <BarButton
-            label={playing ? '一時停止' : '再生'}
+            label={playing ? terms.pause : terms.play}
             large
             onClick={toggle}
             disabled={loading}
@@ -76,7 +106,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
               <Icon name={playing ? 'pause' : 'play'} />
             )}
           </BarButton>
-          <BarButton label="次の曲" disabled={!hasNext} onClick={() => step(1)}>
+          <BarButton label={t.next} disabled={!hasNext} onClick={() => step(1)}>
             <Icon name="next" />
           </BarButton>
         </div>
@@ -100,7 +130,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                 text={loading ? '' : `${item.producerName}・${item.vocalists}`}
               >
                 {loading ? (
-                  '読み込んでいます…'
+                  t.loading
                 ) : (
                   <>
                     <Link href={`/producers/${item.producerId}`} className="hover:text-foreground">
@@ -115,7 +145,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                 text={loading ? '' : item.producerName}
               >
                 {loading ? (
-                  '読み込んでいます…'
+                  t.loading
                 ) : (
                   <Link href={`/producers/${item.producerId}`} className="hover:text-foreground">
                     {item.producerName}
@@ -136,7 +166,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
         {/* ラジオはランダム・ループと同じ「この先どう流すか」のボタンなので並べる（スマホは画面の中に同じ並びで置く） */}
         <PlaybackMode className="hidden md:flex" radio />
         <div className="hidden items-center gap-1 md:flex">
-          <BarButton label={muted ? '消音を解除' : '消音'} onClick={toggleMute}>
+          <BarButton label={muted ? t.unmute : t.mute} onClick={toggleMute}>
             <Icon
               name={
                 muted || volume === 0 ? 'volumeOff' : volume < VOLUME_LOW ? 'volumeLow' : 'volume'
@@ -149,7 +179,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
             max={100}
             value={muted ? 0 : volume}
             onChange={(e) => setVolume(Number(e.target.value))}
-            aria-label="音量"
+            aria-label={t.volume}
             className="w-24 cursor-pointer accent-accent"
           />
         </div>
@@ -159,15 +189,11 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
           押すと前の画面に戻り、動画は右下の窓に縮む（YouTube のアプリの動画の画面の左上の矢印と同じ役目）。
           帯に足すと曲名が削られるので、入れ替える。閉じたいときは、縮めたあとの窓か帯の × で閉じる
         */}
-        <BarButton
-          label="プレイヤーを閉じる"
-          onClick={close}
-          className="max-md:[[data-watch]_&]:hidden"
-        >
+        <BarButton label={t.close} onClick={close} className="max-md:[[data-watch]_&]:hidden">
           <Icon name="close" />
         </BarButton>
         <BarButton
-          label="動画を縮めて前の画面に戻る"
+          label={t.shrink}
           onClick={() => leave(router)}
           className="md:hidden [html:not([data-watch])_&]:hidden"
         >
@@ -221,6 +247,7 @@ function Progress({
   playing: boolean;
   onSeek: (seconds: number) => void;
 }) {
+  const t = useText(TEXT);
   const fill = useRef<HTMLSpanElement>(null);
   const knob = useRef<HTMLSpanElement>(null);
   // 指（マウス）を動かしているあいだだけ出す、飛び先の時間。スマホは時間の表示が無いので、これが頼り
@@ -270,7 +297,7 @@ function Progress({
     <div
       role="slider"
       tabIndex={0}
-      aria-label="再生位置"
+      aria-label={t.position}
       aria-valuemin={0}
       aria-valuemax={Math.round(time.duration)}
       aria-valuenow={Math.round(current)}

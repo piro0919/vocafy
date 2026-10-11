@@ -1,12 +1,15 @@
 'use client';
 
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
 import { useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { PRIMARY_ICON } from './button-styles';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
 import { today } from '@/lib/iso-date';
+
+const TEXT = defineText({ ja: { play: 'きょうの出会いを再生' }, en: { play: 'Play Daily Mix' } });
 
 /**
  * パソコンの上の段の、ログインの左のサイコロ（2026-10-11 に本人と決めた。ログインと同じ塗りの丸いボタン）。どの画面からでも、トップのきょうの出会いを
@@ -17,6 +20,7 @@ import { today } from '@/lib/iso-date';
 export function MixButton() {
   const { current, owner, playAll } = usePlayer();
   const router = useRouter();
+  const t = useText(TEXT);
   const songs = useRef<{ date: string; promise: Promise<QueueItem[]> } | null>(null);
 
   const load = (day: string) => {
@@ -52,8 +56,8 @@ export function MixButton() {
       onClick={onClick}
       onPointerEnter={() => void load(today())}
       onFocus={() => void load(today())}
-      aria-label="きょうの出会いを再生"
-      title="きょうの出会いを再生"
+      aria-label={t.play}
+      title={t.play}
       className={PRIMARY_ICON}
     >
       <Icon name="dice" className="size-5" />

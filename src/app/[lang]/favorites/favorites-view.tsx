@@ -11,6 +11,24 @@ import { SongList } from '@/components/song-list';
 import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { formatCount } from '@/lib/format';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
+import { useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: {
+    emptyBefore: 'お気に入りはまだありません。曲やボカロPの',
+    emptyAfter: 'で追加できます。',
+    songs: '曲',
+    people: (n: string) => `${n}人`,
+  },
+  en: {
+    emptyBefore: 'No favorites yet. Use',
+    emptyAfter: 'on a song or producer to add it.',
+    songs: 'Songs',
+    people: (n: string) => (n === '1' ? '1 producer' : `${n} producers`),
+  },
+});
 
 /** お気に入りの画面に出す曲の数。全部はお気に入りの曲の画面（/favorites/songs）で見る（「再生」か曲を押して移る） */
 const SONG_PREVIEW = 12;
@@ -27,13 +45,15 @@ export function FavoritesView() {
   const { owner, current, playQueue } = usePlayer();
   const router = useRouter();
   useRefreshFavorites();
+  const t = useText(TEXT);
+  const terms = useText(TERMS);
 
   if (songs.length + producers.length === 0) {
     return (
       <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
-        お気に入りはまだありません。曲やボカロPの
+        {t.emptyBefore}
         <Icon name="heart" className="size-4" />
-        で追加できます。
+        {t.emptyAfter}
       </p>
     );
   }
@@ -43,9 +63,9 @@ export function FavoritesView() {
     <div>
       {songs.length > 0 && (
         <Section
-          title="曲"
+          title={t.songs}
           eyebrow="Songs"
-          count={`${formatCount(songs.length)}曲`}
+          count={terms.songs(formatCount(songs.length))}
           action={
             // 頭から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
             <button
@@ -57,7 +77,7 @@ export function FavoritesView() {
               className={PRIMARY}
             >
               <Icon name="play" className="size-5" />
-              再生
+              {terms.play}
             </button>
           }
         >
@@ -72,7 +92,11 @@ export function FavoritesView() {
         </Section>
       )}
       {producers.length > 0 && (
-        <Section title="ボカロP" eyebrow="Producers" count={`${formatCount(producers.length)}人`}>
+        <Section
+          title={terms.producers}
+          eyebrow="Producers"
+          count={t.people(formatCount(producers.length))}
+        >
           <div className={ARTIST_GRID}>
             {producers.map((p, i) => (
               <CoverCard

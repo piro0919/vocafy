@@ -1,13 +1,33 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { Legal } from '@/components/legal';
+import { langOf } from '@/i18n/config';
+import { TERMS } from '@/i18n/terms';
 import { CONTACT_FORM_URL, OPERATOR } from '@/lib/site';
 
-export const metadata: Metadata = { title: '利用規約' };
+/** 最終更新日。英訳は日本語の版と同じ日付にそろえる */
+const UPDATED = { ja: '2026年10月8日', en: 'October 8, 2026' };
 
-export default function TermsPage() {
+export async function generateMetadata({ params }: PageProps<'/[lang]/terms'>): Promise<Metadata> {
+  return { title: TERMS[await langOf(params)].terms };
+}
+
+/**
+ * 本文は言語ごとに分けて書く。日本語の版が正本で、英訳と食い違うときは日本語の版が優先する
+ * （英訳の頭の断り書きは legal.tsx）
+ */
+export default async function TermsPage({ params }: PageProps<'/[lang]/terms'>) {
+  const lang = await langOf(params);
   return (
-    <Legal title="利用規約" eyebrow="Terms" updated="2026年10月8日">
+    <Legal lang={lang} title={TERMS[lang].terms} eyebrow="Terms" updated={UPDATED[lang]}>
+      {lang === 'en' ? <EnTerms /> : <JaTerms />}
+    </Legal>
+  );
+}
+
+function JaTerms() {
+  return (
+    <>
       <p>
         この規約は、{OPERATOR} が運営する
         Vocafy（以下「本サイト」）の利用について定めます。本サイトを利用した時点で、この規約に同意したものとみなします。
@@ -97,6 +117,111 @@ export default function TermsPage() {
       <p>
         この規約は、必要に応じて変更することがあります。変更したときは、このページでお知らせします。
       </p>
-    </Legal>
+    </>
+  );
+}
+
+function EnTerms() {
+  return (
+    <>
+      <p>
+        These terms govern your use of Vocafy (the &ldquo;Site&rdquo;), operated by {OPERATOR}. By
+        using the Site, you are deemed to have agreed to these terms.
+      </p>
+
+      <h2>About the Site</h2>
+      <p>
+        The Site is an unofficial personal website that lets you listen to songs made with VOCALOID
+        and other synthesized voices through embeds of the videos their creators have published on
+        YouTube. It is not affiliated with any of the creators or with the developers of the voice
+        products.
+      </p>
+      <p>
+        The Site does not store or distribute any audio or video files. All playback takes place in
+        the YouTube player.
+      </p>
+
+      <h2>Use of YouTube</h2>
+      <p>
+        The Site uses YouTube API Services. By using the Site, you are also deemed to have agreed to
+        the{' '}
+        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">
+          YouTube Terms of Service
+        </a>
+        . For how we handle user information, please see our{' '}
+        <Link href="/privacy">Privacy Policy</Link>.
+      </p>
+
+      <h2>Rights</h2>
+      <p>
+        Copyright and all other rights in the videos, songs, thumbnails and creator images belong to
+        their respective rights holders. Information such as creator names, song titles and voices,
+        as well as creator images, is based on publicly available information from{' '}
+        <a href="https://vocadb.net/" target="_blank" rel="noopener noreferrer">
+          VocaDB
+        </a>
+        .
+      </p>
+      <p>
+        The Site&rsquo;s icon depicts the character &ldquo;Hatsune Miku&rdquo; of Crypton Future
+        Media, INC., drawn under the{' '}
+        <a
+          href="https://piapro.jp/license/character_guideline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Piapro Character License
+        </a>
+        .
+      </p>
+      <p>
+        The character illustrations on the voice pages are unofficial fan art created with
+        generative AI and are not official artwork. The rights to each character belong to their
+        respective rights holders. Characters of Crypton Future Media, INC. are drawn under the{' '}
+        <a
+          href="https://piapro.jp/license/character_guideline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Piapro Character License
+        </a>
+        . If a rights holder asks us to take them down, we will promptly remove them.
+      </p>
+
+      <h2>Removal requests</h2>
+      <p>
+        If a rights holder asks us to remove a video featured on the Site, we will review the
+        request and promptly remove it. Please contact us through our{' '}
+        <a href={CONTACT_FORM_URL} target="_blank" rel="noopener noreferrer">
+          contact form
+        </a>
+        . Reports of errors in song titles and other information are also welcome through the same
+        form.
+      </p>
+
+      <h2>Prohibited conduct</h2>
+      <ul>
+        <li>Interfering with the operation of the Site</li>
+        <li>Automatically sending large volumes of requests to the Site</li>
+        <li>Violating laws or public order and morals</li>
+      </ul>
+
+      <h2>Disclaimer</h2>
+      <p>
+        We do not guarantee the accuracy or completeness of the information on the Site. Videos may
+        become unplayable without notice due to removal, being made private, regional restrictions
+        or other actions on YouTube.
+      </p>
+      <p>
+        {OPERATOR} is not liable for any damages arising from the use of the Site. The Site may
+        change its content or cease operation without notice.
+      </p>
+
+      <h2>Changes to these terms</h2>
+      <p>
+        We may change these terms as necessary. When we do, we will announce the changes on this
+        page.
+      </p>
+    </>
   );
 }

@@ -7,6 +7,8 @@ import { formatCount } from '@/lib/format';
 import { atLeast } from '@/lib/breakpoints';
 import { EAGER_IMAGES } from '@/lib/image-sizes';
 import { useWindowList } from '@/components/use-window-list';
+import { useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
 
 /** 段の数。cover-card.tsx の ARTIST_GRID（grid-cols-3 sm:4 lg:5 xl:6）と同じ幅で切り替える */
 /** 段の数を決められないとき（サーバーで描くとき）の段の数 */
@@ -33,6 +35,7 @@ export function VirtualProducerGrid({
   start?: number;
 }) {
   const columns = useColumns(COLUMNS, COLUMNS_BASE);
+  const terms = useText(TERMS);
 
   const { list, virtualizer } = useWindowList({
     rows: Math.ceil(producers.length / columns),
@@ -63,7 +66,7 @@ export function VirtualProducerGrid({
               cover={p.picture}
               round
               title={p.name}
-              sub={`${formatCount(p.songCount)}曲`}
+              sub={terms.songs(formatCount(p.songCount))}
               eager={row.index * columns + c < EAGER_IMAGES}
             />
           ))}

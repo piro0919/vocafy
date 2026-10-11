@@ -31,3 +31,9 @@ export function stripLang(pathname: string): string {
 export function langOfPath(pathname: string): Lang {
   return pathname === '/en' || pathname.startsWith('/en/') ? 'en' : DEFAULT_LANG;
 }
+
+/** ページの params の言語。[lang]/layout.tsx が言語でない値を落とすので、ここでは日本語に倒すだけ */
+export async function langOf(params: Promise<{ lang: string }>): Promise<Lang> {
+  const { lang } = await params;
+  return isLang(lang) ? lang : DEFAULT_LANG;
+}

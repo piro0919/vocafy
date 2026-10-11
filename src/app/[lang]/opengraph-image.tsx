@@ -1,7 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
-import { OG_COLORS, OG_SIZE, OgBackdrop } from './og-backdrop';
+import { langOf } from '@/i18n/config';
+import { defineText } from '@/i18n/text';
+import { googleFont, OG_COLORS, OG_SIZE, OgBackdrop } from './og-backdrop';
 
 export const alt = 'Vocafy — ボカロ曲を、ずっと聴ける。';
 export const size = OG_SIZE;
@@ -16,7 +18,17 @@ const font = await readFile(join(process.cwd(), 'src/assets/mplus-rounded-700-og
 // サイトのロゴ（nav.tsx・globals.css の .logo）と同じ字
 const logoFont = await readFile(join(process.cwd(), 'src/assets/orbitron-900-og.ttf'));
 
-export default function OpengraphImage() {
+/** ロゴの下の一文（サイトの説明） */
+const TEXT = defineText({
+  ja: { tagline: 'ボカロ曲を、ずっと聴ける。' },
+  en: { tagline: 'Endless Vocaloid songs.' },
+});
+
+export default async function OpengraphImage({ params }: { params: Promise<{ lang: string }> }) {
+  const lang = await langOf(params);
+  const { tagline } = TEXT[lang];
+  // 英語の一文の字は手元の抜いた字（日本語の一文の分だけ）に無いので、ボカロPの絵と同じく Google Fonts から抜いて取る
+  const taglineFont = lang === 'ja' ? font : await googleFont('M PLUS Rounded 1c', 700, tagline);
   return new ImageResponse(
     <div
       style={{
@@ -53,14 +65,14 @@ export default function OpengraphImage() {
           >
             Voca<span style={{ color: OG_COLORS.accent }}>fy</span>
           </div>
-          <div style={{ fontSize: 34, color: OG_COLORS.muted }}>ボカロ曲を、ずっと聴ける。</div>
+          <div style={{ fontSize: 34, color: OG_COLORS.muted }}>{tagline}</div>
         </div>
       </div>
     </div>,
     {
       ...size,
       fonts: [
-        { name: 'Rounded', data: font, weight: 700 },
+        { name: 'Rounded', data: taglineFont, weight: 700 },
         { name: 'Orbitron', data: logoFont, weight: 900 },
       ],
     },

@@ -3,6 +3,13 @@
 import { useSyncExternalStore } from 'react';
 import { isMouseDevice, mixFlowEnabled, setMixFlowEnabled, subscribeMixFlow } from '@/lib/mix-flow';
 import { CheckRow, SettingSection } from './setting-controls';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { title: 'トップの動き', flow: 'きょうの出会いを流す' },
+  en: { title: 'Home motion', flow: 'Animate Daily Mix' },
+});
 
 /**
  * 設定の画面の「トップの動き」。きょうの出会いの壁を流すかを切り替える（2026-10-11 に本人と決めた）。
@@ -12,11 +19,12 @@ import { CheckRow, SettingSection } from './setting-controls';
 export function MixFlowSetting() {
   const shown = useSyncExternalStore(subscribeMixFlow, isMouseDevice, () => false);
   const on = useSyncExternalStore(subscribeMixFlow, mixFlowEnabled, () => true);
+  const t = useText(TEXT);
   if (!shown) return null;
   return (
-    <SettingSection eyebrow="Motion" title="トップの動き">
+    <SettingSection eyebrow="Motion" title={t.title}>
       <CheckRow checked={on} onChange={setMixFlowEnabled}>
-        きょうの出会いを流す
+        {t.flow}
       </CheckRow>
     </SettingSection>
   );

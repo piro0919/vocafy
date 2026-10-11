@@ -2,7 +2,8 @@
 
 import type { QueueItem } from '@/lib/catalog';
 import { type ReactNode, useRef } from 'react';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, useText } from '@/i18n/navigation';
+import { defineText } from '@/i18n/text';
 import { toast } from 'sonner';
 import { smallThumbOf } from '@/lib/thumb';
 import { FadeImage } from './fade-image';
@@ -142,14 +143,18 @@ export function useOpenSong() {
  * 押せば流れるので、行は薄くしない。薄い行は「再生できない曲」の見た目と同じになる。
  * 印だけでは意味が読めないので、押すと一文で知らせる。飛ばさないブラウザ（iPad の Brave など）もあるので「Safari」とは書かない
  */
-const NO_AUTOPLAY = 'このブラウザでは、この曲は連続再生されません';
+const TEXT = defineText({
+  ja: { noAutoplay: 'このブラウザでは、この曲は連続再生されません' },
+  en: { noAutoplay: "This browser won't play this song automatically" },
+});
 
 export function NoAutoplay() {
+  const t = useText(TEXT);
   return (
     <button
       type="button"
-      onClick={() => toast(NO_AUTOPLAY)}
-      aria-label={NO_AUTOPLAY}
+      onClick={() => toast(t.noAutoplay)}
+      aria-label={t.noAutoplay}
       className={`${ICON_SM} grid text-muted`}
     >
       <Icon name="repeatOff" className="size-4" />

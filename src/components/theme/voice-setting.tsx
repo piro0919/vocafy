@@ -12,16 +12,24 @@ import {
   subscribeVoice,
   VOICES,
 } from './voice';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+
+const TEXT = defineText({
+  ja: { title: 'サイトカラー', follow: '歌っているキャラの色に変える' },
+  en: { title: 'Site color', follow: "Match the singing character's color" },
+});
 
 /** 設定の画面のサイトカラー（キャラの色）の選択。選んだ時点で切り替わり、このブラウザに残る */
 export function VoiceSetting() {
   const voice = useSyncExternalStore(subscribeVoice, readVoice, () => 'miku' as const);
   const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => true);
+  const t = useText(TEXT);
   return (
     <section className={SECTION}>
       <div className="mb-3">
         <Heading id="voice-setting" eyebrow="Color">
-          サイトカラー
+          {t.title}
         </Heading>
       </div>
       {/* 札はトップの歌声の区画と同じ見た目。9人なので、どの幅でも3列の3段にそろえる。
@@ -54,7 +62,7 @@ export function VoiceSetting() {
         ))}
       </div>
       <CheckRow checked={follow} onChange={setFollowVoice} className="mt-4">
-        歌っているキャラの色に変える
+        {t.follow}
       </CheckRow>
     </section>
   );

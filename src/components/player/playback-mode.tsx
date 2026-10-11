@@ -11,6 +11,47 @@ import { type Sleep, usePlayer } from './player-provider';
 import { QueuePanel } from './queue-panel';
 import { ICON } from '../button-styles';
 import { MINUTE_MS } from '@/lib/timing';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
+import { TERMS } from '@/i18n/terms';
+
+const TEXT = defineText({
+  ja: {
+    shuffleOn: 'ランダム再生をオンにする',
+    shuffleOff: 'ランダム再生をオフにする',
+    repeatAll: 'ループを全体にする',
+    repeatOne: 'ループを1曲にする',
+    controls: '再生の切り替え',
+    sleep: 'スリープタイマー',
+    sleepWith: (status: string) => `スリープタイマー（${status}）`,
+    stopsAtEnd: 'この曲が終わったら止まります',
+    stopsIn: (minutes: number) => `あと${minutes}分で止まります`,
+    minutes: (minutes: number) => `${minutes}分`,
+    hours: (hours: number) => `${hours}時間`,
+    endOfSong: 'この曲が終わったら',
+    sleepOff: 'タイマーを切る',
+    radioOff: 'ラジオをやめる',
+    radioFrom: (title: string) => `${title}からラジオを流す`,
+  },
+  en: {
+    shuffleOn: 'Turn on shuffle',
+    shuffleOff: 'Turn off shuffle',
+    repeatAll: 'Repeat all',
+    repeatOne: 'Repeat one',
+    controls: 'Playback options',
+    sleep: 'Sleep timer',
+    sleepWith: (status: string) => `Sleep timer (${status})`,
+    stopsAtEnd: 'Stops at the end of this song',
+    stopsIn: (minutes: number) =>
+      minutes === 1 ? 'Stops in 1 minute' : `Stops in ${minutes} minutes`,
+    minutes: (minutes: number) => `${minutes} minutes`,
+    hours: (hours: number) => (hours === 1 ? '1 hour' : `${hours} hours`),
+    endOfSong: 'End of this song',
+    sleepOff: 'Turn off timer',
+    radioOff: 'Stop radio',
+    radioFrom: (title: string) => `Start radio from ${title}`,
+  },
+});
 
 /**
  * ランダム再生とループの切り替え。入っているあいだは差し色にする。
@@ -33,6 +74,8 @@ export function PlaybackMode({
   scroll?: boolean;
 }) {
   const { current, shuffle, repeat, toggleShuffle, toggleRepeat } = usePlayer();
+  const t = useText(TEXT);
+  const terms = useText(TERMS);
   const [queueOpen, setQueueOpen] = useState(false);
   const queueButton = useRef<HTMLButtonElement>(null);
   const closeQueue = useCallback(() => setQueueOpen(false), []);
@@ -42,8 +85,8 @@ export function PlaybackMode({
       <button
         type="button"
         aria-pressed={shuffle}
-        aria-label={shuffle ? 'ランダム再生をオフにする' : 'ランダム再生をオンにする'}
-        title={shuffle ? 'ランダム再生をオフにする' : 'ランダム再生をオンにする'}
+        aria-label={shuffle ? t.shuffleOff : t.shuffleOn}
+        title={shuffle ? t.shuffleOff : t.shuffleOn}
         onClick={toggleShuffle}
         className={`${button} ${shuffle ? 'text-accent' : 'text-muted hover:text-foreground'}`}
       >
@@ -52,8 +95,8 @@ export function PlaybackMode({
       </button>
       <button
         type="button"
-        aria-label={repeat === 'one' ? 'ループを全体にする' : 'ループを1曲にする'}
-        title={repeat === 'one' ? 'ループを全体にする' : 'ループを1曲にする'}
+        aria-label={repeat === 'one' ? t.repeatAll : t.repeatOne}
+        title={repeat === 'one' ? t.repeatAll : t.repeatOne}
         onClick={toggleRepeat}
         className={`${button} text-accent`}
       >
@@ -64,10 +107,10 @@ export function PlaybackMode({
         <button
           ref={queueButton}
           type="button"
-          aria-label="次に流れる曲"
+          aria-label={terms.upNext}
           aria-expanded={queueOpen}
           aria-keyshortcuts="Q"
-          title="次に流れる曲"
+          title={terms.upNext}
           onClick={() => setQueueOpen((open) => !open)}
           className={`${button} ${queueOpen ? 'text-accent' : 'text-muted hover:text-foreground'}`}
         >
@@ -83,7 +126,7 @@ export function PlaybackMode({
     </>
   );
   return scroll ? (
-    <ScrollRow label="再生の切り替え" className={`min-w-0 items-center ${className}`}>
+    <ScrollRow label={t.controls} className={`min-w-0 items-center ${className}`}>
       {buttons}
     </ScrollRow>
   ) : (
@@ -120,17 +163,13 @@ function useMinutesLeft(sleep: Sleep | null): number | null {
  */
 function SleepButton({ className }: { className: string }) {
   const { sleep, setSleep } = usePlayer();
+  const t = useText(TEXT);
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const close = useCallback(() => setOpen(false), []);
   const left = useMinutesLeft(sleep);
-  const status =
-    sleep?.kind === 'end'
-      ? 'この曲が終わったら止まります'
-      : left !== null
-        ? `あと${left}分で止まります`
-        : null;
-  const label = status ? `スリープタイマー（${status}）` : 'スリープタイマー';
+  const status = sleep?.kind === 'end' ? t.stopsAtEnd : left !== null ? t.stopsIn(left) : null;
+  const label = status ? t.sleepWith(status) : t.sleep;
   const choose = (value: number | 'end' | null) => {
     setSleep(value);
     setOpen(false);
@@ -152,20 +191,20 @@ function SleepButton({ className }: { className: string }) {
         {sleep && <OnDot />}
       </button>
       {createPortal(
-        <FloatingPanel open={open} onClose={close} trigger={trigger} title="スリープタイマー">
+        <FloatingPanel open={open} onClose={close} trigger={trigger} title={t.sleep}>
           {status && <p className="px-4 pb-1 text-xs text-accent">{status}</p>}
           <div className="grid gap-0.5 px-2 pb-2">
             {SLEEP_MINUTES.map((m) => (
               <button key={m} type="button" onClick={() => choose(m)} className={row}>
-                {m < 60 ? `${m}分` : `${m / 60}時間`}
+                {m < 60 ? t.minutes(m) : t.hours(m / 60)}
               </button>
             ))}
             <button type="button" onClick={() => choose('end')} className={row}>
-              この曲が終わったら
+              {t.endOfSong}
             </button>
             {sleep && (
               <button type="button" onClick={() => choose(null)} className={`${row} text-muted`}>
-                タイマーを切る
+                {t.sleepOff}
               </button>
             )}
           </div>
@@ -183,6 +222,7 @@ function SleepButton({ className }: { className: string }) {
  */
 function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?: string }) {
   const { owner, startRadio, stopRadio, holdSlot } = usePlayer();
+  const t = useText(TEXT);
   const router = useRouter();
   const pathname = usePathname();
   const on = owner.kind === 'radio';
@@ -202,10 +242,10 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
   return (
     <button
       type="button"
-      aria-label={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
+      aria-label={on ? t.radioOff : t.radioFrom(song.title)}
       aria-pressed={on}
       aria-keyshortcuts="A"
-      title={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
+      title={on ? t.radioOff : t.radioFrom(song.title)}
       onClick={toggle}
       className={`${className} relative ${ICON} ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
     >

@@ -12,14 +12,27 @@ import {
 } from './swipe-back-store';
 import { useClientValue } from '@/lib/client-value';
 import { isIosStandalone } from '@/lib/standalone';
+import { defineText } from '@/i18n/text';
+import { useText } from '@/i18n/navigation';
 
 type Choice = 'off' | RightEdge;
 
-const OPTIONS: { value: Choice; label: string }[] = [
-  { value: 'off', label: '使わない' },
-  { value: 'back', label: '左右の端で戻る' },
-  { value: 'forward', label: '左端で戻る・右端で進む' },
-];
+const TEXT = defineText({
+  ja: {
+    title: 'スワイプ',
+    off: '使わない',
+    back: '左右の端で戻る',
+    forward: '左端で戻る・右端で進む',
+  },
+  en: {
+    title: 'Swipe',
+    off: 'Off',
+    back: 'Swipe from either edge to go back',
+    forward: 'Left edge to go back, right edge to go forward',
+  },
+});
+
+const CHOICES: Choice[] = ['off', 'back', 'forward'];
 
 /**
  * 設定の画面の「スワイプ」。iPhone・iPad でホーム画面から開いたときだけ出す（ブラウザには戻るボタンがあり、
@@ -29,6 +42,7 @@ export function SwipeBackSetting() {
   const shown = useClientValue(isIosStandalone, false);
   const on = useSyncExternalStore(subscribeSwipeBack, swipeBackEnabled, () => false);
   const right = useSyncExternalStore(subscribeSwipeBack, rightEdge, (): RightEdge => 'back');
+  const t = useText(TEXT);
   if (!shown) return null;
   const choice: Choice = on ? right : 'off';
   const choose = (value: Choice) => {
@@ -36,12 +50,12 @@ export function SwipeBackSetting() {
     if (value !== 'off') setRightEdge(value);
   };
   return (
-    <SettingSection eyebrow="Swipe" title="スワイプ">
+    <SettingSection eyebrow="Swipe" title={t.title}>
       {(id) => (
         <RadioOptions
           name="swipe"
           labelledBy={id}
-          options={OPTIONS}
+          options={CHOICES.map((value) => ({ value, label: t[value] }))}
           value={choice}
           onChange={choose}
         />
