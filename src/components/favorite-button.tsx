@@ -81,10 +81,13 @@ function Heart({ on, beat, size }: { on: boolean; beat: number; size: string }) 
 export function FavoriteButton({
   song,
   quiet = false,
+  keyshortcuts,
   className = '',
 }: {
   song: QueueItem;
   quiet?: boolean;
+  /** キーで押せるボタンにする（再生の帯のハートだけ。player-keys.tsx） */
+  keyshortcuts?: string;
   className?: string;
 }) {
   const { has, toggle } = useFavorites();
@@ -99,6 +102,7 @@ export function FavoriteButton({
       type="button"
       aria-label={on ? `${song.title}をお気に入りから外す` : `${song.title}をお気に入りに入れる`}
       aria-pressed={on}
+      aria-keyshortcuts={keyshortcuts}
       onClick={(e) => {
         e.stopPropagation();
         toggle(song);

@@ -6,19 +6,28 @@ import { FloatingPanel } from './floating-panel';
 import { KeyList } from './keyboard-help';
 import { now } from './player-bar';
 import { usePlayer } from './player-provider';
-import { SEEK_STEP, VOLUME_STEP } from '@/lib/input';
+import { LONG_SEEK_STEP, SEEK_STEP, VOLUME_STEP } from '@/lib/input';
 
 /**
  * キーボードでプレイヤーとサイトを操作する（一覧は keyboard-help.tsx）。
  *
- * Space 再生・一時停止 / ← → 5秒戻る・進む / Shift+← → 前の曲・次の曲 / ↑ ↓ 音量 / M 消音 / S ランダム / R ループ
- * は、何か流しているとき（順番待ちがあるとき）だけ受ける。/ 検索欄へ移る / ? 一覧の板を開く（YouTube と同じ）は、いつでも受ける
+ * 何か流しているとき（順番待ちがあるとき）だけ受けるもの。Space・K 再生・一時停止 / ← → 5秒戻る・進む / J L 10秒戻る・進む /
+ * 0〜9 全体の0〜90%へ / Shift+← →・Shift+P N 前の曲・次の曲 / ↑ ↓ 音量 / M 消音 / S ランダム / R ループ（ここまで YouTube と同じか近い）/
+ * H お気に入り / Q 次に流れる曲 / A ラジオ。H・Q・A は、その印（aria-keyshortcuts）を付けた見えているボタンを押す。
+ * 帯のボタンと同じ動き（ハートの弾み、板のフォーカスの出入り、ラジオの画面への移動）になる。見えていなければ何もしない。
+ * いつでも受けるもの。/ 検索欄へ移る / ? 一覧の板を開く（YouTube と同じ）
  *
  * 次のときは受けない。文字を打っているとき（検索欄など）。キーを自分で使う部品に注目があるとき
  * （再生位置のつまみ。data-own-keys の印）。ボタンやリンクの上の Space は、
  * それを押す動きに任せる。動画を押したあとは注目が YouTube の枠の中に移り、キーは YouTube の側に届く
  * （YouTube の側も Space や ← → で同じように動く）
  */
+/** 数字のキーで飛ぶ位置の刻み（5 なら全体の50%。YouTube と同じ） */
+const DIGITS = 10;
+
+/** 見えているボタンを押して動かすキー（大文字で引く）と、そのボタンの aria-keyshortcuts */
+const KEY_BUTTONS: Record<string, string> = { H: 'H', Q: 'Q', A: 'A' };
+
 export function PlayerKeys() {
   const player = usePlayer();
   const [helpOpen, setHelpOpen] = useState(false);
@@ -60,19 +69,54 @@ export function PlayerKeys() {
 
       if (player.queue.length === 0) return;
       const t = now(player.time, player.playing);
+      const seekBy = (sec: number) =>
+        player.seek(Math.min(player.time.duration, Math.max(0, t + sec)));
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        player.seek((player.time.duration * Number(e.key)) / DIGITS);
+        return;
+      }
+      const shortcut = KEY_BUTTONS[e.key.toUpperCase()];
+      if (shortcut) {
+        const button = [
+          ...document.querySelectorAll<HTMLElement>(`[aria-keyshortcuts="${shortcut}"]`),
+        ].find((el) => !el.closest('[inert]') && el.checkVisibility());
+        if (!button) return;
+        e.preventDefault();
+        button.click();
+        return;
+      }
       let handled = true;
       switch (e.key) {
         case ' ':
           if (target?.closest('button, a, summary')) return;
           player.toggle();
           break;
+        case 'k':
+        case 'K':
+          player.toggle();
+          break;
+        case 'j':
+        case 'J':
+          seekBy(-LONG_SEEK_STEP);
+          break;
+        case 'l':
+        case 'L':
+          seekBy(LONG_SEEK_STEP);
+          break;
+        case 'P':
+        case 'N':
+          // YouTube と同じく Shift と一緒のときだけ
+          if (!e.shiftKey) return;
+          player.step(e.key === 'N' ? 1 : -1);
+          break;
         case 'ArrowLeft':
           if (e.shiftKey) player.step(-1);
-          else player.seek(Math.max(0, t - SEEK_STEP));
+          else seekBy(-SEEK_STEP);
           break;
         case 'ArrowRight':
           if (e.shiftKey) player.step(1);
-          else player.seek(Math.min(player.time.duration, t + SEEK_STEP));
+          else seekBy(SEEK_STEP);
           break;
         case 'ArrowUp':
           player.setVolume(Math.min(100, player.volume + VOLUME_STEP));

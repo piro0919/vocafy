@@ -120,7 +120,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                 )}
               </Marquee>
             </div>
-            {!loading && <FavoriteButton song={item} />}
+            {!loading && <FavoriteButton song={item} keyshortcuts="H" />}
           </div>
         ) : (
           <div className="flex-1" />

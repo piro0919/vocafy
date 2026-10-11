@@ -67,6 +67,7 @@ export function PlaybackMode({
           type="button"
           aria-label="次に流れる曲"
           aria-expanded={queueOpen}
+          aria-keyshortcuts="Q"
           title="次に流れる曲"
           onClick={() => setQueueOpen((open) => !open)}
           className={`${button} ${queueOpen ? 'text-accent' : 'text-muted hover:text-foreground'}`}
@@ -204,6 +205,7 @@ function RadioButton({ song, className = 'grid' }: { song: QueueItem; className?
       type="button"
       aria-label={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       aria-pressed={on}
+      aria-keyshortcuts="A"
       title={on ? 'ラジオをやめる' : `${song.title}からラジオを流す`}
       onClick={toggle}
       className={`${className} relative ${ICON} ${on ? 'text-accent' : 'text-muted hover:text-foreground'}`}
