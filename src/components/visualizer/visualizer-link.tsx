@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { readAmbientColors, subscribeAmbientColors } from '../ambient-colors';
 import { usePlayer } from '../player/player-provider';
@@ -27,20 +27,29 @@ function artworkOf(item: QueueItem): string[] {
   return [`${item.thumb}.L`, `${item.thumb}.M`, item.thumb];
 }
 
+/** 色を計算させる要素と、塗って読む1画素のキャンバス。使い回す（前は色を直すたびに作って捨てていた） */
+let probe: HTMLSpanElement | undefined;
+let pixel: CanvasRenderingContext2D | null | undefined;
+
 /**
  * CSS の色（hsl()・color-mix()・var() を含んでよい）を #rrggbb にする。ブラウザに計算させ、
  * 1画素のキャンバスに塗って読む。アプリは CSS を読めないので、送る前に直す
  */
 function toHex(css: string): string {
-  const probe = document.createElement('span');
+  if (!probe) {
+    probe = document.createElement('span');
+    probe.hidden = true;
+    document.body.append(probe);
+  }
   probe.style.color = css;
-  document.body.append(probe);
   const computed = getComputedStyle(probe).color;
-  probe.remove();
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (pixel === undefined) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    pixel = canvas.getContext('2d', { willReadFrequently: true });
+  }
+  const ctx = pixel;
   if (!ctx) return COLORS.miku;
   ctx.fillStyle = computed;
   ctx.fillRect(0, 0, 1, 1);
@@ -76,10 +85,17 @@ export function VisualizerLink() {
   /** つないだ直後に送る、いちばん新しい情報 */
   const latest = useRef<string | null>(null);
 
+  // 送る2色。直すのは色が変わったときだけ（再生・一時停止のたびには直さない）。
+  // 曲の色が無いときはサイトカラー。--miku は明るい画面でも暗い画面でも明るい差し色で、キャラの色（voice）で変わる
+  const colors = useMemo(
+    () => (on ? (ambient?.split('|') ?? ['var(--miku)', 'var(--miku)']).map(toHex) : []),
+    // voice は --miku の値を変えるので、読まないが直し直す合図にする
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [on, ambient, voice],
+  );
+
   useEffect(() => {
     if (!on) return;
-    // 曲の色が無いときはサイトカラー。--miku は明るい画面でも暗い画面でも明るい差し色
-    const colors = (ambient?.split('|') ?? ['var(--miku)', 'var(--miku)']).map(toHex);
     const message = JSON.stringify({
       song: current && {
         title: current.title,
@@ -94,7 +110,7 @@ export function VisualizerLink() {
     latest.current = message;
     const ws = socket.current;
     if (ws?.readyState === WebSocket.OPEN) ws.send(message);
-  }, [on, current, playing, ambient, voice]);
+  }, [on, current, playing, colors, voice]);
 
   useEffect(() => {
     if (!on) return;
