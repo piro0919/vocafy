@@ -9,6 +9,7 @@ import { formatCount } from '@/lib/format';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
+import { voiceName } from '@/lib/voice-name';
 
 const TEXT = defineText({
   ja: {
@@ -39,9 +40,10 @@ export async function generateMetadata({
   const { id, year, page } = await params;
   const voice = await voiceOf(id);
   const n = pageOf(page);
-  const t = TEXT[await langOf(params)];
+  const lang = await langOf(params);
+  const t = TEXT[lang];
   return {
-    title: voice && `${t.title(voice.name, year)}${n && n > 1 ? t.page(n) : ''}`,
+    title: voice && `${t.title(voiceName(voice.name, lang), year)}${n && n > 1 ? t.page(n) : ''}`,
   };
 }
 
@@ -61,7 +63,7 @@ export default async function VoiceYearPage({
     <>
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow={year}>
-          {TEXT[lang].title(voice.name, year)}
+          {TEXT[lang].title(voiceName(voice.name, lang), year)}
         </Heading>
         <PlayAll
           songs={playlist.songs}

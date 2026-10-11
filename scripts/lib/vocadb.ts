@@ -245,6 +245,14 @@ async function voicebank(id: number): Promise<VdbVoicebank> {
 }
 
 /**
+ * 歌声の英語の名前（lang=English）。英語の画面で、日本語の名前の代わりに出す（scripts/voice-names.ts）。
+ * 英語の名前の無い歌声は、VocaDB が既定の名前を返す
+ */
+export async function voicebankEnglishName(id: number): Promise<string> {
+  return (await get<VdbVoicebank>(`/artists/${id}`, { lang: 'English' })).name;
+}
+
+/**
  * 歌声の元の歌声を、根までたどる。「初音ミク V4X (Dark)」→「初音ミク V4X (Unknown)」→ … →「初音ミク」。
  * 自分と根の歌声を返す（自分が根なら同じもの）。名前は voicebank の決め方による
  */

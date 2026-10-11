@@ -19,6 +19,7 @@ import { LINEAR } from '@/lib/motion';
 import { dayLabel } from '@/lib/iso-date';
 import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 const TEXT = defineText({
   ja: { tile: (title: string, producer: string) => `${title}（${producer}）` },
@@ -55,6 +56,7 @@ export function OnThisDay({
   const open = useOpenSong();
   // 大きな1曲がニコニコの曲なら、埋め込みを先に読み込んでおく（iPad・iPhone だけ。右の一覧の行は SongItem が読む）
   const heroButton = useRef<HTMLButtonElement>(null);
+  const voices = useVoiceNames();
   usePreload(heroButton, hero.videoId);
   const heroActive = current?.songId === hero.songId;
 
@@ -101,7 +103,7 @@ export function OnThisDay({
             </span>
             <span className="mt-1 block truncate text-sm text-muted">
               {hero.producerName}
-              {hero.vocalists && ` ・ ${hero.vocalists}`}
+              {hero.vocalists && ` ・ ${voices.text(hero.vocalists)}`}
             </span>
           </span>
         </button>

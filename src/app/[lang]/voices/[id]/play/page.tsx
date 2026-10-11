@@ -4,6 +4,7 @@ import { ListPlayer } from '@/components/list-player';
 import { findVoice } from '@/lib/catalog';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
+import { voiceName } from '@/lib/voice-name';
 
 const TEXT = defineText({
   ja: { title: (name: string) => `${name}の代表曲` },
@@ -21,8 +22,9 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/voices/[id]/play'>): Promise<Metadata> {
   const found = await findVoice(Number((await params).id));
-  const t = TEXT[await langOf(params)];
-  return { title: found && t.title(found.voice.name), robots: { index: false } };
+  const lang = await langOf(params);
+  const t = TEXT[lang];
+  return { title: found && t.title(voiceName(found.voice.name, lang)), robots: { index: false } };
 }
 
 /**
@@ -33,14 +35,15 @@ export default async function VoicePlayPage({ params }: PageProps<'/[lang]/voice
   const found = await findVoice(Number((await params).id));
   if (!found || found.songs.length === 0) notFound();
   const { voice, songs } = found;
-  const t = TEXT[await langOf(params)];
+  const lang = await langOf(params);
+  const t = TEXT[lang];
   return (
     <div className="pt-content-top">
       <ListPlayer
         source={`voices/${voice.id}`}
         songs={songs}
         eyebrow="Voice"
-        title={t.title(voice.name)}
+        title={t.title(voiceName(voice.name, lang))}
       />
     </div>
   );

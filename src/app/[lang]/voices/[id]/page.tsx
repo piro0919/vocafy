@@ -13,6 +13,7 @@ import { formatCount } from '@/lib/format';
 import { yearOf } from '@/lib/iso-date';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
+import { voiceName } from '@/lib/voice-name';
 
 const TEXT = defineText({
   ja: { picks: (shown: string, total: string) => `${shown}曲（全${total}曲）` },
@@ -32,7 +33,7 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/voices/[id]'>): Promise<Metadata> {
   const { id } = await params;
   const found = await findVoice(Number(id));
-  return { title: found?.voice.name };
+  return { title: found && voiceName(found.voice.name, await langOf(params)) };
 }
 
 /**
@@ -46,7 +47,8 @@ export default async function VoicePage({ params }: PageProps<'/[lang]/voices/[i
   const { voice, songs, yearTotals } = found;
   const byYear = Map.groupBy(songs, (s: DatedItem) => yearOf(s.publishedOn));
   const art = voiceArt(voice.id);
-  const t = TEXT[await langOf(params)];
+  const lang = await langOf(params);
+  const t = TEXT[lang];
   return (
     <>
       <div className="flex items-end gap-4 pt-4 pb-4 sm:pb-6">
@@ -74,7 +76,7 @@ export default async function VoicePage({ params }: PageProps<'/[lang]/voices/[i
         )}
         <div>
           <Heading as="h1" size="page">
-            {voice.name}
+            {voiceName(voice.name, lang)}
           </Heading>
           {/* 流すのは代表曲だけ。全曲（1万曲を超える歌声もある）を年の新しい順に流すと、画面の見せ方と食い違う */}
           <PlayAll

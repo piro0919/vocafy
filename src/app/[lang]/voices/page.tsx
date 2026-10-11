@@ -8,6 +8,7 @@ import { formatCount } from '@/lib/format';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
+import { voiceName } from '@/lib/voice-name';
 
 const TEXT = defineText({
   ja: { characters: 'キャラクター', libraries: '歌声ライブラリ' },
@@ -70,7 +71,7 @@ export default async function VoicesPage({ params }: PageProps<'/[lang]/voices'>
                 href={`/voices/${v.id}`}
                 className="flex max-w-60 items-baseline gap-1.5 rounded-full border border-line/60 px-3 py-1 text-xs transition duration-react hover:bg-hover-accent active:scale-95"
               >
-                <span className="truncate font-bold">{v.name}</span>
+                <span className="truncate font-bold">{voiceName(v.name, lang)}</span>
                 <span className="shrink-0 text-xs text-muted">
                   {TERMS[lang].songs(formatCount(v.songCount))}
                 </span>

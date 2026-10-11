@@ -16,6 +16,7 @@ import { Marquee } from './marquee';
 import { Icon } from './icon';
 import { ICON_SM } from './button-styles';
 import { EAGER_IMAGES, IMAGE_SIZES } from '@/lib/image-sizes';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 /** 棚で縦に詰める行の数 */
 const SHELF_ROWS = 4;
@@ -88,6 +89,7 @@ export function SongItem({
   const { current, playing, skipsNiconico } = usePlayer();
   const active = current?.songId === song.songId;
   const row = useRef<HTMLDivElement>(null);
+  const voices = useVoiceNames();
   // ニコニコの曲は、行が見えているあいだ埋め込みを先に読み込んでおく（iPad・iPhone だけ）
   usePreload(row, song.videoId);
   return (
@@ -116,7 +118,7 @@ export function SongItem({
           </span>
           <span className="block truncate text-xs text-muted">
             {song.producerName}
-            {song.vocalists && ` ・ ${song.vocalists}`}
+            {song.vocalists && ` ・ ${voices.text(song.vocalists)}`}
           </span>
         </span>
         {meta}

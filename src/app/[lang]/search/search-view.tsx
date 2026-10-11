@@ -26,6 +26,7 @@ import { TIMING } from '@/lib/timing';
 import { useText } from '@/i18n/navigation';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 const TEXT = defineText({
   ja: {
@@ -95,6 +96,7 @@ export function SearchView() {
   const recent = useRecentSearches();
   const t = useText(TEXT);
   const terms = useText(TERMS);
+  const voices = useVoiceNames();
   const query = normalize(text);
   const found = useMemo(() => {
     if (!index || !query) return null;
@@ -274,7 +276,7 @@ export function SearchView() {
                         <FadeImage src={art} alt="" fill unoptimized className="object-contain" />
                       </span>
                     )}
-                    {v.name}
+                    {voices.name(v.name)}
                     <span className="text-xs font-normal text-muted">
                       {terms.songs(formatCount(v.songCount))}
                     </span>

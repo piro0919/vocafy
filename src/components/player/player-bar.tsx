@@ -21,6 +21,7 @@ import { GLASS } from '@/components/surface-styles';
 import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
 import { TERMS } from '@/i18n/terms';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 const TEXT = defineText({
   ja: {
@@ -77,6 +78,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
   const router = useRouter();
   const t = useText(TEXT);
   const terms = useText(TERMS);
+  const voices = useVoiceNames();
 
   return (
     <div
@@ -127,7 +129,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
               {/* パソコンはボカロP名と歌声、スマホはボカロP名だけ。スマホは帯が狭く、歌声まで並べるとボカロP名が途中で切れた */}
               <Marquee
                 className="text-xs text-muted max-md:hidden"
-                text={loading ? '' : `${item.producerName}・${item.vocalists}`}
+                text={loading ? '' : `${item.producerName}・${voices.text(item.vocalists)}`}
               >
                 {loading ? (
                   t.loading
@@ -136,7 +138,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
                     <Link href={`/producers/${item.producerId}`} className="hover:text-foreground">
                       {item.producerName}
                     </Link>
-                    {item.vocalists && ` ・ ${item.vocalists}`}
+                    {item.vocalists && ` ・ ${voices.text(item.vocalists)}`}
                   </>
                 )}
               </Marquee>

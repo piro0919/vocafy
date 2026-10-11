@@ -13,6 +13,7 @@ import { DRAG_SLOP } from '@/lib/input';
 import { resetDockSize, startDockResize, useDockSize } from './dock-size';
 import { GLASS } from '@/components/surface-styles';
 import { defineText } from '@/i18n/text';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 const TEXT = defineText({
   ja: { resize: '大きさを変える', close: 'プレイヤーを閉じる' },
@@ -57,6 +58,7 @@ export function DockStrip({
   onClose: () => void;
 }) {
   const t = useText(TEXT);
+  const voices = useVoiceNames();
   const strip = useRef<HTMLDivElement>(null);
   // 引いたあとの「押した」を、帯の行き先へのリンクに渡さない
   const dragged = useRef(false);
@@ -175,7 +177,9 @@ export function DockStrip({
               {' ・ '}
               {shown.producerName}
               {/* 下の再生の帯と同じく、スマホ（帯が 200px）ではボカロPだけにする */}
-              {shown.vocalists && <span className="max-md:hidden">{` ・ ${shown.vocalists}`}</span>}
+              {shown.vocalists && (
+                <span className="max-md:hidden">{` ・ ${voices.text(shown.vocalists)}`}</span>
+              )}
             </span>
             <Icon name="expand" className="size-4 shrink-0" />
           </Link>

@@ -7,6 +7,7 @@ import { FadeImage } from './fade-image';
 import { HopOnHover } from './hop-on-hover';
 import { formatCount } from '@/lib/format';
 import { PILL } from './button-styles';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 type VoiceProps = { id: number; name: string; songCount: number };
 
@@ -18,13 +19,14 @@ type VoiceProps = { id: number; name: string; songCount: number };
  */
 export function CharacterCard({ id, name, songCount, art }: VoiceProps & { art: string }) {
   const t = useText(TERMS);
+  const voices = useVoiceNames();
   return (
     <Link
       href={`/voices/${id}`}
       style={{ '--c': voiceColor(name) } as React.CSSProperties}
       className="group relative flex h-full flex-col transition duration-react active:scale-95"
     >
-      <CharacterFace name={name} sub={t.songs(formatCount(songCount))} art={art} />
+      <CharacterFace name={voices.name(name)} sub={t.songs(formatCount(songCount))} art={art} />
     </Link>
   );
 }

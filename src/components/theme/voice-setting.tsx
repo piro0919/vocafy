@@ -14,6 +14,7 @@ import {
 } from './voice';
 import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 const TEXT = defineText({
   ja: { title: 'サイトカラー', follow: '歌っているキャラの色に変える' },
@@ -25,6 +26,7 @@ export function VoiceSetting() {
   const voice = useSyncExternalStore(subscribeVoice, readVoice, () => 'miku' as const);
   const follow = useSyncExternalStore(subscribeVoice, readFollowVoice, () => true);
   const t = useText(TEXT);
+  const voices = useVoiceNames();
   return (
     <section className={SECTION}>
       <div className="mb-3">
@@ -54,7 +56,7 @@ export function VoiceSetting() {
               className="sr-only"
             />
             <CharacterFace
-              name={o.label}
+              name={voices.name(o.label)}
               art={`/characters/${o.art}.webp`}
               selected={voice === o.value}
             />

@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter as useProgressRouter } from '@bprogress/next/app';
 import { usePathname as useNextPathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { RadioOptions, SettingSection } from '@/components/setting-controls';
@@ -16,6 +15,12 @@ const choice = createLocalChoice<Lang>({
   event: 'vocafy-lang-change',
 });
 
+/**
+ * 言語を変えて移るときは、ページを読み込み直す。言語は画面の一番外側の枠（[lang]/layout.tsx の <html>）から変わるので、
+ * 画面の中で移ると <html> が作り直され、描く前に付けたテーマとサイトカラーの印（theme-script.ts の data-theme・data-voice）が
+ * 外れていた（2026-10-12 に本人が見つけた）。枠ごと作り直すので再生も止まり、読み込み直して失うものは無い
+ */
+
 /** いまの住所を、別の言語の同じ画面の住所にする（?以降も残す） */
 function sameScreenIn(lang: Lang): string {
   return localize(stripLang(location.pathname), lang) + location.search;
@@ -27,13 +32,12 @@ function sameScreenIn(lang: Lang): string {
  * ブラウザの言語は見ない。選んだ人だけを移す
  */
 export function LangRedirect() {
-  const router = useProgressRouter();
   const pathname = useNextPathname();
   useEffect(() => {
     if (langOfPath(location.pathname) === DEFAULT_LANG && choice.read() !== DEFAULT_LANG) {
-      router.replace(sameScreenIn(choice.read()), { showProgress: false });
+      location.replace(sameScreenIn(choice.read()));
     }
-  }, [pathname, router]);
+  }, [pathname]);
   return null;
 }
 
@@ -46,11 +50,10 @@ const OPTIONS: { value: Lang; label: string }[] = [
 /** 設定の画面の言語の選択。読めない言語の画面からも見つけられるよう、一番上に置く。選ぶと残して、いまの画面のその言語の住所へ移る */
 export function LangSetting() {
   const lang = useLang();
-  const router = useProgressRouter();
   const change = (next: Lang) => {
     choice.save(next);
     choice.notify();
-    router.push(sameScreenIn(next));
+    location.assign(sameScreenIn(next));
   };
   return (
     <SettingSection eyebrow="Language" title={lang === 'en' ? 'Language' : '言語'} first>

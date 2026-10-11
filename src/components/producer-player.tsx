@@ -21,6 +21,7 @@ import { GLASS } from '@/components/surface-styles';
 import { defineText } from '@/i18n/text';
 import { useLocalize, useText } from '@/i18n/navigation';
 import { TERMS } from '@/i18n/terms';
+import { useVoiceNames } from '@/lib/use-voice-name';
 
 const TEXT = defineText({
   ja: {
@@ -76,6 +77,7 @@ export function ProducerPlayer({
   const { current, playing, owner, playQueue, takeOver, toggle, skipsNiconico } = usePlayer();
   const t = useText(TEXT);
   const terms = useText(TERMS);
+  const voices = useVoiceNames();
   const to = useLocalize();
   // 動画をここに大きく出すのは、この人の曲の並びを流しているときだけ。お気に入りの並び・一覧の「再生」の並びのまま
   // 出すと、次の曲が別の人の曲になった途端に、この画面にいるまま動画が右下の窓へ飛んだ。流している曲がこの人の一覧に
@@ -195,7 +197,7 @@ export function ProducerPlayer({
                       {song.title}
                     </Marquee>
                     <span className="block truncate text-xs text-muted">
-                      {song.vocalists.join('・')}
+                      {song.vocalists.map(voices.name).join('・')}
                       {song.year && ` ・ ${terms.year(song.year)}`}
                     </span>
                   </span>
