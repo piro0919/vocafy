@@ -1,7 +1,7 @@
 'use client';
 
 import { COLORS } from '@/lib/voice-color';
-import { VOICE_KEY } from './theme-script';
+import { VOICE_KEY, VOICE_POOL_KEY } from './theme-script';
 import { vocalistNames } from '@/lib/vocalist-names';
 import { prefersReducedMotion } from '@/lib/motion';
 import { createLocalChoice, createLocalFlag } from '@/lib/local-flag';
@@ -53,6 +53,44 @@ export function setVoice(voice: Voice) {
     return;
   }
   document.startViewTransition(apply);
+}
+
+/**
+ * 開くたびにサイトカラーを変える設定（2026-10-12 に本人と決めた）。選んだキャラを「,」でつないで残し、空なら切っている。
+ * 引くのはページを描く前のスクリプト（theme-script.ts）で、前回と違う色を引いて VOICE_KEY に残す。
+ * 画面の移動では読み込み直さないので、変わるのは開いたときと読み込み直したときだけ。
+ * useSyncExternalStore で読むので、並びでなく残した文字列のまま返す
+ */
+export function readVoicePool(): string {
+  try {
+    const raw = localStorage.getItem(VOICE_POOL_KEY) ?? '';
+    return raw
+      .split(',')
+      .filter((v) => VOICES.some((o) => o.value === v))
+      .join(',');
+  } catch {
+    return '';
+  }
+}
+
+export function voicePoolOf(raw: string): Voice[] {
+  return VOICES.map((o) => o.value).filter((v) => raw.split(',').includes(v));
+}
+
+/** 空の並びで切る。いまの色が並びから外れたら、残りから1つ選んで当てる */
+export function setVoicePool(pool: Voice[]) {
+  try {
+    if (pool.length === 0) localStorage.removeItem(VOICE_POOL_KEY);
+    else localStorage.setItem(VOICE_POOL_KEY, pool.join(','));
+  } catch {
+    // 残せない窓。切り替わらない
+    return;
+  }
+  if (pool.length > 0 && !pool.includes(readVoice())) {
+    setVoice(pool[Math.floor(Math.random() * pool.length)]);
+    return;
+  }
+  choice.notify();
 }
 
 /**

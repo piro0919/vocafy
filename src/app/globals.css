@@ -17,9 +17,9 @@
   --line: #2b3740;
   --foreground: #eef6f6;
   --muted: #9aabb0;
-  --accent: #39c5bb;
+  --site-accent: #39c5bb;
   --heart: #ff6b9a;
-  --miku: #39c5bb;
+  --site-miku: #39c5bb;
   color-scheme: dark;
 }
 
@@ -31,7 +31,7 @@
   --line: #cfdede;
   --foreground: #10181a;
   --muted: #5d6f73;
-  --accent: #0b7770;
+  --site-accent: #0b7770;
   --heart: #e2336f;
   color-scheme: light;
 }
@@ -44,10 +44,20 @@
     --line: #cfdede;
     --foreground: #10181a;
     --muted: #5d6f73;
-    --accent: #0b7770;
+    --site-accent: #0b7770;
     --heart: #e2336f;
     color-scheme: light;
   }
+}
+
+/*
+ * 部品が使う差し色（--accent）とボタンの地（--miku）。ふだんはサイトカラー（--site-*）のままで、
+ * 曲を流しているあいだは歌っているキャラの色（singer-themes.css）が上書きする。
+ * 左のメニュー・タブ・上の帯・設定の画面は、流しているあいだもサイトカラーに戻す（site-color。2026-10-12 に本人と決めた）
+ */
+:root {
+  --accent: var(--site-accent);
+  --miku: var(--site-miku);
 }
 
 /*
@@ -60,128 +70,128 @@
   --sidebar: #161712;
   --surface: #2c2c23;
   --line: #3c3d32;
-  --accent: #f29b00;
-  --miku: #f29b00;
+  --site-accent: #f29b00;
+  --site-miku: #f29b00;
 }
 :root[data-voice='rin'][data-theme='light'] {
   --background: #f6f2e9;
   --sidebar: #eeeade;
   --surface: #e7e1ce;
   --line: #dad3bd;
-  --accent: #8f5b00;
-  --miku: #f29b00;
+  --site-accent: #8f5b00;
+  --site-miku: #f29b00;
 }
 :root[data-voice='luka'][data-theme='dark'] {
   --background: #1c1b1f;
   --sidebar: #161519;
   --surface: #2c2930;
   --line: #3c3a43;
-  --accent: #f37fa6;
-  --miku: #f37fa6;
+  --site-accent: #f37fa6;
+  --site-miku: #f37fa6;
 }
 :root[data-voice='luka'][data-theme='light'] {
   --background: #f6f1f3;
   --sidebar: #eee8eb;
   --surface: #e8dde2;
   --line: #dacfd4;
-  --accent: #995069;
-  --miku: #f37fa6;
+  --site-accent: #995069;
+  --site-miku: #f37fa6;
 }
 :root[data-voice='kaito'][data-theme='dark'] {
   --background: #131a22;
   --sidebar: #0f151b;
   --surface: #1e2834;
   --line: #2a3848;
-  --accent: #6189df;
-  --miku: #799ce4;
+  --site-accent: #6189df;
+  --site-miku: #799ce4;
 }
 :root[data-voice='kaito'][data-theme='light'] {
   --background: #ebf0f6;
   --sidebar: #e0e7ef;
   --surface: #d2dbe8;
   --line: #c1cddb;
-  --accent: #3662be;
-  --miku: #799ce4;
+  --site-accent: #3662be;
+  --site-miku: #799ce4;
 }
 :root[data-voice='len'][data-theme='dark'] {
   --background: #1c1f17;
   --sidebar: #161812;
   --surface: #2c2f23;
   --line: #3d4132;
-  --accent: #f5c400;
-  --miku: #f5c400;
+  --site-accent: #f5c400;
+  --site-miku: #f5c400;
 }
 :root[data-voice='len'][data-theme='light'] {
   --background: #f6f5e9;
   --sidebar: #efedde;
   --surface: #e8e5ce;
   --line: #dad9bd;
-  --accent: #7f6600;
-  --miku: #f5c400;
+  --site-accent: #7f6600;
+  --site-miku: #f5c400;
 }
 :root[data-voice='meiko'][data-theme='dark'] {
   --background: #1b181a;
   --sidebar: #151215;
   --surface: #2a2428;
   --line: #3a3239;
-  --accent: #e15e65;
-  --miku: #e77e83;
+  --site-accent: #e15e65;
+  --site-miku: #e77e83;
 }
 :root[data-voice='meiko'][data-theme='light'] {
   --background: #f4eced;
   --sidebar: #ece2e3;
   --surface: #e4d4d5;
   --line: #d6c5c6;
-  --accent: #bb2e35;
-  --miku: #e77e83;
+  --site-accent: #bb2e35;
+  --site-miku: #e77e83;
 }
 :root[data-voice='gumi'][data-theme='dark'] {
   --background: #161f1a;
   --sidebar: #111815;
   --surface: #222f28;
   --line: #304039;
-  --accent: #78c13f;
-  --miku: #78c13f;
+  --site-accent: #78c13f;
+  --site-miku: #78c13f;
 }
 :root[data-voice='gumi'][data-theme='light'] {
   --background: #eef5ed;
   --sidebar: #e5ede3;
   --surface: #d9e5d5;
   --line: #c9d8c6;
-  --accent: #477225;
-  --miku: #78c13f;
+  --site-accent: #477225;
+  --site-miku: #78c13f;
 }
 :root[data-voice='teto'][data-theme='dark'] {
   --background: #1b181b;
   --sidebar: #151316;
   --surface: #2b242a;
   --line: #3a333b;
-  --accent: #e45b71;
-  --miku: #ea7b8d;
+  --site-accent: #e45b71;
+  --site-miku: #ea7b8d;
 }
 :root[data-voice='teto'][data-theme='light'] {
   --background: #f5edef;
   --sidebar: #ede3e5;
   --surface: #e5d6d9;
   --line: #d7c6ca;
-  --accent: #b8344a;
-  --miku: #ea7b8d;
+  --site-accent: #b8344a;
+  --site-miku: #ea7b8d;
 }
 :root[data-voice='kafu'][data-theme='dark'] {
   --background: #171e23;
   --sidebar: #12181c;
   --surface: #232e36;
   --line: #313f4a;
-  --accent: #7fb7ec;
-  --miku: #7fb7ec;
+  --site-accent: #7fb7ec;
+  --site-miku: #7fb7ec;
 }
 :root[data-voice='kafu'][data-theme='light'] {
   --background: #eff4f7;
   --sidebar: #e5ecf1;
   --surface: #dae4ea;
   --line: #cad7de;
-  --accent: #4a6a89;
-  --miku: #7fb7ec;
+  --site-accent: #4a6a89;
+  --site-miku: #7fb7ec;
 }
 
 /*
@@ -323,6 +333,11 @@
   :root {
     --page-x: 2rem;
   }
+}
+/* この中は、曲を流しているあいだも差し色とボタンの地をサイトカラーにする（左のメニュー・タブ・上の帯・設定の画面） */
+@utility site-color {
+  --accent: var(--site-accent);
+  --miku: var(--site-miku);
 }
 @utility page-x {
   padding-inline: var(--page-x);

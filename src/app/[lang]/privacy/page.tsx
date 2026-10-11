@@ -36,7 +36,7 @@ function JaPrivacy() {
 
       <h2>本サイトが集める情報</h2>
       <p>
-        お気に入りの曲とボカロP、最近聴いた曲（直近の100曲）、最近の検索の言葉（直近の8件）、音量・ループ・ランダム再生・画面の明るさ・サイトカラー（流している曲の歌声の色にするかどうかを含む）・スワイプで戻る・表示する言語の設定は、お使いのブラウザの中（localStorage）に保存します。ログインしていなければ本サイトには送られず、ブラウザのデータを消すと消えます。最近聴いた曲は、ログインしていても本サイトには送りません。履歴の画面の「履歴を削除」から消せます。
+        お気に入りの曲とボカロP、最近聴いた曲（直近の100曲）、最近の検索の言葉（直近の8件）、音量・ループ・ランダム再生・画面の明るさ・サイトカラー（流している曲の歌声の色にするかどうか、開くたびに変える色を含む）・スワイプで戻る・表示する言語の設定は、お使いのブラウザの中（localStorage）に保存します。ログインしていなければ本サイトには送られず、ブラウザのデータを消すと消えます。最近聴いた曲は、ログインしていても本サイトには送りません。履歴の画面の「履歴を削除」から消せます。
       </p>
 
       <h2>ログインしたときに預かる情報</h2>
@@ -129,11 +129,12 @@ function EnPrivacy() {
       <p>
         Your favorite songs and producers, recently played songs (the last 100), recent search terms
         (the last 8), and your settings for volume, repeat, shuffle, screen brightness, site color
-        (including whether to use the color of the voice singing the current song), swipe to go back
-        and display language are stored in your browser (localStorage). Unless you are signed in,
-        they are not sent to the Site, and they are deleted when you clear your browser data.
-        Recently played songs are not sent to the Site even when you are signed in. You can delete
-        them with &ldquo;Clear history&rdquo; on the History page.
+        (including whether to use the color of the voice singing the current song, and the colors to
+        switch among on each visit), swipe to go back and display language are stored in your
+        browser (localStorage). Unless you are signed in, they are not sent to the Site, and they
+        are deleted when you clear your browser data. Recently played songs are not sent to the Site
+        even when you are signed in. You can delete them with &ldquo;Clear history&rdquo; on the
+        History page.
       </p>
 
       <h2>Information we hold when you sign in</h2>

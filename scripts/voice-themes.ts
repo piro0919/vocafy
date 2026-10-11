@@ -66,7 +66,7 @@ function compute(color: string): Record<Theme, { accent: string; miku: string }>
 function fromGlobals(): Record<string, Record<Theme, { accent: string; miku: string }>> {
   const css = readFileSync('src/app/globals.css', 'utf8');
   const vars = (block: string) =>
-    Object.fromEntries([...block.matchAll(/--(\w+): (#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]));
+    Object.fromEntries([...block.matchAll(/--([\w-]+): (#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]));
   const block = (selector: string) => {
     const at = css.indexOf(selector);
     if (at < 0) throw new Error(`globals.css に ${selector} が無い`);
@@ -76,8 +76,8 @@ function fromGlobals(): Record<string, Record<Theme, { accent: string; miku: str
   const light = block(":root[data-theme='light'] {");
   const out: Record<string, Record<Theme, { accent: string; miku: string }>> = {
     初音ミク: {
-      dark: { accent: dark.accent, miku: dark.miku },
-      light: { accent: light.accent, miku: dark.miku },
+      dark: { accent: dark['site-accent'], miku: dark['site-miku'] },
+      light: { accent: light['site-accent'], miku: dark['site-miku'] },
     },
   };
   const NINE: Record<string, string> = {
@@ -94,8 +94,8 @@ function fromGlobals(): Record<string, Record<Theme, { accent: string; miku: str
     const d = block(`:root[data-voice='${key}'][data-theme='dark'] {`);
     const l = block(`:root[data-voice='${key}'][data-theme='light'] {`);
     out[name] = {
-      dark: { accent: d.accent, miku: d.miku },
-      light: { accent: l.accent, miku: l.miku },
+      dark: { accent: d['site-accent'], miku: d['site-miku'] },
+      light: { accent: l['site-accent'], miku: l['site-miku'] },
     };
   }
   return out;

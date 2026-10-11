@@ -15,5 +15,5 @@ export const MENU_ROW =
 
 export const sidebarRow = (active: boolean) =>
   `flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-react ${
-    active ? 'bg-foreground/10 text-foreground' : 'text-muted hover:text-foreground'
+    active ? 'bg-foreground/10 text-accent' : 'text-muted hover:text-foreground'
   }`;

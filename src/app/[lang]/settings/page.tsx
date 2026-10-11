@@ -23,7 +23,7 @@ export async function generateMetadata({
 export default async function SettingsPage({ params }: PageProps<'/[lang]/settings'>) {
   const t = TERMS[await langOf(params)];
   return (
-    <div className="max-w-xl">
+    <div className="site-color max-w-xl">
       <div className="pt-4 pb-4 sm:pb-6">
         <Heading as="h1" size="page" eyebrow="Settings">
           {t.settings}

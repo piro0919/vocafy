@@ -71,7 +71,7 @@ export function Sidebar() {
   const active = useActive();
   const t = useText(TERMS);
   return (
-    <nav className="fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
+    <nav className="site-color fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
       <div className={`${GLASS_PANEL} flex flex-1 flex-col gap-1 px-3 pt-4`}>
         <div className="mb-5 px-3">
           <Logo />
@@ -105,14 +105,14 @@ export function MobileTabs() {
   const t = useText(TERMS);
   return (
     <nav
-      className={`${GLASS_PANEL} chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 md:hidden`}
+      className={`${GLASS_PANEL} site-color chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 md:hidden`}
     >
       {ITEMS.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           className={`flex flex-col items-center justify-center gap-0.5 text-tab font-bold ${
-            active(item.href) ? 'text-foreground' : 'text-muted'
+            active(item.href) ? 'text-accent' : 'text-muted'
           }`}
         >
           <Icon name={item.icon} className="size-5" />

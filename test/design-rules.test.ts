@@ -149,8 +149,8 @@ describe('見た目の決まり', () => {
   it('colors.ts の色は globals.css と同じ値', () => {
     const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
     for (const [name, value] of [
-      ['--miku', COLORS.miku],
-      ['--accent', COLORS.accentLight],
+      ['--site-miku', COLORS.miku],
+      ['--site-accent', COLORS.accentLight],
       ['--background', COLORS.lightBg],
       ['--background', COLORS.darkBg],
       ['--foreground', COLORS.ink],
