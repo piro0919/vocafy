@@ -6,10 +6,11 @@ import { PlayAllPill } from '@/components/play-all';
 import { Heading, SECTION } from '@/components/heading';
 import { JsonLd } from '@/components/json-ld';
 import { Shelf } from '@/components/shelf';
-import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, today, voices, years } from '@/lib/catalog';
+import { notFound } from 'next/navigation';
+import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, voices, years } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
-import { monthDayOf } from '@/lib/iso-date';
+import { monthDayOf, today } from '@/lib/iso-date';
 
 /** サイトそのものの情報 */
 const jsonLd: WithContext<WebSite> = {
@@ -19,9 +20,15 @@ const jsonLd: WithContext<WebSite> = {
   url: SITE_URL,
 };
 
-// きょうの日付の曲と日替わりの並びが毎日変わるので、トップだけは1時間ごとに作り直す（日付が変わってから1時間以内に替わる）。
-// DB を読むのは1日24回まで。ほかのページは時間では作り直さない
-export const revalidate = 3600;
+// トップの中身。きょうの日付の曲と日替わりの並びは日付だけで決まるので、日付ごとのページにして次の配備まで使い回す。
+// `/` に来た人には proxy.ts が日本のきょうのページを返し、住所は `/` のまま。日付が変わると見に行くページが替わるので、
+// 0時ちょうどに切り替わり、DB はその日の最初の1人のときだけ起きる（2026-10-11。前は1時間ごとに作り直し、23回は同じ中身だった）
+export const revalidate = false;
+
+/** ビルドした日のページだけ先に作る。翌日からは、その日に最初に来た人のときに作る */
+export function generateStaticParams() {
+  return [{ date: today() }];
+}
 
 /** トップの歌声の区画に出すキャラの数。列の数（3・4・6）の3段・4段・3段で、最後の段が欠けないようにする */
 const VOICE_CARDS = { base: 9, sm: 16, lg: 18 };
@@ -32,8 +39,9 @@ const ON_THIS_DAY_MIN = 8;
  * トップ。人気で並べず、どの曲も同じ扱いで出会えるようにする（2026-10-08 に本人と決めた）。
  * 上から、お気に入りの棚（あれば）、きょうの日付の曲、日替わりの無作為の並び、歌声、年代。毎日変わるものを上に、探しに行く入口を下に置く
  */
-export default async function Home() {
-  const date = today();
+export default async function Home({ params }: PageProps<'/home/[date]'>) {
+  const { date } = await params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
   const [day, dayList, mix, voiceList, yearList] = await Promise.all([
     onThisDay(date, ON_THIS_DAY_MIN),
     playlistOfDay(monthDayOf(date)),

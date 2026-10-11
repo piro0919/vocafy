@@ -5,7 +5,7 @@ import pg from 'pg';
 import { cache } from 'react';
 import { env } from '@/env';
 import { thumbOf } from './thumb';
-import { monthOf, yearOf } from './iso-date';
+import { monthOf, today, yearOf } from './iso-date';
 
 // 正本は VocaDB。DB の中身は scripts/ingest.ts が取り込んだもので、手で直さない
 
@@ -243,11 +243,6 @@ export const latestOfProducer = cache(async (id: number): Promise<DatedItem[]> =
   );
   return rows.map(toItem);
 });
-
-/** 日本の暦できょうの日付（YYYY-MM-DD）。ページは1時間ごとに作り直すので、日付の変わり目から1時間までずれうる */
-export function today(): string {
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
-}
 
 /** hash の掛ける数（文字列の hash でよく使う素数） */
 const HASH_PRIME = 31;

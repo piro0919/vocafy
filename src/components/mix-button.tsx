@@ -18,7 +18,7 @@ export function MixButton() {
   const router = useRouter();
   const songs = useRef<{ date: string; promise: Promise<QueueItem[]> } | null>(null);
 
-  // トップと同じく日本の日付で決める（catalog.ts の today）
+  // トップと同じく日本の日付で決める（iso-date.ts の today）
   const date = () =>
     new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
 

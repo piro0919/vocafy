@@ -14,3 +14,8 @@ export const monthOf = (iso: string) => iso.slice(MONTH.start, MONTH.end);
 export const monthDayOf = (iso: string) => iso.slice(MONTH_DAY.start, MONTH_DAY.end);
 /** "2026-10-11" */
 export const dateOf = (iso: string) => iso.slice(DATE.start, DATE.end);
+
+/** 日本の暦できょうの日付（"2026-10-11"）。トップの中身を選ぶ proxy.ts と、日替わりの選び方（catalog.ts）が使う */
+export function today(): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+}
