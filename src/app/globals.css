@@ -234,6 +234,9 @@
   --spacing-voice-dot: 6%;
   /* 流す壁（home-sections.tsx の FlowingWall）の札の幅。札の右にすき間（gap-2）を持たせ、6枚で段の幅とすき間1つ分になる。
      札の絵の幅は止まった壁の6列と同じになる */
+  /* 上下の板の後ろの覆いの高さ（ambient.tsx の EdgeVeil）。板の手前までと、その先の透かしていく幅 */
+  --spacing-veil-top: calc(var(--veil-top) + var(--veil-fade-top));
+  --spacing-veil-bottom: calc(var(--veil-bottom) + var(--veil-fade-bottom));
   --spacing-mix-tile: calc((100% + var(--spacing) * 2) / 6);
   /* 次に流れる曲などの板の高さの上限 */
   --max-height-panel: 60dvh;
@@ -331,6 +334,24 @@
 }
 
 /* 画面全体の方眼（ambient.tsx）を、左下を濃く、右上へ向かって薄くし、対角線の6割で消す（本人の指定） */
+/*
+ * 上下の板の後ろの覆い（ambient.tsx の EdgeVeil）。板の手前（--veil-top・--veil-bottom）までは隠しきり、
+ * その先の fade の幅で透かしていく。上の覆いは画面の上から、下の覆いは画面の下から測る
+ */
+@utility veil-mask-top {
+  mask-image: linear-gradient(
+    to bottom,
+    black var(--veil-top),
+    transparent calc(var(--veil-top) + var(--veil-fade-top))
+  );
+}
+@utility veil-mask-bottom {
+  mask-image: linear-gradient(
+    to top,
+    black var(--veil-bottom),
+    transparent calc(var(--veil-bottom) + var(--veil-fade-bottom))
+  );
+}
 @utility grid-fade {
   mask-image: linear-gradient(to top right, black, transparent 60%);
 }
@@ -759,6 +780,63 @@ html[data-player='dock'] {
 @variant md {
   html[data-player='dock'] {
     --panel-max: calc(100dvh - var(--above-dock) - var(--below-header));
+  }
+}
+
+/*
+ * 上下の板の後ろの覆い（ambient.tsx の EdgeVeil）の寸法。--veil-top は上の板の下端、--veil-bottom は下の板の上端（画面の下から）。
+ * 板が無いときはどちらも 0 で、透かしていく幅（--veil-fade-*）も 0 にして覆いを消す。
+ * 上はパソコンでは上の段がいつも出ている。スマホは上の帯が出ているとき（下へスクロールして隠れているとき・動画の画面では無い）。
+ * 下はパソコンでは再生の帯が出ているとき。スマホはタブか再生の帯のどちらかが出ているとき。板が隠れる動きに合わせて縮める
+ */
+@property --veil-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --veil-bottom {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --veil-fade-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --veil-fade-bottom {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+:root {
+  --veil-top: calc(var(--spacing-gutter) + var(--spacing-header));
+  --veil-fade-top: var(--spacing-fade);
+  --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now));
+  --veil-fade-bottom: var(--spacing-fade);
+  transition:
+    --veil-top var(--transition-duration-move) var(--ease-out),
+    --veil-fade-top var(--transition-duration-move) var(--ease-out),
+    --veil-bottom var(--transition-duration-move) var(--ease-out),
+    --veil-fade-bottom var(--transition-duration-move) var(--ease-out);
+}
+html:is([data-player='slot'], [data-player='dock']) {
+  --veil-bottom: calc(var(--spacing-gutter) + var(--tabs-now) + var(--spacing-bar));
+}
+@variant max-md {
+  :root:is([data-chrome='hidden'], [data-watch]) {
+    --veil-top: 0px;
+    --veil-fade-top: 0px;
+  }
+  :root[data-chrome='hidden']:not([data-player='slot'], [data-player='dock']) {
+    --veil-bottom: 0px;
+    --veil-fade-bottom: 0px;
+  }
+}
+@variant md {
+  :root:not([data-player='slot'], [data-player='dock']) {
+    --veil-bottom: 0px;
+    --veil-fade-bottom: 0px;
   }
 }
 

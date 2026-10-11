@@ -148,11 +148,12 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     });
   }, [from, to, images, progress]);
 
-  return (
-    <SourceContext value={setSource}>
+  // 上部の色の層と方眼。画面の後ろに1つ敷き、上下の板の後ろの覆い（EdgeVeil）にも同じものを写す。
+  // 写しは位置を absolute にし、覆いの中で画面と同じ位置に置く。層の出入りを数えるのは元の側だけ
+  const backdrop = (copy: boolean) => (
+    <>
       <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 -z-behind h-ambient opacity-35 dark:opacity-100"
+        className={`pointer-events-none inset-x-0 top-0 h-ambient opacity-35 dark:opacity-100 ${copy ? 'absolute' : 'fixed -z-behind'}`}
       >
         {layers.map((layer) => (
           <div
@@ -162,12 +163,17 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
                 ? 'absolute inset-0 animate-fade-out'
                 : 'absolute inset-0 animate-fade-in'
             }
-            onAnimationEnd={() =>
-              setLayers((prev) =>
-                layer.leaving
-                  ? prev.filter((l) => l.id !== layer.id)
-                  : prev.map((l) => (l.id < layer.id && !l.leaving ? { ...l, leaving: true } : l)),
-              )
+            onAnimationEnd={
+              copy
+                ? undefined
+                : () =>
+                    setLayers((prev) =>
+                      layer.leaving
+                        ? prev.filter((l) => l.id !== layer.id)
+                        : prev.map((l) =>
+                            l.id < layer.id && !l.leaving ? { ...l, leaving: true } : l,
+                          ),
+                    )
             }
             style={{ background: `linear-gradient(to bottom, ${layer.colors[0]}, transparent)` }}
           >
@@ -190,8 +196,7 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
       {/* 方眼（2026-10-11）。歌声合成ソフトのピアノロールのマス目に寄せた模様。画面全体に固定して敷き、左下を濃いめに、
           右上へ向かってほぼ見えなくなるまで薄くする（本人の指定）。細い線は 24px ごと、4マスごとに少し濃い線 */}
       <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-behind grid-fade"
+        className={`pointer-events-none inset-0 grid-fade ${copy ? 'absolute' : 'fixed -z-behind'}`}
         style={{
           backgroundImage: [
             `linear-gradient(to right, ${GRID_MAJOR} 1px, transparent 1px)`,
@@ -202,8 +207,42 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
           backgroundSize: '96px 96px, 96px 96px, 24px 24px, 24px 24px',
         }}
       />
+    </>
+  );
+
+  return (
+    <SourceContext value={setSource}>
+      <div aria-hidden>{backdrop(false)}</div>
       {children}
+      <EdgeVeil side="top">{backdrop(true)}</EdgeVeil>
+      <EdgeVeil side="bottom">{backdrop(true)}</EdgeVeil>
     </SourceContext>
+  );
+}
+
+/**
+ * 上下の浮いた板（上の段・上の帯、下のタブ・再生の帯）の後ろで、本文を背景に溶かす覆い（2026-10-11 に本人と決めた）。
+ * 板と画面の端のすき間を本文が通ると細切れに見えたので、板の手前までは背景だけを見せ、その先の fade の幅で本文を
+ * 少しずつぼかしながら薄くする。薄くするのは、背景の写しを上に重ねて少しずつ透かす形。背景は画面に固定されているので、
+ * 写しは元とぴったり重なる。高さは板が出ているかで変わる（globals.css の --veil-top・--veil-bottom）。
+ * 本文の中で手前に出したもの（z-raised）より上、板より下。動画の枠は本文の外の重なりにあるので、この覆いは動画に重ならない（YouTube の規約）
+ */
+function EdgeVeil({ side, children }: { side: 'top' | 'bottom'; children: ReactNode }) {
+  const top = side === 'top';
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none fixed inset-x-0 z-raised overflow-hidden ${top ? 'top-0 h-veil-top' : 'bottom-0 h-veil-bottom'}`}
+    >
+      <div
+        className={`absolute inset-0 backdrop-blur-md ${top ? 'veil-mask-top' : 'veil-mask-bottom'}`}
+      />
+      <div
+        className={`absolute inset-x-0 h-dvh bg-background ${top ? 'top-0 veil-mask-top' : 'bottom-0 veil-mask-bottom'}`}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
