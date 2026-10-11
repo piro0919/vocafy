@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useId } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
-import { setSignedIn } from '@/lib/favorites';
+import { clearLocalFavorites, setSignedIn } from '@/lib/favorites';
 import { ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { useClientValue } from '@/lib/client-value';
@@ -68,7 +68,10 @@ function SessionAccount() {
           type="button"
           onClick={() => {
             document.getElementById(id)?.hidePopover();
-            void signOut().then(() => setSignedIn(false));
+            void signOut().then(() => {
+              setSignedIn(false);
+              clearLocalFavorites();
+            });
           }}
           className={`block w-full ${MENU_ROW}`}
         >

@@ -105,6 +105,15 @@ export function localFavoriteIds() {
   return { songs: songs.read().map(songs.idOf), producers: producers.read().map(producers.idOf) };
 }
 
+/**
+ * ログアウトしたときに、手元の写し（そのアカウントのお気に入り）を消す。残すと、同じ端末で別のアカウントでログインしたときに、
+ * 「この端末で初めてのログイン」として前の人のお気に入りが新しいアカウントに足された（2026-10-12 に本人と決めた）
+ */
+export function clearLocalFavorites() {
+  songs.write([]);
+  producers.write([]);
+}
+
 /** 手元の写しを、アカウントのお気に入りで置き換える */
 export function replaceFavorites(next: { songs: QueueItem[]; producers: FavoriteProducer[] }) {
   songs.write(next.songs);
