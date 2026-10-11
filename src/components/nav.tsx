@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from './icon';
 import { InstallButton } from './install-app';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
+import { GLASS_PANEL, sidebarRow } from '@/components/surface-styles';
 
 const ITEMS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'ホーム', icon: 'home' },
@@ -64,20 +65,12 @@ export function Sidebar() {
   const active = useActive();
   return (
     <nav className="fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
-      <div className="flex flex-1 flex-col gap-1 rounded-2xl border border-line/60 bg-glass px-3 pt-4 shadow-float backdrop-blur-lg backdrop-saturate-150">
+      <div className={`${GLASS_PANEL} flex flex-1 flex-col gap-1 px-3 pt-4`}>
         <div className="mb-5 px-3">
           <Logo />
         </div>
         {SIDEBAR_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-react ${
-              active(item.href)
-                ? 'bg-foreground/10 text-foreground'
-                : 'text-muted hover:text-foreground'
-            }`}
-          >
+          <Link key={item.href} href={item.href} className={sidebarRow(active(item.href))}>
             <Icon name={item.icon} />
             {item.label}
           </Link>
@@ -86,14 +79,7 @@ export function Sidebar() {
         <div className="mt-auto py-3">
           {/* パソコンは上の帯を出さないので、アプリの案内はここに置く（出せるときだけ出る） */}
           <InstallButton menu />
-          <Link
-            href="/settings"
-            className={`flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-react ${
-              active('/settings')
-                ? 'bg-foreground/10 text-foreground'
-                : 'text-muted hover:text-foreground'
-            }`}
-          >
+          <Link href="/settings" className={sidebarRow(active('/settings'))}>
             <Icon name="settings" />
             設定
           </Link>
@@ -110,7 +96,9 @@ export function Sidebar() {
 export function MobileTabs() {
   const active = useActive();
   return (
-    <nav className="chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 rounded-2xl border border-line/60 bg-glass shadow-float backdrop-blur-lg backdrop-saturate-150 md:hidden">
+    <nav
+      className={`${GLASS_PANEL} chrome-tabs fixed inset-x-gutter bottom-gutter z-tabs grid h-tabs grid-cols-5 md:hidden`}
+    >
       {ITEMS.map((item) => (
         <Link
           key={item.href}

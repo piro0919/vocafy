@@ -8,6 +8,7 @@ import { setSignedIn } from '@/lib/favorites';
 import { ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { useClientValue } from '@/lib/client-value';
+import { GLASS_PANEL, MENU_ROW } from '@/components/surface-styles';
 
 function LoginButton() {
   return (
@@ -50,7 +51,7 @@ function SessionAccount() {
       <div
         id={id}
         popover="auto"
-        className="fixed inset-auto top-(--below-header) right-gutter m-0 w-64 rounded-2xl border border-line/60 bg-glass p-2 text-foreground shadow-float backdrop-blur-lg backdrop-saturate-150 md:right-3"
+        className={`${GLASS_PANEL} fixed inset-auto top-(--below-header) right-gutter m-0 w-64 p-2 text-foreground md:right-3`}
       >
         <div className="px-3 py-2">
           <p className="truncate text-sm font-bold">{user.name}</p>
@@ -59,7 +60,7 @@ function SessionAccount() {
         <Link
           href="/settings"
           onClick={() => document.getElementById(id)?.hidePopover()}
-          className="block rounded-md px-3 py-2 text-sm font-bold text-muted transition-colors hover:bg-hover hover:text-foreground"
+          className={`block ${MENU_ROW}`}
         >
           設定
         </Link>
@@ -69,7 +70,7 @@ function SessionAccount() {
             document.getElementById(id)?.hidePopover();
             void signOut().then(() => setSignedIn(false));
           }}
-          className="block w-full rounded-md px-3 py-2 text-left text-sm font-bold text-muted transition-colors hover:bg-hover hover:text-foreground"
+          className={`block w-full ${MENU_ROW}`}
         >
           ログアウト
         </button>

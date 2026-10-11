@@ -17,6 +17,7 @@ import { ICON } from '../button-styles';
 import { clock, now } from './playback-time';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { SEEK_STEP } from '@/lib/input';
+import { GLASS } from '@/components/surface-styles';
 
 /** 音量のアイコンを、小さい音の形にする境目（0〜100） */
 const VOLUME_LOW = 50;
@@ -51,7 +52,7 @@ export function PlayerBar({ item, open }: { item: QueueItem | null; open: boolea
     <div
       aria-hidden={!open}
       inert={!open}
-      className={`chrome-bottom chrome-bar fixed inset-x-gutter bottom-(--bar-bottom) z-chrome h-bar rounded-t-2xl border border-b-0 border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150 transition duration-move md:rounded-2xl md:border-b md:shadow-float ${
+      className={`${GLASS} chrome-bottom chrome-bar fixed inset-x-gutter bottom-(--bar-bottom) z-chrome h-bar rounded-t-2xl border-b-0 transition duration-move md:rounded-2xl md:border-b md:shadow-float ${
         open ? '' : 'pointer-events-none translate-y-full opacity-0'
       }`}
     >

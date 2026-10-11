@@ -17,6 +17,7 @@ import { useLinkedSong, useSongInUrl } from './player/use-song-in-url';
 import { StageLayout } from './stage-layout';
 import { ShareMenu } from './share-menu';
 import { useClientValue } from '@/lib/client-value';
+import { GLASS } from '@/components/surface-styles';
 
 /** 年の札の行のすぐ下に、どこまで来た曲をその年とみなすか（px） */
 const YEAR_LINE_GAP = 8;
@@ -273,7 +274,7 @@ function YearJump({ songs }: { songs: Song[] }) {
       ref={bar}
       // 上下の板の後ろの覆い（ambient.tsx の EdgeVeil、z-raised）より手前に出すため、ほかの浮いた板と同じく上の段の重なり（z-header）に置く
       // スマホでは、すぐ上の操作の帯と横幅をそろえ、画面の端から gutter の位置まで広げる（gutter-x）
-      className="sticky top-(--below-stage-controls) z-header mb-3 max-md:gutter-x rounded-full border border-line/60 bg-glass p-1 shadow-float backdrop-blur-lg backdrop-saturate-150 md:top-(--below-header) lg:top-(--stage-top)"
+      className={`${GLASS} sticky top-(--below-stage-controls) z-header mb-3 max-md:gutter-x rounded-full p-1 shadow-float md:top-(--below-header) lg:top-(--stage-top)`}
     >
       {/* 1行で横にスクロールする。スクロールバーは見せず、続きがある側の端だけをぼかす（ScrollRow） */}
       <ScrollRow label="年ごとに移動" className="gap-1">

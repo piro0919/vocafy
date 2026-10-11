@@ -7,6 +7,7 @@ import { ICON, ICON_SM } from './button-styles';
 import { Icon, type IconName } from './icon';
 import { QrCode } from './qr-code';
 import { useClientValue } from '@/lib/client-value';
+import { GLASS_PANEL, MENU_ROW } from '@/components/surface-styles';
 
 /** 共有の文に付けるハッシュタグ。ボカロPの名前は付けない（記号入りの名前でタグが切れ、追う人もいない） */
 const HASHTAG = 'Vocafy';
@@ -81,8 +82,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
       href: `https://social-plugins.line.me/lineit/share?url=${enc(url)}`,
     },
   ];
-  const row =
-    'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-bold text-muted transition-colors hover:bg-hover hover:text-foreground';
+  const row = `flex w-full items-center gap-3 ${MENU_ROW}`;
 
   return (
     <div ref={box} className="relative">
@@ -101,7 +101,7 @@ export function ShareMenu({ url, text, label }: { url: string; text: string; lab
         <div
           ref={menu}
           role="menu"
-          className="absolute top-0 left-full z-overlay ml-2 w-52 rounded-2xl border border-line/60 bg-glass p-2 shadow-float backdrop-blur-lg backdrop-saturate-150"
+          className={`${GLASS_PANEL} absolute top-0 left-full z-overlay ml-2 w-52 p-2`}
         >
           {qr ? (
             // QR は板の中身を差し替えて出す。押したボタンのすぐ下に出るので、カメラを向ける先が分かりやすい。

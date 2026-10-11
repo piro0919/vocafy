@@ -18,6 +18,7 @@ import { COVER_PLAY, PRIMARY } from './button-styles';
 import { below } from '@/lib/breakpoints';
 import { RESPONSIVE_SIZES } from '@/lib/image-sizes';
 import { DRAG_SLOP } from '@/lib/input';
+import { GLASS_PANEL } from '@/components/surface-styles';
 
 /**
  * 詳細画面（ボカロP）の大きなプレイヤーの置き場所。
@@ -252,7 +253,7 @@ export function StageControls({ children, extra }: { children: ReactNode; extra?
       <div
         ref={bar}
         inert={!pinned}
-        className={`fixed inset-x-gutter top-(--stage-controls-top) z-chrome h-stage-controls rounded-2xl border border-line/60 bg-glass shadow-float backdrop-blur-lg backdrop-saturate-150 transition-show duration-move md:hidden ${pinned ? '' : 'invisible translate-y-(--hide-up) opacity-0'}`}
+        className={`${GLASS_PANEL} fixed inset-x-gutter top-(--stage-controls-top) z-chrome h-stage-controls transition-show duration-move md:hidden ${pinned ? '' : 'invisible translate-y-(--hide-up) opacity-0'}`}
       >
         {/* 題名の部分と同じく、下へ引くと前の画面に戻り、流している曲は右下の窓に縮む */}
         <SwipeToLeave className="flex size-full items-center justify-center">

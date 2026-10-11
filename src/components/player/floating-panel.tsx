@@ -3,6 +3,7 @@
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
 import { ICON_SM } from '../button-styles';
 import { Icon } from '../icon';
+import { GLASS_PANEL } from '@/components/surface-styles';
 
 /**
  * 再生の帯のボタンから開く板（次に流れる曲・スリープタイマー）の外枠。
@@ -69,7 +70,7 @@ export function FloatingPanel({
       tabIndex={-1}
       // 置き場所と高さの上限は globals.css の --panel-bottom・--panel-max（動画の上に重ねない。YouTube の規約）。
       // パソコンで右下の窓で流しているときは、窓と同じ幅・同じ側に出す
-      className={`fixed inset-x-gutter bottom-(--panel-bottom) z-overlay flex max-h-(--panel-max) flex-col overflow-hidden rounded-2xl border border-line/60 bg-glass shadow-float outline-none backdrop-blur-lg backdrop-saturate-150 duration-move md:left-auto md:w-96 md:[html[data-player=dock]_&]:w-dock-wide md:[html[data-player=dock][data-dock=left]_&]:right-auto md:[html[data-player=dock][data-dock=left]_&]:left-(--beside-sidebar) motion-reduce:transition-none ${
+      className={`${GLASS_PANEL} fixed inset-x-gutter bottom-(--panel-bottom) z-overlay flex max-h-(--panel-max) flex-col overflow-hidden outline-none duration-move md:left-auto md:w-96 md:[html[data-player=dock]_&]:w-dock-wide md:[html[data-player=dock][data-dock=left]_&]:right-auto md:[html[data-player=dock][data-dock=left]_&]:left-(--beside-sidebar) motion-reduce:transition-none ${
         // 見える・見えないの切り替え（visibility）は閉じるときだけ動きに乗せ、消えきってから見えなくする。
         // 開くときにも乗せると、出し始めはまだ見えない扱いで、フォーカスを受け付けなかった
         open ? 'transition' : 'invisible translate-y-4 opacity-0 transition-show'

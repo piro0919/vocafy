@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { usePwa } from 'use-pwa';
 import { isAppleDevice } from '@/lib/apple-device';
 import { Icon } from './icon';
+import { sidebarRow } from './surface-styles';
 import { ICON, PILL } from './button-styles';
 import { Heading, SECTION } from './heading';
 import { useClientValue } from '@/lib/client-value';
@@ -83,7 +84,7 @@ export function InstallButton({ className = '', menu }: { className?: string; me
         <button
           type="button"
           onClick={start}
-          className={`flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold text-muted transition-colors duration-react hover:text-foreground ${className}`}
+          className={`${sidebarRow(false)} w-full ${className}`}
         >
           <Icon name="install" />
           アプリをインストール

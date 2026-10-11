@@ -1,6 +1,7 @@
 'use client';
 
 import { Toaster as Sonner } from 'sonner';
+import { GLASS } from '@/components/surface-styles';
 
 /**
  * 一瞬だけ出す知らせ（「リンクをコピーしました」など）。Sonner を使い、見た目はサイトの浮いた板（左のメニューや再生の帯）に合わせる。
@@ -16,8 +17,7 @@ export function Toaster() {
       toastOptions={{
         unstyled: true,
         classNames: {
-          toast:
-            'flex items-center justify-center gap-2 rounded-full border border-line/60 bg-glass px-4 py-2.5 text-sm font-bold text-foreground shadow-float backdrop-blur-lg backdrop-saturate-150',
+          toast: `${GLASS} flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold text-foreground shadow-float`,
           // 「元に戻す」のような押せる知らせのボタン。字は差し色にし、知らせの文と分ける
           actionButton:
             '-my-1 -mr-2 ml-1 shrink-0 rounded-full px-2 py-1 text-accent transition duration-react hover:bg-hover active:scale-95',

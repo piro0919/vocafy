@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { GLASS_PANEL } from '@/components/surface-styles';
 
 /**
  * 上の帯。スマホだけで出す（パソコンは左のメニューに全部あるので出さない。上には layout.tsx の検索欄とログインの段を置く）。
@@ -9,9 +10,7 @@ import type { ReactNode } from 'react';
 export function Header({ children }: { children: ReactNode }) {
   return (
     <header className="chrome-header sticky top-0 z-header px-gutter pt-gutter md:hidden">
-      <div className="flex h-header items-center rounded-2xl border border-line/60 bg-glass px-2 shadow-float backdrop-blur-lg backdrop-saturate-150">
-        {children}
-      </div>
+      <div className={`${GLASS_PANEL} flex h-header items-center px-2`}>{children}</div>
     </header>
   );
 }
