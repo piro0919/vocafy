@@ -24,6 +24,8 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/years/[year]/[month]/play'>): Promise<Metadata> {
   const { year, month } = await params;
+  if (!/^\d{4}$/.test(year) || !MONTH.test(month)) notFound();
+  if ((await playlistOfMonth(Number(year), month)).songs.length === 0) notFound();
   return { title: TEXT[await langOf(params)].title(year, Number(month)), robots: { index: false } };
 }
 

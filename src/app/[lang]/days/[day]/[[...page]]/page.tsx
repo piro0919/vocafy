@@ -30,8 +30,9 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/days/[day]/[[...page]]'>): Promise<Metadata> {
   const { day, page } = await params;
   const n = pageOf(page);
+  if (!n || (await songsOfDay(day, n)).songs.length === 0) notFound();
   const lang = await langOf(params);
-  return { title: `${dayTitle(day, lang)}${n && n > 1 ? TEXT[lang].page(n) : ''}` };
+  return { title: `${dayTitle(day, lang)}${n > 1 ? TEXT[lang].page(n) : ''}` };
 }
 
 /**

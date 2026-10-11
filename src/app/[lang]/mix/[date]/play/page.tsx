@@ -16,6 +16,9 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/mix/[date]/play'>): Promise<Metadata> {
+  const { date } = await params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || (await dailyMix(date, MIX_SIZE)).length === 0)
+    notFound();
   return { title: TERMS[await langOf(params)].dailyMix, robots: { index: false } };
 }
 

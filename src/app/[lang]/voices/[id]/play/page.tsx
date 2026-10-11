@@ -22,9 +22,10 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/voices/[id]/play'>): Promise<Metadata> {
   const found = await findVoice(Number((await params).id));
+  if (!found || found.songs.length === 0) notFound();
   const lang = await langOf(params);
   const t = TEXT[lang];
-  return { title: found && t.title(voiceName(found.voice.name, lang)), robots: { index: false } };
+  return { title: t.title(voiceName(found.voice.name, lang)), robots: { index: false } };
 }
 
 /**

@@ -33,7 +33,8 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/voices/[id]'>): Promise<Metadata> {
   const { id } = await params;
   const found = await findVoice(Number(id));
-  return { title: found && voiceName(found.voice.name, await langOf(params)) };
+  if (!found || found.songs.length === 0) notFound();
+  return { title: voiceName(found.voice.name, await langOf(params)) };
 }
 
 /**

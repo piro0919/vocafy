@@ -29,9 +29,11 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/voices/[id]/[year]/play'>): Promise<Metadata> {
   const { id, year } = await params;
   const voice = await voiceOf(id);
+  if (!voice || !/^\d{4}$/.test(year)) notFound();
+  if ((await playlistOfVoiceYear(voice.id, Number(year))).songs.length === 0) notFound();
   const lang = await langOf(params);
   const t = TEXT[lang];
-  return { title: voice && t.title(voiceName(voice.name, lang), year), robots: { index: false } };
+  return { title: t.title(voiceName(voice.name, lang), year), robots: { index: false } };
 }
 
 /** その歌声（キャラ）のその年の曲の再生用の画面（list-player.tsx）。歌声の年の画面の「すべて再生」から */

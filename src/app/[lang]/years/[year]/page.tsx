@@ -38,6 +38,8 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/years/[year]'>): Promise<Metadata> {
   const { year } = await params;
+  // 無い年は、題名を作る前に見つからない画面にする（題名を作ると、見つからない画面のタブにその題名が出た）
+  if (!/^\d{4}$/.test(year) || (await picksOfYear(Number(year))).songs.length === 0) notFound();
   return { title: TEXT[await langOf(params)].title(year) };
 }
 

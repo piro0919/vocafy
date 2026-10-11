@@ -40,10 +40,12 @@ export async function generateMetadata({
   const { id, year, page } = await params;
   const voice = await voiceOf(id);
   const n = pageOf(page);
+  if (!n || !voice || !/^\d{4}$/.test(year)) notFound();
+  if ((await songsOfVoiceYear(voice.id, Number(year), n)).songs.length === 0) notFound();
   const lang = await langOf(params);
   const t = TEXT[lang];
   return {
-    title: voice && `${t.title(voiceName(voice.name, lang), year)}${n && n > 1 ? t.page(n) : ''}`,
+    title: `${t.title(voiceName(voice.name, lang), year)}${n && n > 1 ? t.page(n) : ''}`,
   };
 }
 

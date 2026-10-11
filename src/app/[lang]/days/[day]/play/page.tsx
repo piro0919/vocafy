@@ -17,6 +17,7 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/days/[day]/play'>): Promise<Metadata> {
   const { day } = await params;
+  if ((await playlistOfDay(day)).songs.length === 0) notFound();
   return { title: dayTitle(day, await langOf(params)), robots: { index: false } };
 }
 

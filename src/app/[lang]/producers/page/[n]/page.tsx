@@ -25,7 +25,8 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/producers/page/[n]'>): Promise<Metadata> {
   const { n } = await params;
   const page = pageOf([n]);
-  return { title: page ? TEXT[await langOf(params)].title(page) : undefined };
+  if (!page) notFound();
+  return { title: TEXT[await langOf(params)].title(page) };
 }
 
 /** ボカロPの一覧の2ページ目から。1ページ目を /producers/page/1 と書いたものは無いページとして扱う */

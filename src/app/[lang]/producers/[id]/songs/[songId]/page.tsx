@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { findProducer } from '@/lib/catalog';
 import { SITE_URL } from '@/lib/site';
 import { ProducerView } from '../../producer-view';
+import { langOf, localize } from '@/i18n/config';
 
 /**
  * 曲を共有したときの住所（2026-10-11）。中身はボカロPの画面と同じで、その曲が一覧で目立ち、大きな再生ボタンがその曲からになる。
@@ -28,12 +29,14 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/producers/[id]/songs/[songId]'>): Promise<Metadata> {
   const loaded = await load(params);
-  if (!loaded) return {};
+  if (!loaded) notFound();
   const { found, song } = loaded;
   return {
     title: `${song.title} - ${found.producer.name}`,
     robots: { index: false, follow: true },
-    alternates: { canonical: `${SITE_URL}/producers/${found.producer.id}` },
+    alternates: {
+      canonical: `${SITE_URL}${localize(`/producers/${found.producer.id}`, await langOf(params))}`,
+    },
   };
 }
 

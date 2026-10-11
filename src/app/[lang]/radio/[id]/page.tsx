@@ -16,9 +16,10 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/radio/[id]'>): Promise<Metadata> {
   const { id } = await params;
+  if (!Number.isSafeInteger(Number(id))) notFound();
   const [seed] = await songsByIds([Number(id)]);
-  const t = TERMS[await langOf(params)];
-  return { title: seed ? t.radioOf(seed.title) : t.radio, robots: { index: false } };
+  if (!seed) notFound();
+  return { title: TERMS[await langOf(params)].radioOf(seed.title), robots: { index: false } };
 }
 
 /**

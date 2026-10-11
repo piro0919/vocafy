@@ -15,7 +15,8 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/producers/[id]'>): Promise<Metadata> {
   const found = await findProducer(Number((await params).id));
-  return { title: found?.producer.name };
+  if (!found) notFound();
+  return { title: found.producer.name };
 }
 
 export default async function ProducerPage({ params }: PageProps<'/[lang]/producers/[id]'>) {

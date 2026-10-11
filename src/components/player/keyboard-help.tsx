@@ -4,12 +4,15 @@ import { Heading, SECTION } from '../heading';
 import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
 
-/** キー操作の一覧（player-keys.tsx と同じ割り当て）。設定の画面と、? で開く板の両方に出す */
+/**
+ * キー操作の一覧（player-keys.tsx と同じ割り当て）。設定の画面と、? で開く板の両方に出す。
+ * 数字のキーは、範囲の記号が言語で違う（日本語は「〜」、英語は「–」）ので文言から引く
+ */
 const KEYS = [
   ['Space / K', 'playPause'],
   ['← / →', 'seek5'],
   ['J / L', 'seek10'],
-  ['0〜9', 'seekPercent'],
+  ['digits', 'seekPercent'],
   ['Shift + ← / →', 'prevNext'],
   ['Shift + P / N', 'prevNext'],
   ['↑ / ↓', 'volume'],
@@ -26,6 +29,7 @@ const KEYS = [
 const TEXT = defineText({
   ja: {
     title: 'キーボード操作',
+    digits: '0〜9',
     playPause: '再生・一時停止',
     seek5: '5秒戻る・進む',
     seek10: '10秒戻る・進む',
@@ -43,6 +47,7 @@ const TEXT = defineText({
   },
   en: {
     title: 'Keyboard shortcuts',
+    digits: '0–9',
     playPause: 'Play / pause',
     seek5: 'Back / forward 5 seconds',
     seek10: 'Back / forward 10 seconds',
@@ -73,7 +78,7 @@ export function KeyList() {
         <div key={key} className="contents">
           <dt>
             <kbd className="rounded border border-line/60 bg-surface px-1.5 py-0.5 font-sans text-xs">
-              {key}
+              {key === 'digits' ? t.digits : key}
             </kbd>
           </dt>
           <dd className="text-muted">{t[label]}</dd>

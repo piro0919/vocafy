@@ -21,6 +21,7 @@ export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/years/[year]/play'>): Promise<Metadata> {
   const { year } = await params;
+  if ((await picksOfYear(Number(year))).songs.length === 0) notFound();
   return { title: TEXT[await langOf(params)].title(year), robots: { index: false } };
 }
 
