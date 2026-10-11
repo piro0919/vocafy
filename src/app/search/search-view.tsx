@@ -49,29 +49,19 @@ export function SearchView() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  // 打つ欄は上の帯にあり（header-search.tsx）、そちらが住所の ?q= を書き換える。この画面は住所の言葉で探すだけ。
+  // 前はこの画面でも言葉を持ち、住所に合わせたあと同じ言葉で住所を書き直していて、打つたびに画面の移動（とサーバーへの
+  // 問い合わせ）が2回ずつ起きていた
+  // state に写してから使う（住所の値をそのまま使うと、React Compiler が下の useMemo の最適化をあきらめた）
   const fromUrl = params.get('q') ?? '';
   const [text, setText] = useState(fromUrl);
-  // 打つ欄は上の帯にあり（header-search.tsx）、住所を書き換えるので、住所が外から変わったら合わせる
-  const [seen, setSeen] = useState(fromUrl);
-  if (seen !== fromUrl) {
-    setSeen(fromUrl);
-    if (fromUrl !== text.trim()) setText(fromUrl);
-  }
+  if (text !== fromUrl) setText(fromUrl);
   const [index, setIndex] = useState<Prepared | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     loadIndex().then(setIndex, () => setFailed(true));
   }, []);
-
-  // 打った言葉を住所に残す。打つたびに履歴が増えないよう、置き換えにする。少し待ってからまとめて書く
-  useEffect(() => {
-    const id = setTimeout(() => {
-      const q = text.trim();
-      router.replace(q ? `${pathname}?q=${encodeURIComponent(q)}` : pathname, { scroll: false });
-    }, TIMING.searchDebounce);
-    return () => clearTimeout(id);
-  }, [text, pathname, router]);
 
   const recent = useRecentSearches();
   const query = normalize(text);
@@ -178,7 +168,9 @@ export function SearchView() {
               <li key={q} className="min-w-0">
                 <button
                   type="button"
-                  onClick={() => setText(q)}
+                  onClick={() =>
+                    router.replace(`${pathname}?q=${encodeURIComponent(q)}`, { scroll: false })
+                  }
                   title={q}
                   // 長い言葉は「…」で切り、札が画面からはみ出さないようにする
                   className={`block max-w-60 truncate px-4 py-1.5 ${CHIP}`}
