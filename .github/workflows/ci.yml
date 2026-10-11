@@ -56,6 +56,9 @@ jobs:
 
       - run: pnpm test
 
+      # DB を読むテスト。同じ Postgres の中にテスト用の DB（vocafy_test）を作って使う（test/db/）
+      - run: pnpm test:db
+
       # 使われていないファイル・エクスポート・パッケージ
       - run: pnpm knip
 

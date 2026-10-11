@@ -10,7 +10,25 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['test/**/*.test.ts'],
     environment: 'node',
+    projects: [
+      // DB の要らないテスト（pnpm test。push の前にも走る）
+      {
+        extends: true,
+        test: { name: 'unit', include: ['test/**/*.test.ts'], exclude: ['test/db/**'] },
+      },
+      // DB を読むテスト（pnpm test:db）。テスト用の DB を作り直して使う（test/db/global-setup.ts）。
+      // どのファイルも表を空にしてから自分の場面を入れるので、同時には走らせない
+      {
+        extends: true,
+        test: {
+          name: 'db',
+          include: ['test/db/**/*.test.ts'],
+          globalSetup: ['test/db/global-setup.ts'],
+          setupFiles: ['test/db/env.ts'],
+          fileParallelism: false,
+        },
+      },
+    ],
   },
 });
