@@ -51,8 +51,12 @@ function maxHeight(): number {
   );
 }
 
-function clamp(width: number): number {
-  const max = Math.min(window.innerWidth * MAX_SHARE, maxHeight() * RATIO);
+/** 幅の上限。画面の幅と高さで決まる。測るたびに画面の配置を計算し直させるので、引いているあいだは引き始めに1回だけ測る */
+function maxWidth(): number {
+  return Math.min(window.innerWidth * MAX_SHARE, maxHeight() * RATIO);
+}
+
+function clamp(width: number, max = maxWidth()): number {
   return Math.max(IMAGE_SIZES.dockWide, Math.min(width, max));
 }
 
@@ -76,12 +80,21 @@ export function useDockSize() {
       const width = saved();
       apply(width === null ? null : clamp(width));
     };
+    // 画面の大きさを変えているあいだは resize が続けて届くので、1コマに1回だけ収め直す
+    let frame = 0;
+    const onResize = () => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        refit();
+      });
+    };
     refit();
     wide.addEventListener('change', refit);
-    window.addEventListener('resize', refit);
+    window.addEventListener('resize', onResize);
     return () => {
+      cancelAnimationFrame(frame);
       wide.removeEventListener('change', refit);
-      window.removeEventListener('resize', refit);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 }
@@ -101,6 +114,8 @@ export function startDockResize(e: ReactPointerEvent<HTMLElement>) {
   const startY = e.clientY;
   const startWidth = frame?.getBoundingClientRect().width ?? IMAGE_SIZES.dockWide;
   let width = startWidth;
+  // 引いているあいだは画面の大きさが変わらないので、上限は引き始めに1回だけ測る
+  const max = maxWidth();
   handle.setPointerCapture(e.pointerId);
   // 引いているあいだに指が動画の上へ入っても、埋め込みに取られないようにする
   if (frame) frame.style.pointerEvents = 'none';
@@ -108,7 +123,7 @@ export function startDockResize(e: ReactPointerEvent<HTMLElement>) {
   const move = (ev: PointerEvent) => {
     const dx = left ? ev.clientX - startX : startX - ev.clientX;
     const dy = (startY - ev.clientY) * RATIO;
-    width = clamp(startWidth + Math.max(dx, dy));
+    width = clamp(startWidth + Math.max(dx, dy), max);
     apply(width);
   };
   const up = () => {
