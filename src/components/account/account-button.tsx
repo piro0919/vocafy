@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Link, useText } from '@/i18n/navigation';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
-import { useId } from 'react';
+import { type ReactNode, useId } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { clearLocalFavorites, setSignedIn } from '@/lib/favorites';
 import { HEADER_ICON, ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
@@ -105,4 +105,21 @@ function SessionAccount({ compact }: { compact?: boolean }) {
 export function AccountButton({ compact }: { compact?: boolean }) {
   const hinted = useClientValue(hasSignInHint, false);
   return hinted ? <SessionAccount compact={compact} /> : <LoginButton compact={compact} />;
+}
+
+function SessionSignedOut({ children }: { children: ReactNode }) {
+  const { data, isPending } = authClient.useSession();
+  // 聞いているあいだは出さない。印のある端末はたいていログイン中なので、出してから消すより、あとから出す方が揺れが少ない
+  if (isPending || data?.user) return null;
+  return children;
+}
+
+/**
+ * ログインしていないときだけ中身を出す。スマホの上の帯の歯車に使う（2026-10-12 に本人と決めた）。
+ * ログイン中は顔写真のメニューに設定があるので、入口を一つにする（YouTube のアプリと同じ）。
+ * セッションを聞くのは、ログインしたことのある端末だけ（AccountButton と同じ）
+ */
+export function SignedOutOnly({ children }: { children: ReactNode }) {
+  const hinted = useClientValue(hasSignInHint, false);
+  return hinted ? <SessionSignedOut>{children}</SessionSignedOut> : children;
 }

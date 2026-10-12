@@ -7,7 +7,7 @@ import { TERMS } from '@/i18n/terms';
 import { Suspense, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { loadIndex } from '@/lib/search-index';
-import { AccountButton } from './account/account-button';
+import { AccountButton, SignedOutOnly } from './account/account-button';
 import { HeaderSearch, HeaderSearchFallback } from './header-search';
 import { Icon } from './icon';
 import { InstallButton } from './install-app';
@@ -87,10 +87,15 @@ export function HeaderBar() {
       >
         <Icon name="search" className="size-5" />
       </button>
-      {/* スマホは左のメニューが出ないので、設定への入口を上の帯の右端に置く（YouTube Music のアプリと同じ） */}
-      <Link href="/settings" aria-label={term.settings} className={ICON_BUTTON}>
-        <Icon name="settings" className="size-5" />
-      </Link>
+      {/*
+          スマホは左のメニューが出ないので、設定への入口を上の帯に置く（YouTube Music のアプリと同じ）。
+          ログイン中は顔写真のメニューに設定があるので出さない
+        */}
+      <SignedOutOnly>
+        <Link href="/settings" aria-label={term.settings} className={ICON_BUTTON}>
+          <Icon name="settings" className="size-5" />
+        </Link>
+      </SignedOutOnly>
       {/* パソコンの上の段と同じく、ログインの左にきょうの出会いとお気に入りを流すボタン */}
       <MixButton />
       <FavoritesPlayButton />
