@@ -22,7 +22,7 @@ export const TERMS = defineText({
     showAll: 'すべて表示',
     pickup: 'ピックアップ',
     radio: 'ラジオ',
-    upNext: '次に流れる曲',
+    upNext: '次に再生する曲',
     dailyMix: 'きょうの出会い',
     terms: '利用規約',
     privacy: 'プライバシーポリシー',

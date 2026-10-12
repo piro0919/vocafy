@@ -10,7 +10,7 @@ test('? でキーボード操作の一覧を開き、Esc で閉じる', async ({
   await page.keyboard.press('?');
   const panel = page.getByRole('dialog', { name: 'キーボード操作' });
   await expect(panel).toBeVisible();
-  await expect(panel.getByText('次に流れる曲')).toBeVisible();
+  await expect(panel.getByText('次に再生する曲')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
 });
@@ -19,11 +19,11 @@ test('流しているあいだ、Q で次に流れる曲の板を開き、並び
   await page.goto('/producers/45');
   // 何も流していないときは受けない
   await page.keyboard.press('q');
-  await expect(page.getByRole('dialog', { name: '次に流れる曲' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '次に再生する曲' })).toHaveCount(0);
   await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
   await page.keyboard.press('q');
-  const panel = page.getByRole('dialog', { name: '次に流れる曲' });
+  const panel = page.getByRole('dialog', { name: '次に再生する曲' });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole('button').filter({ hasText: 'DECO＊27' }).first()).toBeVisible();
 });

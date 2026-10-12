@@ -40,7 +40,7 @@ const TEXT = defineText({
     shuffle: 'ランダム再生',
     repeat: 'ループ',
     favorite: 'お気に入りに入れる・外す',
-    upNext: '次に流れる曲',
+    upNext: '次に再生する曲',
     radio: 'ラジオ',
     search: '検索',
     help: 'キーボード操作の一覧',

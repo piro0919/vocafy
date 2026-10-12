@@ -32,7 +32,7 @@ const TEXT = defineText({
     endOfSong: 'この曲が終わったら',
     sleepOff: 'タイマーを切る',
     radioOff: 'ラジオをやめる',
-    radioFrom: (title: string) => `${title}からラジオを流す`,
+    radioFrom: (title: string) => `${title}からラジオを再生する`,
   },
   en: {
     shuffleOn: 'Turn on shuffle',

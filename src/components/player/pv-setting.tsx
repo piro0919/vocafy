@@ -9,8 +9,8 @@ import { useText } from '@/i18n/navigation';
 const TEXT = defineText({
   ja: {
     title: 'YouTube に PV が無い曲',
-    youtube: 'YouTube の音源で流す',
-    niconico: 'ニコニコの PV で流す',
+    youtube: 'YouTube の音源で再生する',
+    niconico: 'ニコニコの PV で再生する',
   },
   en: {
     title: 'Songs without a PV on YouTube',

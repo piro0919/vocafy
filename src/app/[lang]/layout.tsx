@@ -67,7 +67,7 @@ const rounded = M_PLUS_Rounded_1c({
 const TEXT = defineText({
   ja: {
     description:
-      'ボカロ曲を、ずっと聴ける音楽プレイヤー。ボカロP・歌声・年代から選んで、本家の動画で流す。',
+      'ボカロ曲を、ずっと聴ける音楽プレイヤー。ボカロP・歌声・年代から選んで、本家の動画で再生する。',
   },
   en: {
     description:
