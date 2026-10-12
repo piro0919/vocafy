@@ -9,6 +9,7 @@ import { HeaderSearch, HeaderSearchFallback } from '@/components/header-search';
 import { MobileTabs, Sidebar } from '@/components/nav';
 import { AccountButton } from '@/components/account/account-button';
 import { MixButton } from '@/components/mix-button';
+import { FavoritesPlayButton } from '@/components/favorites-play';
 import { AccountSync } from '@/components/account/account-sync';
 import { HistoryRecorder } from '@/components/player/history-recorder';
 import { SongTitle } from '@/components/player/song-title';
@@ -137,7 +138,7 @@ export default async function RootLayout({ children, params }: LayoutProps<'/[la
                         <HeaderBar />
                       </Header>
                       {/*
-                    パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。ログインの左に、きょうの出会いを流すサイコロ。
+                    パソコンの上の段。検索欄とログインを置く（Spotify・YouTube と同じ置き場所）。ログインの左に、きょうの出会いを流すサイコロとお気に入りを流すボタン。
                     左のメニューと同じく、画面の端から離した角丸の板として画面の上に留める
                   */}
                       <div className="site-color sticky top-0 z-header hidden px-gutter pt-gutter md:block">
@@ -147,8 +148,9 @@ export default async function RootLayout({ children, params }: LayoutProps<'/[la
                           <Suspense fallback={<HeaderSearchFallback />}>
                             <HeaderSearch />
                           </Suspense>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-2">
                             <MixButton />
+                            <FavoritesPlayButton />
                             <AccountButton />
                           </div>
                         </div>

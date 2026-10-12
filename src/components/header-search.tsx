@@ -27,7 +27,7 @@ type FieldProps = {
 function Field({ value, onChange, mobile, inputRef }: FieldProps) {
   const t = useText(TEXT);
   return (
-    <label className={mobile ? BOX : `${BOX} max-w-search lg:max-w-search-stage`}>
+    <label className={mobile ? BOX : `${BOX} min-w-0 max-w-search lg:max-w-search-stage`}>
       <Icon name="search" className="size-5 shrink-0 text-muted" />
       <input
         ref={inputRef}

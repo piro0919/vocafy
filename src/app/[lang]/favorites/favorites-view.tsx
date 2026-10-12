@@ -8,6 +8,7 @@ import { ARTIST_GRID, CoverCard } from '@/components/cover-card';
 import { Heading, SECTION } from '@/components/heading';
 import { Icon } from '@/components/icon';
 import { usePlayer } from '@/components/player/player-provider';
+import { usePlayFavorites } from '@/components/favorites-play';
 import { SongList } from '@/components/song-list';
 import { useFavoriteProducers, useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { formatCount } from '@/lib/format';
@@ -43,7 +44,8 @@ const SONG_PREVIEW = 12;
 export function FavoritesView() {
   const { items: songs } = useFavorites();
   const { items: producers } = useFavoriteProducers();
-  const { owner, current, playQueue } = usePlayer();
+  const { playQueue } = usePlayer();
+  const playFavorites = usePlayFavorites();
   const router = useRouter();
   useRefreshFavorites();
   const t = useText(TEXT);
@@ -70,14 +72,7 @@ export function FavoritesView() {
           count={terms.songs(formatCount(songs.length))}
           action={
             // 頭から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
-            <button
-              type="button"
-              onClick={() => {
-                if (!(owner.kind === 'favorites' && current)) playQueue(songs, 0, FAVORITES, true);
-                router.push('/favorites/songs');
-              }}
-              className={PRIMARY}
-            >
+            <button type="button" onClick={() => playFavorites?.()} className={PRIMARY}>
               <Icon name="play" className="size-5" />
               {terms.play}
             </button>
