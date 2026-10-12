@@ -7,8 +7,8 @@ import { defineText } from '@/i18n/text';
 import { useText } from '@/i18n/navigation';
 
 const TEXT = defineText({
-  ja: { title: 'トップの動き', flow: 'きょうの出会いを流す' },
-  en: { title: 'Home motion', flow: 'Animate Daily Mix' },
+  ja: { title: 'トップの動き', flow: 'きょうの出会いを自動でスクロールする' },
+  en: { title: 'Home motion', flow: 'Auto-scroll Daily Mix' },
 });
 
 /**

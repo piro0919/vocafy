@@ -19,13 +19,13 @@ type Choice = 'off' | RightEdge;
 
 const TEXT = defineText({
   ja: {
-    title: 'スワイプ',
+    title: 'スワイプで戻る',
     off: '使わない',
-    back: '左右の端で戻る',
-    forward: '左端で戻る・右端で進む',
+    back: '画面の左右の端から戻る',
+    forward: '画面の左端から戻る・右端から進む',
   },
   en: {
-    title: 'Swipe',
+    title: 'Swipe to go back',
     off: 'Off',
     back: 'Swipe from either edge to go back',
     forward: 'Left edge to go back, right edge to go forward',
