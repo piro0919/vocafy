@@ -7,15 +7,29 @@ import { TERMS } from '@/i18n/terms';
 import { useId } from 'react';
 import { authClient, hasSignInHint, signIn, signOut } from '@/lib/auth-client';
 import { clearLocalFavorites, setSignedIn } from '@/lib/favorites';
-import { ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
+import { HEADER_ICON, ICON_SM, PRIMARY_TEXT } from '@/components/button-styles';
+import { Icon } from '@/components/icon';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { useClientValue } from '@/lib/client-value';
 import { GLASS_PANEL, MENU_ROW } from '@/components/surface-styles';
 
 const TEXT = defineText({ ja: { account: 'アカウント' }, en: { account: 'Account' } });
 
-function LoginButton() {
+/** compact はスマホの上の帯。文字のボタンでは帯の幅に収まらないので、人型のアイコンにする（YouTube のアプリと同じ） */
+function LoginButton({ compact }: { compact?: boolean }) {
   const term = useText(TERMS);
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={() => signIn()}
+        aria-label={term.signIn}
+        className={`grid ${HEADER_ICON}`}
+      >
+        <Icon name="account" className="size-5" />
+      </button>
+    );
+  }
   return (
     <button type="button" onClick={() => signIn()} className={PRIMARY_TEXT}>
       {term.signIn}
@@ -24,14 +38,14 @@ function LoginButton() {
 }
 
 /** ログイン中の顔写真と、押すと開くメニュー（名前・設定・ログアウト）。開閉はブラウザの popover に任せる */
-function SessionAccount() {
+function SessionAccount({ compact }: { compact?: boolean }) {
   const { data, isPending } = authClient.useSession();
   const id = useId();
   const t = useText(TEXT);
   const term = useText(TERMS);
   const user = data?.user;
   if (isPending) return <span className="size-9 shrink-0" />;
-  if (!user) return <LoginButton />;
+  if (!user) return <LoginButton compact={compact} />;
   return (
     <>
       <button type="button" popoverTarget={id} aria-label={t.account} className={`grid ${ICON_SM}`}>
@@ -88,7 +102,7 @@ function SessionAccount() {
  * 右上のログイン（Spotify・YouTube と同じ置き場所）。スマホは上の帯の右端、パソコンは本文の右上に置く。
  * ログインしたことのない端末（ほとんどの人）はセッションを聞きに行かず、ログインのボタンだけを出す（auth-client.ts の印）
  */
-export function AccountButton() {
+export function AccountButton({ compact }: { compact?: boolean }) {
   const hinted = useClientValue(hasSignInHint, false);
-  return hinted ? <SessionAccount /> : <LoginButton />;
+  return hinted ? <SessionAccount compact={compact} /> : <LoginButton compact={compact} />;
 }

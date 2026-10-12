@@ -3,7 +3,7 @@
 import { useRouter, useText } from '@/i18n/navigation';
 import { defineText } from '@/i18n/text';
 import { useFavorites } from '@/lib/favorites';
-import { PRIMARY_ICON } from './button-styles';
+import { HEADER_ICON } from './button-styles';
 import { Icon } from './icon';
 import { usePlayer } from './player/player-provider';
 
@@ -27,7 +27,7 @@ export function usePlayFavorites() {
 }
 
 /**
- * パソコンの上の段の、サイコロとログインのあいだの丸いボタン（2026-10-12 に本人と決めた）。どの画面からでも、お気に入りを頭から流す。
+ * 上の帯（スマホ）と上の段（パソコン）の、サイコロとログインのあいだのボタン（2026-10-12 に本人と決めた）。どの画面からでも、お気に入りを頭から流す。
  * 左のメニューの「お気に入り」の行に指を乗せたときだけ ▶ を出す形も並べて試し、こちらにした
  */
 export function FavoritesPlayButton() {
@@ -40,7 +40,7 @@ export function FavoritesPlayButton() {
       onClick={play}
       aria-label={t.play}
       title={t.play}
-      className={PRIMARY_ICON}
+      className={`grid ${HEADER_ICON}`}
     >
       <Icon name="favoritesPlay" className="size-5" />
     </button>

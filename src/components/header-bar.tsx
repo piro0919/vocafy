@@ -12,11 +12,13 @@ import { HeaderSearch, HeaderSearchFallback } from './header-search';
 import { Icon } from './icon';
 import { InstallButton } from './install-app';
 import { Logo } from './nav';
-import { ICON } from './button-styles';
+import { HEADER_ICON } from './button-styles';
+import { MixButton } from './mix-button';
+import { FavoritesPlayButton } from './favorites-play';
 
 const TEXT = defineText({ ja: { back: '戻る' }, en: { back: 'Back' } });
 
-const ICON_BUTTON = `grid ${ICON} text-muted hover:text-foreground`;
+const ICON_BUTTON = `grid ${HEADER_ICON}`;
 
 /** 虫めがねから検索の画面を開いたか。開いていれば ← で戻り、住所から直に開いたときはトップへ移る */
 let openedFromSite = false;
@@ -89,8 +91,11 @@ export function HeaderBar() {
       <Link href="/settings" aria-label={term.settings} className={ICON_BUTTON}>
         <Icon name="settings" className="size-5" />
       </Link>
+      {/* パソコンの上の段と同じく、ログインの左にきょうの出会いとお気に入りを流すボタン */}
+      <MixButton />
+      <FavoritesPlayButton />
       {/* ログインは右端に置く（YouTube と同じ） */}
-      <AccountButton />
+      <AccountButton compact />
     </div>
   );
 }
