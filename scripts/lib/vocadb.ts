@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { today } from '../../src/lib/iso-date';
 import { SONG_TYPES } from './pick';
 
 /**
@@ -8,7 +9,7 @@ import { SONG_TYPES } from './pick';
  * 相手に負荷をかけないよう、取りに行くときは 1 秒に 1 回までにする。
  *
  * 2026-10-09 に、1日で約 4400 回（1 秒に 2 回弱で数時間）聞いたあと、VocaDB の API が 503 で1時間ほど止まった。
- * こちらが原因かは分からないが、千回を超えて聞く取り込みは、走らせる前に回数を見積もる
+ * こちらが原因かは分からない
  */
 const BASE = 'https://vocadb.net/api';
 const CACHE = new URL('../../data/raw/vocadb/', import.meta.url);
@@ -16,10 +17,48 @@ const INTERVAL = 1000;
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
+ * 1日に VocaDB へ聞く回数の上限。VocaDB は「事前の許可なく1日に数千回聞くと DoS 攻撃とみなし、IP を締め出すことがある」
+ * としている（https://wiki.vocadb.net/docs/public-api の API usage rules）。2026-10-12 に本人と決めた値で、数千回を確実に下回る。
+ * 達したら取り込みを止める。返事は控えに残っているので、次の日に同じコマンドを走らせれば続きから進む。
+ * 数えるのは控えを読んだ分を除いた、実際に聞いた回数（聞き直しも含む）。日付は日本の暦
+ */
+export const DAILY_LIMIT = 750;
+const COUNT = new URL('../../data/raw/vocadb-count.json', import.meta.url);
+
+export class DailyLimitError extends Error {
+  constructor() {
+    super(
+      `VocaDB にきょう聞ける回数（${DAILY_LIMIT} 回）に達したので止めます。明日同じコマンドを走らせると、控えを使って続きから進みます`,
+    );
+  }
+}
+
+/** 次の1回を聞いてよければ数え、上限に達していれば DailyLimitError。数はファイルに残し、同じ日のほかの実行とも合わせる */
+async function countRequest() {
+  const date = today();
+  let count = 0;
+  try {
+    const saved = JSON.parse(await readFile(COUNT, 'utf8')) as { date: string; count: number };
+    if (saved.date === date) count = saved.count;
+  } catch {
+    // まだ聞いていない
+  }
+  if (count >= DAILY_LIMIT) throw new DailyLimitError();
+  await mkdir(new URL('.', COUNT), { recursive: true });
+  await writeFile(COUNT, JSON.stringify({ date, count: count + 1 }));
+}
+
+/**
  * 残したものを使う日数。新しく出た曲は自動の取り込み（ingest --recent）が日付で聞くので、ここを短くして拾う必要は無い。
  * 全体の取り込みを手元で走らせたとき、評価点の順位やボカロPの全曲が古くなりすぎない程度にする
  */
 const MAX_AGE_DAYS = 30;
+
+/**
+ * 中身が変わらない返事（動画と曲の対応・歌声の名前と元の歌声）を使う日数。全体の取り込みが聞く回数の半分ほどがこれで、
+ * 30日ごとに聞き直すと1日の上限（DAILY_LIMIT）の何日分にもなる。VocaDB で直されたら、その控えのファイルを消せば聞き直す
+ */
+const STABLE_DAYS = 365;
 
 export type VdbArtist = {
   id: number;
@@ -84,6 +123,7 @@ const RETRY_MINUTES = [1, 2, 4, 8];
 
 async function fetchWithRetry(url: string): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
+    await countRequest();
     const wait = last + INTERVAL - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     last = Date.now();
@@ -101,7 +141,14 @@ async function fetchWithRetry(url: string): Promise<Response> {
   }
 }
 
-async function get<T>(path: string, params: Record<string, string | number | string[]>) {
+/** 控えを使う日数。返事の中身で変えるときは関数で渡す */
+type MaxAge<T> = number | ((body: T) => number);
+
+async function get<T>(
+  path: string,
+  params: Record<string, string | number | string[]>,
+  maxAge: MaxAge<T> = MAX_AGE_DAYS,
+) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     for (const v of Array.isArray(value) ? value : [value]) search.append(key, String(v));
@@ -109,9 +156,9 @@ async function get<T>(path: string, params: Record<string, string | number | str
   const url = `${BASE}${path}?${search}`;
   const file = new URL(`${createHash('sha1').update(url).digest('hex')}.json`, CACHE);
   try {
-    if (Date.now() - (await stat(file)).mtimeMs < MAX_AGE_DAYS * DAY) {
-      return JSON.parse(await readFile(file, 'utf8')) as T;
-    }
+    const age = Date.now() - (await stat(file)).mtimeMs;
+    const body = JSON.parse(await readFile(file, 'utf8')) as T;
+    if (age < (typeof maxAge === 'number' ? maxAge : maxAge(body)) * DAY) return body;
   } catch {
     // まだ取っていない
   }
@@ -198,14 +245,21 @@ export async function songsPublishedAfter(after: string): Promise<VdbSong[]> {
   }
 }
 
-/** ニコニコの動画の ID から、その動画が登録された曲を引く。VocaDB に無ければ null */
+/**
+ * ニコニコの動画の ID から、その動画が登録された曲を引く。VocaDB に無ければ null。
+ * 動画と曲の対応は変わらないので長く残す。無かった返事だけは、あとから登録されたときに拾えるよう30日で聞き直す
+ */
 export async function songByNiconico(videoId: string): Promise<VdbSong | null> {
-  return get<VdbSong | null>('/songs/byPv', {
-    fields: SONG_FIELDS.fields,
-    lang: SONG_FIELDS.lang,
-    pvService: 'NicoNicoDouga',
-    pvId: videoId,
-  });
+  return get<VdbSong | null>(
+    '/songs/byPv',
+    {
+      fields: SONG_FIELDS.fields,
+      lang: SONG_FIELDS.lang,
+      pvService: 'NicoNicoDouga',
+      pvId: videoId,
+    },
+    (song) => (song ? STABLE_DAYS : MAX_AGE_DAYS),
+  );
 }
 
 /** その人が関わったオリジナル曲と出し直しの版をすべて。作者かどうかは呼ぶ側で確かめる */
@@ -250,13 +304,22 @@ type VdbVoicebank = Pick<VdbArtist, 'id' | 'name' | 'artistType'> & {
  * 歌声の名前。VocaDB は日本語の欄に読みのカタカナを入れている歌声があり、日本語で聞くと「グミ」「カイト」「イア」のように
  * 公式（GUMI・KAITO・IA）と違う表記で返る。そこで既定の名前（lang=Default）も聞き、日本語の名前に漢字が無い
  * （カタカナやハングルの読みだけの）ときは既定の名前を使う。漢字のある名前（初音ミク・歌手不明・星尘Minus）は日本語のまま。
- * 既定の名前だけにすると、歌手不明が「Unknown vocalist(s)」、星尘Minus が「Minus」になった
+ * 既定の名前だけにすると、歌手不明が「Unknown vocalist(s)」、星尘Minus が「Minus」になった。
+ * 歌声の名前と元の歌声はまず変わらないので長く残す
  */
 async function voicebank(id: number): Promise<VdbVoicebank> {
   const params = { fields: 'BaseVoicebank' };
-  const ja = await get<VdbVoicebank>(`/artists/${id}`, { ...params, lang: 'Japanese' });
+  const ja = await get<VdbVoicebank>(
+    `/artists/${id}`,
+    { ...params, lang: 'Japanese' },
+    STABLE_DAYS,
+  );
   if (/\p{Script=Han}/u.test(ja.name)) return ja;
-  const def = await get<VdbVoicebank>(`/artists/${id}`, { ...params, lang: 'Default' });
+  const def = await get<VdbVoicebank>(
+    `/artists/${id}`,
+    { ...params, lang: 'Default' },
+    STABLE_DAYS,
+  );
   return { ...ja, name: def.name };
 }
 
