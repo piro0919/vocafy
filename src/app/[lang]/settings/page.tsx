@@ -10,7 +10,6 @@ import { ThemeSetting } from '@/components/theme/theme-setting';
 import { VoiceSetting } from '@/components/theme/voice-setting';
 import { Heading } from '@/components/heading';
 import { SupportLink } from '@/components/support-link';
-import { VisualizerSetting } from '@/components/visualizer/visualizer-setting';
 import { langOf } from '@/i18n/config';
 import { LangSetting } from '@/i18n/lang-choice';
 import { TERMS } from '@/i18n/terms';
@@ -40,7 +39,6 @@ export default async function SettingsPage({ params }: PageProps<'/[lang]/settin
       <InstallApp />
       <SwipeBackSetting />
       <KeyboardHelp />
-      <VisualizerSetting />
       <SupportLink />
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["scripts/*.ts"],
+  "entry": ["scripts/*.ts", "src/components/visualizer/visualizer-setting.tsx"],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "test/**/*.ts"],
   "ignoreDependencies": ["@commitlint/cli", "@secretlint/secretlint-rule-preset-recommend"]
 }
