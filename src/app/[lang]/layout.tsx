@@ -88,6 +88,8 @@ export async function generateMetadata({ params }: LayoutProps<'/[lang]'>): Prom
     title: { default: 'Vocafy', template: '%s | Vocafy' },
     description: TEXT[lang].description,
     twitter: { card: 'summary_large_image' },
+    // ホーム画面のアプリで、ステータスバーを不透明にして本文をその下から始める。iPad のアプリで上部がにじんで見えたので、koidamashii と同じ値にした（2026-10-12。効いたかは未確認）
+    appleWebApp: { capable: true, title: 'Vocafy', statusBarStyle: 'default' },
   };
 }
 
