@@ -4,10 +4,13 @@ import { catalogRows, writeCatalog } from './lib/catalog-write';
 import { isDropped, tooManyDead, withoutDead } from './lib/dead';
 import type { ProducerLinks } from '../src/lib/catalog';
 import {
+  accountsOf,
+  arrangedOnly,
   EXTRA_PRODUCERS,
   isEligible,
   isOwnVersion,
   linksOf,
+  markUploaders,
   UNKNOWN_PRODUCER,
   dropSharedVideos,
   producersOf,
@@ -27,6 +30,7 @@ import {
   type VdbSong,
 } from './lib/vocadb';
 import { deadYouTube, viewCounts } from './lib/youtube';
+import { confirmUploaders } from './lib/uploaders';
 import { fillEnglishProducerNames } from './lib/song-names';
 import { fillEnglishVoiceNames } from './lib/voice-names';
 
@@ -193,6 +197,7 @@ const PRODUCER_NAMES = new Map([[UNKNOWN_PRODUCER, '作者不明']]);
  */
 async function recentSongs(days: number): Promise<{
   songs: VdbSong[];
+  arranged: Arranged[];
   complete: Set<number>;
   knownVocalists: Map<number, { name: string; baseId: number }>;
 }> {
@@ -201,14 +206,45 @@ async function recentSongs(days: number): Promise<{
   const vocalists = await db().query<{ id: number; name: string; base_id: number }>(
     'select id, name, base_id from vocalist',
   );
-  const songs = (await songsPublishedAfter(daysAgo(days))).filter(
-    (s) => isEligible(s) && producersOf(s).some((p) => complete.has(p.id)),
+  const published = (await songsPublishedAfter(daysAgo(days))).filter(isEligible);
+  const songs = published.filter((s) => producersOf(s).some((p) => complete.has(p.id)));
+  const arranged = published.flatMap((song) =>
+    [...complete]
+      .filter((id) => arrangedOnly(song, id))
+      .map((producerId) => ({ song, producerId })),
   );
   return {
     songs,
+    arranged,
     complete,
     knownVocalists: new Map(vocalists.rows.map((v) => [v.id, { name: v.name, baseId: v.base_id }])),
   };
+}
+
+/** 編曲だけで載った、全曲を取ったボカロPの曲（pick.ts の arrangedOnly）。本家の動画を本人が上げていれば作者に戻す */
+type Arranged = { song: VdbSong; producerId: number };
+
+/**
+ * arranged のうち、本家の動画をボカロP本人が上げていた曲に印を付けて songs に足す（scripts/lib/uploaders.ts）。
+ * 足した曲の作者は fetched にも書き直す。足した曲数を返す
+ */
+async function addUploaded(
+  arranged: Arranged[],
+  songs: Map<number, VdbSong>,
+  fetched: Map<number, Set<number>>,
+): Promise<number> {
+  const confirmed = await confirmUploaders(
+    arranged,
+    async (id) => accountsOf((await artist(id)).webLinks ?? []),
+    process.argv.includes('--no-youtube') ? undefined : scriptEnv('YOUTUBE_API_KEY'),
+  );
+  for (const [id, uploaders] of confirmed) {
+    const song = songs.get(id) ?? arranged.find((a) => a.song.id === id)!.song;
+    const marked = markUploaders(song, uploaders);
+    fetched.set(id, new Set(producersOf(marked).map((p) => p.id)));
+    songs.set(id, marked);
+  }
+  return confirmed.size;
 }
 
 async function main() {
@@ -221,10 +257,12 @@ async function main() {
   // 全曲を取り込むボカロP。新しく出た曲を足すときは、新しく種に掛かった人だけ（取り込み済みの人の画像やリンクは取り直さない）
   const producerIds = new Set<number>();
   let knownVocalists = new Map<number, { name: string; baseId: number }>();
+  const arranged: Arranged[] = [];
 
   if (recentDays !== undefined) {
     const recent = await recentSongs(recentDays);
     for (const s of recent.songs) songs.set(s.id, s);
+    arranged.push(...recent.arranged);
     knownVocalists = recent.knownVocalists;
     console.log(`この ${recentDays} 日に出た曲のうち、取り込み済みのボカロPの曲: ${songs.size} 曲`);
 
@@ -266,10 +304,17 @@ async function main() {
   for (const id of producerIds) {
     for (const song of await songsByArtist(id)) {
       fetched.set(song.id, new Set(producersOf(song).map((p) => p.id)));
-      if (isEligible(song) && producersOf(song).some((p) => p.id === id)) songs.set(song.id, song);
+      if (!isEligible(song)) continue;
+      if (producersOf(song).some((p) => p.id === id)) songs.set(song.id, song);
+      else if (arrangedOnly(song, id)) arranged.push({ song, producerId: id });
     }
     if (++done % 20 === 0) console.log(`  ボカロP ${done}/${producerIds.size}: ${songs.size} 曲`);
   }
+  // 編曲だけで載った曲は、本家の動画を本人が上げていれば入れる。ほかの人の全曲で先に入った曲にも印を付け直す
+  const uploaded = await addUploaded(arranged, songs, fetched);
+  console.log(
+    `編曲だけで載った曲 ${arranged.length} 件のうち、本家の動画を本人が上げていた ${uploaded} 曲を入れる`,
+  );
 
   // 出し直しの版は本人のものだけ。元の曲の作者は、今回集めた曲から引き、無ければ DB から引く
   for (const s of songs.values()) fetched.set(s.id, new Set(producersOf(s).map((p) => p.id)));

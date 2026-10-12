@@ -86,25 +86,102 @@ const WRONG_CREDITS = new Set([
  */
 const AUTHOR_ROLES = ['Default', 'Composer', 'Lyricist'];
 
-/**
- * 曲の作者（Producer の役割が付いた人のうち、作曲・作詞をした人。AUTHOR_ROLES）。作曲・作詞の人が1人も載っていない曲
- * （ぬゆりとバルーンの「ミザン」は2人とも編曲・調声）は、曲が消えないよう Producer の人を全員作者にする。
- * VocaDB に登録の無い人と、補助（isSupport）の人は入れない。
- * 補助は調声や編曲を手伝った人で、拾うとその人の全曲がついてくる。ギガの「ガッチュー！」の調声に載った
- * 「Unknown producer(s)」から作者不明の 1321 曲が、ほかの人の曲の調声からずきお・かごめPなど 15 人の曲が入っていた
- */
-export function producersOf(song: VdbSong) {
-  const credited = (song.artists ?? []).filter(
+/** 作者の候補（Producer の役割が付いた人）。VocaDB に登録の無い人・補助の人・誤って入っている人は除く */
+function creditedOf(song: VdbSong) {
+  return (song.artists ?? []).filter(
     (a) =>
       a.artist &&
       has(a.categories, 'Producer') &&
       !a.isSupport &&
       !WRONG_CREDITS.has(`${song.id}:${a.artist.id}`),
   );
-  const authors = credited.filter((a) =>
-    AUTHOR_ROLES.some((r) => has(a.effectiveRoles ?? 'Default', r)),
+}
+
+/**
+ * 曲の作者（Producer の役割が付いた人のうち、作曲・作詞をした人。AUTHOR_ROLES）。編曲だけで載った人も、本家の動画を
+ * 自分で上げていれば作者にする（uploader。markUploaders）。作曲・作詞の人が1人も載っていない曲
+ * （ぬゆりとバルーンの「ミザン」は2人とも編曲・調声）は、曲が消えないよう Producer の人を全員作者にする。
+ * VocaDB に登録の無い人と、補助（isSupport）の人は入れない。
+ * 補助は調声や編曲を手伝った人で、拾うとその人の全曲がついてくる。ギガの「ガッチュー！」の調声に載った
+ * 「Unknown producer(s)」から作者不明の 1321 曲が、ほかの人の曲の調声からずきお・かごめPなど 15 人の曲が入っていた
+ */
+export function producersOf(song: VdbSong) {
+  const credited = creditedOf(song);
+  const authors = credited.filter(
+    (a) => a.uploader || AUTHOR_ROLES.some((r) => has(a.effectiveRoles ?? 'Default', r)),
   );
   return (authors.length > 0 ? authors : credited).flatMap((a) => (a.artist ? [a.artist] : []));
+}
+
+/**
+ * 編曲だけで載っていて、作者から外れている人か（2026-10-12 に本人と決めた）。そうなら、本家の動画を上げた人を確かめ
+ * （scripts/lib/uploaders.ts）、本人なら作者に戻す。ずきおの「制空権」は作曲・作詞がアキバヲタPで、ずきおは編曲だけだが、
+ * 動画はずきおが上げている。emon(Tes.) が編曲した DECO＊27 の曲は DECO＊27 が上げているので戻らない。
+ * 調声・ミックスだけの人は、本家の動画を上げていても戻さない（びびの調声の曲など、自分の曲として出す形がほぼ無い）
+ */
+export function arrangedOnly(song: VdbSong, producerId: number): boolean {
+  const credit = creditedOf(song).find((a) => a.artist?.id === producerId);
+  return (
+    credit !== undefined &&
+    !credit.uploader &&
+    has(credit.effectiveRoles ?? 'Default', 'Arranger') &&
+    !producersOf(song).some((p) => p.id === producerId)
+  );
+}
+
+/** 本家の動画を上げたと確かめた人（producerIds）に uploader の印を付けた曲。元の曲は書き換えない */
+export function markUploaders(song: VdbSong, producerIds: Set<number>): VdbSong {
+  return {
+    ...song,
+    artists: song.artists?.map((a) =>
+      a.artist && producerIds.has(a.artist.id) ? { ...a, uploader: true } : a,
+    ),
+  };
+}
+
+/** 本家の動画（YouTube とニコニコ。Topic も含む）。だれが上げたかを確かめるのに使う */
+type Video = { service: 'youtube' | 'niconico'; id: string };
+
+export function originalVideos(song: VdbSong): Video[] {
+  return (song.pvs ?? []).flatMap((pv): Video[] => {
+    if (pv.pvType !== 'Original') return [];
+    if (pv.service === 'Youtube') return [{ service: 'youtube', id: pv.pvId }];
+    if (pv.service === 'NicoNicoDouga') return [{ service: 'niconico', id: pv.pvId }];
+    return [];
+  });
+}
+
+/**
+ * ボカロPのアカウント。VocaDB のリンクのうち、YouTube のチャンネルとニコニコのユーザー。動画を上げた人と照らし合わせるので、
+ * linksOf と違って Official 以外・閉じたもの・サブも使う（昔のアカウントから上げた動画もある）。
+ * YouTube の /channel/ はそのまま番号、/@ と /user/ と /c/ は名前で、Data API で番号に引き直す
+ */
+export type Accounts = {
+  youtube: string[];
+  youtubeNames: string[];
+  niconico: string[];
+};
+
+/** 住所の中の %xx を戻す。壊れた書き方はそのまま */
+function decoded(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+export function accountsOf(links: VdbWebLink[]): Accounts {
+  const accounts: Accounts = { youtube: [], youtubeNames: [], niconico: [] };
+  for (const { url } of links) {
+    const channel = /youtube\.com\/channel\/(UC[\w-]+)/.exec(url);
+    const named = /youtube\.com\/(@|user\/|c\/)([^/?#]+)/.exec(url);
+    const user = /nicovideo\.jp\/user\/(\d+)/.exec(url);
+    if (channel) accounts.youtube.push(channel[1]);
+    else if (named) accounts.youtubeNames.push(`${named[1]}${decoded(named[2])}`);
+    else if (user) accounts.niconico.push(user[1]);
+  }
+  return accounts;
 }
 
 /** 曲の歌声のうち、合成音声のもの */

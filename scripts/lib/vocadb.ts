@@ -86,6 +86,11 @@ type VdbSongArtist = {
   /** VocaDB に登録の無い人は artist が無く、名前だけが入る */
   artist?: VdbArtist;
   name: string;
+  /**
+   * 編曲だけで載った人が、本家の動画を自分のアカウントから上げていたら立てる（VocaDB の返事には無い。取り込みが
+   * scripts/lib/uploaders.ts で確かめて pick.ts の markUploaders で付ける）。立っていれば作曲・作詞の人と同じく作者にする
+   */
+  uploader?: boolean;
 };
 
 type VdbPv = {

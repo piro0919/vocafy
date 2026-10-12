@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accountsOf,
+  arrangedOnly,
   dropSharedVideos,
   isEligible,
   isOwnVersion,
   linksOf,
+  markUploaders,
+  originalVideos,
   producersOf,
   sourcesOf,
   versionVideos,
@@ -267,6 +271,79 @@ describe('producersOf の役割', () => {
       ],
     });
     expect(producersOf(s).map((p) => p.name)).toEqual(['ぬゆり', 'バルーン']);
+  });
+});
+
+describe('編曲だけの人と本家の動画', () => {
+  const credit = (id: number, name: string, effectiveRoles: string) => ({
+    categories: 'Producer',
+    isSupport: false,
+    effectiveRoles,
+    artist: { id, name, artistType: 'Producer' },
+    name,
+  });
+  // 制空権。作曲・作詞はアキバヲタPで、ずきおは編曲だけ。動画はずきおが上げた
+  const seikuken = song({
+    id: 44945,
+    artists: [
+      credit(2954, 'ずきお', 'Arranger'),
+      credit(415, 'アキバヲタP', 'Composer, Lyricist'),
+      credit(5658, 'びび', 'VoiceManipulator'),
+      { categories: 'Vocalist', isSupport: false, artist: miku, name: '初音ミク' },
+    ],
+  });
+
+  it('編曲だけで載り、作者から外れている人を見分ける', () => {
+    expect(arrangedOnly(seikuken, 2954)).toBe(true);
+    expect(arrangedOnly(seikuken, 415)).toBe(false);
+    // 調声だけの人は確かめない
+    expect(arrangedOnly(seikuken, 5658)).toBe(false);
+  });
+
+  it('作曲・作詞の人がいない曲の編曲の人は、もう作者なので確かめない', () => {
+    const s = song({ artists: [credit(1, 'ぬゆり', 'Arranger')] });
+    expect(arrangedOnly(s, 1)).toBe(false);
+  });
+
+  it('動画を上げたと確かめた人は作者にする。元の曲は書き換えない', () => {
+    const marked = markUploaders(seikuken, new Set([2954]));
+    expect(producersOf(marked).map((p) => p.name)).toEqual(['ずきお', 'アキバヲタP']);
+    expect(arrangedOnly(marked, 2954)).toBe(false);
+    expect(producersOf(seikuken).map((p) => p.name)).toEqual(['アキバヲタP']);
+  });
+
+  it('本家の動画を YouTube とニコニコで拾う。転載は拾わない', () => {
+    const s = song({
+      pvs: [
+        { service: 'NicoNicoDouga', pvType: 'Original', pvId: 'nm22446967' },
+        { service: 'Youtube', pvType: 'Reprint', pvId: 'x' },
+        { service: 'Piapro', pvType: 'Original', pvId: 'y' },
+      ],
+    });
+    expect(originalVideos(s)).toEqual([{ service: 'niconico', id: 'nm22446967' }]);
+  });
+
+  it('アカウントは Official 以外や閉じたリンクからも拾い、YouTube の名前は分けて持つ', () => {
+    const link = (url: string, over: Partial<VdbWebLink> = {}): VdbWebLink => ({
+      category: 'Official',
+      description: '',
+      url,
+      disabled: false,
+      ...over,
+    });
+    expect(
+      accountsOf([
+        link('http://www.nicovideo.jp/user/4093028', { disabled: true }),
+        link('https://www.youtube.com/channel/UCQS8TAEfaDhnU-L5oZ5Mj5A/videos'),
+        link('https://www.youtube.com/@%E3%81%9A%E3%81%8D%E3%81%8A', { category: 'Other' }),
+        link('https://www.youtube.com/user/deco27'),
+        link('https://x.com/mzkch_'),
+      ]),
+    ).toEqual({
+      youtube: ['UCQS8TAEfaDhnU-L5oZ5Mj5A'],
+      youtubeNames: ['@ずきお', 'user/deco27'],
+      niconico: ['4093028'],
+    });
   });
 });
 
