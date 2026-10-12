@@ -879,6 +879,9 @@ html[data-player='dock'] {
      列はここに貼り付ける。ずれていると、スクロールの最初の分だけ動いてから止まる */
   --stage-top: calc(var(--spacing-gutter) + var(--spacing-header) + var(--spacing-content-top) * 2);
   --video-full: calc(100vw * 9 / 16);
+  /* スマホで固定した動画の下に、本文が潜らないよう空ける高さ（player-stage.tsx）。空きはページの上の余白（pt-content-top）の
+     下から始まるので、その分を引く。本文の幅の 16:9 にすると、左右の余白の広い iPad の幅で題名が動画に接した */
+  --stage-spacer: calc(var(--video-full) - var(--spacing-content-top));
   --stage-controls-top: calc(var(--video-full) + var(--spacing-gutter));
   --below-stage-controls: calc(
     var(--stage-controls-top) + var(--spacing-stage-controls) + var(--spacing-gutter)

@@ -75,9 +75,7 @@ export function PlayerStage({
   return (
     <>
       {/* スマホで固定したぶん、本文が動画の下に潜らないよう、同じ高さの空きを置く */}
-      <div aria-hidden className="md:hidden">
-        <div className="aspect-video" />
-      </div>
+      <div aria-hidden className="h-(--stage-spacer) md:hidden" />
       {/* data-stage-video は、共有の板が動画に重ならないよう測る目印（share-menu.tsx の fitMenu） */}
       <div
         data-stage-video
