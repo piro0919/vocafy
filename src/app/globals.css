@@ -242,8 +242,6 @@
   --spacing-content-top: 1rem;
   /* 画面の上部の色の背景の高さ */
   --spacing-ambient: 32rem;
-  /* ホーム画面のアプリで、画面の上端に塗る帯の高さ（ambient.tsx の EdgeTint）。iOS 27 が上端をぼかさないための下限が 6px */
-  --spacing-edge-tint: 0.375rem;
   /* 絵の札。キャラの枠を左右にはみ出させる幅と、台の上端の位置。歌声の画面の色の丸の左右の間 */
   --spacing-art-bleed: 12%;
   --spacing-art-stand: 42%;
@@ -444,9 +442,6 @@ html:has([data-dock-arc]:is(:hover, :active)) [data-dock-arc]:is(:hover, :active
 @utility grid-fade {
   mask-image: linear-gradient(to top right, black, transparent 60%);
 }
-
-/* standalone: はホーム画面に置いたアプリとして開いているときに効く */
-@custom-variant standalone (@media (display-mode: standalone));
 
 /* dark: は暗い画面のときに効く。端末の設定ではなく data-theme を見る */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
