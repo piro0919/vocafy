@@ -976,6 +976,18 @@ html:is([data-player='slot'], [data-player='dock']) {
   }
 }
 
+/* スマホの動画の画面では、上に固定した動画と操作の帯、下の再生の帯の裏を、スクロールで行を見せる先から外す。
+   流している曲の行を真ん中へ送る（producer-player.tsx の scrollIntoView）とき、画面全体の真ん中に送ると、
+   見えている所の真ん中より上にずれ、iPad の縦向きなどでは動画の裏に入った。
+   下は再生の帯が出ているかに関わらず帯の上端にする。一覧から押して移ったときは、行へ送る時点で帯の印（data-player）が
+   まだ付いておらず、--bottom-edge だと帯の分だけ下にずれた */
+@variant max-md {
+  :root[data-watch] {
+    scroll-padding-top: var(--below-stage-controls);
+    scroll-padding-bottom: var(--bar-top);
+  }
+}
+
 /* 下に出したままのものが本文の最後を隠さないよう、本文の下に同じだけ余白を足す */
 .page-bottom {
   padding-bottom: calc(var(--bottom-edge) + var(--spacing-page-end));
