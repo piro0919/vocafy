@@ -24,18 +24,18 @@ const TEXT = defineText({
 export /**
  * 右下の窓の位置と大きさ。スマホでは下のタブと帯の上、パソコンでは帯の上。
  * スマホは画面が狭いので、規約の下限（200×200）ちょうどの正方形にする。16:9 の動画は窓の中で上下に黒い帯が入る。
- * パソコンは 16:9 の 356×200。
+ * 幅が sm（640px）からは 16:9 の 356×200。md より狭い iPad の縦向き（744px など）も、正方形にするほど狭くはないため
  * 左に寄せたとき（html の data-dock が left）は、パソコンでは左のメニューの板（--spacing-sidebar）の右に置く
  */
 const DOCK =
-  'fixed right-gutter bottom-(--dock-bottom) size-dock md:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
+  'fixed right-gutter bottom-(--dock-bottom) size-dock sm:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
 
 /**
  * 窓のすぐ上に付ける帯。窓と帯で一枚の板に見せ、角の丸みと縁の線をほかの浮いた板（左のメニュー・下の再生の帯）にそろえる。
  * 動画の側の線は外へ描く（ring）。枠の内側に線（border）を引くと、動画が 200×200（YouTube の規約の下限）を割る
  */
 const DOCK_STRIP =
-  'fixed right-gutter bottom-(--dock-strip-bottom) h-dock-strip w-dock md:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
+  'fixed right-gutter bottom-(--dock-strip-bottom) h-dock-strip w-dock sm:w-dock-wide [html[data-dock=left]_&]:right-auto [html[data-dock=left]_&]:left-gutter md:[html[data-dock=left]_&]:left-(--beside-sidebar)';
 /** 離したとき、これだけ引いていれば、引いた向きの側へ寄せる */
 const DRAG_SWITCH = 48;
 /** 出入りの動き。閉じたあとは少し下へずらして消す */
