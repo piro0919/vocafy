@@ -4,6 +4,7 @@ import { useRouter, useText } from '@/i18n/navigation';
 import { TERMS } from '@/i18n/terms';
 import type { QueueItem } from '@/lib/catalog';
 import { Icon } from './icon';
+import { playStart } from './player/play-order';
 import { usePlayer } from './player/player-provider';
 import { PRIMARY } from './button-styles';
 
@@ -22,7 +23,7 @@ function usePlayAll(songs: QueueItem[], source: string) {
   // 流し始めてから一覧の再生用の画面（/years/2026/play など。list-player.tsx）へ移り、そこで動画を大きく出す。
   // 移らないと動画の置き場所が無く、右下の窓で流れていた
   const start = () => {
-    playAll(songs, source, { moving: true });
+    playAll(songs, source, { at: playStart(songs.length, true), moving: true });
     router.push(`/${source}/play`);
   };
   return { here, playing, start, toggle, router };

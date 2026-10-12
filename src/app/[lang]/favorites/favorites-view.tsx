@@ -71,7 +71,7 @@ export function FavoritesView() {
           eyebrow="Songs"
           count={terms.songs(formatCount(songs.length))}
           action={
-            // 頭から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
+            // どこかの曲から流して、お気に入りの曲の画面へ移る。もう流しているときは、止めずに移るだけ
             <button type="button" onClick={() => playFavorites?.()} className={PRIMARY}>
               <Icon name="play" className="size-5" />
               {terms.play}

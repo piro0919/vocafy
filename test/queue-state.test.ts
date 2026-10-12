@@ -12,6 +12,7 @@ import {
   upcomingOf,
   withOrder,
 } from '@/components/player/queue-state';
+import { playStart } from '@/components/player/play-order';
 
 const song = (songId: number) => ({ songId }) as QueueItem;
 const songs = (...ids: number[]) => ids.map(song);
@@ -133,5 +134,21 @@ describe('upcomingOf', () => {
 describe('radioSeeds', () => {
   it('いまの曲から始め、残りは並びの後ろからさかのぼる', () => {
     expect(ids(radioSeeds(songs(1, 2, 3, 4, 5), 1, 4))).toEqual([2, 5, 4, 3]);
+  });
+});
+
+describe('playStart', () => {
+  it('anywhere なら、並びのどこかから始める', () => {
+    expect(playStart(10, true, () => 0)).toBe(0);
+    expect(playStart(10, true, () => 0.55)).toBe(5);
+    expect(playStart(10, true, () => 0.999)).toBe(9);
+  });
+
+  it('anywhere でなければ、いつも先頭から', () => {
+    expect(playStart(10, false, () => 0.55)).toBe(0);
+  });
+
+  it('並びが空なら 0', () => {
+    expect(playStart(0, true, () => 0.55)).toBe(0);
   });
 });

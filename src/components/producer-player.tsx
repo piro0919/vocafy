@@ -9,6 +9,7 @@ import { dayOf, monthOf, yearOf } from '@/lib/iso-date';
 import { FavoriteButton } from './favorite-button';
 import { Bars } from './now-playing';
 import { StagePlayButton } from './player-stage';
+import { playStart } from './player/play-order';
 import { usePlayer } from './player/player-provider';
 import { usePreload } from './player/use-preload';
 import { NoAutoplay } from './song-list';
@@ -76,7 +77,8 @@ export function ProducerPlayer({
   queue: QueueItem[];
   cover: string | null;
 }) {
-  const { current, playing, owner, playQueue, takeOver, toggle, skipsNiconico } = usePlayer();
+  const { current, playing, owner, playQueue, takeOver, toggle, skipsNiconico, shuffle } =
+    usePlayer();
   const t = useText(TEXT);
   const terms = useText(TERMS);
   const dateLabel = (iso: string) =>
@@ -131,7 +133,8 @@ export function ProducerPlayer({
             0,
             queue.findIndex((q) => q.songId === songId),
           )
-        : 0,
+        : // 先頭はこの人の最新曲なので、ランダムのときだけどこかから（play-order.ts の playStart）
+          playStart(queue.length, shuffle),
       page,
     );
 

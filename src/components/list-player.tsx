@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { StagePlayButton } from './player-stage';
 import { SongShare } from './share-menu';
+import { playStart } from './player/play-order';
 import { usePlayer } from './player/player-provider';
 import { VirtualSongList } from './virtual-song-list';
 import { StageLayout } from './stage-layout';
@@ -63,8 +64,8 @@ export function ListPlayer({
 
   const play = (page: { songs: QueueItem[] }, at: number) =>
     page.songs.length > 0 && playAll(page.songs, source, { at });
-  // 住所の曲（共有されたり読み込み直したりしたとき）が一覧にあれば、そこから流す。無ければ先頭から
-  const start = () => play({ songs }, Math.max(0, linkedAt));
+  // 住所の曲（共有されたり読み込み直したりしたとき）が一覧にあれば、そこから流す。無ければどこかから（play-order.ts の playStart）
+  const start = () => play({ songs }, linkedAt >= 0 ? linkedAt : playStart(songs.length, true));
 
   // この一覧を流しているあいだは、住所に流している曲を入れる（use-song-in-url.ts）
   useSongInUrl(here ? current : null, `/${source}/play`);

@@ -3,6 +3,7 @@
 import { Icon } from '@/components/icon';
 import { StagePlayButton } from '@/components/player-stage';
 import { SongShare } from '@/components/share-menu';
+import { playStart } from '@/components/player/play-order';
 import { usePlayer } from '@/components/player/player-provider';
 import { useFavorites, useRefreshFavorites } from '@/lib/favorites';
 import { NO_RESTORE } from '@/lib/no-restore';
@@ -41,14 +42,16 @@ export function FavoriteSongs() {
   const here = useTakeOver(songs, FAVORITES);
   const t = useText(TEXT);
   const terms = useText(TERMS);
-  const play = (at = 0) => songs.length > 0 && playQueue(songs, at, FAVORITES);
+  const play = (at: number) => songs.length > 0 && playQueue(songs, at, FAVORITES);
+  // 「再生」は並びのどこかから（play-order.ts の playStart）
+  const playAny = () => play(playStart(songs.length, true));
 
   return (
     <StageLayout
       song={here ? current : null}
       cover={songs[0]?.thumb ?? null}
       label={t.play}
-      onPlay={() => play()}
+      onPlay={playAny}
       heading={
         <StageHeading
           eyebrow="Favorites"
@@ -62,7 +65,7 @@ export function FavoriteSongs() {
           disabled={songs.length === 0}
           // 読み込み直しや戻るで、ブラウザが押せる・押せないを前の状態に戻すと、サーバーの HTML と食い違う
           {...NO_RESTORE}
-          onClick={() => (here ? toggle() : play())}
+          onClick={() => (here ? toggle() : playAny())}
         />
       }
       share={<SongShare song={here ? current : null} />}

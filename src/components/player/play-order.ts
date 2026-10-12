@@ -12,3 +12,12 @@ export function buildOrder(length: number, start: number, shuffle: boolean): num
   }
   return [start, ...rest];
 }
+
+/**
+ * 「再生」で流し始める位置（2026-10-12 に決めた）。anywhere なら並びのどこかから、そうでなければ先頭から。
+ * 押すたびに同じ曲から始まらないようにする。ランダムでなければ、選んだ曲から並びどおりに続け、最後の次は先頭へ戻る。
+ * ボカロPの画面だけは、先頭がその人の最新曲で意味があるので、ランダムのときだけ anywhere にする
+ */
+export function playStart(length: number, anywhere: boolean, random = Math.random): number {
+  return anywhere && length > 0 ? Math.floor(random() * length) : 0;
+}
