@@ -823,10 +823,11 @@ body {
   --bottom-edge: calc(var(--spacing-gutter) + var(--tabs-shown));
 }
 @variant max-md {
+  /* --bottom-edge はここで 0 にしない。:root[data-watch] は html[data-player='slot'] より詳細度が高く、
+     流しているあいだの再生の帯の分まで消して、一覧の最後が帯の裏に隠れた */
   :root[data-watch] {
     --tabs-shown: 0px;
     --tabs-now: 0px;
-    --bottom-edge: 0px;
   }
   :root[data-chrome='hidden'] {
     --tabs-now: 0px;
