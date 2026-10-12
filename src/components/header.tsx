@@ -9,7 +9,10 @@ import { GLASS_PANEL } from '@/components/surface-styles';
  */
 export function Header({ children }: { children: ReactNode }) {
   return (
-    <header className="site-color chrome-header sticky top-0 z-header px-gutter pt-gutter md:hidden">
+    <header
+      data-top-bar
+      className="site-color chrome-header sticky top-0 z-header px-gutter pt-gutter md:hidden"
+    >
       <div className={`${GLASS_PANEL} flex h-header items-center px-2`}>{children}</div>
     </header>
   );

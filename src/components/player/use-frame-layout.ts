@@ -45,9 +45,17 @@ export function useFrameLayout(mode: FrameMode, slot: HTMLElement | null) {
         if (!slot.isConnected) return;
         const r = slot.getBoundingClientRect();
         if (r.width === 0) return;
-        // プレイヤーはページの外側の層にあり、ページの中のヘッダーより上に描かれる。
-        // スクロールでヘッダーの下に潜った分は、上側を切り取って見せない（スマホは置き場所を貼り付けないので潜る）
-        const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+        // プレイヤーはページの外側の層にあり、ページの中の上の帯より上に描かれる。
+        // スクロールで上の帯の下に潜った分は、上側を切り取って見せない（スマホは置き場所を貼り付けないので潜る）。
+        // iPad の Safari は、置き場所を貼り付けていても、勢いのついたスクロールのあいだ位置合わせが遅れて動画が上へずれる。
+        // 上の帯はスマホ（header.tsx）とパソコン（layout.tsx）で別の要素なので、見えている方の下端を取る（隠れている方は 0 になる）
+        const headerBottom = Math.max(
+          0,
+          ...Array.from(
+            document.querySelectorAll('[data-top-bar]'),
+            (bar) => bar.getBoundingClientRect().bottom,
+          ),
+        );
         const hidden = Math.max(0, Math.min(r.height, headerBottom - r.top));
         el.style.clipPath = hidden > 0 ? `inset(${hidden}px 0 0 0)` : '';
         el.style.top = `${r.top}px`;

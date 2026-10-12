@@ -91,12 +91,28 @@ describe('置き場所に合わせる', () => {
 
   it('ヘッダーの下に潜った分は、上側を切り取って見せない', () => {
     const header = document.createElement('header');
+    header.dataset.topBar = '';
     header.getBoundingClientRect = () => rect(0, 0, 1000, 60);
     document.body.append(header);
     const slot = slotAt(rect(20, 0, 640, 360));
     const view = setup({ mode: 'dock', slot: null });
     view.rerender({ mode: 'slot', slot });
     expect(view.result.current.current!.style.clipPath).toBe('inset(40px 0 0 0)');
+  });
+
+  // iPad の Safari は、勢いのついたスクロールのあいだ位置合わせが遅れ、貼り付いた置き場所でも動画が上へずれる
+  it('パソコンの上の段でも、隠れているスマホの帯に引きずられずに切り取る', () => {
+    const mobile = document.createElement('header');
+    mobile.dataset.topBar = '';
+    mobile.getBoundingClientRect = () => rect(0, 0, 0, 0);
+    const desktop = document.createElement('div');
+    desktop.dataset.topBar = '';
+    desktop.getBoundingClientRect = () => rect(0, 0, 1000, 76);
+    document.body.append(mobile, desktop);
+    const slot = slotAt(rect(30, 0, 640, 360));
+    const view = setup({ mode: 'dock', slot: null });
+    view.rerender({ mode: 'slot', slot });
+    expect(view.result.current.current!.style.clipPath).toBe('inset(46px 0 0 0)');
   });
 
   it('ページから外れた置き場所や、大きさ0の置き場所には合わせない', () => {
