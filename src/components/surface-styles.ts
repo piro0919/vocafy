@@ -5,6 +5,7 @@
  * - GLASS_PANEL: 浮いた板（角 16px・影）。上の段・左のメニュー・下のタブ・メニューの板など
  * - MENU_ROW: 板の中の押せる行（右上のメニュー・共有の送り先）。並べ方は使う側で足す
  * - sidebarRow: 左のメニューの1行。いまの画面の行は地を付ける
+ * - sidebarSubRow: 左のメニューの、項目にぶら下がる子の行（お気に入りのボカロP）。sidebarRow より低く、字を細くする
  */
 export const GLASS = 'border border-line/60 bg-glass backdrop-blur-lg backdrop-saturate-150';
 
@@ -16,4 +17,11 @@ export const MENU_ROW =
 export const sidebarRow = (active: boolean) =>
   `flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors duration-react ${
     active ? 'bg-foreground/10 text-accent' : 'text-muted hover:text-foreground'
+  }`;
+
+export const sidebarSubRow = (active: boolean) =>
+  `flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors duration-react ${
+    active
+      ? 'bg-foreground/10 font-bold text-accent'
+      : 'font-medium text-muted hover:text-foreground'
   }`;

@@ -90,12 +90,23 @@ test('曲の一覧から押すと、その人の画面で大きく出し、次�
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
-test('ボカロPをお気に入りに入れると、お気に入りの画面に出て、外すと消える', async ({ page }) => {
+test('ボカロPをお気に入りに入れると、お気に入りの画面に出て、外すと消える', async ({
+  page,
+  isMobile,
+}) => {
   await page.goto('/producers/45');
   await page.getByRole('button', { name: 'DECO＊27をお気に入りに入れる' }).click();
   await expect(page.getByRole('button', { name: 'DECO＊27をお気に入りから外す' })).toBeVisible();
+  // パソコンでは、左のメニューにも並ぶ
+  if (!isMobile) {
+    await expect(
+      page
+        .getByRole('region', { name: 'お気に入りのボカロP' })
+        .getByRole('link', { name: /DECO＊27/ }),
+    ).toBeVisible();
+  }
   await page.goto('/favorites');
-  await expect(page.getByRole('link', { name: /DECO＊27/ })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: /DECO＊27/ })).toBeVisible();
   await page.goto('/producers/45');
   await page.getByRole('button', { name: 'DECO＊27をお気に入りから外す' }).click();
   await page.goto('/favorites');

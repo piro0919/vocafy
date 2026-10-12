@@ -1,10 +1,12 @@
 'use client';
 
 import Image from 'next/image';
+import { Fragment } from 'react';
 import { Link, usePathname, useText } from '@/i18n/navigation';
 import { TERMS } from '@/i18n/terms';
 import { Icon, type IconName } from './icon';
 import { InstallButton } from './install-app';
+import { SidebarProducers } from './sidebar-producers';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { GLASS_PANEL, sidebarRow } from '@/components/surface-styles';
 import { isHomePath } from '@/lib/home-path';
@@ -77,10 +79,14 @@ export function Sidebar() {
           <Logo />
         </div>
         {SIDEBAR_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href} className={sidebarRow(active(item.href))}>
-            <Icon name={item.icon} />
-            {t[item.label]}
-          </Link>
+          <Fragment key={item.href}>
+            <Link href={item.href} className={sidebarRow(active(item.href))}>
+              <Icon name={item.icon} />
+              {t[item.label]}
+            </Link>
+            {/* お気に入りのすぐ下に、お気に入りのボカロPを並べる（YouTube の登録チャンネルと同じ形） */}
+            {item.href === '/favorites' && <SidebarProducers />}
+          </Fragment>
         ))}
         {/* YouTube と同じく、設定は左のメニューの下の方に置く */}
         <div className="mt-auto py-3">
