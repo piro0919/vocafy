@@ -5,6 +5,8 @@
 /** 曲の流す先。YouTube を先に使い、無いときだけニコニコで流す */
 export type Source = {
   youtubeId: string | null;
+  /** YouTube の動画が、配信の音源から自動で作られた静止画の動画（Topic）か */
+  youtubeTopic: boolean;
   niconicoId: string | null;
   niconicoThumb: string | null;
 };

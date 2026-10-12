@@ -1,5 +1,6 @@
 import type { ProducerLinks } from '../../src/lib/catalog';
 import type { VdbSong, VdbWebLink } from './vocadb';
+import type { Source } from './dead';
 
 /**
  * VocaDB の曲から、Vocafy に入れる部分を選び出す。DB にも VocaDB にも触らないので、テストから確かめられる
@@ -115,24 +116,34 @@ export function vocalistsOf(song: VdbSong) {
   );
 }
 
+/** YouTube が配信の音源から自動で作った動画か（「〇〇 - Topic」のチャンネル）。絵はジャケットの静止画 */
+const isTopic = (pv: { author?: string }) => / - Topic$/.test(pv.author ?? '');
+
 /**
  * 流せる本家の動画。YouTube を先に、無ければニコニコ。転載（Reprint）は使わない。
+ * YouTube の本家が何本かあるときは、Topic でない動画（MV）を先に選ぶ。Topic しか無い曲は youtubeTopic を立て、
+ * 設定でニコニコの PV を選んだ人にはニコニコで流す（src/components/player/pv-choice.ts）。
  * YouTube に本家が無い曲は、手で当てた動画（YOUTUBE_STANDINS）があればそれを使う。
  * ニコニコの表紙は動画の ID から組み立てられないので、VocaDB の持つ住所も拾う。
  * 本家の動画が1本も無い曲は null
  */
-export function sourcesOf(song: VdbSong): {
-  youtubeId: string | null;
-  niconicoId: string | null;
-  niconicoThumb: string | null;
-} | null {
-  const original = (service: string) =>
-    song.pvs?.find((pv) => pv.service === service && pv.pvType === 'Original' && !pv.disabled);
-  const youtubeId = original('Youtube')?.pvId ?? YOUTUBE_STANDINS.get(song.id) ?? null;
-  const niconico = original('NicoNicoDouga');
+export function sourcesOf(song: VdbSong): Source | null {
+  const originals = (service: string) =>
+    (song.pvs ?? []).filter(
+      (pv) => pv.service === service && pv.pvType === 'Original' && !pv.disabled,
+    );
+  const youtubes = originals('Youtube');
+  const youtube = youtubes.find((pv) => !isTopic(pv)) ?? youtubes[0];
+  const youtubeId = youtube?.pvId ?? YOUTUBE_STANDINS.get(song.id) ?? null;
+  const niconico = originals('NicoNicoDouga')[0];
   const niconicoId = niconico?.pvId ?? null;
   return youtubeId || niconicoId
-    ? { youtubeId, niconicoId, niconicoThumb: niconico?.thumbUrl ?? null }
+    ? {
+        youtubeId,
+        youtubeTopic: youtube !== undefined && isTopic(youtube),
+        niconicoId,
+        niconicoThumb: niconico?.thumbUrl ?? null,
+      }
     : null;
 }
 

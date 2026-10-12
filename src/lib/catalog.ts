@@ -24,6 +24,11 @@ export type QueueItem = {
   videoId: string;
   /** 表紙の画像 */
   thumb: string;
+  /**
+   * ニコニコの本家（PV）。YouTube の動画が配信の音源から自動で作られた静止画の動画（Topic）で、ニコニコに本家がある曲だけ。
+   * 設定でニコニコの PV を選んだ人には、並びに入れるときにこちらへ差し替える（src/components/player/pv-choice.ts）
+   */
+  pv?: { videoId: string; thumb: string };
   producerId: number;
   producerName: string;
   /** 歌声の名前を「・」でつないだもの */
@@ -37,6 +42,8 @@ export type Song = {
   /** 英語の画面に出す曲名（english-name.ts）。無ければ英語の画面でも title */
   en?: EnglishTitle;
   youtubeId: string | null;
+  /** YouTube の動画が Topic（配信の音源と静止画）か */
+  youtubeTopic: boolean;
   niconicoId: string | null;
   niconicoThumb: string | null;
   year: number | null;
@@ -58,6 +65,7 @@ type SongRow = {
   name_en: string | null;
   romaji: string | null;
   youtube_id: string | null;
+  youtube_topic: boolean;
   niconico_id: string | null;
   niconico_thumb: string | null;
   year: number | null;
@@ -83,7 +91,7 @@ const VOCALIST_NAMES = `
 
 /** 曲に、作者と歌声（補助の歌声は後ろ）を付けて読む。where と order は呼ぶ側が書く */
 const SONG_SELECT = `
-  select s.id, s.name, s.name_en, s.romaji, s.youtube_id, s.niconico_id, s.niconico_thumb,
+  select s.id, s.name, s.name_en, s.romaji, s.youtube_id, s.youtube_topic, s.niconico_id, s.niconico_thumb,
     extract(year from s.published_on)::int as year,
     to_char(s.published_on, 'YYYY-MM-DD') as published_on,
     (select coalesce(json_agg(json_build_object('id', p.id, 'name', p.name) order by p.complete desc, p.id), '[]')
@@ -102,6 +110,7 @@ const toSong = (r: SongRow): Song => ({
   title: r.name,
   ...withEnglish(r.name, r.name_en, r.romaji),
   youtubeId: r.youtube_id,
+  youtubeTopic: r.youtube_topic,
   niconicoId: r.niconico_id,
   niconicoThumb: r.niconico_thumb,
   year: r.year,
@@ -110,30 +119,41 @@ const toSong = (r: SongRow): Song => ({
   vocalists: r.vocalists,
 });
 
+/** ニコニコの表紙。VocaDB の持つ住所が小さい絵（130×100 ほど）なので、末尾に番号の付いた新しい住所は .M を足して中くらいの絵（320×180）にする */
+const niconicoCover = (thumb: string) => (/\/\d+\.\d+$/.test(thumb) ? `${thumb}.M` : thumb);
+
 /**
  * 流す先と表紙。YouTube に本家があればそちら、無ければニコニコ。
- * ニコニコの表紙は、VocaDB の持つ住所が小さい絵（130×100 ほど）なので、末尾に番号の付いた新しい住所は
- * .M を足して中くらいの絵（320×180）にする。番号の無い古い住所は .M を受け付けないので、そのまま使う。
+ * ニコニコの表紙は、番号の無い古い住所は .M を受け付けないので、そのまま使う（niconicoCover）。
+ * YouTube の動画が Topic で、ニコニコに本家がある曲は、ニコニコの側も pv に持たせる。
  * どちらも流せない（ニコニコの表紙が取れていない）曲は null
  */
 function sourceOf(
   youtubeId: string | null,
   niconicoId: string | null,
   niconicoThumb: string | null,
-): Pick<QueueItem, 'service' | 'videoId' | 'thumb'> | null {
-  if (youtubeId) return { service: 'youtube', videoId: youtubeId, thumb: thumbOf(youtubeId) };
-  if (niconicoId && niconicoThumb) {
-    const thumb = /\/\d+\.\d+$/.test(niconicoThumb) ? `${niconicoThumb}.M` : niconicoThumb;
-    return { service: 'niconico', videoId: niconicoId, thumb };
+  youtubeTopic = false,
+): Pick<QueueItem, 'service' | 'videoId' | 'thumb' | 'pv'> | null {
+  const niconico =
+    niconicoId && niconicoThumb
+      ? { videoId: niconicoId, thumb: niconicoCover(niconicoThumb) }
+      : null;
+  if (youtubeId) {
+    return {
+      service: 'youtube',
+      videoId: youtubeId,
+      thumb: thumbOf(youtubeId),
+      ...(youtubeTopic && niconico ? { pv: niconico } : {}),
+    };
   }
-  return null;
+  return niconico && { service: 'niconico', ...niconico };
 }
 
 /** 曲を順番待ちの形にする。producer は、どのボカロPの画面で流すか。流せない曲は外す */
 export function queueOf(songs: Song[], producer?: { id: number; name: string }): QueueItem[] {
   return songs.flatMap((s) => {
     const by = producer ?? s.producers[0];
-    const source = sourceOf(s.youtubeId, s.niconicoId, s.niconicoThumb);
+    const source = sourceOf(s.youtubeId, s.niconicoId, s.niconicoThumb, s.youtubeTopic);
     return source && by
       ? [
           {
@@ -225,6 +245,7 @@ type QueueRow = {
   name_en: string | null;
   romaji: string | null;
   youtube_id: string | null;
+  youtube_topic: boolean;
   niconico_id: string | null;
   niconico_thumb: string | null;
   published_on: string | null;
@@ -240,7 +261,7 @@ type QueueRow = {
  * （YouTube に本家があるか、ニコニコに本家があって表紙が取れている曲。PLAYABLE）
  */
 const QUEUE_SELECT = `
-  select s.id, s.name, s.name_en, s.romaji, s.youtube_id, s.niconico_id, s.niconico_thumb,
+  select s.id, s.name, s.name_en, s.romaji, s.youtube_id, s.youtube_topic, s.niconico_id, s.niconico_thumb,
     to_char(s.published_on, 'YYYY-MM-DD') as published_on, s.rating_score,
     p.id as producer_id, p.name as producer_name,
     (select coalesce(string_agg(x.name, '・' order by x.support, x.id), '') from (${VOCALIST_NAMES}) x) as vocalists
@@ -256,7 +277,7 @@ const toItem = (r: QueueRow): DatedItem => ({
   title: r.name,
   ...withEnglish(r.name, r.name_en, r.romaji),
   // QUEUE_SELECT は流せる曲だけを読むので、流す先は必ず決まる
-  ...sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb)!,
+  ...sourceOf(r.youtube_id, r.niconico_id, r.niconico_thumb, r.youtube_topic)!,
   producerId: r.producer_id,
   producerName: r.producer_name,
   vocalists: r.vocalists,

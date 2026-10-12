@@ -43,6 +43,7 @@ import {
   skipsAutoNiconico,
 } from './player-rules';
 import { useEngines } from './use-engines';
+import { withPv } from './pv-choice';
 import { useFrameLayout } from './use-frame-layout';
 import { useRadioExtension } from './use-radio-extension';
 import { useResumeWriter } from './use-resume-writer';
@@ -275,7 +276,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [skipAhead, playerRef]);
 
   const load = useCallback(
-    (items: QueueItem[], at: number, nextOwner: Owner) => {
+    (given: QueueItem[], at: number, nextOwner: Owner) => {
+      const items = withPv(given);
       keepAwake();
       setResumable(false);
       // 戻した前の曲を流さずに別の曲を押したとき、その曲が前の曲の続きの位置から始まらないように消す（続きから流すときは resume が戻す）
@@ -325,7 +327,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   /** 一覧の続きのページやラジオの関連曲を後ろに足す。いまの曲と流す順はそのままで、足した曲を流す順の後ろに付ける */
   const append = useCallback(
     (items: QueueItem[]) =>
-      commit(appendItems(cursor.current, items, playbackRef.current?.shuffle ?? false)),
+      commit(appendItems(cursor.current, withPv(items), playbackRef.current?.shuffle ?? false)),
     [commit, playbackRef],
   );
 
@@ -390,7 +392,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const adopt = useCallback(
     (items: QueueItem[], at: number, nextOwner: Owner) => {
-      commit(restart(items, at, playbackRef.current?.shuffle ?? false));
+      commit(restart(withPv(items), at, playbackRef.current?.shuffle ?? false));
       setOwner(nextOwner);
     },
     [commit, setOwner, playbackRef],

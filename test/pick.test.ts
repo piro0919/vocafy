@@ -37,8 +37,33 @@ describe('sourcesOf', () => {
   it('YouTube とニコニコの本家を両方拾う', () => {
     expect(sourcesOf(song())).toEqual({
       youtubeId: 'vnw8zURAxkU',
+      youtubeTopic: false,
       niconicoId: 'sm9714351',
       niconicoThumb: null,
+    });
+  });
+
+  it('YouTube の本家が何本かあれば、Topic でない動画（MV）を選ぶ', () => {
+    const s = song({
+      pvs: [
+        { service: 'Youtube', pvType: 'Original', pvId: 'topic', author: 'TAK - Topic' },
+        { service: 'Youtube', pvType: 'Original', pvId: 'mv', author: 'TAK / DORIDORI' },
+      ],
+    });
+    expect(sourcesOf(s)).toMatchObject({ youtubeId: 'mv', youtubeTopic: false });
+  });
+
+  it('YouTube の本家が Topic だけなら、それを選んで印を立てる', () => {
+    const s = song({
+      pvs: [
+        { service: 'NicoNicoDouga', pvType: 'Original', pvId: 'sm2500648' },
+        { service: 'Youtube', pvType: 'Original', pvId: 'topic', author: 'Toraboruta - Topic' },
+      ],
+    });
+    expect(sourcesOf(s)).toMatchObject({
+      youtubeId: 'topic',
+      youtubeTopic: true,
+      niconicoId: 'sm2500648',
     });
   });
 
@@ -67,6 +92,7 @@ describe('sourcesOf', () => {
     });
     expect(sourcesOf(s)).toEqual({
       youtubeId: null,
+      youtubeTopic: false,
       niconicoId: 'sm1',
       niconicoThumb: 'https://t/1',
     });
@@ -80,6 +106,7 @@ describe('sourcesOf', () => {
     });
     expect(sourcesOf(s)).toEqual({
       youtubeId: 'IwvJUQzBjwE',
+      youtubeTopic: false,
       niconicoId: null,
       niconicoThumb: null,
     });

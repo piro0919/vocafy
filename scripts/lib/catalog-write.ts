@@ -22,6 +22,7 @@ export type CatalogRows = {
     rating_score: number;
     favorited_times: number;
     youtube_id: string | null;
+    youtube_topic: boolean;
     niconico_id: string | null;
     seed: boolean;
     niconico_thumb: string | null;
@@ -90,6 +91,7 @@ export function catalogRows({
         rating_score: s.ratingScore,
         favorited_times: s.favoritedTimes,
         youtube_id: source.youtubeId,
+        youtube_topic: source.youtubeTopic,
         niconico_id: source.niconicoId,
         seed: seedIds.has(s.id),
         niconico_thumb: source.niconicoThumb,
@@ -135,16 +137,16 @@ export async function writeCatalog(client: pg.ClientBase, rows: CatalogRows) {
       [JSON.stringify(rows.vocalists)],
     );
     await client.query(
-      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, niconico_id, seed, niconico_thumb,
-         romaji, name_en, original_id)
+      `insert into song (id, name, published_on, rating_score, favorited_times, youtube_id, youtube_topic, niconico_id, seed,
+         niconico_thumb, romaji, name_en, original_id)
        select * from jsonb_to_recordset($1) as x(id integer, name text, published_on date,
-         rating_score integer, favorited_times integer, youtube_id text, niconico_id text, seed boolean,
+         rating_score integer, favorited_times integer, youtube_id text, youtube_topic boolean, niconico_id text, seed boolean,
          niconico_thumb text, romaji text, name_en text, original_id integer)
        on conflict (id) do update set name = excluded.name, published_on = excluded.published_on,
          niconico_thumb = excluded.niconico_thumb, romaji = excluded.romaji, name_en = excluded.name_en,
          original_id = excluded.original_id,
          rating_score = excluded.rating_score, favorited_times = excluded.favorited_times,
-         youtube_id = excluded.youtube_id, niconico_id = excluded.niconico_id,
+         youtube_id = excluded.youtube_id, youtube_topic = excluded.youtube_topic, niconico_id = excluded.niconico_id,
          seed = song.seed or excluded.seed, imported_at = now()`,
       [JSON.stringify(rows.songs)],
     );

@@ -28,7 +28,9 @@ const rows = (over: Partial<Parameters<typeof catalogRows>[0]> = {}) =>
   catalogRows({
     kept: [vdb()],
     dropped: [],
-    sources: new Map([[1, { youtubeId: 'yt1', niconicoId: 'sm1', niconicoThumb: null }]]),
+    sources: new Map([
+      [1, { youtubeId: 'yt1', youtubeTopic: false, niconicoId: 'sm1', niconicoThumb: null }],
+    ]),
     seedIds: new Set([1]),
     producerIds: new Set([45]),
     names: new Map(),
@@ -143,7 +145,7 @@ describe('writeCatalog（DB に書く）', () => {
     });
     const version = vdb({ id: 2, name: '千本桜 -Hello ver.-', originalVersionId: 1 });
     const other = vdb({ id: 3, name: '別の曲名', originalVersionId: 1 });
-    const source = { youtubeId: 'yt', niconicoId: null, niconicoThumb: null };
+    const source = { youtubeId: 'yt', youtubeTopic: false, niconicoId: null, niconicoThumb: null };
     await write(
       rows({
         kept: [original, version, other],

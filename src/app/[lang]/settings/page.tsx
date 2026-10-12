@@ -3,6 +3,7 @@ import { InstallApp } from '@/components/install-app';
 import { MixFlowSetting } from '@/components/mix-flow-setting';
 import { DockSetting } from '@/components/player/dock-setting';
 import { KeyboardHelp } from '@/components/player/keyboard-help';
+import { PvSetting } from '@/components/player/pv-setting';
 import { ResumeSetting } from '@/components/player/resume-setting';
 import { SwipeBackSetting } from '@/components/swipe-back/swipe-back-setting';
 import { ThemeSetting } from '@/components/theme/theme-setting';
@@ -33,6 +34,7 @@ export default async function SettingsPage({ params }: PageProps<'/[lang]/settin
       <ThemeSetting />
       <VoiceSetting />
       <DockSetting />
+      <PvSetting />
       <ResumeSetting />
       <MixFlowSetting />
       <VisualizerSetting />

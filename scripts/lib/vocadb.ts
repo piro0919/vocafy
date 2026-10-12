@@ -92,6 +92,8 @@ type VdbPv = {
   service: string;
   pvType: string;
   pvId: string;
+  /** 上げたチャンネルの名前。YouTube が配信の音源から自動で作った動画は「〇〇 - Topic」 */
+  author?: string;
   /** 表紙の画像。ニコニコは動画の ID から組み立てられないので、これを使う */
   thumbUrl?: string;
   disabled?: boolean;
