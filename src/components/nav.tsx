@@ -74,7 +74,7 @@ export function Sidebar() {
   const t = useText(TERMS);
   return (
     <nav className="site-color fixed inset-y-0 left-0 z-chrome hidden w-sidebar py-gutter pl-gutter transition-layout duration-move md:flex [html[data-player=dock]_&]:pb-(--above-bar) [html[data-player=slot]_&]:pb-(--above-bar)">
-      <div className={`${GLASS_PANEL} flex flex-1 flex-col gap-1 px-3 pt-4`}>
+      <div className={`${GLASS_PANEL} flex min-w-0 flex-1 flex-col gap-1 px-3 pt-4`}>
         <div className="mb-5 px-3">
           <Logo />
         </div>
