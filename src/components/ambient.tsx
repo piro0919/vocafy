@@ -211,9 +211,31 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     <SourceContext value={setSource}>
       <div aria-hidden>{backdrop(false)}</div>
       {children}
+      <EdgeTint color={layers.findLast((l) => !l.leaving)?.colors[0] ?? from} />
       <EdgeVeil side="top">{backdrop(true)}</EdgeVeil>
       <EdgeVeil side="bottom">{backdrop(true)}</EdgeVeil>
     </SourceContext>
+  );
+}
+
+/**
+ * ホーム画面のアプリで、画面の上端に塗る不透明な帯（2026-10-12）。iOS 27 は、画面の上端で不透明な色を拾えないと、
+ * ステータスバーの下から上端をガラス状にぼかす（上部がにじんで見えた）。上端から 4px 以内に、高さ 6px 以上・幅が画面の8割以上の
+ * 固定した要素が地を塗っていれば、その色で塗るという報告に合わせた（Apple の資料は無い）。上の板は上端から gutter 離れているので当たらない。
+ * 色は上部の色の層の上端（暗い画面はそのまま、明るい画面は opacity-35）を地の上に重ねたもので、帯が見分けられないようにする。
+ * 方眼は上端ではほぼ消えているので描かない。動画の枠は本文の外の重なりにあるので、この帯は動画に重ならない（YouTube の規約）
+ */
+function EdgeTint({ color }: { color: string | undefined }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-header hidden h-edge-tint bg-background standalone:block"
+    >
+      <div
+        className="absolute inset-0 opacity-35 transition-colors duration-slow dark:opacity-100"
+        style={{ background: color }}
+      />
+    </div>
   );
 }
 
