@@ -204,6 +204,45 @@ describe('producersOf', () => {
   });
 });
 
+describe('producersOf の役割', () => {
+  const credit = (id: number, name: string, effectiveRoles: string) => ({
+    categories: 'Producer',
+    isSupport: false,
+    effectiveRoles,
+    artist: { id, name, artistType: 'Producer' },
+    name,
+  });
+
+  it('編曲・調声だけで載った人は作者にしない', () => {
+    const s = song({
+      artists: [
+        credit(45, 'DECO＊27', 'Arranger, Composer, Lyricist'),
+        credit(179, 'emon(Tes.)', 'Arranger'),
+        credit(3, '調声の人', 'VoiceManipulator'),
+        { categories: 'Vocalist', isSupport: false, artist: miku, name: '初音ミク' },
+      ],
+    });
+    expect(producersOf(s).map((p) => p.name)).toEqual(['DECO＊27']);
+  });
+
+  it('作詞だけの人と、役割が既定の人は作者にする', () => {
+    const s = song({
+      artists: [credit(1, '作曲', 'Default'), credit(2, '作詞', 'Lyricist')],
+    });
+    expect(producersOf(s).map((p) => p.name)).toEqual(['作曲', '作詞']);
+  });
+
+  it('作曲・作詞の人が1人もいない曲は、Producer の人を全員作者にする', () => {
+    const s = song({
+      artists: [
+        credit(1, 'ぬゆり', 'Arranger, Instrumentalist, VoiceManipulator'),
+        credit(2, 'バルーン', 'Arranger, VoiceManipulator'),
+      ],
+    });
+    expect(producersOf(s).map((p) => p.name)).toEqual(['ぬゆり', 'バルーン']);
+  });
+});
+
 describe('linksOf', () => {
   const link = (description: string, url: string, over: Partial<VdbWebLink> = {}): VdbWebLink => ({
     category: 'Official',

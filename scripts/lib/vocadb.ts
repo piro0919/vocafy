@@ -42,6 +42,8 @@ type VdbSongArtist = {
   /** 「Producer, Illustrator」のようにカンマ区切り */
   categories: string;
   isSupport: boolean;
+  /** 「Composer, Lyricist」のようにカンマ区切り。Default はその分類の既定の役割（Producer なら作曲など） */
+  effectiveRoles?: string;
   /** VocaDB に登録の無い人は artist が無く、名前だけが入る */
   artist?: VdbArtist;
   name: string;

@@ -79,19 +79,31 @@ const WRONG_CREDITS = new Set([
 ]);
 
 /**
- * 曲の作者（Producer の役割が付いた人）。VocaDB に登録の無い人と、補助（isSupport）の人は入れない。
+ * 作者とみなす役割（2026-10-12 に本人と決めた）。作曲・作詞をした人だけを作者にし、編曲・調声・ミックスだけで載った人は
+ * 入れない。入れていたころは、DECO＊27 の「Sprite Girl」が編曲の emon(Tes.) の画面に、調声の仕事が多いびびの画面に
+ * 他人の曲が 250 曲中 249 曲並んでいた（DB の 29,260 曲のうち 2,121 曲に、作曲も作詞もしていない作者が付いていた）
+ */
+const AUTHOR_ROLES = ['Default', 'Composer', 'Lyricist'];
+
+/**
+ * 曲の作者（Producer の役割が付いた人のうち、作曲・作詞をした人。AUTHOR_ROLES）。作曲・作詞の人が1人も載っていない曲
+ * （ぬゆりとバルーンの「ミザン」は2人とも編曲・調声）は、曲が消えないよう Producer の人を全員作者にする。
+ * VocaDB に登録の無い人と、補助（isSupport）の人は入れない。
  * 補助は調声や編曲を手伝った人で、拾うとその人の全曲がついてくる。ギガの「ガッチュー！」の調声に載った
  * 「Unknown producer(s)」から作者不明の 1321 曲が、ほかの人の曲の調声からずきお・かごめPなど 15 人の曲が入っていた
  */
 export function producersOf(song: VdbSong) {
-  return (song.artists ?? []).flatMap((a) =>
-    a.artist &&
-    has(a.categories, 'Producer') &&
-    !a.isSupport &&
-    !WRONG_CREDITS.has(`${song.id}:${a.artist.id}`)
-      ? [a.artist]
-      : [],
+  const credited = (song.artists ?? []).filter(
+    (a) =>
+      a.artist &&
+      has(a.categories, 'Producer') &&
+      !a.isSupport &&
+      !WRONG_CREDITS.has(`${song.id}:${a.artist.id}`),
   );
+  const authors = credited.filter((a) =>
+    AUTHOR_ROLES.some((r) => has(a.effectiveRoles ?? 'Default', r)),
+  );
+  return (authors.length > 0 ? authors : credited).flatMap((a) => (a.artist ? [a.artist] : []));
 }
 
 /** 曲の歌声のうち、合成音声のもの */
