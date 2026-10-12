@@ -33,14 +33,14 @@ export default async function SettingsPage({ params }: PageProps<'/[lang]/settin
       <LangSetting />
       <ThemeSetting />
       <VoiceSetting />
-      <DockSetting />
+      <MixFlowSetting />
       <PvSetting />
       <ResumeSetting />
-      <MixFlowSetting />
-      <VisualizerSetting />
+      <DockSetting />
       <InstallApp />
       <SwipeBackSetting />
       <KeyboardHelp />
+      <VisualizerSetting />
       <SupportLink />
     </div>
   );
