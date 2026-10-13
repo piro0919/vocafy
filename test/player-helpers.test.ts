@@ -194,6 +194,22 @@ describe('動画の画面から戻る（leave）', () => {
     vi.useRealTimers();
     Reflect.deleteProperty(globalThis, 'window');
   });
+
+  it('一つ前の履歴が別のページ読み込みなら、「戻る」で読み込み直さずトップへ', () => {
+    for (const sameDocument of [true, false]) {
+      const navigation = {
+        canGoBack: true,
+        currentEntry: { index: 2 },
+        entries: () => [{ sameDocument: false }, { sameDocument }, { sameDocument: true }],
+      };
+      Object.assign(globalThis, { window: Object.assign(new EventTarget(), { navigation }) });
+      const r = router();
+      leave(r as unknown as Parameters<typeof leave>[0]);
+      expect(r.back).toHaveBeenCalledTimes(sameDocument ? 1 : 0);
+      expect(r.push).toHaveBeenCalledTimes(sameDocument ? 0 : 1);
+    }
+    Reflect.deleteProperty(globalThis, 'window');
+  });
 });
 
 describe('isHomePath（トップの画面か）', () => {
