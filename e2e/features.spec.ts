@@ -145,6 +145,39 @@ test('開き直すと、前の曲が止まった状態で戻り、押すとそ�
   await expect(page.locator('[data-player-frame] iframe')).toHaveCount(1);
 });
 
+test('開き直して戻したニコニコの曲は、続きの位置を埋め込みの住所で渡し、流れ始めてからシークしない', async ({
+  page,
+}) => {
+  // 流れ始めてからシークすると、iPhone ではシークが再生を打ち切り、押した操作の外の流し直しが止められた（2026-10-13）
+  await page.goto('/producers/45');
+  // 行には「◯◯をお気に入りに入れる」ボタンも並ぶので、曲名のあとにそれが続かないボタンを選ぶ（site.spec.ts と同じ）
+  await page
+    .locator('#song-8478')
+    .getByRole('button', { name: /罪と罰(?!をお気に入り)/ })
+    .click();
+  const embed = page.locator('[data-player-frame] iframe[src*="sm8166339"]');
+  await expect(embed).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '一時停止' }).first()).toBeVisible();
+  // 長さ（偽物は 200 秒）が帯に届いてから、5 で真ん中の 100 秒へ
+  const slider = page.getByRole('slider', { name: '再生位置' }).first();
+  await expect(slider).toHaveAttribute('aria-valuemax', '200');
+  await page.keyboard.press('5');
+  await expect(slider).toHaveAttribute('aria-valuenow', '100');
+  await page.reload();
+  await page
+    .getByRole('button', { name: /の続きを再生$/ })
+    .first()
+    .click();
+  await expect(embed).toHaveAttribute('src', /[?&]from=100(&|$)/);
+  await expect(page.getByRole('button', { name: '一時停止' }).first()).toBeVisible();
+  const frame = page.frames().find((f) => f.url().includes('sm8166339'));
+  const received = await frame?.evaluate(
+    () => (window as unknown as { __received: string[] }).__received,
+  );
+  expect(received).toContain('play');
+  expect(received).not.toContain('seek');
+});
+
 test('持ち主でない画面で開き直したときは、右下の窓の場所に戻す', async ({ page }) => {
   await page.goto('/producers/45');
   await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();

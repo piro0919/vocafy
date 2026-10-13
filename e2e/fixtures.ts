@@ -6,7 +6,10 @@ import { test as base, expect, type Page } from '@playwright/test';
  *
  * - YouTube の仕組み（iframe_api）は、本物と同じ形でプレイヤーを作る偽物を返す。頼まれたら「再生中」を知らせ、
  *   一時停止を頼まれたら「一時停止」を知らせる。曲が終わったり流せなかったりはしないので、勝手に次の曲へは進まない
- * - 埋め込みのページ（YouTube・ニコニコ）は空のページを返す。テストは埋め込みの住所（src）で、どちらで流したかを見る
+ * - YouTube の埋め込みのページは空のページを返す。テストは埋め込みの住所（src）で、どちらで流したかを見る
+ * - ニコニコの埋め込みのページは、niconico.ts が使う分の知らせをやりとりする偽物を返す（2026-10-13）。読み込めたら知らせ、
+ *   play で「再生中」、pause で「一時停止」、seek で位置を知らせる。届いた知らせの名前は埋め込みの中の window.__received に残す。
+ *   住所の from（秒）から始める
  *
  * 曲送りを確かめるテストは、Shift+N などで明示して送る
  */
@@ -50,6 +53,30 @@ const FAKE_IFRAME_API = `
 
 const BLANK = '<!doctype html><title>embed</title>';
 
+/** ニコニコの埋め込みのページの偽物。niconico.ts が使う分だけ */
+const FAKE_NICONICO_EMBED = `<!doctype html><title>embed</title><script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const playerId = params.get('playerId');
+  const DURATION = 200000;
+  let current = Number(params.get('from') || 0) * 1000;
+  window.__received = [];
+  const post = (eventName, data) => parent.postMessage({ eventName, playerId, data }, '*');
+  const status = (playerStatus) => post('statusChange', { playerStatus, seekStatus: 0 });
+  const meta = () => post('playerMetadataChange', { currentTime: current, duration: DURATION });
+  addEventListener('message', (e) => {
+    const { eventName, data } = e.data || {};
+    if (!eventName) return;
+    window.__received.push(eventName);
+    if (eventName === 'play') { status(2); meta(); }
+    if (eventName === 'pause') status(3);
+    if (eventName === 'seek') { current = data.time; meta(); }
+  });
+  post('loadComplete', { videoInfo: { watchId: location.pathname.split('/').pop() } });
+  meta();
+})();
+</script>`;
+
 /** 動画の仕組みを偽物に差し替える */
 async function fakeVideos(page: Page) {
   await page.route('https://www.youtube.com/iframe_api', (route) =>
@@ -59,7 +86,7 @@ async function fakeVideos(page: Page) {
     route.fulfill({ contentType: 'text/html', body: BLANK }),
   );
   await page.route('https://embed.nicovideo.jp/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: BLANK }),
+    route.fulfill({ contentType: 'text/html', body: FAKE_NICONICO_EMBED }),
   );
 }
 
