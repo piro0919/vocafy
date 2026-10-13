@@ -16,6 +16,8 @@ type Fake = Engine & {
   calls: string[];
   events: EngineEvents;
   videoId: string;
+  /** 作ったときの音量と消音 */
+  sound: Sound;
   /** 先に読み込んでおいた埋め込みを受け取って作ったか */
   preloaded?: unknown;
 };
@@ -27,7 +29,7 @@ function fake(service: Engine['service']) {
   return (
     _box: HTMLElement,
     videoId: string,
-    _sound: Sound,
+    sound: Sound,
     events: EngineEvents,
     preloaded?: unknown,
   ) => {
@@ -37,6 +39,7 @@ function fake(service: Engine['service']) {
       calls,
       events,
       videoId,
+      sound,
       preloaded,
       load: (id) => calls.push(`load:${id}`),
       play: () => calls.push('play'),
@@ -269,6 +272,78 @@ describe('一時停止', () => {
     act(() => vi.advanceTimersByTime(FADE_TOTAL));
     expect(yt.calls).not.toContain('pause');
     expect(result.current.pausingSoftly()).toBe(false);
+  });
+});
+
+describe('曲を替えている途中の一時停止', () => {
+  it('前の曲を絞っている途中に押したら、帯はすぐ止まった表示にし、次の曲は鳴り始めたら消音して止める', () => {
+    const { result } = setup();
+    play(result, 'youtube', 'a');
+    const yt = last();
+    act(() => yt.events.onPlaying());
+    play(result, 'youtube', 'b');
+    act(() => result.current.pause());
+    expect(handlers.onPaused).toHaveBeenCalledTimes(1);
+    // 絞っている途中で消音すると音が途切れるので、絞りきるまでは任せる
+    expect(yt.calls).not.toContain('muted:true');
+    act(() => vi.advanceTimersByTime(FADE_TOTAL + PAUSE_WAIT_MS));
+    expect(yt.calls.at(-1)).toBe('load:b');
+    yt.calls.length = 0;
+    act(() => yt.events.onPlaying());
+    expect(yt.calls).toEqual(['muted:true', 'pause']);
+    expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
+  });
+
+  it('次の曲を読み込んでいる途中に押したら、すぐ消音して止め、鳴り始めても止めたままにする', () => {
+    const { result } = setup();
+    play(result, 'youtube', 'a');
+    play(result, 'youtube', 'b');
+    const yt = last();
+    yt.calls.length = 0;
+    act(() => result.current.pause());
+    expect(yt.calls).toEqual(['muted:true', 'pause']);
+    expect(handlers.onPaused).toHaveBeenCalledTimes(1);
+    // YouTube は読み込み終わると、止めていても流し始める
+    yt.calls.length = 0;
+    act(() => yt.events.onPlaying());
+    expect(yt.calls).toEqual(['muted:true', 'pause']);
+    expect(handlers.onPlaying).not.toHaveBeenCalled();
+  });
+
+  it('止めたあとに再生を押したら、鳴り始めたときに消音を解いて音量を戻す', () => {
+    const { result } = setup();
+    play(result, 'youtube', 'a');
+    act(() => result.current.pause());
+    const yt = last();
+    act(() => yt.events.onPlaying());
+    yt.calls.length = 0;
+    act(() => result.current.play());
+    expect(yt.calls).toEqual(['play']);
+    act(() => yt.events.onPlaying());
+    act(() => vi.advanceTimersByTime(FADE_OUT_MS));
+    expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
+    expect(yt.calls.slice(1, 3)).toEqual(['volume:0', 'muted:false']);
+    expect(yt.calls.at(-1)).toBe('volume:80');
+  });
+
+  it('止めたあとに別の曲を選んだら、その曲は流す', () => {
+    const { result } = setup();
+    play(result, 'youtube', 'a');
+    act(() => result.current.pause());
+    play(result, 'youtube', 'b');
+    act(() => last().events.onPlaying());
+    expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
+  });
+
+  it('止めたまま別の仕組みの曲へ替わるときは、新しいプレイヤーを消音で作る', () => {
+    const { result } = setup();
+    play(result, 'youtube', 'a');
+    act(() => last().events.onPlaying());
+    play(result, 'niconico', 'sm1');
+    act(() => result.current.pause());
+    act(() => vi.advanceTimersByTime(FADE_TOTAL + PAUSE_WAIT_MS));
+    expect(last().service).toBe('niconico');
+    expect(last().sound).toEqual({ volume: 80, muted: true });
   });
 });
 
