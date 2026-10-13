@@ -64,3 +64,11 @@ All audio is embedded; the site stores no audio or video files. Only the produce
 Song, producer and voice data come from [VocaDB](https://vocadb.net/). `pnpm ingest` picks seed songs — the top rated on VocaDB, niconico's million-view songs, and YouTube uploads with a million views — then imports every song by the seeds' producers. Credits marked as support (tuning, arranging) do not count as producers. Run it with `--dry` first to count how many songs a larger seed would add.
 
 How the scope was decided and why things are the way they are: see [CLAUDE.md](CLAUDE.md) (in Japanese).
+
+## License
+
+The code is MIT. The license does not cover:
+
+- Song, producer and voice data, which come from VocaDB under CC BY 4.0
+- The character illustrations and silhouettes (`public/characters`, `src/assets/silhouettes`) and the Hatsune Miku icon. They are unofficial fan art of characters owned by their rights holders; see the terms of use on the site
+- The fonts in `src/assets`, which keep their own licenses (SIL Open Font License)
