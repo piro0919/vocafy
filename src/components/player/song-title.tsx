@@ -26,8 +26,7 @@ export function SongTitle() {
     wantedRef.current = wanted;
     if (wanted) {
       if (ours.current === null) page.current = document.title;
-      ours.current = wanted;
-      document.title = wanted;
+      ours.current = setTitle(wanted);
     } else if (ours.current !== null) {
       ours.current = null;
       if (page.current !== null) document.title = page.current;
@@ -40,14 +39,21 @@ export function SongTitle() {
       if (document.title === ours.current) return;
       page.current = document.title;
       const next = wantedRef.current;
-      if (next) {
-        ours.current = next;
-        document.title = next;
-      }
+      if (next) ours.current = setTitle(next);
     });
     observer.observe(document.head, { subtree: true, childList: true, characterData: true });
     return () => observer.disconnect();
   }, []);
 
   return null;
+}
+
+/**
+ * 題名を書き、ブラウザが読み返す形を返す。ブラウザは読むときに続いた空白を1つに詰め、頭と末尾の空白を外すので、
+ * 書いた文字のまま覚えると読み返しと食い違う。食い違うと見張りが「書き換えられた」とみなして書き直し、
+ * その書き直しをまた拾って、止まらずに回り続けた（2026-10-13。末尾に空白のある曲名「不♡快感 」で、ページが固まった）
+ */
+function setTitle(title: string): string {
+  document.title = title;
+  return document.title;
 }
