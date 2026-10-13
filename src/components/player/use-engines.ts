@@ -185,8 +185,13 @@ export function useEngines(
   /** 曲の行が見えたときに呼ぶ。返す関数は見えなくなったときに呼ぶ */
   const preload = useCallback(
     (videoId: string) => {
+      // 流している曲は先に読み込まない。プレイヤーが無いあいだ（開き直して前の曲を戻しただけで、まだ流していない）は、
+      // その曲も読み込む。外していたら、戻した曲を押したときに埋め込みが無く、1回で流れなかった（2026-10-13）
       if (!pool.current && isAppleDevice())
-        pool.current = createNiconicoPool(() => frameRef.current, playingVideo);
+        pool.current = createNiconicoPool(
+          () => frameRef.current,
+          () => (player.current ? playingVideo() : undefined),
+        );
       return pool.current?.want(videoId) ?? (() => {});
     },
     [frameRef, playingVideo],
@@ -202,7 +207,7 @@ export function useEngines(
    * その動画を流す。同じ仕組みの曲が続くなら、プレイヤーを使い回して動画だけ替える。先に読み込んでおいたニコニコの埋め込みが
    * あれば、いまのプレイヤーを使い回さずにそれで流す
    */
-  const switchTo = useCallback(
+  const swapTo = useCallback(
     (service: QueueItem['service'], videoId: string) => {
       // 先に読み込んでおいたニコニコの埋め込みがあれば受け取る（3）
       const preloaded =
@@ -243,6 +248,14 @@ export function useEngines(
       player.current = spawn(service, videoId, now, preloaded);
     },
     [soundRef, drop, spawn],
+  );
+  const switchTo = useCallback(
+    (service: QueueItem['service'], videoId: string) => {
+      swapTo(service, videoId);
+      // 前に受け取った埋め込みの曲がまだ見えていれば、次に押されたときのために読み込み直す（3）
+      pool.current?.refresh();
+    },
+    [swapTo],
   );
 
   /** 一時停止の前に絞っている途中なら、やめる（曲を替えるとき。同じプレイヤーで次の曲を流すので、そのままだと次の曲が止まる） */

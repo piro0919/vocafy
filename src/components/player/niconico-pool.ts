@@ -34,8 +34,6 @@ export type Preloaded = {
 
 type Entry = Preloaded & {
   ready: boolean;
-  /** いま見えている曲の行の数 */
-  wanted: number;
 };
 
 let serial = 0;
@@ -46,6 +44,9 @@ export function createNiconicoPool(
   playing: () => string | undefined,
 ) {
   const entries = new Map<string, Entry>();
+  // いま見えている曲の行の数。埋め込みとは別に持つ。押されて埋め込みを渡したあとも行は見えたままなので、
+  // 曲が替わったときに読み込み直せるように（refresh）。持たずにいたら、一度押した曲は2回目から1回で流れなかった（2026-10-13）
+  const wanted = new Map<string, number>();
 
   const onMessage = (e: MessageEvent<{ eventName?: string; playerId?: string }>) => {
     if (e.origin !== ORIGIN || e.data?.eventName !== 'loadComplete') return;
@@ -60,33 +61,42 @@ export function createNiconicoPool(
     entry.box.remove();
   };
 
+  /** 読み込んでいなければ読み込み始める。いま流している曲は読み込まない */
+  const ensure = (videoId: string) => {
+    if (videoId === playing() || entries.has(videoId)) return;
+    const container = frame();
+    if (!container) return;
+    const playerId = `vocafy-pre-${++serial}`;
+    const box = document.createElement('div');
+    box.className = 'size-full';
+    box.hidden = true;
+    const iframe = document.createElement('iframe');
+    iframe.allow = 'autoplay; fullscreen';
+    iframe.title = niconicoFrameTitle();
+    iframe.src = `${ORIGIN}/watch/${encodeURIComponent(videoId)}?jsapi=1&playerId=${playerId}`;
+    box.append(iframe);
+    container.append(box);
+    entries.set(videoId, { videoId, playerId, iframe, box, ready: false });
+  };
+
   return {
     /** 曲の行が見えた。読み込んでいなければ読み込み始める。返す関数は見えなくなったときに呼ぶ */
     want(videoId: string): () => void {
-      if (videoId === playing()) return () => {};
-      let entry = entries.get(videoId);
-      if (!entry) {
-        const container = frame();
-        if (!container) return () => {};
-        const playerId = `vocafy-pre-${++serial}`;
-        const box = document.createElement('div');
-        box.className = 'size-full';
-        box.hidden = true;
-        const iframe = document.createElement('iframe');
-        iframe.allow = 'autoplay; fullscreen';
-        iframe.title = niconicoFrameTitle();
-        iframe.src = `${ORIGIN}/watch/${encodeURIComponent(videoId)}?jsapi=1&playerId=${playerId}`;
-        box.append(iframe);
-        container.append(box);
-        entry = { videoId, playerId, iframe, box, ready: false, wanted: 0 };
-        entries.set(videoId, entry);
-      }
-      const e = entry;
-      e.wanted += 1;
+      wanted.set(videoId, (wanted.get(videoId) ?? 0) + 1);
+      ensure(videoId);
+      let released = false;
       return () => {
-        e.wanted = Math.max(0, e.wanted - 1);
-        // 見ている行が無くなったら捨てる。押されて受け取られたあと（take）の埋め込みは、流しているので触らない
-        if (e.wanted === 0 && entries.get(e.videoId) === e) remove(e);
+        if (released) return;
+        released = true;
+        const left = (wanted.get(videoId) ?? 1) - 1;
+        if (left > 0) {
+          wanted.set(videoId, left);
+          return;
+        }
+        wanted.delete(videoId);
+        // 見ている行が無くなったら捨てる。押されて受け取られたあと（take）の埋め込みは、流しているので抱えていない
+        const entry = entries.get(videoId);
+        if (entry) remove(entry);
       };
     },
     /** 読み込み済みの埋め込みを受け取る（抱えるのをやめる）。読み込み途中か、無ければ null */
@@ -96,9 +106,14 @@ export function createNiconicoPool(
       entries.delete(videoId);
       return entry;
     },
+    /** 流す曲が替わったときに呼ぶ。見えているのに埋め込みの無い曲（前に受け取られた曲）を読み込み直す */
+    refresh() {
+      for (const videoId of wanted.keys()) ensure(videoId);
+    },
     destroy() {
       window.removeEventListener('message', onMessage);
       for (const entry of [...entries.values()]) remove(entry);
+      wanted.clear();
     },
   };
 }

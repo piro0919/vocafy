@@ -146,6 +146,33 @@ describe('take（押されたので受け取る）', () => {
   });
 });
 
+describe('refresh（流す曲が替わった）', () => {
+  it('受け取られた曲の行がまだ見えていれば、読み込み直す', () => {
+    pool.want('sm1');
+    loaded(playerIdOf(boxes()[0]));
+    playing = 'sm1';
+    pool.take('sm1');
+    // 流しているあいだは読み込まない
+    pool.refresh();
+    expect(boxes()).toHaveLength(1);
+    // 別の曲に替わったら、見えている sm1 を読み込み直し、次に押されたときに受け取れる
+    playing = 'sm2';
+    pool.refresh();
+    expect(boxes()).toHaveLength(2);
+    loaded(playerIdOf(boxes()[1]));
+    expect(pool.take('sm1')?.playerId).toBe(playerIdOf(boxes()[1]));
+  });
+
+  it('見えなくなった曲・抱えている曲は読み込まない', () => {
+    const release = pool.want('sm1');
+    pool.want('sm2');
+    release();
+    pool.refresh();
+    expect(boxes()).toHaveLength(2);
+    expect(boxes().filter((b) => !b.removed)).toHaveLength(1);
+  });
+});
+
 describe('destroy', () => {
   it('抱えている埋め込みをすべて捨て、そのあとの知らせは拾わない', () => {
     pool.want('sm1');

@@ -425,7 +425,31 @@ describe('ニコニコの曲の先読み（iPad・iPhone だけ）', () => {
     apple.value = true;
     playing = 'sm1';
     const { result, frame } = setup();
+    play(result, 'niconico', 'sm1');
     act(() => void result.current.preload('sm1'));
-    expect(frame.querySelector('iframe')).toBeNull();
+    expect(frame.querySelector('iframe[src*="vocafy-pre"]')).toBeNull();
+  });
+
+  it('プレイヤーがまだ無いとき（開き直して前の曲を戻しただけ）は、その曲も先読みする', () => {
+    apple.value = true;
+    playing = 'sm1';
+    const { result, frame } = setup();
+    act(() => void result.current.preload('sm1'));
+    expect(frame.querySelector('iframe[src*="vocafy-pre"]')?.getAttribute('src')).toContain(
+      '/watch/sm1',
+    );
+  });
+
+  it('押されて渡した曲は、別の曲に替わったら、行が見えたままなら読み込み直す', () => {
+    apple.value = true;
+    const { result, frame } = setup();
+    act(() => void result.current.preload('sm1'));
+    loaded(frame);
+    playing = 'sm1';
+    play(result, 'niconico', 'sm1');
+    expect(frame.querySelectorAll('iframe[src*="vocafy-pre"]')).toHaveLength(1);
+    playing = 'sm2';
+    play(result, 'niconico', 'sm2');
+    expect(frame.querySelectorAll('iframe[src*="vocafy-pre"]')).toHaveLength(2);
   });
 });
