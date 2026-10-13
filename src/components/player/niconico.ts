@@ -30,6 +30,7 @@ type Message = {
   playerId?: string;
   data?: {
     playerStatus?: number;
+    seekStatus?: number;
     currentTime?: number;
     duration?: number;
   };
@@ -52,6 +53,10 @@ export function createNiconicoEngine(
   let videoId = firstVideoId;
   let current = 0;
   let duration = 0;
+  // 止められたと知らせたか・一時停止をこちらから頼んだか・再生位置が進んだか。一時停止の知らせが止められたためかを見分ける
+  let blocked = false;
+  let asked = false;
+  let progressed = false;
   let volume = sound.volume;
   let muted = sound.muted;
 
@@ -75,16 +80,28 @@ export function createNiconicoEngine(
     if (eventName === 'loadComplete') start();
     if (eventName === 'statusChange') {
       if (data?.playerStatus === STATUS.playing) events.onPlaying();
-      if (data?.playerStatus === STATUS.paused) events.onPaused();
+      // 頼んでいないのに、音が一度も進まないまま一時停止になったら、止められたとみなす。
+      // iPhone の Safari では、止められても player-error:video:play が届かず、一時停止だけが届くことがある（2026-10-13）。
+      // シークの最中（seekStatus が 0 以外）にも一時停止が届くので、それは除く
+      if (data?.playerStatus === STATUS.paused) {
+        if (!blocked && !asked && !progressed && !data.seekStatus) {
+          blocked = true;
+          events.onBlocked();
+        } else events.onPaused();
+      }
       if (data?.playerStatus === STATUS.ended) events.onEnded();
     }
     if (eventName === 'playerMetadataChange') {
       current = (data?.currentTime ?? 0) / 1000;
+      if (current > 0) progressed = true;
       duration = (data?.duration ?? 0) / 1000;
     }
     // 押す操作の無い再生をブラウザに止められた。状態は読み込み中のまま何も届かない。
     // ボタンから play を送り直せば流れる（2026-10-09 に Chromium の設定で止めて確かめた）
-    if (eventName === 'player-error:video:play') events.onBlocked();
+    if (eventName === 'player-error:video:play' && !blocked) {
+      blocked = true;
+      events.onBlocked();
+    }
     // 消えた・ほかのサイトでは流せない動画。台帳から外せるよう Vocafy に知らせる（確かめ直すのは API の側）
     if (eventName === 'error') {
       reportUnplayable('niconico', videoId);
@@ -98,6 +115,9 @@ export function createNiconicoEngine(
     playerId = `vocafy-${++serial}`;
     current = 0;
     duration = 0;
+    blocked = false;
+    asked = false;
+    progressed = false;
     // 動画を替えるたびに、埋め込みごと作り直す。読み込み先（src）を付けてから置くので、ページの履歴は増えない。
     // - src を書き換えると、ブラウザがページの履歴に1つ積み、戻る操作の1回目が埋め込みの中を前の動画に戻すのに
     //   使われて、ページが戻らなかった
@@ -119,10 +139,18 @@ export function createNiconicoEngine(
   return {
     service: 'niconico',
     load,
-    play: () => send('play'),
-    pause: () => send('pause'),
+    play: () => {
+      asked = false;
+      blocked = false;
+      send('play');
+    },
+    pause: () => {
+      asked = true;
+      send('pause');
+    },
     seek: (seconds) => {
       current = seconds;
+      progressed = true;
       send('seek', { time: seconds * 1000 });
     },
     setVolume: (v) => {

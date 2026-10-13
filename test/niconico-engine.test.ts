@@ -108,8 +108,10 @@ describe('作ったとき', () => {
 describe('届いた知らせ', () => {
   it('再生中・一時停止・終わりを知らせる。読み込み中（1）は何もしない', () => {
     const { ev, frame } = create();
-    for (const playerStatus of [1, 2, 3, 4])
-      receive(frame.playerId, 'statusChange', { playerStatus });
+    receive(frame.playerId, 'statusChange', { playerStatus: 1 });
+    receive(frame.playerId, 'statusChange', { playerStatus: 2 });
+    receive(frame.playerId, 'playerMetadataChange', { currentTime: 500, duration: 240000 });
+    for (const playerStatus of [3, 4]) receive(frame.playerId, 'statusChange', { playerStatus });
     expect(ev.onPlaying).toHaveBeenCalledTimes(1);
     expect(ev.onPaused).toHaveBeenCalledTimes(1);
     expect(ev.onEnded).toHaveBeenCalledTimes(1);
@@ -126,6 +128,40 @@ describe('届いた知らせ', () => {
     const { ev, frame } = create();
     receive(frame.playerId, 'player-error:video:play');
     expect(ev.onBlocked).toHaveBeenCalledTimes(1);
+  });
+
+  it('止められた知らせのあとに届く一時停止は、一時停止として知らせる（WebKit の届き方）', () => {
+    const { ev, frame } = create();
+    receive(frame.playerId, 'statusChange', { playerStatus: 2 });
+    receive(frame.playerId, 'player-error:video:play');
+    receive(frame.playerId, 'statusChange', { playerStatus: 3 });
+    expect(ev.onBlocked).toHaveBeenCalledTimes(1);
+    expect(ev.onPaused).toHaveBeenCalledTimes(1);
+  });
+
+  it('止められた知らせが無くても、音が進まないまま頼んでいない一時停止が届いたら、止められたとみなす（iPhone）', () => {
+    const { ev, frame } = create();
+    receive(frame.playerId, 'statusChange', { playerStatus: 2 });
+    receive(frame.playerId, 'statusChange', { playerStatus: 3 });
+    expect(ev.onBlocked).toHaveBeenCalledTimes(1);
+    expect(ev.onPaused).not.toHaveBeenCalled();
+  });
+
+  it('こちらから頼んだ一時停止と、シークの最中の一時停止は、止められたとみなさない', () => {
+    const { engine, ev, frame } = create();
+    receive(frame.playerId, 'statusChange', { playerStatus: 3, seekStatus: 2 });
+    engine.pause();
+    receive(frame.playerId, 'statusChange', { playerStatus: 3 });
+    expect(ev.onBlocked).not.toHaveBeenCalled();
+    expect(ev.onPaused).toHaveBeenCalledTimes(2);
+  });
+
+  it('動画を替えたら、止められたかの見分けをやり直す', () => {
+    const { engine, ev } = create();
+    receive(frames.at(-1)!.playerId, 'statusChange', { playerStatus: 3 });
+    engine.load('sm2');
+    receive(frames.at(-1)!.playerId, 'statusChange', { playerStatus: 3 });
+    expect(ev.onBlocked).toHaveBeenCalledTimes(2);
   });
 
   it('流せない動画は、Vocafy に知らせてから次へ進ませる', () => {
