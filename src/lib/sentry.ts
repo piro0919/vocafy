@@ -6,7 +6,8 @@ const MAX_EVENTS = 10;
 
 /**
  * Sentry の設定のうち、ブラウザとサーバーで共通のもの（2026-10-14）。DSN が無い手元と CI では送らない。
- * 性能の計測と画面の録画は使わない（送る量を増やさないため）
+ * 性能の計測と画面の録画は使わない（送る量を増やさないため）。tracesSampleRate は書かない。0 と書くと、計測の仕組みは動いたまま
+ * 全部を捨てる形になり、サーバーでリクエストのたびに計測の手間がかかっていた（入れた日の6時間で 2,306 個を捨てていた）
  */
 export function sentryOptions() {
   let sent = 0;
@@ -15,7 +16,6 @@ export function sentryOptions() {
     enabled: Boolean(DSN),
     // 本番・プレビューを分ける。Vercel の外（手元）は development
     environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? 'development',
-    tracesSampleRate: 0,
     sendDefaultPii: false,
     beforeSend<T>(event: T): T | null {
       if (sent >= MAX_EVENTS) return null;
