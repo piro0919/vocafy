@@ -87,18 +87,18 @@ export function HeaderBar() {
       >
         <Icon name="search" className="size-5" />
       </button>
+      {/* パソコンの上の段と同じく、ログインの左にきょうの出会いとお気に入りを流すボタン */}
+      <MixButton />
+      <FavoritesPlayButton />
       {/*
           スマホは左のメニューが出ないので、設定への入口を上の帯に置く（YouTube Music のアプリと同じ）。
-          ログイン中は顔写真のメニューに設定があるので出さない
+          ログインのすぐ左。ログイン中は顔写真のメニューに設定があるので出さない
         */}
       <SignedOutOnly>
         <Link href="/settings" aria-label={term.settings} className={ICON_BUTTON}>
           <Icon name="settings" className="size-5" />
         </Link>
       </SignedOutOnly>
-      {/* パソコンの上の段と同じく、ログインの左にきょうの出会いとお気に入りを流すボタン */}
-      <MixButton />
-      <FavoritesPlayButton />
       {/* ログインは右端に置く（YouTube と同じ） */}
       <AccountButton compact />
     </div>
