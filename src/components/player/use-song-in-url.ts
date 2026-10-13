@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { useClientValue } from '@/lib/client-value';
 import { stripLang } from '@/i18n/config';
@@ -17,7 +17,10 @@ const readSong = () => songParam(window.location.search);
  * ブラウザで読む（サーバーで読むと開くたびに作り直しになり、DB を起こす）
  */
 export function useLinkedSong(): number | null {
-  return useClientValue(readSong, null);
+  // 開いたときの住所の曲を、画面にいるあいだ持ち続ける。描き直すたびに読み直すと、流している曲を useSongInUrl が住所に
+  // 書いたあとの描き直しで、押した曲を共有されたリンクの曲と取り違え、その行まで勝手にスクロールした（2026-10-14、iPhone）
+  const [first] = useState(() => (typeof window === 'undefined' ? null : readSong()));
+  return useClientValue(() => first, null);
 }
 
 /**

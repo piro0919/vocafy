@@ -58,6 +58,28 @@ test('再生を押すと、プレイヤーが画面の置き場所に出る', as
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
+test('ボカロPの画面で曲を押しても、ページはスクロールしない', async ({ page }) => {
+  // 押した曲が住所（?song=）に入ったあとの描き直しで、それを共有されたリンクの曲と取り違え、
+  // その行まで勝手にスクロールしていた（2026-10-14、iPhone）。fixture は4曲で動く幅が無いので、呼んだ回数で見る
+  await page.addInitScript(() => {
+    const original = Element.prototype.scrollIntoView;
+    Object.assign(window, { scrolledIntoView: 0 });
+    Element.prototype.scrollIntoView = function (options) {
+      Object.assign(window, {
+        scrolledIntoView: Number(Reflect.get(window, 'scrolledIntoView')) + 1,
+      });
+      original.call(this, options);
+    };
+  });
+  await page.goto('/producers/45');
+  await page.locator('ol li button').filter({ hasText: '・' }).last().click();
+  await expect(page).toHaveURL(/\?song=\d+/);
+  // 住所に入ったあとに描き直させる（再生の帯の一時停止で、流しているかが変わる）
+  await page.getByRole('button', { name: '一時停止' }).first().click();
+  await expect(page.getByRole('button', { name: '再生' }).first()).toBeVisible();
+  expect(await page.evaluate(() => Reflect.get(window, 'scrolledIntoView'))).toBe(0);
+});
+
 // 動画を大きく出すのは、流している並びの持ち主の画面だけ（player-rules.ts の owns）。戻る・進むや曲送りで、
 // 大きく出したり右下の窓にしたりが食い違ったことが何度もあった
 test('一覧を流すと再生用の画面で大きく出し、戻ると右下の窓、進むとまた大きく出す', async ({
