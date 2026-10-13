@@ -24,6 +24,12 @@ export function niconicoFrameTitle(): string {
   return TEXT[langOfPath(location.pathname)].title;
 }
 
+/** 埋め込みの住所。from は流し始める位置（秒）。niconico.ts も使う */
+export function niconicoEmbedUrl(videoId: string, playerId: string, from?: number): string {
+  const start = from ? `&from=${Math.floor(from)}` : '';
+  return `${ORIGIN}/watch/${encodeURIComponent(videoId)}?jsapi=1&playerId=${playerId}${start}`;
+}
+
 export type Preloaded = {
   videoId: string;
   playerId: string;
@@ -37,11 +43,15 @@ type Entry = Preloaded & {
 };
 
 let serial = 0;
+/** 流し始める位置を持たないとき */
+const NO_START = (): number | undefined => undefined;
 
 export function createNiconicoPool(
   frame: () => HTMLElement | null,
   /** いま流している動画。その曲は先に読み込まない（流し始めたあとも行は見えたままなので、同じ動画をもう1つ読み込んでいた） */
   playing: () => string | undefined,
+  /** その動画を流し始める位置（秒）。開き直して戻した曲の続きの位置 */
+  startOf: (videoId: string) => number | undefined = NO_START,
 ) {
   const entries = new Map<string, Entry>();
   // いま見えている曲の行の数。埋め込みとは別に持つ。押されて埋め込みを渡したあとも行は見えたままなので、
@@ -73,7 +83,7 @@ export function createNiconicoPool(
     const iframe = document.createElement('iframe');
     iframe.allow = 'autoplay; fullscreen';
     iframe.title = niconicoFrameTitle();
-    iframe.src = `${ORIGIN}/watch/${encodeURIComponent(videoId)}?jsapi=1&playerId=${playerId}`;
+    iframe.src = niconicoEmbedUrl(videoId, playerId, startOf(videoId));
     box.append(iframe);
     container.append(box);
     entries.set(videoId, { videoId, playerId, iframe, box, ready: false });

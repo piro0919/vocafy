@@ -1,5 +1,5 @@
 import type { Engine, EngineEvents, Sound } from './engine';
-import { niconicoFrameTitle, type Preloaded } from './niconico-pool';
+import { niconicoEmbedUrl, niconicoFrameTitle, type Preloaded } from './niconico-pool';
 import { reportUnplayable } from './report';
 
 /** 埋め込みが statusChange で知らせる再生の状態の番号 */
@@ -45,6 +45,12 @@ export function createNiconicoEngine(
   events: EngineEvents,
   /** 先に読み込んでおいた埋め込み（niconico-pool.ts）。あればそれを使い、押した操作の中ですぐ流し始める */
   preloaded?: Preloaded,
+  /**
+   * 流し始める位置（秒）。開き直して前の曲の続きから流すとき。埋め込みの住所の from で渡す（先に読み込んでおいた埋め込みは、
+   * 先読みのときに付けてある。niconico-pool.ts）。流れ始めてからシークすると、iPhone の Safari ではシークが再生を打ち切り、
+   * 流し直しが押した操作の外になって止められた。再生を送る前のシークは無視された（2026-10-13）
+   */
+  startAt?: number,
 ): Engine {
   let iframe: HTMLIFrameElement | null = null;
 
@@ -110,7 +116,7 @@ export function createNiconicoEngine(
   };
   window.addEventListener('message', onMessage);
 
-  const load = (id: string) => {
+  const load = (id: string, from?: number) => {
     videoId = id;
     playerId = `vocafy-${++serial}`;
     current = 0;
@@ -126,7 +132,7 @@ export function createNiconicoEngine(
     const next = document.createElement('iframe');
     next.allow = 'autoplay; fullscreen';
     next.title = niconicoFrameTitle();
-    next.src = `${ORIGIN}/watch/${encodeURIComponent(id)}?jsapi=1&playerId=${playerId}`;
+    next.src = niconicoEmbedUrl(id, playerId, from);
     container.replaceChildren(next);
     iframe = next;
   };
@@ -134,7 +140,7 @@ export function createNiconicoEngine(
     iframe = preloaded.iframe;
     playerId = preloaded.playerId;
     start();
-  } else load(videoId);
+  } else load(videoId, startAt);
 
   return {
     service: 'niconico',

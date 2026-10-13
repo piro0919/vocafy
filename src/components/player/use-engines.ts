@@ -9,6 +9,8 @@ import { savedVolume } from './player-storage';
 import { createYouTubeEngine } from './youtube';
 
 const DEFAULT_SOUND: Sound = { volume: 100, muted: false };
+/** 流し始める位置を持たないとき */
+const NO_START = (): number | undefined => undefined;
 /** 隠している YouTube のプレイヤーの入れ物（park）。枠（fixed）いっぱいに重ね、見えなくして押せなくする */
 const PARKED = ['invisible', 'absolute', 'inset-0', 'pointer-events-none'];
 
@@ -40,6 +42,8 @@ export function useEngines(
   handlersRef: RefObject<EngineEvents>,
   /** いま流している動画。その曲は先に読み込まない（niconico-pool.ts） */
   playingVideo: () => string | undefined,
+  /** その動画を流し始める位置（秒）。開き直して戻した曲の続きの位置で、ニコニコの埋め込みの先読みに付ける */
+  startOf: (videoId: string) => number | undefined = NO_START,
 ) {
   const player = useRef<Engine | null>(null);
   // ニコニコの曲を流すあいだ、止めて隠しておく YouTube のプレイヤー。プレイヤーごとの入れ物（枠の中の div）
@@ -108,6 +112,8 @@ export function useEngines(
       videoId: string,
       sound: Sound,
       preloaded?: Preloaded,
+      /** ニコニコの曲を流し始める位置（秒）。開き直して前の曲の続きから流すとき */
+      startAt?: number,
     ): Engine | null => {
       if (!frameRef.current) return null;
       // 隠しているプレイヤーの知らせは拾わない（止めたときの一時停止が、流しているニコニコの曲の表示を変えないように）
@@ -155,17 +161,15 @@ export function useEngines(
       if (preloaded) {
         box = preloaded.box;
         box.hidden = false;
-        engine = createNiconicoEngine(box, videoId, sound, events, preloaded);
+        engine = createNiconicoEngine(box, videoId, sound, events, preloaded, startAt);
       } else {
         box = document.createElement('div');
         box.className = 'size-full';
         frameRef.current.append(box);
-        engine = (service === 'niconico' ? createNiconicoEngine : createYouTubeEngine)(
-          box,
-          videoId,
-          sound,
-          events,
-        );
+        engine =
+          service === 'niconico'
+            ? createNiconicoEngine(box, videoId, sound, events, undefined, startAt)
+            : createYouTubeEngine(box, videoId, sound, events);
       }
       boxes.current.set(engine, box);
       return engine;
@@ -202,10 +206,11 @@ export function useEngines(
         pool.current = createNiconicoPool(
           () => frameRef.current,
           () => (player.current ? playingVideo() : undefined),
+          startOf,
         );
       return pool.current?.want(videoId) ?? (() => {});
     },
-    [frameRef, playingVideo],
+    [frameRef, playingVideo, startOf],
   );
 
   /** 隠している YouTube のプレイヤーに、押した操作の中で許しを付けておく（engine.ts の prime）。並びに YouTube の曲が無ければ要らない */
@@ -219,7 +224,7 @@ export function useEngines(
    * あれば、いまのプレイヤーを使い回さずにそれで流す
    */
   const swapTo = useCallback(
-    (service: QueueItem['service'], videoId: string) => {
+    (service: QueueItem['service'], videoId: string, startAt?: number) => {
       // 先に読み込んでおいたニコニコの埋め込みがあれば受け取る（3）
       const preloaded =
         service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined;
@@ -254,13 +259,13 @@ export function useEngines(
         kept.load(videoId);
         return;
       }
-      player.current = spawn(service, videoId, now, preloaded);
+      player.current = spawn(service, videoId, now, preloaded, startAt);
     },
     [soundRef, drop, spawn, park],
   );
   const switchTo = useCallback(
-    (service: QueueItem['service'], videoId: string) => {
-      swapTo(service, videoId);
+    (service: QueueItem['service'], videoId: string, startAt?: number) => {
+      swapTo(service, videoId, startAt);
       // 前に受け取った埋め込みの曲がまだ見えていれば、次に押されたときのために読み込み直す（3）
       pool.current?.refresh();
     },

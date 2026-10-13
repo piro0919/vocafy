@@ -68,6 +68,20 @@ describe('want（行が見えた）', () => {
     expect(box.children[0].src).toContain('/watch/sm1?jsapi=1&playerId=vocafy-pre-');
   });
 
+  it('流し始める位置があれば、住所の from に秒で付ける（開き直して戻した曲の続き）', () => {
+    const withStart = createNiconicoPool(
+      () => container as unknown as HTMLElement,
+      () => undefined,
+      (id) => (id === 'sm1' ? 122.7 : undefined),
+    );
+    withStart.want('sm1');
+    withStart.want('sm2');
+    const [a, b] = boxes();
+    expect(a.children[0].src).toContain('&from=122');
+    expect(b.children[0].src).not.toContain('from=');
+    withStart.destroy();
+  });
+
   it('同じ曲の行が2つ見えても、埋め込みは1つ', () => {
     pool.want('sm1');
     pool.want('sm1');

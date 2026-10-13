@@ -89,6 +89,26 @@ describe('作ったとき', () => {
     expect(frame.allow).toContain('autoplay');
   });
 
+  it('流し始める位置を、住所の from で渡す。再生の前にシークは送らない', () => {
+    const ev = events();
+    const engine = createNiconicoEngine(
+      container,
+      'sm9',
+      { volume: 40, muted: false },
+      ev,
+      undefined,
+      61.5,
+    );
+    destroyers.push(engine.destroy);
+    const frame = frames.at(-1)!;
+    expect(new URL(frame.src).searchParams.get('from')).toBe('61');
+    receive(frame.playerId, 'loadComplete');
+    expect(names(frame)).not.toContain('seek');
+    // 次の動画には付けない
+    engine.load('sm10');
+    expect(frames.at(-1)!.src).not.toContain('from=');
+  });
+
   it('読み込めたら、コメントを隠し、残しておいた音量と消音にしてから流す', () => {
     const { frame } = create('sm1', { volume: 40, muted: true });
     receive(frame.playerId, 'loadComplete');
