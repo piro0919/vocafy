@@ -57,6 +57,21 @@ test('履歴の画面に聴いた曲が並び、削除しても知らせから�
   await expect(row).toBeVisible();
 });
 
+test('スマホの上の帯では、設定はログインのすぐ左に並ぶ', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'スマホの上の帯');
+  await page.goto('/');
+  const settings = page.getByRole('link', { name: '設定', exact: true });
+  await expect(settings).toBeVisible();
+  // 帯の中のアイコンを並び順に読み、最後の2つが 設定・ログイン であることを見る（2026-10-13 に本人と決めた並び）
+  const labels = await settings
+    .locator('xpath=..')
+    .locator('a[aria-label], button[aria-label]')
+    .evaluateAll((els) =>
+      els.filter((el) => el.checkVisibility()).map((el) => el.getAttribute('aria-label')),
+    );
+  expect(labels.slice(-2)).toEqual(['設定', 'ログイン']);
+});
+
 test('サイトカラーとミニプレーヤーの位置は、選ぶとすぐ変わり、開き直しても残る', async ({
   page,
 }) => {

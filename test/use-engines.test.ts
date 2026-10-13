@@ -20,6 +20,8 @@ type Fake = Engine & {
   sound: Sound;
   /** 先に読み込んでおいた埋め込みを受け取って作ったか */
   preloaded?: unknown;
+  /** 流し始める位置（ニコニコだけ） */
+  startAt?: number;
 };
 
 const made = vi.hoisted(() => ({ list: [] as unknown[] }));
@@ -32,6 +34,7 @@ function fake(service: Engine['service']) {
     sound: Sound,
     events: EngineEvents,
     preloaded?: unknown,
+    startAt?: number,
   ) => {
     const calls: string[] = [];
     const engine: Fake = {
@@ -41,6 +44,7 @@ function fake(service: Engine['service']) {
       videoId,
       sound,
       preloaded,
+      startAt,
       load: (id) => calls.push(`load:${id}`),
       play: () => calls.push('play'),
       pause: () => calls.push('pause'),
@@ -71,13 +75,13 @@ let handlers: Record<keyof EngineEvents, ReturnType<typeof vi.fn>>;
 const engines = () => made.list as Fake[];
 const last = () => engines().at(-1)!;
 
-function setup() {
+function setup(startOf?: (videoId: string) => number | undefined) {
   const frame = document.createElement('div');
   document.body.append(frame);
   const soundRef = { current: sound };
   const handlersRef = { current: handlers as unknown as EngineEvents };
   const view = renderHook(() =>
-    useEngines({ current: frame }, soundRef, handlersRef, () => playing),
+    useEngines({ current: frame }, soundRef, handlersRef, () => playing, startOf),
   );
   return { ...view, frame, soundRef };
 }
@@ -416,6 +420,26 @@ describe('音量と後片付け', () => {
     expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
     expect(handlers.onError).toHaveBeenCalledTimes(1);
     expect(handlers.onBlocked).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('流し始める位置（開き直して戻したニコニコの曲の続き）', () => {
+  it('曲を替えるときに渡した位置で、ニコニコのプレイヤーを作る。YouTube には渡さない', () => {
+    const { result } = setup();
+    act(() => result.current.change(() => result.current.switchTo('niconico', 'sm1', 61)));
+    expect(last()).toMatchObject({ service: 'niconico', startAt: 61 });
+    act(() => result.current.change(() => result.current.switchTo('youtube', 'a', 61)));
+    expect(last()).toMatchObject({ service: 'youtube', startAt: undefined });
+  });
+
+  it('先読みする埋め込みの住所に、その曲の続きの位置を付ける', () => {
+    apple.value = true;
+    const { result, frame } = setup((id) => (id === 'sm1' ? 122 : undefined));
+    act(() => void result.current.preload('sm1'));
+    act(() => void result.current.preload('sm2'));
+    const srcs = [...frame.querySelectorAll('iframe')].map((f) => f.getAttribute('src') ?? '');
+    expect(srcs.find((src) => src.includes('/watch/sm1'))).toContain('&from=122');
+    expect(srcs.find((src) => src.includes('/watch/sm2'))).not.toContain('from=');
   });
 });
 
