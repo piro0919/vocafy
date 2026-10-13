@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 // 環境変数を確かめる。欠けていればビルドの頭で止まる
 import './src/env';
@@ -78,4 +79,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry（src/lib/sentry.ts）。鍵（SENTRY_AUTH_TOKEN）があるときだけ、ビルドの最後にソースマップを Sentry に上げ、
+// 届いたエラーの場所を元のコードで読めるようにする。上げたソースマップは配る側から消す。鍵が無い手元と CI では何もしない
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      org: 'kk-web',
+      project: 'vocafy',
+      silent: !process.env.CI,
+      telemetry: false,
+      sourcemaps: { deleteSourcemapsAfterUpload: true },
+    })
+  : nextConfig;
