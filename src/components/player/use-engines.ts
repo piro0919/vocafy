@@ -9,6 +9,8 @@ import { savedVolume } from './player-storage';
 import { createYouTubeEngine } from './youtube';
 
 const DEFAULT_SOUND: Sound = { volume: 100, muted: false };
+/** 隠している YouTube のプレイヤーの入れ物（park）。枠（fixed）いっぱいに重ね、見えなくして押せなくする */
+const PARKED = ['invisible', 'absolute', 'inset-0', 'pointer-events-none'];
 
 /**
  * 動画を流すプレイヤー（engine.ts）の持ち方と、音の切り替え。player-provider.tsx から分けた（2026-10-12）。
@@ -59,6 +61,16 @@ export function useEngines(
   // 曲を替えている途中（まだ鳴り始めていない）に一時停止が押されたか。次の曲が鳴り始めたら、すぐ止める。
   // 読み込みの途中で止めても、読み込み終わると流れ始めて、押した一時停止が消えた（2026-10-13）
   const held = useRef(false);
+
+  /**
+   * YouTube のプレイヤーの入れ物を隠す・出す（parked）。display: none（hidden）にせず、場所を取らない見えない形にする。
+   * iPhone の Safari は display: none の入れ物の動画を押した操作の中でも音ありで流させず、許し付け（prime）が効かずに、
+   * ニコニコの曲を押して始めた並びのあとの YouTube の曲が止められた（2026-10-13 に本人の iPhone で確かめた）
+   */
+  const park = useCallback((engine: Engine, parking: boolean) => {
+    const box = boxes.current.get(engine);
+    for (const name of PARKED) box?.classList.toggle(name, parking);
+  }, []);
 
   /** プレイヤーを壊し、入れ物も外す */
   const drop = useCallback((engine: Engine | null) => {
@@ -168,10 +180,9 @@ export function useEngines(
     if (!isAppleDevice() || player.current || parked.current) return;
     const engine = spawn('youtube', '', savedVolume());
     if (!engine) return;
-    const box = boxes.current.get(engine);
-    if (box) box.hidden = true;
+    park(engine, true);
     parked.current = engine;
-  }, [spawn]);
+  }, [spawn, park]);
 
   // 3. 見えているニコニコの曲の埋め込みの先読み。曲の行の部品は先に作られて頼んでくるので、初めて頼まれたときに作る。ほかの端末では作らない
   const pool = useRef<NiconicoPool | null>(null);
@@ -230,15 +241,13 @@ export function useEngines(
       player.current = null;
       if (leaving?.service === 'youtube') {
         leaving.pause();
-        const box = boxes.current.get(leaving);
-        if (box) box.hidden = true;
+        park(leaving, true);
         parked.current = leaving;
       } else drop(leaving);
       if (service === 'youtube' && parked.current) {
         const kept = parked.current;
         parked.current = null;
-        const box = boxes.current.get(kept);
-        if (box) box.hidden = false;
+        park(kept, false);
         player.current = kept;
         kept.setMuted(now.muted);
         kept.setVolume(now.volume);
@@ -247,7 +256,7 @@ export function useEngines(
       }
       player.current = spawn(service, videoId, now, preloaded);
     },
-    [soundRef, drop, spawn],
+    [soundRef, drop, spawn, park],
   );
   const switchTo = useCallback(
     (service: QueueItem['service'], videoId: string) => {

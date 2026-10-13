@@ -203,6 +203,28 @@ describe('YouTube とニコニコの行き来', () => {
     expect(engines()).toHaveLength(2);
   });
 
+  it('隠すときは display: none にせず、見えない形で重ねる。戻したら見える形に戻す', () => {
+    // iPhone の Safari は、display: none の入れ物の動画には許し付けが効かなかった（2026-10-13）
+    const { result, frame } = setup();
+    play(result, 'youtube', 'a');
+    const box = frame.firstElementChild as HTMLElement;
+    play(result, 'niconico', 'sm1');
+    expect(box.hidden).toBe(false);
+    expect(box.classList.contains('invisible')).toBe(true);
+    expect(box.classList.contains('absolute')).toBe(true);
+    play(result, 'youtube', 'b');
+    expect(box.classList.contains('invisible')).toBe(false);
+    expect(box.classList.contains('absolute')).toBe(false);
+  });
+
+  it('iPad・iPhone で先に作っておく YouTube のプレイヤーも、display: none にせずに隠す', () => {
+    apple.value = true;
+    const { frame } = setup();
+    const box = frame.firstElementChild as HTMLElement;
+    expect(box.hidden).toBe(false);
+    expect(box.classList.contains('invisible')).toBe(true);
+  });
+
   it('隠しているプレイヤーの知らせは、帯に伝えない', () => {
     const { result } = setup();
     play(result, 'youtube', 'a');
