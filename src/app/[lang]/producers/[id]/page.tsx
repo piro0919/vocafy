@@ -1,4 +1,5 @@
 import { langOf } from '@/i18n/config';
+import { canonical } from '@/lib/site';
 import { producerName } from '@/lib/producer-name';
 import { producerNamesFor } from '@/lib/producer-names';
 import type { Metadata } from 'next';
@@ -19,8 +20,13 @@ export async function generateMetadata({
 }: PageProps<'/[lang]/producers/[id]'>): Promise<Metadata> {
   const found = await findProducer(Number((await params).id));
   if (!found) notFound();
-  const names = await producerNamesFor(await langOf(params));
-  return { title: producerName(found.producer.id, found.producer.name, names) };
+  const lang = await langOf(params);
+  const names = await producerNamesFor(lang);
+  return {
+    title: producerName(found.producer.id, found.producer.name, names),
+    // 流している曲を入れた住所（?song=）も、この住所にまとめる
+    alternates: canonical(`/producers/${found.producer.id}`, lang),
+  };
 }
 
 export default async function ProducerPage({ params }: PageProps<'/[lang]/producers/[id]'>) {

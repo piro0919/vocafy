@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { pageOf } from '@/components/pager';
 import { producers } from '@/lib/catalog';
 import { langOf } from '@/i18n/config';
+import { canonical } from '@/lib/site';
 import { defineText } from '@/i18n/text';
 import { PRODUCERS_PER_PAGE, ProducerList } from '../../producer-list';
 
@@ -26,7 +27,9 @@ export async function generateMetadata({
   const { n } = await params;
   const page = pageOf([n]);
   if (!page) notFound();
-  return { title: TEXT[await langOf(params)].title(page) };
+  const lang = await langOf(params);
+  // 前の住所。中身はボカロPの一覧と同じ（そのページの先頭の人までスクロールして開くだけ）なので、一覧の住所を名乗る
+  return { title: TEXT[lang].title(page), alternates: canonical('/producers', lang) };
 }
 
 /** ボカロPの一覧の2ページ目から。1ページ目を /producers/page/1 と書いたものは無いページとして扱う */

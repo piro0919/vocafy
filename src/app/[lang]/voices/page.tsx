@@ -6,6 +6,7 @@ import { voices } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { formatCount } from '@/lib/format';
 import { langOf } from '@/i18n/config';
+import { canonical } from '@/lib/site';
 import { defineText } from '@/i18n/text';
 import { TERMS } from '@/i18n/terms';
 import { voiceName } from '@/lib/voice-name';
@@ -17,7 +18,8 @@ const TEXT = defineText({
 });
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/voices'>): Promise<Metadata> {
-  return { title: TERMS[await langOf(params)].voices };
+  const lang = await langOf(params);
+  return { title: TERMS[lang].voices, alternates: canonical('/voices', lang) };
 }
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。

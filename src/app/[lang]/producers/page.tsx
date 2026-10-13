@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { langOf } from '@/i18n/config';
+import { canonical } from '@/lib/site';
 import { TERMS } from '@/i18n/terms';
 import { ProducerList } from './producer-list';
 
 export async function generateMetadata({
   params,
 }: PageProps<'/[lang]/producers'>): Promise<Metadata> {
-  return { title: TERMS[await langOf(params)].producers };
+  const lang = await langOf(params);
+  return { title: TERMS[lang].producers, alternates: canonical('/producers', lang) };
 }
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。

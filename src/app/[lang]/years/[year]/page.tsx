@@ -7,6 +7,7 @@ import { type DatedItem, picksOfYear } from '@/lib/catalog';
 import { formatCount } from '@/lib/format';
 import { monthOf } from '@/lib/iso-date';
 import { langOf } from '@/i18n/config';
+import { canonical } from '@/lib/site';
 import { defineText } from '@/i18n/text';
 
 /** 英語の月の名前（「March」） */
@@ -39,7 +40,8 @@ export async function generateMetadata({
   const { year } = await params;
   // 無い年は、題名を作る前に見つからない画面にする（題名を作ると、見つからない画面のタブにその題名が出た）
   if (!/^\d{4}$/.test(year) || (await picksOfYear(Number(year))).songs.length === 0) notFound();
-  return { title: TEXT[await langOf(params)].title(year) };
+  const lang = await langOf(params);
+  return { title: TEXT[lang].title(year), alternates: canonical(`/years/${year}`, lang) };
 }
 
 /**

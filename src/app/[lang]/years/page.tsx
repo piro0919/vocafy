@@ -3,10 +3,12 @@ import { YearCard } from '@/components/browse-cards';
 import { Heading } from '@/components/heading';
 import { years } from '@/lib/catalog';
 import { langOf } from '@/i18n/config';
+import { canonical } from '@/lib/site';
 import { TERMS } from '@/i18n/terms';
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/years'>): Promise<Metadata> {
-  return { title: TERMS[await langOf(params)].years };
+  const lang = await langOf(params);
+  return { title: TERMS[lang].years, alternates: canonical('/years', lang) };
 }
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。

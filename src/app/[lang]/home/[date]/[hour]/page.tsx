@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { WebSite, WithContext } from 'schema-dts';
 import { AmbientSource } from '@/components/ambient';
 import { CharacterCard, MoreLink, YearCard } from '@/components/browse-cards';
@@ -12,7 +13,7 @@ import { unstable_cache } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { dailyMix, MIX_SIZE, onThisDay, playlistOfDay, voices, years } from '@/lib/catalog';
 import { niconicoBigCover } from '@/lib/niconico-cover';
-import { SITE_URL } from '@/lib/site';
+import { canonical, SITE_URL } from '@/lib/site';
 import { voiceArt } from '@/lib/voice-art';
 import { hourInJapan, monthDayOf, today } from '@/lib/iso-date';
 import { dayTitle } from '@/lib/list-titles';
@@ -32,6 +33,13 @@ const jsonLd: WithContext<WebSite> = {
 // 中身のデータは日付ごとに1回だけ DB から取り（下の unstable_cache）、同じ日のほかの時のページはそれを使い回すので、
 // DB はその日の最初の1人のときだけ起きる（2026-10-11。前は1時間ごとに作り直して毎回 DB を起こし、24回のうち23回は同じ中身だった）
 export const revalidate = false;
+
+// 中では /home/日付/時 の住所で作るが、見せる住所は / のまま（proxy.ts）なので、正規の住所はトップにする
+export async function generateMetadata({
+  params,
+}: PageProps<'/[lang]/home/[date]/[hour]'>): Promise<Metadata> {
+  return { alternates: canonical('/', await langOf(params)) };
+}
 
 /** ビルドした日と時のページだけ先に作る。ほかは、その時に最初に来た人のときに作る */
 export function generateStaticParams() {

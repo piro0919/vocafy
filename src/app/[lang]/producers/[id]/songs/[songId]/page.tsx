@@ -4,9 +4,9 @@ import { producerNamesFor } from '@/lib/producer-names';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { findProducer } from '@/lib/catalog';
-import { SITE_URL } from '@/lib/site';
+import { canonical } from '@/lib/site';
 import { ProducerView } from '../../producer-view';
-import { langOf, localize } from '@/i18n/config';
+import { langOf } from '@/i18n/config';
 
 /**
  * 曲を共有したときの住所（2026-10-11）。中身はボカロPの画面と同じで、その曲が一覧で目立ち、大きな再生ボタンがその曲からになる。
@@ -39,9 +39,7 @@ export async function generateMetadata({
   return {
     title: `${displayTitle(song, lang).main} - ${name}`,
     robots: { index: false, follow: true },
-    alternates: {
-      canonical: `${SITE_URL}${localize(`/producers/${found.producer.id}`, await langOf(params))}`,
-    },
+    alternates: canonical(`/producers/${found.producer.id}`, lang),
   };
 }
 
