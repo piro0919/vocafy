@@ -30,14 +30,26 @@ export function useSongInUrl(song: QueueItem | null, path: string) {
   const songId = song?.songId ?? null;
   useEffect(() => {
     if (songId === null) return;
-    const url = new URL(window.location.href);
-    if (stripLang(url.pathname) !== path) return;
-    // ほかの画面へ移り始めていて、住所がまだ変わっていないあいだは書き換えない。書き換えると移動が取り消される
-    if (navigationPending()) return;
-    if (url.searchParams.get('song') === String(songId)) return;
-    url.searchParams.set('song', String(songId));
-    // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
-    // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
-    window.history.replaceState(null, '', url);
+    const write = () => {
+      const url = new URL(window.location.href);
+      if (stripLang(url.pathname) !== path) return;
+      if (url.searchParams.get('song') === String(songId)) return;
+      url.searchParams.set('song', String(songId));
+      // 最初の引数は null にする（Next.js の資料のとおり）。今の履歴の中身（どの画面か）を写すと、画面を移る途中に
+      // 前の画面の中身が新しい住所の履歴に紛れ込み、戻る操作が効かないことがあった
+      window.history.replaceState(null, '', url);
+    };
+    // ほかの画面へ移り始めていて、住所がまだ変わっていないあいだは書き換えない。書き換えると移動が取り消される。
+    // この画面へ移ってきたところでも、移動中の印は親（NavigationDepth）の effect が外すので、子のこの effect の時点ではまだ立っている。
+    // 見送ったままにすると押した曲が住所に入らなかった（2026-10-14）ので、親の effect のあとにもう一度確かめる。
+    // そのときもまだ立っていれば、本当にほかの画面へ移る途中なので書き換えない
+    if (!navigationPending()) {
+      write();
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (!navigationPending()) write();
+    });
+    return () => clearTimeout(timer);
   }, [songId, path]);
 }

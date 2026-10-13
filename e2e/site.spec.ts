@@ -90,6 +90,14 @@ test('曲の一覧から押すと、その人の画面で大きく出し、次�
   await expect(page.locator('html')).toHaveAttribute('data-player', 'slot');
 });
 
+test('曲の一覧から押してその人の画面へ移ると、押した曲が住所に入る', async ({ page }) => {
+  // 移った先の画面が住所を書き換えようとした時点では、まだ移動中の印が外れておらず、書き換えを見送ったまま
+  // 書き直さなかった（2026-10-14、iPhone の履歴の画面から押して見つけた）
+  await page.goto('/years/2016');
+  await page.locator('main button').filter({ hasText: '・' }).first().click();
+  await expect(page).toHaveURL(/\/producers\/\d+\?song=\d+/);
+});
+
 test('ボカロPをお気に入りに入れると、お気に入りの画面に出て、外すと消える', async ({
   page,
   isMobile,
