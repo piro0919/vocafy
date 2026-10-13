@@ -19,6 +19,8 @@ Playwright（`mcp__playwright-login__*`）で `https://kk-web.sentry.io/issues/?
   - message（`Playback failed: blocked` など）
   - tags の playback・service・url・browser・os・device・apple
   - entries の breadcrumbs の末尾8件。category が player のものが、直前のプレイヤーの知らせ（load・swap・playing・paused・blocked・error）
+    - swap の path はどのプレイヤーで流したか（preloaded・reuse・parked・spawn）。iPad・iPhone のニコニコの曲は、先読みの様子（preload が none・loading・ready、ms は読み込み始めてからの時間）も付く
+    - 時刻は 2026-10-14 の版から記録したときのもの。それより前の記録は、全部が送った瞬間の同じ時刻になっていて、間隔は読めない
   - entries の exception の stacktrace は、押したのに鳴らなかった件では Sentry の読み込み役の中を指すだけなので読まない
 
 返事は大きいので、evaluate の中で上の欄だけに絞ってから返す。
@@ -51,6 +53,7 @@ Playwright（`mcp__playwright-login__*`）で `https://kk-web.sentry.io/issues/?
 
 ## 5. Sentry の状態を変える
 
+- 書き込みは、ページの中の fetch に Cookie の `sc` の値を `X-CSRFToken` の頭に付けて送る（付けないと通らない）
 - 直したもの: 直した版が配備されたあとに Resolved にする（`PUT /api/0/organizations/kk-web/issues/{id}/` に `{"status":"resolved"}`）。配備前に閉じると、配備前の出来事で開き直される
 - 外のせい: Ignored にする（`{"status":"ignored"}`）
 - 端末の仕様・原因不明: そのまま残す
