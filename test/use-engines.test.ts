@@ -332,6 +332,22 @@ describe('曲を替えている途中の一時停止', () => {
     expect(handlers.onPlaying).not.toHaveBeenCalled();
   });
 
+  it('iPad・iPhone で、鳴っている曲からすぐ替えた次の曲の読み込み中に押しても、鳴り始めたら止める', () => {
+    // 絞らずにすぐ替えるので、前の曲が鳴っている印が残り、押した一時停止が次の曲に効かなかった（2026-10-13）
+    apple.value = true;
+    const { result } = setup();
+    play(result, 'youtube', 'a');
+    act(() => last().events.onPlaying());
+    play(result, 'niconico', 'sm1');
+    const nico = last();
+    act(() => result.current.pause());
+    expect(handlers.onPaused).toHaveBeenCalledTimes(1);
+    nico.calls.length = 0;
+    act(() => nico.events.onPlaying());
+    expect(nico.calls).toEqual(['muted:true', 'pause']);
+    expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
+  });
+
   it('止めたあとに再生を押したら、鳴り始めたときに消音を解いて音量を戻す', () => {
     const { result } = setup();
     play(result, 'youtube', 'a');

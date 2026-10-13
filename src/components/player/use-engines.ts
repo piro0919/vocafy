@@ -292,6 +292,9 @@ export function useEngines(
       const current = player.current;
       if (!current || !sounding.current || sound.muted || sound.volume === 0 || isAppleDevice()) {
         pendingSwap.current = null;
+        // 次の曲はまだ鳴っていない。下ろさずにいると、iPad・iPhone（絞らずにすぐ替える）で、読み込み中に押した一時停止が
+        // 前の曲が鳴っているものとして扱われ、次の曲が流れ始めた（held が立たなかった。2026-10-13 に iPhone で確かめた）
+        sounding.current = false;
         swap();
         return;
       }
