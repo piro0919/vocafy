@@ -18,12 +18,14 @@ const FAVORITES = { kind: 'favorites' } as const;
  */
 export function usePlayFavorites() {
   const { items: songs } = useFavorites();
-  const { owner, current, playQueue } = usePlayer();
+  const { owner, current, playQueue, resumable, resume } = usePlayer();
   const router = useRouter();
   if (songs.length === 0) return null;
   return () => {
-    if (!(owner.kind === 'favorites' && current))
-      playQueue(songs, playStart(songs.length, true), FAVORITES, true);
+    // 開き直して戻しただけで流していないお気に入りは、押した操作の中で続きから流す（play-all.tsx の open と同じ）
+    if (owner.kind === 'favorites' && current) {
+      if (resumable) resume();
+    } else playQueue(songs, playStart(songs.length, true), FAVORITES, true);
     router.push('/favorites/songs');
   };
 }

@@ -2,13 +2,14 @@
 
 import { useRouter, useText } from '@/i18n/navigation';
 import { defineText } from '@/i18n/text';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { QueueItem } from '@/lib/catalog';
 import { HEADER_ICON } from './button-styles';
 import { Icon } from './icon';
 import { playStart } from './player/play-order';
 import { usePlayer } from './player/player-provider';
 import { today } from '@/lib/iso-date';
+import { isAppleDevice } from '@/lib/apple-device';
 
 const TEXT = defineText({ ja: { play: 'きょうの出会いを再生' }, en: { play: 'Play Daily Mix' } });
 
@@ -19,7 +20,7 @@ const TEXT = defineText({ ja: { play: 'きょうの出会いを再生' }, en: { 
  * （指を乗せたときに先に取っておく）。押した操作の外で流し始めることになるが、パソコンのブラウザは一度押した画面なら流す
  */
 export function MixButton() {
-  const { current, owner, playAll } = usePlayer();
+  const { current, owner, playAll, resumable, resume } = usePlayer();
   const router = useRouter();
   const t = useText(TEXT);
   const songs = useRef<{ date: string; promise: Promise<QueueItem[]> } | null>(null);
@@ -34,10 +35,18 @@ export function MixButton() {
     return songs.current.promise;
   };
 
+  // iPad・iPhone では、開いたときに曲を取っておく。押してから取ると、届くまでに押した操作の扱いが切れて止められた
+  // （2026-10-14、iPhone で。取るのを 2 秒遅らせると止められ、0.3 秒なら流れた）。ほかの端末は止められないので、指を乗せたときに取る
+  useEffect(() => {
+    if (isAppleDevice()) void load(today());
+  }, []);
+
   const onClick = async () => {
     const day = today();
     const source = `mix/${day}`;
     if (current !== null && owner.kind === 'list' && owner.source === source) {
+      // 開き直して戻しただけで流していないなら、押した操作の中で続きから流す（play-all.tsx の open と同じ）
+      if (resumable) resume();
       router.push(`/${source}/play`);
       return;
     }

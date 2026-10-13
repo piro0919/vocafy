@@ -16,7 +16,7 @@ import { PRIMARY } from './button-styles';
  */
 /** 一覧を通して流す処理（PlayAll と PlayAllPill で共有する） */
 function usePlayAll(songs: QueueItem[], source: string) {
-  const { current, playing, owner, playAll, toggle } = usePlayer();
+  const { current, playing, owner, playAll, toggle, resumable, resume } = usePlayer();
   const router = useRouter();
   // この一覧を流しているか
   const here = current !== null && owner.kind === 'list' && owner.source === source;
@@ -26,7 +26,13 @@ function usePlayAll(songs: QueueItem[], source: string) {
     playAll(songs, source, { at: playStart(songs.length, true), moving: true });
     router.push(`/${source}/play`);
   };
-  return { here, playing, start, toggle, router };
+  // もうこの一覧を流しているときは、止めずに画面へ移るだけ。開き直して戻しただけで流していないときは、押した操作の中で続きから流す。
+  // 移るだけにしていたころは、戻したきょうの出会いの曲が流れず、押しても動かないように見えた（2026-10-14、iPhone で）
+  const open = () => {
+    if (resumable) resume();
+    router.push(`/${source}/play`);
+  };
+  return { here, playing, start, toggle, open };
 }
 
 export function PlayAll({
@@ -58,7 +64,7 @@ export function PlayAll({
 
 /**
  * トップの区画の見出しの右に置く「再生」（形は題名の下の「再生」と同じ PRIMARY。2026-10-11 に本人と決めた）。押すと一覧を流し始めて、
- * 一覧の再生用の画面へ移る。もうその一覧を流しているときは、止めずに移るだけ（お気に入りの「再生」と同じ）
+ * 一覧の再生用の画面へ移る。もうその一覧を流しているときは、止めずに移るだけ（お気に入りの「再生」と同じ）。戻しただけなら続きから流す
  */
 export function PlayAllPill({
   songs,
@@ -71,14 +77,10 @@ export function PlayAllPill({
   /** 全曲から選んだ曲を流すか（PlayAll と同じ） */
   pickup?: boolean;
 }) {
-  const { here, start, router } = usePlayAll(songs, source);
+  const { here, start, open } = usePlayAll(songs, source);
   const t = useText(TERMS);
   return (
-    <button
-      type="button"
-      onClick={() => (here ? router.push(`/${source}/play`) : start())}
-      className={PRIMARY}
-    >
+    <button type="button" onClick={() => (here ? open() : start())} className={PRIMARY}>
       <Icon name={pickup ? 'shuffle' : 'play'} className="size-5" />
       {pickup ? t.pickup : t.play}
     </button>
