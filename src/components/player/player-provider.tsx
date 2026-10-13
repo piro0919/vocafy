@@ -189,6 +189,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     stopPauseFade,
     change,
     pause: softPause,
+    play: playEngine,
     preload,
     pausingSoftly,
     setVolume: setEngineVolume,
@@ -366,13 +367,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       if (action === 'repeat' && playerRef.current) {
         playerRef.current.seek(0);
-        playerRef.current.play();
+        playEngine();
         return;
       }
       autoNext.current = true;
       next(1);
     };
-  }, [next, setSleep, sleepRef, playerRef, playbackRef]);
+  }, [next, setSleep, sleepRef, playerRef, playbackRef, playEngine]);
 
   const toggleShuffle = useCallback(() => {
     const now = playbackRef.current ?? savedPlayback();
@@ -652,11 +653,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           softPause();
           return;
         }
-        const p = playerRef.current;
-        if (p?.service === 'niconico') primeParked(cursor.current.queue);
+        if (playerRef.current?.service === 'niconico') primeParked(cursor.current.queue);
         // 止めていた音の出口を、押した操作の中で開け直す（押した操作の外だと、ブラウザが開け直しを止めることがある）
         keepAwake();
-        p?.play();
+        playEngine();
       },
       step,
       close,
@@ -725,6 +725,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       primeParked,
       pausingSoftly,
       softPause,
+      playEngine,
       setEngineVolume,
       soundRef,
       setSound,

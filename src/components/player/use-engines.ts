@@ -56,6 +56,9 @@ export function useEngines(
   const riseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   // 一時停止の前に音量を絞っている途中なら、その時計
   const pauseFade = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 曲を替えている途中（まだ鳴り始めていない）に一時停止が押されたか。次の曲が鳴り始めたら、すぐ止める。
+  // 読み込みの途中で止めても、読み込み終わると流れ始めて、押した一時停止が消えた（2026-10-13）
+  const held = useRef(false);
 
   /** プレイヤーを壊し、入れ物も外す */
   const drop = useCallback((engine: Engine | null) => {
@@ -104,8 +107,15 @@ export function useEngines(
         };
       const events: EngineEvents = {
         onPlaying: live(() => {
-          sounding.current = true;
           if (pausing.current === engine) pausing.current = null;
+          // 替えている途中に一時停止が押されていたら、鳴らさずに止める。音は絞ったままにし、再生を押したら上げる（rise）
+          if (held.current && engine) {
+            engine.setMuted(true);
+            quiet.current = engine;
+            engine.pause();
+            return;
+          }
+          sounding.current = true;
           if (quiet.current && quiet.current === engine) rise(engine);
           handlersRef.current.onPlaying();
         }),
@@ -198,7 +208,9 @@ export function useEngines(
       const preloaded =
         service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined;
       // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
-      const now = soundRef.current ?? DEFAULT_SOUND;
+      // 替えている途中に一時停止が押されていたら、消音して始める（鳴り始めたらすぐ止めるが、それまでの出だしも鳴らさない）
+      const given = soundRef.current ?? DEFAULT_SOUND;
+      const now = held.current ? { ...given, muted: true } : given;
       // 絞って替えたときは、消音と音量を戻すのは次の曲が鳴り始めてから（onPlaying の rise）。頼んだ直後に戻すと、
       // 止めた前の曲の残りか次の曲の出だしがいきなり元の音量で鳴り、プツッと聞こえた
       if (player.current?.service === service && !preloaded) {
@@ -246,6 +258,8 @@ export function useEngines(
   const change = useCallback(
     (swap: () => void) => {
       const sound = soundRef.current ?? DEFAULT_SOUND;
+      // 別の曲が選ばれたら、その曲は流す
+      held.current = false;
       pendingSwap.current = swap;
       if (fading.current) return;
       const current = player.current;
@@ -291,6 +305,18 @@ export function useEngines(
       if (p) rise(p);
       return;
     }
+    // 曲を替えている途中（まだ鳴り始めていない）なら、鳴り始めたときに止める印を立て、表示はすぐ一時停止にする。
+    // 前の曲を絞っている途中なら、絞りきるまでは任せる（途中で消音すると、プツッと鳴る）
+    if (!sounding.current) {
+      held.current = true;
+      if (p && !fading.current) {
+        p.setMuted(true);
+        quiet.current = p;
+        p.pause();
+      }
+      handlersRef.current.onPaused();
+      return;
+    }
     const { volume, muted } = soundRef.current ?? DEFAULT_SOUND;
     if (!p || !sounding.current || muted || volume === 0 || isAppleDevice()) {
       p?.pause();
@@ -312,7 +338,13 @@ export function useEngines(
         pauseFade.current = null;
       },
     });
-  }, [soundRef, rise]);
+  }, [soundRef, rise, handlersRef]);
+
+  /** 流す。替えている途中に押された一時停止（held）も取り消す */
+  const play = useCallback(() => {
+    held.current = false;
+    player.current?.play();
+  }, []);
 
   /** 一時停止の前に絞っている途中か。途中で押し直したら、止めるのをやめる（pause） */
   const pausingSoftly = useCallback(() => pauseFade.current !== null, []);
@@ -331,6 +363,7 @@ export function useEngines(
     clearTimeout(riseTimer.current);
     if (pauseFade.current) clearTimeout(pauseFade.current);
     pauseFade.current = null;
+    held.current = false;
     quiet.current = null;
     pausing.current = null;
     fading.current = false;
@@ -350,6 +383,7 @@ export function useEngines(
     stopPauseFade,
     change,
     pause,
+    play,
     pausingSoftly,
     setVolume,
     reset,
