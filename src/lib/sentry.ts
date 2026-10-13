@@ -38,7 +38,12 @@ export function sentryLoaderUrl(): string | null {
 /** 読み込み役が window.Sentry に置く窓口のうち、使う分。本体を読み込むまでは呼び出しを溜めておき、読み込んだら流す */
 type SentryApi = {
   init(options: Record<string, unknown>): void;
-  addBreadcrumb(breadcrumb: { category: string; message: string; data?: object }): void;
+  addBreadcrumb(breadcrumb: {
+    category: string;
+    message: string;
+    data?: object;
+    timestamp?: number;
+  }): void;
   captureMessage(
     message: string,
     context: {

@@ -39,6 +39,8 @@ export type Preloaded = {
 };
 
 type Entry = Preloaded & {
+  /** 読み込み始めた時刻（performance.now()） */
+  since: number;
   ready: boolean;
   /** 音を消して流し、止め終えたか（動画の準備が済んだか） */
   warmed: boolean;
@@ -116,7 +118,15 @@ export function createNiconicoPool(
     iframe.src = niconicoEmbedUrl(videoId, playerId, startOf(videoId));
     box.append(iframe);
     container.append(box);
-    entries.set(videoId, { videoId, playerId, iframe, box, ready: false, warmed: false });
+    entries.set(videoId, {
+      videoId,
+      playerId,
+      iframe,
+      box,
+      since: performance.now(),
+      ready: false,
+      warmed: false,
+    });
   };
 
   return {
@@ -145,6 +155,18 @@ export function createNiconicoPool(
       if (!entry?.ready) return null;
       entries.delete(videoId);
       return entry;
+    },
+    /**
+     * その曲の埋め込みの様子。押したのに止められたときに、先読みが無かったのか（none）、読み込み途中だったのか（loading）を
+     * Sentry の記録で見分ける（use-engines.ts の swap）。ms は読み込み始めてからの時間
+     */
+    status(videoId: string): { preload: 'none' | 'loading' | 'ready'; ms?: number } {
+      const entry = entries.get(videoId);
+      if (!entry) return { preload: 'none' };
+      return {
+        preload: entry.ready ? 'ready' : 'loading',
+        ms: Math.round(performance.now() - entry.since),
+      };
     },
     /** 流す曲が替わったときに呼ぶ。見えているのに埋め込みの無い曲（前に受け取られた曲）を読み込み直す */
     refresh() {

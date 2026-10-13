@@ -228,7 +228,8 @@ export function useEngines(
    */
   const swapTo = useCallback(
     (service: QueueItem['service'], videoId: string, startAt?: number) => {
-      // 先に読み込んでおいたニコニコの埋め込みがあれば受け取る（3）
+      // 先に読み込んでおいたニコニコの埋め込みがあれば受け取る（3）。受け取る前に様子を控えておく（Sentry の記録に使う）
+      const status = service === 'niconico' ? pool.current?.status(videoId) : undefined;
       const preloaded =
         service === 'niconico' ? (pool.current?.take(videoId) ?? undefined) : undefined;
       // 音量はいまの値を読む。絞っているあいだにつまみを動かされたら、動かしたあとの音量で始める
@@ -244,6 +245,7 @@ export function useEngines(
             : service === 'youtube' && parked.current
               ? 'parked'
               : 'spawn',
+        ...status,
       });
       // 絞って替えたときは、消音と音量を戻すのは次の曲が鳴り始めてから（onPlaying の rise）。頼んだ直後に戻すと、
       // 止めた前の曲の残りか次の曲の出だしがいきなり元の音量で鳴り、プツッと聞こえた

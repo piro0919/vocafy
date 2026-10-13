@@ -112,4 +112,17 @@ describe('プレイヤーの知らせ', () => {
       expect.objectContaining({ category: 'player', message: 'load' }),
     );
   });
+
+  it('記録には、送るときでなく記録したときの時刻（秒）を付ける', () => {
+    vi.useFakeTimers({ now: new Date('2026-10-14T08:00:00Z') });
+    try {
+      const { watch } = setup();
+      watch.requested('youtube', 'a', false);
+      expect(sentry.addBreadcrumb).toHaveBeenCalledWith(
+        expect.objectContaining({ timestamp: Date.parse('2026-10-14T08:00:00Z') / 1000 }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

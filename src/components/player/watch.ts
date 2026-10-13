@@ -13,9 +13,12 @@ import { TIMING } from '@/lib/timing';
 type Service = QueueItem['service'];
 type Failure = 'blocked' | 'error' | 'retap';
 
-/** プレイヤーの知らせを、失敗の知らせに添える記録として残す */
+/**
+ * プレイヤーの知らせを、失敗の知らせに添える記録として残す。時刻（秒）は自分で付ける。読み込み役は本体を読み込むまで呼び出しを
+ * 溜めて、送るときにまとめて流すので、付けずにいたら全部の記録が送った瞬間の同じ時刻になった（2026-10-14）
+ */
 export function trail(message: string, data?: Record<string, unknown>): void {
-  window.Sentry?.addBreadcrumb({ category: 'player', message, data });
+  window.Sentry?.addBreadcrumb({ category: 'player', message, data, timestamp: Date.now() / 1000 });
 }
 
 function report(kind: Failure, service: Service, videoId: string, detail?: string): void {

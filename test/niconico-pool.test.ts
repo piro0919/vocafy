@@ -145,6 +145,18 @@ describe('want（行が見えた）', () => {
   });
 });
 
+describe('status（押したときの埋め込みの様子。Sentry の記録に使う）', () => {
+  it('見えていない曲は none、読み込み途中は loading、読み込めたら ready', () => {
+    expect(pool.status('sm1')).toEqual({ preload: 'none' });
+    pool.want('sm1');
+    expect(pool.status('sm1').preload).toBe('loading');
+    loaded(playerIdOf(boxes()[0]));
+    expect(pool.status('sm1').preload).toBe('ready');
+    pool.take('sm1');
+    expect(pool.status('sm1')).toEqual({ preload: 'none' });
+  });
+});
+
 describe('take（押されたので受け取る）', () => {
   it('読み込みが終わる前は受け取れない', () => {
     pool.want('sm1');
