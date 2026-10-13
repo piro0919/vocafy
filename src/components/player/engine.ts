@@ -6,8 +6,8 @@ import type { QueueItem } from '@/lib/catalog';
  */
 export type Engine = {
   service: QueueItem['service'];
-  /** 別の動画に切り替えて、頭から流す */
-  load(videoId: string): void;
+  /** 別の動画に切り替えて流す。from（秒）があればそこから、無ければ頭から */
+  load(videoId: string, from?: number): void;
   play(): void;
   pause(): void;
   /** 秒 */

@@ -139,11 +139,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [owner, ownerRef, setOwner] = useMirroredState<Owner>(LOOSE);
   const [time, setTime] = useState<PlaybackTime>({ current: 0, duration: 0, at: 0 });
   // 開き直したときに戻した、まだ流していない前の曲（player-resume.ts）。プレイヤーはまだ作っておらず、再生を押すと続きから流す。
-  // resumeAt は続きの位置（秒）で、鳴り始めたところでそこへ飛ぶ
+  // resumeAt は続きの位置（秒）で、再生を押したときにプレイヤーに渡す（startFrom）
   const [resumable, setResumable] = useState(false);
   const resumeAt = useRef<number | null>(null);
-  // ニコニコの曲の続きの位置は、鳴り始めてから飛ばず、流し始める前にプレイヤーに渡す（niconico.ts の startAt）。resume が立てて下ろす
-  const niconicoStart = useRef<number | null>(null);
+  // 続きの位置は、鳴り始めてから飛ばず、流し始める前にプレイヤーに渡す（niconico.ts の startAt、youtube.ts の startSeconds）。resume が立てて下ろす。
+  // YouTube の曲も鳴り始めてから飛んでいたころは、押した直後に曲の頭が1秒ほど鳴ってから続きへ飛んだ（2026-10-14、Android の Chrome で）
+  const startFrom = useRef<number | null>(null);
   const { slot, setSlot, holdingSlot, holdSlot, waitingForSlot, waitForSlot } = useSlot();
   const mode = queue.length === 0 ? 'none' : slot ? 'slot' : waitingForSlot ? 'none' : 'dock';
   // いまの形。置き場所を待つか決めるときに読む。右下の窓がもう出ているなら待たない（waits）
@@ -249,11 +250,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     handlers.current = {
       onPlaying: () => {
-        // 戻した前の曲を流し始めたら、聴いていた位置へ飛ぶ
-        if (resumeAt.current !== null) {
-          playerRef.current?.seek(resumeAt.current);
-          resumeAt.current = null;
-        }
         watch.sounded();
         trail('playing');
         setPlaying(true);
@@ -326,8 +322,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
       // 音量を絞りきってから替える（use-engines.ts）。先に読み込んでおいたニコニコの埋め込みは、替えるときに受け取る
-      // 開き直して戻したニコニコの曲は、続きの位置をプレイヤーに渡す（resume）
-      const startAt = service === 'niconico' ? (niconicoStart.current ?? undefined) : undefined;
+      // 開き直して戻した曲は、続きの位置をプレイヤーに渡す（resume）
+      const startAt = startFrom.current ?? undefined;
       change(() => switchTo(service, videoId, startAt));
     },
     [
@@ -585,13 +581,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const { queue: q, index: i } = cursor.current;
     if (!q[i]) return;
     const at = resumeAt.current;
-    // ニコニコの曲なら、続きの位置をプレイヤーに先に渡す（niconicoStart）
-    niconicoStart.current = at;
+    // 続きの位置をプレイヤーに先に渡す（startFrom）
+    startFrom.current = at;
     load(q, i, settledOwner(ownerRef.current, q[i]));
-    niconicoStart.current = null;
-    // load は位置を 0 に戻すので、YouTube の曲なら続きの位置を戻す（鳴り始めたところでそこへ飛ぶ）
-    resumeAt.current = playerRef.current?.service === 'niconico' ? null : at;
-  }, [load, ownerRef, playerRef]);
+    startFrom.current = null;
+  }, [load, ownerRef]);
 
   // 流しているあいだ、並びとどこまで聴いたかを残す（use-resume-writer.ts）
   const resumeSnapshot = useCallback(() => {

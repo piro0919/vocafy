@@ -7,7 +7,7 @@ const UNPLAYABLE_ERRORS: number[] = Object.values(ERRORS);
 
 // YouTube の IFrame API のうち、使う分だけの型と読み込み
 type YTPlayer = {
-  loadVideoById(id: string): void;
+  loadVideoById(id: string | { videoId: string; startSeconds?: number }): void;
   playVideo(): void;
   pauseVideo(): void;
   stopVideo(): void;
@@ -80,10 +80,17 @@ export function createYouTubeEngine(
   videoId: string,
   sound: Sound,
   events: EngineEvents,
+  /** 流し始める位置（秒）。開き直して前の曲の続きから流すとき */
+  startAt?: number,
 ): Engine {
   // 準備のできたプレイヤー。準備を待つあいだは null
   let player: YTPlayer | null = null;
   let latest = videoId;
+  // latest を流し始める位置（秒）
+  let latestFrom = startAt;
+  /** 位置があれば、そこから流すように頼む */
+  const request = (id: string, from?: number) =>
+    player?.loadVideoById(from ? { videoId: id, startSeconds: from } : id);
   // 準備を待つあいだに一時停止を押されたら、準備ができても流さない。動画を入れずに作ったときも流さない
   let wantPlay = videoId !== '';
   let destroyed = false;
@@ -136,7 +143,7 @@ export function createYouTubeEngine(
           player.setVolume(sound.volume);
           if (sound.muted) player.mute();
           // 待つあいだに別の曲が選ばれていたら、その曲に替える（替えると流れ始める）
-          if (latest !== first) player.loadVideoById(latest);
+          if (latest !== first || latestFrom) request(latest, latestFrom);
           else if (wantPlay) player.playVideo();
           else if (first) player.pauseVideo();
         },
@@ -178,15 +185,16 @@ export function createYouTubeEngine(
 
   return {
     service: 'youtube',
-    load: (id) => {
+    load: (id, from) => {
       if (priming) endPrime();
       latest = id;
+      latestFrom = from;
       wantPlay = true;
       retry();
       // 前の動画を止めてから次の動画を頼む。止めずに頼むと、次の動画が届くまで前の動画が鳴り続け、
       // 曲を替えた直後に前の曲の音が一瞬聞こえた。止めても知らせ（onStateChange）は一時停止にならない
       player?.stopVideo();
-      player?.loadVideoById(id);
+      request(id, from);
     },
     play: () => {
       wantPlay = true;

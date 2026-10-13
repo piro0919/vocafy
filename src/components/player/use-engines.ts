@@ -169,7 +169,7 @@ export function useEngines(
         engine =
           service === 'niconico'
             ? createNiconicoEngine(box, videoId, sound, events, undefined, startAt)
-            : createYouTubeEngine(box, videoId, sound, events);
+            : createYouTubeEngine(box, videoId, sound, events, startAt);
       }
       boxes.current.set(engine, box);
       return engine;
@@ -235,7 +235,7 @@ export function useEngines(
       // 絞って替えたときは、消音と音量を戻すのは次の曲が鳴り始めてから（onPlaying の rise）。頼んだ直後に戻すと、
       // 止めた前の曲の残りか次の曲の出だしがいきなり元の音量で鳴り、プツッと聞こえた
       if (player.current?.service === service && !preloaded) {
-        player.current.load(videoId);
+        player.current.load(videoId, startAt);
         if (quiet.current !== player.current) player.current.setVolume(now.volume);
         return;
       }
@@ -256,7 +256,7 @@ export function useEngines(
         player.current = kept;
         kept.setMuted(now.muted);
         kept.setVolume(now.volume);
-        kept.load(videoId);
+        kept.load(videoId, startAt);
         return;
       }
       player.current = spawn(service, videoId, now, preloaded, startAt);

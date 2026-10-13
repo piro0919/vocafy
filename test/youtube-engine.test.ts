@@ -21,8 +21,10 @@ class FakePlayer {
     public videoId: string | undefined,
     public events: Handlers,
   ) {}
-  loadVideoById(id: string) {
-    this.calls.push(`load:${id}`);
+  loadVideoById(id: string | { videoId: string; startSeconds?: number }) {
+    this.calls.push(
+      typeof id === 'string' ? `load:${id}` : `load:${id.videoId}@${id.startSeconds}`,
+    );
   }
   playVideo() {
     this.calls.push('play');
@@ -145,6 +147,19 @@ describe('準備を待つあいだ', () => {
     engine.load('c');
     players[0].ready();
     expect(players[0].calls).toEqual(['volume:50', 'load:c']);
+  });
+
+  it('続きの位置を渡されたら、鳴り始めてから飛ばず、その位置から流すよう頼む', async () => {
+    const create = await load();
+    const engine = create(container(), 'a', { volume: 50, muted: false }, events(), 30);
+    apiLoads();
+    await flush();
+    players[0].ready();
+    expect(players[0].calls).toEqual(['volume:50', 'load:a@30']);
+    // 使い回して動画だけ替えるときも同じ。位置が無ければ頭から
+    engine.load('b', 45);
+    engine.load('c');
+    expect(players[0].calls.slice(2)).toEqual(['stop', 'load:b@45', 'stop', 'load:c']);
   });
 
   it('準備のあいだに一時停止を押されたら、準備ができても流さない', async () => {
