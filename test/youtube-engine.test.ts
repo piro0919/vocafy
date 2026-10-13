@@ -265,6 +265,8 @@ describe('準備ができたあと', () => {
     const { ev, player } = await ready();
     for (const code of [100, 101, 150, 5]) player.events.onError?.({ data: code });
     expect(ev.onError).toHaveBeenCalledTimes(4);
+    expect(ev.onError).toHaveBeenCalledWith({ detail: '100', unplayable: true });
+    expect(ev.onError).toHaveBeenLastCalledWith({ detail: '5', unplayable: false });
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 

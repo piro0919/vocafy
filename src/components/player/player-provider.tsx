@@ -49,6 +49,7 @@ import { useRadioExtension } from './use-radio-extension';
 import { useResumeWriter } from './use-resume-writer';
 import { useSleepTimer } from './use-sleep-timer';
 import { useSlot } from './use-slot';
+import { createTapWatch, trail } from './watch';
 import { IMAGE_SIZES } from '@/lib/image-sizes';
 import { TIMING } from '@/lib/timing';
 import { useClientValue } from '@/lib/client-value';
@@ -210,6 +211,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // 曲が終わって自動で次へ進むところか。load が読んで下ろす。いま流している曲が自動で進んだ先か（auto）も持つ
   const autoNext = useRef(false);
   const auto = useRef(false);
+  // 押したのに鳴らなかったことを Sentry に知らせる（watch.ts）
+  const [watch] = useState(createTapWatch);
   // ニコニコの曲は、iPad の Safari では自動で進んだ先だと必ず止められる（曲ごとに埋め込みを作り直すので、押した記録が残らない）。
   // 一度止められたら、このタブでは自動で進む先のニコニコの曲を読み込まずに飛ばす。自分で押した曲は ▶ で流せるので飛ばさない。
   // 並びがニコニコの曲だけのときに回り続けないよう、続けて飛ばした数（skipped）が並びの数に届いたら止まる
@@ -251,11 +254,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           playerRef.current?.seek(resumeAt.current);
           resumeAt.current = null;
         }
+        watch.sounded();
+        trail('playing');
         setPlaying(true);
         setLoading(false);
       },
       // 再生の開始をブラウザに止められたときも届く。読み込み中のままにせず、再生ボタンを出す
       onPaused: () => {
+        trail('paused');
         setPlaying(false);
         setLoading(false);
       },
@@ -264,6 +270,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       onBlocked: () => {
         setLoading(false);
         const { queue: q, index: i } = cursor.current;
+        if (q[i]) watch.blocked(q[i].service, q[i].videoId, auto.current);
         const skip = skipsAutoNiconico(q[i], {
           auto: auto.current,
           blocked: true,
@@ -277,12 +284,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPlaying(false);
       },
       // 再生できない動画（削除・非公開・埋め込み不可・有料会員限定など）は、読み込み中のまま止めず、次の曲へ進む
-      onError: () => {
+      onError: (failure) => {
+        const { queue: q, index: i } = cursor.current;
+        if (q[i]) watch.failed(q[i].service, q[i].videoId, failure.detail, failure.unplayable);
         setLoading(false);
         onEnded.current();
       },
     };
-  }, [skipAhead, playerRef]);
+  }, [skipAhead, playerRef, watch]);
 
   const load = useCallback(
     (given: QueueItem[], at: number, nextOwner: Owner) => {
@@ -302,6 +311,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setTime({ current: 0, duration: 0, at: performance.now() });
       const { service, videoId } = items[at];
+      watch.requested(service, videoId, auto.current);
       // 自分で押したニコニコの曲なら、押した操作のうちに隠している YouTube のプレイヤーに許しを付け、あとに続く YouTube の曲が止められないようにする
       if (!auto.current && service === 'niconico') primeParked(items);
       const skip = skipsAutoNiconico(items[at], {
@@ -332,6 +342,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setOwner,
       loadSettings,
       playbackRef,
+      watch,
     ],
   );
 
@@ -666,6 +677,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           softPause();
           return;
         }
+        watch.retried();
         if (playerRef.current?.service === 'niconico') primeParked(cursor.current.queue);
         // 止めていた音の出口を、押した操作の中で開け直す（押した操作の外だと、ブラウザが開け直しを止めることがある）
         keepAwake();
@@ -743,6 +755,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       soundRef,
       setSound,
       ownerRef,
+      watch,
     ],
   );
 

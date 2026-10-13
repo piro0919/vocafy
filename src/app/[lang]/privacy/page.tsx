@@ -5,7 +5,7 @@ import { TERMS } from '@/i18n/terms';
 import { CONTACT_FORM_URL, OPERATOR } from '@/lib/site';
 
 /** 最終更新日。英訳は日本語の版と同じ日付にそろえる */
-const UPDATED = { ja: '2026年10月12日', en: 'October 12, 2026' };
+const UPDATED = { ja: '2026年10月14日', en: 'October 14, 2026' };
 
 export async function generateMetadata({
   params,
@@ -64,6 +64,15 @@ function JaPrivacy() {
           rel="noopener noreferrer"
         >
           Vercel のプライバシーについての説明
+        </a>
+        をご覧ください。
+      </p>
+      <p>
+        不具合を直すため、Sentry
+        を使っています。ページでエラーが起きたときや、曲が再生できなかったときに、エラーの内容、開いていたページ、端末やブラウザの種類、流そうとした曲と直前のプレイヤーの動きを送ります。IP
+        アドレス、アカウントの情報、Cookie は送りません。詳しくは{' '}
+        <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer">
+          Sentry のプライバシーポリシー
         </a>
         をご覧ください。
       </p>
@@ -165,6 +174,16 @@ function EnPrivacy() {
           rel="noopener noreferrer"
         >
           Vercel&rsquo;s privacy information
+        </a>
+        .
+      </p>
+      <p>
+        We use Sentry to fix bugs. When an error occurs on a page or a song fails to play, we send
+        the error details, the page you were on, your device and browser types, the song we tried to
+        play, and the player&rsquo;s recent activity. We do not send your IP address, account
+        information, or cookies. For details, see{' '}
+        <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer">
+          Sentry&rsquo;s privacy policy
         </a>
         .
       </p>

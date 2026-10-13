@@ -19,13 +19,17 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   },
-  client: {},
+  client: {
+    // エラーの送り先（Sentry の kk-web の vocafy）。本番の Vercel にだけ入れる。無ければ送らない（src/lib/sentry.ts）
+    NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
+  },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   },
   emptyStringAsUndefined: true,
 });

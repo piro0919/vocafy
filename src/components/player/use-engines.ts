@@ -151,9 +151,9 @@ export function useEngines(
           sounding.current = false;
           handlersRef.current.onBlocked();
         }),
-        onError: live(() => {
+        onError: live((failure) => {
           sounding.current = false;
-          handlersRef.current.onError();
+          handlersRef.current.onError(failure);
         }),
       };
       // 先に読み込んでおいた埋め込みは、その入れ物ごと表に出して使う

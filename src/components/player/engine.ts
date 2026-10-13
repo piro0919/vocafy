@@ -32,8 +32,11 @@ export type EngineEvents = {
   /** 押す操作の無い再生をブラウザに止められた（iPad の Safari など）。止まったまま次の操作を待っている */
   onBlocked(): void;
   /** 流せない動画（削除・非公開・埋め込み不可など） */
-  onError(): void;
+  onError(failure: PlayFailure): void;
 };
+
+/** 流せなかったわけ。detail はプレイヤーの返したエラーの番号や名前、unplayable は動画そのものが流せないとき */
+type PlayFailure = { detail: string; unplayable: boolean };
 
 /** 作るときに渡す、残しておいた音量 */
 export type Sound = { volume: number; muted: boolean };

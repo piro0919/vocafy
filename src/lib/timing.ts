@@ -18,4 +18,6 @@ export const TIMING = {
   navigationLimit: 10_000,
   /** 「戻る」を送ってから、履歴が動かなかったとみなしてトップへ移るまでの時間（leave.ts） */
   backFallback: 500,
+  /** 押した曲が鳴る前に同じ曲をこれだけのうちに押し直したら、鳴らなかったとみなして知らせる（player/watch.ts） */
+  retapWindow: 15_000,
 } as const;

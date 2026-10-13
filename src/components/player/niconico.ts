@@ -33,6 +33,8 @@ type Message = {
     seekStatus?: number;
     currentTime?: number;
     duration?: number;
+    /** error のときの中身（sensitive_video・watch_api_error など） */
+    code?: string;
   };
 };
 
@@ -111,7 +113,8 @@ export function createNiconicoEngine(
     // 消えた・ほかのサイトでは流せない動画。台帳から外せるよう Vocafy に知らせる（確かめ直すのは API の側）
     if (eventName === 'error') {
       reportUnplayable('niconico', videoId);
-      events.onError();
+      // 流せない動画かは API が確かめ直すまで分からないので、どれも知らせる（watch.ts。中身ごとにまとまる）
+      events.onError({ detail: data?.code ?? 'unknown', unplayable: false });
     }
   };
   window.addEventListener('message', onMessage);

@@ -32,6 +32,7 @@
     "@dnd-kit/modifiers": "9.0.0",
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
+    "@sentry/nextjs": "^11.6.0",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-virtual": "^3.14.13",
     "@vercel/analytics": "^2.0.1",

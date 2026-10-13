@@ -415,7 +415,7 @@ describe('音量と後片付け', () => {
     play(result, 'youtube', 'a');
     const yt = last();
     act(() => yt.events.onPlaying());
-    act(() => yt.events.onError());
+    act(() => yt.events.onError({ detail: '5', unplayable: false }));
     act(() => yt.events.onBlocked());
     expect(handlers.onPlaying).toHaveBeenCalledTimes(1);
     expect(handlers.onError).toHaveBeenCalledTimes(1);
