@@ -410,6 +410,20 @@ describe('音量と後片付け', () => {
     expect(result.current.player.current).toBeNull();
   });
 
+  it('iPad・iPhone では、reset のあとも空の YouTube のプレイヤーを作り直し、次の YouTube の曲で使う', () => {
+    // 作り直さずにいたころは、プレイヤーを閉じたあとに押した YouTube の曲が止められた（2026-10-14、iPhone で）
+    apple.value = true;
+    const { result, frame } = setup();
+    play(result, 'youtube', 'a');
+    act(() => result.current.reset());
+    expect(frame.children).toHaveLength(1);
+    const warmed = last();
+    expect(warmed.calls).not.toContain('destroy');
+    play(result, 'youtube', 'b');
+    expect(last()).toBe(warmed);
+    expect(warmed.calls).toContain('load:b');
+  });
+
   it('知らせは、いま流しているプレイヤーのものだけを handlers に渡す', () => {
     const { result } = setup();
     play(result, 'youtube', 'a');

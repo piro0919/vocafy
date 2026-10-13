@@ -6,6 +6,7 @@ import { FADE_OUT_MS, FADE_STEPS, fadeOut, PAUSE_WAIT_MS } from './fade';
 import { createNiconicoEngine } from './niconico';
 import { createNiconicoPool, type NiconicoPool, type Preloaded } from './niconico-pool';
 import { savedVolume } from './player-storage';
+import { trail } from './watch';
 import { createYouTubeEngine } from './youtube';
 
 const DEFAULT_SOUND: Sound = { volume: 100, muted: false };
@@ -180,13 +181,15 @@ export function useEngines(
   // iPad・iPhone では、YouTube のプレイヤーを曲を押す前に作っておく（動画は入れない）。押す前から用意できていれば、
   // 押した操作の中で動画を頼めるので、Safari に1曲目を止められない。作るのを押してからにすると、仕組みの読み込みを
   // 待つあいだに押した操作の続きとみなされなくなる。ほかの端末は止められないので、開いただけで YouTube を読み込ませない
-  useEffect(() => {
+  // プレイヤーを閉じたとき（reset）も作り直す。作り直さずにいたころは、閉じたあとに押した YouTube の曲が止められた（2026-10-14、iPhone で）
+  const prewarm = useCallback(() => {
     if (!isAppleDevice() || player.current || parked.current) return;
     const engine = spawn('youtube', '', savedVolume());
     if (!engine) return;
     park(engine, true);
     parked.current = engine;
   }, [spawn, park]);
+  useEffect(prewarm, [prewarm]);
 
   // 3. 見えているニコニコの曲の埋め込みの先読み。曲の行の部品は先に作られて頼んでくるので、初めて頼まれたときに作る。ほかの端末では作らない
   const pool = useRef<NiconicoPool | null>(null);
@@ -232,6 +235,16 @@ export function useEngines(
       // 替えている途中に一時停止が押されていたら、消音して始める（鳴り始めたらすぐ止めるが、それまでの出だしも鳴らさない）
       const given = soundRef.current ?? DEFAULT_SOUND;
       const now = held.current ? { ...given, muted: true } : given;
+      // どのプレイヤーで流すか。押したのに鳴らなかったときに、Sentry の記録で見分ける（watch.ts）
+      trail('swap', {
+        path: preloaded
+          ? 'preloaded'
+          : player.current?.service === service
+            ? 'reuse'
+            : service === 'youtube' && parked.current
+              ? 'parked'
+              : 'spawn',
+      });
       // 絞って替えたときは、消音と音量を戻すのは次の曲が鳴り始めてから（onPlaying の rise）。頼んだ直後に戻すと、
       // 止めた前の曲の残りか次の曲の出だしがいきなり元の音量で鳴り、プツッと聞こえた
       if (player.current?.service === service && !preloaded) {
@@ -403,7 +416,8 @@ export function useEngines(
     player.current = null;
     drop(parked.current);
     parked.current = null;
-  }, [drop]);
+    prewarm();
+  }, [drop, prewarm]);
 
   return {
     player,
