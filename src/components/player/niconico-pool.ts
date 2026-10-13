@@ -40,9 +40,13 @@ export type Preloaded = {
 
 type Entry = Preloaded & {
   ready: boolean;
+  /** 音を消して流し、止め終えたか（動画の準備が済んだか） */
+  warmed: boolean;
 };
 
 let serial = 0;
+/** 埋め込みの statusChange の「再生中」（niconico.ts の STATUS と同じ） */
+const PLAYING = 2;
 /** 流し始める位置を持たないとき */
 const NO_START = (): number | undefined => undefined;
 
@@ -58,10 +62,36 @@ export function createNiconicoPool(
   // 曲が替わったときに読み込み直せるように（refresh）。持たずにいたら、一度押した曲は2回目から1回で流れなかった（2026-10-13）
   const wanted = new Map<string, number>();
 
-  const onMessage = (e: MessageEvent<{ eventName?: string; playerId?: string }>) => {
-    if (e.origin !== ORIGIN || e.data?.eventName !== 'loadComplete') return;
-    for (const entry of entries.values()) {
-      if (entry.playerId === e.data.playerId) entry.ready = true;
+  const post = (entry: Entry, eventName: string, data?: Record<string, unknown>) =>
+    entry.iframe.contentWindow?.postMessage(
+      { eventName, data, sourceConnectorType: 1, playerId: entry.playerId },
+      ORIGIN,
+    );
+  /**
+   * 読み込めた埋め込みは、音を消して流し、流れ始めたらすぐ止めて、動画の準備まで済ませておく（2026-10-13）。
+   * 埋め込みは再生を頼まれてから視聴の手続きと動画の読み込みを始めるので、押してから流れ始めるまで 1〜2 秒以上かかり、
+   * iPhone ではそのあいだに押した操作の扱いが切れて止められることがあった。音を消した再生は押す操作なしでも許されるので、
+   * 先に準備しておけば、押したときにすぐ流れる（本人の iPhone で、押した瞬間に音ありで流れた）。
+   * 止めるときに埋め込みが player-error（The operation was aborted）を出すが、受け取られる前なので誰にも届かない
+   */
+  const onMessage = (
+    e: MessageEvent<{ eventName?: string; playerId?: string; data?: { playerStatus?: number } }>,
+  ) => {
+    if (e.origin !== ORIGIN) return;
+    const entry = [...entries.values()].find((x) => x.playerId === e.data?.playerId);
+    if (!entry) return;
+    if (e.data.eventName === 'loadComplete' && !entry.ready) {
+      entry.ready = true;
+      post(entry, 'mute', { mute: true });
+      post(entry, 'play');
+    }
+    if (
+      e.data.eventName === 'statusChange' &&
+      e.data.data?.playerStatus === PLAYING &&
+      !entry.warmed
+    ) {
+      entry.warmed = true;
+      post(entry, 'pause');
     }
   };
   window.addEventListener('message', onMessage);
@@ -86,7 +116,7 @@ export function createNiconicoPool(
     iframe.src = niconicoEmbedUrl(videoId, playerId, startOf(videoId));
     box.append(iframe);
     container.append(box);
-    entries.set(videoId, { videoId, playerId, iframe, box, ready: false });
+    entries.set(videoId, { videoId, playerId, iframe, box, ready: false, warmed: false });
   };
 
   return {

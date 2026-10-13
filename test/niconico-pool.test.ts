@@ -13,13 +13,23 @@ type Node = {
   hidden?: boolean;
   className?: string;
   children: Node[];
+  /** 埋め込みへ送った知らせ（iframe だけが使う） */
+  sent: { eventName: string; data?: unknown; playerId: string }[];
+  contentWindow: { postMessage: (message: never, origin: string) => void };
   removed: boolean;
   append: (child: Node) => void;
   remove: () => void;
 };
 const node = (tag: string): Node => {
+  const sent: Node['sent'] = [];
   const n: Node = {
     tag,
+    sent,
+    contentWindow: {
+      postMessage: (message, origin) => {
+        if (origin === ORIGIN) sent.push(message);
+      },
+    },
     children: [],
     removed: false,
     append: (child) => n.children.push(child),
@@ -48,6 +58,15 @@ function loaded(playerId: string | null, origin = ORIGIN) {
   Object.assign(e, { origin, data: { eventName: 'loadComplete', playerId } });
   win.dispatchEvent(e);
 }
+function startedPlaying(playerId: string | null) {
+  const e = new Event('message') as Event & { origin: string; data: unknown };
+  Object.assign(e, {
+    origin: ORIGIN,
+    data: { eventName: 'statusChange', playerId, data: { playerStatus: 2 } },
+  });
+  win.dispatchEvent(e);
+}
+const sentNames = (box: Node) => box.children[0].sent.map((m) => m.eventName);
 
 beforeEach(() => {
   pool?.destroy();
@@ -157,6 +176,32 @@ describe('take（押されたので受け取る）', () => {
     pool.take('sm1');
     release();
     expect(boxes()[0].removed).toBe(false);
+  });
+});
+
+describe('温める（動画の準備を先に済ませる）', () => {
+  it('読み込めたら音を消して流し、流れ始めたら1回だけ止める', () => {
+    pool.want('sm1');
+    const [box] = boxes();
+    const id = playerIdOf(box);
+    loaded(id);
+    expect(box.children[0].sent.slice(0, 2)).toEqual([
+      expect.objectContaining({ eventName: 'mute', data: { mute: true }, playerId: id }),
+      expect.objectContaining({ eventName: 'play', playerId: id }),
+    ]);
+    startedPlaying(id);
+    startedPlaying(id);
+    expect(sentNames(box)).toEqual(['mute', 'play', 'pause']);
+  });
+
+  it('受け取られたあとは、流れ始めても止めない（押した曲を止めないように）', () => {
+    pool.want('sm1');
+    const [box] = boxes();
+    const id = playerIdOf(box);
+    loaded(id);
+    pool.take('sm1');
+    startedPlaying(id);
+    expect(sentNames(box)).toEqual(['mute', 'play']);
   });
 });
 
