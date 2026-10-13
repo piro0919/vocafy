@@ -330,8 +330,10 @@ function Progress({
       }}
       // 当たり判定は見た目の線より広くとる。線は帯の上の縁に重ねる。
       // スマホは指で狙うので、上へ広げる（下へ広げると曲名や再生ボタンに重なる）。
-      // 帯の角が丸いので、線が角からはみ出さないよう左右を内に寄せる（パソコンも浮いた板なので同じ）
-      className="group absolute inset-x-4 -top-2 h-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
+      // 帯の角が丸いので、線が角からはみ出さないよう左右を内に寄せる（パソコンも浮いた板なので同じ）。
+      // つまみは帯の上の縁に乗るので、下半分が帯の中身（後ろに並ぶ relative の要素）に潜らないよう、中身より上に重ねる。
+      // 潜っていたころは、スマホでつまみをつかんで引くと帯の中身が受け取り、位置が動かなかった（2026-10-14、Android の Chrome で）
+      className="group absolute inset-x-4 -top-2 z-raised h-4 cursor-pointer touch-none outline-none max-md:-top-6 max-md:h-8"
     >
       <span
         ref={bubble}

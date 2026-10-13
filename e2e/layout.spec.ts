@@ -68,3 +68,22 @@ for (const { width, height } of SIZES) {
       .toBe(true);
   });
 }
+
+test('再生の帯のつまみは、帯の中身に潜らず、つかめる', async ({ page }) => {
+  // つまみは帯の上の縁に乗る。下半分が帯の中身に潜っていたころは、スマホでつまみをつかんで引くと
+  // 帯の中身が受け取り、位置が動かなかった（2026-10-14、Android の Chrome で）
+  await page.goto('/producers/45');
+  await page.getByRole('button', { name: 'このボカロPの曲を再生' }).click();
+  const slider = page.getByRole('slider', { name: '再生位置' });
+  await expect(slider).toBeVisible();
+  const hits = await slider.evaluate((el) => {
+    const knob = el.querySelector('span.rounded-full');
+    if (!knob) throw new Error('つまみが見つからない');
+    const k = knob.getBoundingClientRect();
+    // つまみの中心と、帯の中身に潜っていた下寄りの点
+    return [k.top + k.height / 2, k.bottom - 1].map((y) =>
+      el.contains(document.elementFromPoint(k.left + k.width / 2, y)),
+    );
+  });
+  expect(hits).toEqual([true, true]);
+});
