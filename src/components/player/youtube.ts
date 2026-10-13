@@ -1,5 +1,6 @@
 import type { Engine, EngineEvents, Sound } from './engine';
 import { reportUnplayable } from './report';
+import { trail } from './watch';
 
 /** YouTube のプレイヤーのエラーの番号のうち、動画そのものが流せないもの（消えた・非公開 100、埋め込み不可 101・150） */
 const ERRORS = { gone: 100, notEmbeddable: 101, notEmbeddableToo: 150 };
@@ -138,6 +139,7 @@ export function createYouTubeEngine(
       events: {
         onReady: (e) => {
           if (destroyed) return;
+          trail('youtube ready', { first, latest });
           player = e.target;
           // 残しておいた音量で始める
           player.setVolume(sound.volume);
@@ -168,6 +170,7 @@ export function createYouTubeEngine(
         // 押す操作の無い再生をブラウザに止められた（iPad の Safari で、プレイヤーを作って最初の曲など）。
         // 状態は未開始のまま何も届かない。ボタンから playVideo を送れば流れる
         onAutoplayBlocked: () => {
+          trail('youtube autoplay blocked', { latest, priming });
           if (priming) endPrime();
           else events.onBlocked();
         },

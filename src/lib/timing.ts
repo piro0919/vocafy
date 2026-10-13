@@ -20,4 +20,6 @@ export const TIMING = {
   backFallback: 500,
   /** 押した曲が鳴る前に同じ曲をこれだけのうちに押し直したら、鳴らなかったとみなして知らせる（player/watch.ts） */
   retapWindow: 15_000,
+  /** これより早い押し直しは数えない。素早い二度押しで、鳴らないと感じて押し直したのではない（player/watch.ts） */
+  retapMin: 1000,
 } as const;

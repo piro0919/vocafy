@@ -66,6 +66,14 @@ describe('押し直し', () => {
     expect(kinds()).toEqual([]);
   });
 
+  it('素早い二度押しは、鳴らないと感じた押し直しに数えない', () => {
+    const { watch, after } = setup();
+    watch.requested('youtube', 'a', false);
+    after(150);
+    watch.requested('youtube', 'a', false);
+    expect(kinds()).toEqual([]);
+  });
+
   it('自動で進んだ曲は見張らない', () => {
     const { watch } = setup();
     watch.requested('youtube', 'a', true);

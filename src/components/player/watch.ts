@@ -44,7 +44,13 @@ export function createTapWatch(now: () => number = () => performance.now()) {
         return;
       }
       if (last && last.videoId === videoId) {
-        if (!last.sounded && !reported && now() - last.at < TIMING.retapWindow) {
+        const waited = now() - last.at;
+        if (
+          !last.sounded &&
+          !reported &&
+          waited >= TIMING.retapMin &&
+          waited < TIMING.retapWindow
+        ) {
           reported = true;
           report('retap', service, videoId);
         }
