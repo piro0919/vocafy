@@ -53,7 +53,7 @@ Playwright（`mcp__playwright-login__*`）で `https://kk-web.sentry.io/issues/?
 
 ## 5. Sentry の状態を変える
 
-- 書き込みは、ページの中の fetch に Cookie の `sc` の値を `X-CSRFToken` の頭に付けて送る（付けないと通らない）
+- 書き込みは、ページの中の fetch に Cookie の `sentry-sc` の値を `X-CSRFToken` の頭に付けて送る（付けないと通らない）
 - 直したもの: 直した版が配備されたあとに Resolved にする（`PUT /api/0/organizations/kk-web/issues/{id}/` に `{"status":"resolved"}`）。配備前に閉じると、配備前の出来事で開き直される
 - 外のせい: Ignored にする（`{"status":"ignored"}`）
 - 端末の仕様・原因不明: そのまま残す
