@@ -12,7 +12,14 @@ import { formatCount } from '@/lib/format';
 import { niconicoBigCover } from '@/lib/niconico-cover';
 import { voiceArtIdByName } from '@/lib/voice-art';
 import { favoriteSinger, singerLayout } from './og-layout';
-import { googleFont, OG_COLORS as T, OG_SHADOW, OG_SIZE, OgBackdrop } from '../../og-backdrop';
+import {
+  OG_COLORS as T,
+  OG_SHADOW,
+  OG_SIZE,
+  OgBackdrop,
+  requiredFont,
+  roundedFonts,
+} from '../../og-backdrop';
 
 export { OG_SIZE };
 
@@ -114,9 +121,9 @@ export async function producerImage(
         ? niconicoBigCover(song.niconicoThumb)
         : null,
     singerArts(song ? song.vocalists : favoriteSingers(found?.songs ?? [])),
-    googleFont('M PLUS Rounded 1c', 800, big),
-    googleFont('M PLUS Rounded 1c', 700, sub),
-    googleFont('Orbitron', 900, `${eyebrow}Vocafy`),
+    roundedFonts('Rounded', 800, big),
+    roundedFonts('RoundedBody', 700, sub),
+    requiredFont('Orbitron', 900, `${eyebrow}Vocafy`),
   ]);
   const silhouette = singersImage(singers);
   // 字の大きさ。右の欄は幅 640px ほど（表紙のときも、表紙の幅を顔の画像に近づけてそろえた）
@@ -227,11 +234,7 @@ export async function producerImage(
     </div>,
     {
       ...OG_SIZE,
-      fonts: [
-        { name: 'Rounded', data: display, weight: 800 },
-        { name: 'RoundedBody', data: body, weight: 700 },
-        { name: 'Orbitron', data: tech, weight: 900 },
-      ],
+      fonts: [...display, ...body, { name: 'Orbitron', data: tech, weight: 900 }],
     },
   );
 }

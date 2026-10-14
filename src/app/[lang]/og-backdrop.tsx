@@ -18,13 +18,14 @@ export const OG_SHADOW = '0 20px 48px rgba(16,24,26,0.18)';
 
 /**
  * Google Fonts から、text の文字だけを抜いて取る。ボカロPの名前はどんな字でも来るので、抜いた字を手元に置いておけない。
- * User-Agent を付けずに聞くと、絵を作る仕組み（Satori）が読める TrueType で返る（woff2 は読めない）
+ * User-Agent を付けずに聞くと、絵を作る仕組み（Satori）が読める TrueType で返る（woff2 は読めない）。
+ * 書体に text の字が1つも無いと、フォントの住所が 400 で HTML を返す。そのときは null（Sentry の VOCAFY-6）
  */
 export async function googleFont(
   family: string,
   weight: number,
   text: string,
-): Promise<ArrayBuffer> {
+): Promise<ArrayBuffer | null> {
   const css = await (
     await fetch(
       `https://fonts.googleapis.com/css2?family=${family.replaceAll(' ', '+')}:wght@${weight}&text=${encodeURIComponent(text)}`,
@@ -32,7 +33,36 @@ export async function googleFont(
   ).text();
   const url = css.match(/src: url\((.+?)\) format\('(?:truetype|opentype)'\)/)?.[1];
   if (!url) throw new Error(`${family} を取れませんでした`);
-  return (await fetch(url)).arrayBuffer();
+  const res = await fetch(url);
+  if (res.status === 400) return null;
+  if (!res.ok) throw new Error(`${family} を取れませんでした（${res.status}）`);
+  return res.arrayBuffer();
+}
+
+const HANGUL = /\p{Script=Hangul}/gu;
+
+/**
+ * 絵の字の書体。M PLUS Rounded 1c にハングルが無いので、ハングルだけ Noto Sans KR で補う（字の無い書体は Satori が飛ばし、次の書体で描く）。
+ * どちらの書体にも無い字は描かれない
+ */
+export async function roundedFonts(name: string, weight: 700 | 800, text: string) {
+  const hangul = [...new Set(text.match(HANGUL))].join('');
+  const rest = text.replace(HANGUL, '');
+  const [rounded, korean] = await Promise.all([
+    rest.trim() ? googleFont('M PLUS Rounded 1c', weight, rest) : null,
+    hangul ? googleFont('Noto Sans KR', weight, hangul) : null,
+  ]);
+  return [
+    ...(rounded ? [{ name, data: rounded, weight }] : []),
+    ...(korean ? [{ name: `${name}Korean`, data: korean, weight }] : []),
+  ];
+}
+
+/** 字の無い書体を返さない googleFont。ロゴの字（英字）のように、必ずある字だけに使う */
+export async function requiredFont(family: string, weight: number, text: string) {
+  const data = await googleFont(family, weight, text);
+  if (!data) throw new Error(`${family} に字がありません`);
+  return data;
 }
 
 /** サイトの地の方眼（ambient.tsx）と同じ模様。マスは 30px、4マスごとに濃い線。左下を濃く、右上へ向かって消す */

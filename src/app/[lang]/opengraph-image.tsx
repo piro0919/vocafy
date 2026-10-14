@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import { langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
-import { googleFont, OG_COLORS, OG_SIZE, OgBackdrop } from './og-backdrop';
+import { requiredFont, OG_COLORS, OG_SIZE, OgBackdrop } from './og-backdrop';
 
 export const alt = 'Vocafy — ボカロ曲を、ずっと聴ける。';
 export const size = OG_SIZE;
@@ -28,7 +28,7 @@ export default async function OpengraphImage({ params }: { params: Promise<{ lan
   const lang = await langOf(params);
   const { tagline } = TEXT[lang];
   // 英語の一文の字は手元の抜いた字（日本語の一文の分だけ）に無いので、ボカロPの絵と同じく Google Fonts から抜いて取る
-  const taglineFont = lang === 'ja' ? font : await googleFont('M PLUS Rounded 1c', 700, tagline);
+  const taglineFont = lang === 'ja' ? font : await requiredFont('M PLUS Rounded 1c', 700, tagline);
   return new ImageResponse(
     <div
       style={{
