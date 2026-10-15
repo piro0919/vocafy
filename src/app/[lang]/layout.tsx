@@ -28,6 +28,7 @@ import { ThemeWatcher } from '@/components/theme/theme-watcher';
 import { SITE_URL } from '@/lib/site';
 import { DEFAULT_LANG, isLang } from '@/i18n/config';
 import { LangRedirect } from '@/i18n/lang-choice';
+import { ExternalBrowser } from '@/components/external-browser';
 import { VoiceNamesProvider } from '@/components/voice-names';
 import { voiceNamesFor } from '@/lib/voice-names';
 import { producerNamesFor } from '@/lib/producer-names';
@@ -176,6 +177,7 @@ export default async function RootLayout({ children, params }: LayoutProps<'/[la
                 <VoiceFollower />
                 <VisualizerLink />
                 <LangRedirect />
+                <ExternalBrowser />
               </PlayerProvider>
             </Progress>
           </ProducerNamesProvider>
