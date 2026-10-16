@@ -10,3 +10,4 @@ minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - eslint-plugin-hollow-tests
   - use-pwa
+  - niconico-embed-player

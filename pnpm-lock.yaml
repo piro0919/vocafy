@@ -41,6 +41,9 @@ importers:
       next:
         specifier: 16.3.8
         version: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      niconico-embed-player:
+        specifier: 0.1.0
+        version: 0.1.0
       pg:
         specifier: ^8.23.1
         version: 8.23.1
@@ -4141,6 +4144,9 @@ packages:
         optional: true
       sass:
         optional: true
+
+  niconico-embed-player@0.1.0:
+    resolution: {integrity: sha512-P3LzfLjj38yGkrinGtMYFor7WC+tI+gR10Jr+4m/mGDKCAcaE0m4ca5/g04pjKriYutdP+DZ1FtKGzsZROSDyQ==}
 
   node-exports-info@1.6.2:
     resolution: {integrity: sha512-kXs9Go0cah0qHVV2v389IXQLdLCeE1xfFtjOAF+iobu0OIoG1pje8At2vMHyaPMiPMnG/LWP50twML21eMcAag==}
@@ -9178,6 +9184,8 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
+
+  niconico-embed-player@0.1.0: {}
 
   node-exports-info@1.6.2:
     dependencies:
