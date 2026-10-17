@@ -19,7 +19,7 @@ Playwright（`mcp__playwright-login__*`）で `https://kk-web.sentry.io/issues/?
   - message（`Playback failed: blocked` など）
   - tags の playback・service・url・browser・os・device・apple
   - entries の breadcrumbs の末尾8件。category が player のものが、直前のプレイヤーの知らせ（load・swap・playing・paused・blocked・error）
-    - swap の path はどのプレイヤーで流したか（preloaded・reuse・parked・spawn）。iPad・iPhone のニコニコの曲は、先読みの様子（preload が none・loading・ready、ms は読み込み始めてからの時間）も付く
+    - swap の path はどのプレイヤーで流したか（preloaded・reuse・parked・spawn）。iPad・iPhone のニコニコの曲は、先読みの様子（preload が none・loading・ready、ms は読み込み始めてからの時間、warmed は音を消して流して止める温めが済んだか。warmed は niconico-embed-player 0.1.2 から）も付く
     - 時刻は 2026-10-14 の版から記録したときのもの。それより前の記録は、全部が送った瞬間の同じ時刻になっていて、間隔は読めない
   - entries の exception の stacktrace は、押したのに鳴らなかった件では Sentry の読み込み役の中を指すだけなので読まない
 
