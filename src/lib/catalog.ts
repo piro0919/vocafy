@@ -314,7 +314,7 @@ function hash(text: string): number {
 function shuffleOn<T extends { id: number }>(date: string, list: T[]): T[] {
   return list
     .map((item) => ({ item, key: hash(`${date}${item.id}`) }))
-    .toSorted((a, b) => a.key - b.key)
+    .sort((a, b) => a.key - b.key)
     .map(({ item }) => item);
 }
 
@@ -378,9 +378,9 @@ export const onThisDay = cache(
         : [],
     );
     const sharp = (list: typeof rows) => list.filter((r) => covers.get(r.id) !== null);
-    const pool = (
-      [sharp(exact), sharp(within), exact].find((list) => list.length > 0) ?? within
-    ).toSorted((a, b) => b.rating_score - a.rating_score || a.id - b.id);
+    const pool = [
+      ...([sharp(exact), sharp(within), exact].find((list) => list.length > 0) ?? within),
+    ].sort((a, b) => b.rating_score - a.rating_score || a.id - b.id);
     const popular = shuffle(pool.slice(0, HERO_POPULAR_POOL)).slice(0, HERO_POPULAR);
     const others = shuffle(pool.filter((r) => !popular.includes(r))).slice(
       0,

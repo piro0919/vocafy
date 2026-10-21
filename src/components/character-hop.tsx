@@ -41,9 +41,7 @@ export function CharacterHop({ className, children }: { className: string; child
         const items = ([...el.children] as HTMLElement[]).filter(
           (item) => item.offsetParent !== null,
         );
-        const columns = [...new Set(items.map((item) => item.offsetLeft))].toSorted(
-          (a, b) => a - b,
-        );
+        const columns = [...new Set(items.map((item) => item.offsetLeft))].sort((a, b) => a - b);
         for (const item of items)
           item.style.setProperty('--hop-order', String(columns.indexOf(item.offsetLeft)));
         el.dataset.hop = '';

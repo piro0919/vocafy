@@ -68,7 +68,7 @@ export function FavoriteNewSongs() {
       const songs = lists
         .flat()
         .filter((s) => (seen.has(s.songId) ? false : (seen.add(s.songId), true)))
-        .toSorted((a, b) => b.publishedOn.localeCompare(a.publishedOn))
+        .sort((a, b) => b.publishedOn.localeCompare(a.publishedOn))
         .slice(0, SONGS);
       setLoaded({ key, songs });
     });

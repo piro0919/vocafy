@@ -217,7 +217,7 @@ function FlowingWall({ songs }: { songs: DatedItem[] }) {
           { transform: 'translateX(0)' },
           { transform: `translateX(-${distance}px)` },
         ];
-        const animation = track.animate(i % 2 === 0 ? frames : frames.toReversed(), {
+        const animation = track.animate(i % 2 === 0 ? frames : [...frames].reverse(), {
           duration: (distance / FLOW_SPEED) * 1000,
           iterations: Infinity,
           easing: LINEAR,

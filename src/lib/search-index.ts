@@ -113,7 +113,7 @@ export function findInIndex(index: Prepared, query: string): Found {
   const producers = index.producers
     .map((p) => ({ p, s: Math.max(score(p.key, query), score(p.english, folded)) }))
     .filter((x) => x.s > 0)
-    .toSorted((a, b) => b.s - a.s || b.p.songCount - a.p.songCount)
+    .sort((a, b) => b.s - a.s || b.p.songCount - a.p.songCount)
     .map((x) => x.p);
   const songs = index.songs
     .map((s) => ({
@@ -127,12 +127,12 @@ export function findInIndex(index: Prepared, query: string): Found {
         ),
     }))
     .filter((x) => x.rank > 0)
-    .toSorted((a, b) => b.rank - a.rank)
+    .sort((a, b) => b.rank - a.rank)
     .map((x) => x.s);
   const voices = index.voices
     .map((v) => ({ v, s: score(v.key, query) }))
     .filter((x) => x.s > 0)
-    .toSorted((a, b) => b.s - a.s || b.v.songCount - a.v.songCount)
+    .sort((a, b) => b.s - a.s || b.v.songCount - a.v.songCount)
     .map((x) => x.v);
   return { producers, songs, voices };
 }

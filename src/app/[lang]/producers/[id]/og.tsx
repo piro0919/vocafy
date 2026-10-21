@@ -72,7 +72,7 @@ function singersImage(arts: Art[]): { src: string; width: number; height: number
     `<image xlink:href="${a.src}" x="${x}" y="0" width="${w}" height="${height}"/>`;
   const drawn = arts
     .map((a, i) => image(a, placements[i]!))
-    .toReversed()
+    .reverse()
     .join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}">
 <g opacity="0.22">${drawn}</g></svg>`;

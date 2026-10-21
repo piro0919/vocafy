@@ -44,7 +44,7 @@ export function colorsOf(data: ArrayLike<number>): [string, string] | null {
   }
   const ranked = [...buckets.values()]
     .map((b) => ({ r: b.r / b.weight, g: b.g / b.weight, b: b.b / b.weight, weight: b.weight }))
-    .toSorted((a, b) => b.weight - a.weight);
+    .sort((a, b) => b.weight - a.weight);
   const first = ranked[0];
   if (!first) return null;
   const distance = (a: typeof first, b: typeof first) =>

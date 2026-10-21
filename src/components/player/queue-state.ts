@@ -98,5 +98,5 @@ export function upcomingOf(
  * 入っているとき、足せる曲が見つかるまで試す）。limit 曲まで
  */
 export function radioSeeds(queue: QueueItem[], index: number, limit: number): QueueItem[] {
-  return [queue[index], ...queue.filter((_, i) => i !== index).toReversed()].slice(0, limit);
+  return [queue[index], ...queue.filter((_, i) => i !== index).reverse()].slice(0, limit);
 }

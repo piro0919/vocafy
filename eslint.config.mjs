@@ -42,6 +42,37 @@ const eslintConfig = defineConfig([
       'src/app/\\[lang\\]/producers/\\[id\\]/og.tsx',
     ],
   }),
+  // Chrome 110 より前のブラウザに無い関数を使わない（Sentry の VOCAFY-9。QQ Browser で検索が toSorted で落ちた）。
+  // ブラウザに配るかはファイルの場所で見分けにくいので、配列の関数は src の全体で止める。groupBy などはページ（サーバー）でだけ許す
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'MemberExpression[property.name=/^(toSorted|toReversed|toSpliced)$/]',
+          message: '古いブラウザに無い。[...list].sort() などで書く',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/components/**/*.{ts,tsx}', 'src/lib/**/*.ts', 'src/i18n/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'MemberExpression[property.name=/^(toSorted|toReversed|toSpliced)$/]',
+          message: '古いブラウザに無い。[...list].sort() などで書く',
+        },
+        {
+          selector:
+            'MemberExpression[object.name=/^(Map|Object|Promise)$/][property.name=/^(groupBy|withResolvers)$/]',
+          message: '古いブラウザに無い',
+        },
+      ],
+    },
+  },
   // 何も確かめずに通るテスト（確かめる文が無い・条件の中にしか無い）を落とす（eslint-plugin-hollow-tests、2026-10-12）
   { ...hollowTests.configs.recommended, files: ['test/**/*.{ts,tsx}', 'e2e/**/*.ts'] },
   // Override default ignores of eslint-config-next.
