@@ -39,7 +39,7 @@ jobs:
     # VocaDB が止まっているときは、聞き直しで最大 15 分ほど待つ（scripts/lib/vocadb.ts）
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup
 
