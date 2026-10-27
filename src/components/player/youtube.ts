@@ -15,6 +15,8 @@ type YTPlayer = {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
+  getPlayerState(): number;
+  isMuted(): boolean;
   setVolume(volume: number): void;
   mute(): void;
   unMute(): void;
@@ -168,9 +170,17 @@ export function createYouTubeEngine(
           if (data === YT.PlayerState.ENDED) events.onEnded();
         },
         // 押す操作の無い再生をブラウザに止められた（iPad の Safari で、プレイヤーを作って最初の曲など）。
-        // 状態は未開始のまま何も届かない。ボタンから playVideo を送れば流れる
+        // 状態は未開始のまま何も届かない。ボタンから playVideo を送れば流れる。
+        // 再生中が届いたあとに止められたと届いたこともある（VOCAFY-3、2026-10-23 の iPhone）。音を消して流し続けていたのかを
+        // 見分けるため、そのときの状態・位置・消音を記録に残す
         onAutoplayBlocked: () => {
-          trail('youtube autoplay blocked', { latest, priming });
+          trail('youtube autoplay blocked', {
+            latest,
+            priming,
+            state: player?.getPlayerState(),
+            at: player?.getCurrentTime(),
+            muted: player?.isMuted(),
+          });
           if (priming) endPrime();
           else events.onBlocked();
         },

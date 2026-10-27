@@ -17,6 +17,8 @@ type Handlers = {
 
 class FakePlayer {
   calls: string[] = [];
+  playerState = -1;
+  muted = false;
   constructor(
     public videoId: string | undefined,
     public events: Handlers,
@@ -43,6 +45,12 @@ class FakePlayer {
   }
   getDuration() {
     return 200;
+  }
+  getPlayerState() {
+    return this.playerState;
+  }
+  isMuted() {
+    return this.muted;
   }
   setVolume(v: number) {
     this.calls.push(`volume:${v}`);
@@ -71,7 +79,11 @@ type FakeScript = { src: string; onerror: (() => void) | null; remove: () => voi
 
 let players: FakePlayer[];
 let scripts: FakeScript[];
-const win: { YT?: unknown; onYouTubeIframeAPIReady?: () => void } = {};
+const win: {
+  YT?: unknown;
+  onYouTubeIframeAPIReady?: () => void;
+  Sentry?: { addBreadcrumb: (b: unknown) => void };
+} = {};
 const fetchMock = vi.fn(() => Promise.resolve(new Response()));
 
 vi.stubGlobal('window', win);
@@ -289,6 +301,26 @@ describe('準備ができたあと', () => {
     const { ev, player } = await ready();
     player.events.onAutoplayBlocked?.();
     expect(ev.onBlocked).toHaveBeenCalledTimes(1);
+  });
+
+  // VOCAFY-3: 再生中が届いた 1.5 秒後に止められたと届いた。音を消して流し続けていたのかを、記録で見分ける
+  it('止められたときのプレイヤーの状態・位置・消音を記録に残す', async () => {
+    const addBreadcrumb = vi.fn();
+    win.Sentry = { addBreadcrumb };
+    try {
+      const { player } = await ready();
+      player.playerState = STATE.PLAYING;
+      player.muted = true;
+      player.events.onAutoplayBlocked?.();
+      expect(addBreadcrumb).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'youtube autoplay blocked',
+          data: expect.objectContaining({ state: STATE.PLAYING, at: 12, muted: true }),
+        }),
+      );
+    } finally {
+      delete win.Sentry;
+    }
   });
 });
 
