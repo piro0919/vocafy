@@ -35,7 +35,7 @@ jobs:
       # 小さな台帳（db/fixture.sql）を入れた CI 用の DB。ビルドがトップとボカロPの一覧を作るのに要る
       DATABASE_URL: postgres://vocafy:vocafy@localhost:5434/vocafy
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # 下のマイグレーションの確かめで、push の前のコミットと比べる
           fetch-depth: 0
@@ -104,7 +104,7 @@ jobs:
       # 小さな台帳（db/fixture.sql）を入れた CI 用の DB。ビルドがトップとボカロPの一覧を作るのに要る
       DATABASE_URL: postgres://vocafy:vocafy@localhost:5434/vocafy
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup
 
@@ -113,7 +113,7 @@ jobs:
         run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
 
       - id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
@@ -159,7 +159,7 @@ jobs:
       # 小さな台帳（db/fixture.sql）を入れた CI 用の DB。測るボカロPの画面（/producers/45）は DECO＊27
       DATABASE_URL: postgres://vocafy:vocafy@localhost:5434/vocafy
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup
 
