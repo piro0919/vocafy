@@ -7,9 +7,9 @@ import { langOf } from '@/i18n/config';
 import { voiceName } from '@/lib/voice-name';
 import { voiceNamesFor } from '@/lib/voice-names';
 
-// 流す曲（全曲から選ぶピックアップ）を日ごとに選び直すので、1日ごとに作り直す（catalog.ts の Playlist）。
-// 作り直すのは開かれたページだけで、DB を起こすのはその日の1回目だけ
-export const revalidate = 86400;
+// 時間では作り直さず、最初に開かれたときに作って次の配備まで残す（DB を起こさないため）。流す曲（ピックアップ）も配備ごとに選ぶ（catalog.ts の pickupSeed）。
+// 1日ごとに作り直していたころは、Neon の無料の計算時間を使い切りかけた（2026-11-19）
+export const revalidate = false;
 
 export function generateStaticParams() {
   return [];

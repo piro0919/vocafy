@@ -5,12 +5,12 @@ import { notFound } from 'next/navigation';
 import { Heading } from '@/components/heading';
 import { PickGroups } from '@/components/pick-groups';
 import { PlayAll } from '@/components/play-all';
-import { type DatedItem, findVoice } from '@/lib/catalog';
+import { type DatedItem, findVoice, voices } from '@/lib/catalog';
 import { voiceArt } from '@/lib/voice-art';
 import { voiceColor } from '@/lib/voice-color';
 import { formatCount } from '@/lib/format';
 import { yearOf } from '@/lib/iso-date';
-import { langOf } from '@/i18n/config';
+import { LANGS, langOf } from '@/i18n/config';
 import { defineText } from '@/i18n/text';
 import { voiceName } from '@/lib/voice-name';
 import { voiceNamesFor } from '@/lib/voice-names';
@@ -21,11 +21,13 @@ const TEXT = defineText({
 });
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
-// 歌声の画面はビルドのときには作らず、最初に開かれたときに作って残す
+// 歌声の画面は、英語の分も含めてビルドのときに全員分を作る。開かれたときに作っていたころは、配備のたびに1日百数十枚を作り直して
+// DB が起き続け、Neon の無料の計算時間を使い切りかけた（2026-11-19）
 export const revalidate = false;
 
-export function generateStaticParams() {
-  return [];
+export async function generateStaticParams() {
+  const all = await voices();
+  return LANGS.flatMap((lang) => all.map((v) => ({ lang, id: String(v.id) })));
 }
 
 export async function generateMetadata({

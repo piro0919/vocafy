@@ -1,18 +1,20 @@
-import { langOf } from '@/i18n/config';
+import { LANGS, langOf } from '@/i18n/config';
 import { canonical } from '@/lib/site';
 import { producerName } from '@/lib/producer-name';
 import { producerNamesFor } from '@/lib/producer-names';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { findProducer } from '@/lib/catalog';
+import { findProducer, producers } from '@/lib/catalog';
 import { ProducerView } from './producer-view';
 
 // 台帳は取り込みのときにしか変わらないので、時間では作り直さず、次の配備まで作ったページを使い回す（DB を起こさないため）。
-// ボカロPの画面はビルドのときには作らず、最初に開かれたときに作って残す
+// ボカロPの画面は、英語の分も含めてビルドのときに全員分を作る。開かれたときに作っていたころは、配備のたびに1日数百枚を作り直して
+// DB が起き続け、Neon の無料の計算時間を使い切りかけた（2026-11-19）。英語の画面への要求も4分の1ほどあったので、英語も作る
 export const revalidate = false;
 
-export function generateStaticParams() {
-  return [];
+export async function generateStaticParams() {
+  const all = await producers();
+  return LANGS.flatMap((lang) => all.map((p) => ({ lang, id: String(p.id) })));
 }
 
 export async function generateMetadata({

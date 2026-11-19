@@ -47,7 +47,7 @@ export function generateStaticParams() {
 }
 
 // 日付で決まるデータの作り置き。引数（日付）ごとに分かれ、次の配備まで残る。catalog.ts の関数そのものを包まないのは、
-// ほかの画面（日付の一覧など）は1日ごとに作り直していて、そちらまで作り置きにしないため。
+// ほかの画面（日付の一覧など）はページごとの作り置きに任せていて、関数の結果まで二重に作り置かないため。
 // Vercel の Data cache は配備をまたいで残る（https://vercel.com/docs/caching/runtime-cache/data-cache の「Persistent across
 // deployments」）ので、鍵に配備の番号を入れて、配備ごとに作り直させる。入れないと、配備し直しても（毎週の取り込みのあとも）
 // 最初に作った中身のまま残る（2026-10-12 に資料で分かった）

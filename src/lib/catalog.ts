@@ -460,10 +460,17 @@ const PICKUP_SIZE = 100;
 /**
  * 一覧で流す曲。total は一覧の全曲の数、pickup はその中から PICKUP_SIZE 曲を選んだか。
  * 1つの一覧を何百曲も続けて聴く人はまずいないので、流すのは PICKUP_SIZE 曲までにする（2026-10-11 に本人と決めた。
- * 1曲4分として100曲で6時間半）。多い一覧は全曲から日付で決まる並べ替えで選び（評価点の上位からも少し混ぜる）、同じ日は同じ曲にする（画面に並べた曲と
+ * 1曲4分として100曲で6時間半）。多い一覧は全曲から配備ごとに決まる並べ替え（pickupSeed）で選び（評価点の上位からも少し混ぜる）、同じ配備のあいだは同じ曲にする（画面に並べた曲と
  * 流れる並びが食い違わず、共有した相手にも同じ曲が出る）。選んだ曲は新しい順に並べる
  */
 export type Playlist = { songs: DatedItem[]; total: number; pickup: boolean };
+
+/**
+ * ピックアップの選び方を決める種。本番は配備の ID で、次の配備（毎週の取り込み）まで同じ曲を選ぶ。
+ * 一覧の画面と再生用の画面は配備まで作り置き、同じ配備の中でも別の日に作られうるので、日付を種にすると並べた曲と流れる曲が食い違う。
+ * 1日ごとに作り直していたころは日付だったが、Neon の計算時間を減らすため作り直すのをやめた（2026-11-19）。配備の ID が無い手元と CI は日付
+ */
+const pickupSeed = () => process.env.VERCEL_DEPLOYMENT_ID ?? today();
 
 /**
  * 全曲から選ぶときに、評価点の上位から選ぶ曲の数と、その上位の範囲。残りは全曲から無作為に選ぶ。
@@ -477,7 +484,7 @@ async function playlist(where: string, params: unknown[], first: Paged): Promise
   if (first.total <= PICKUP_SIZE) return { songs: first.songs, total: first.total, pickup: false };
   // 後ろに足す値の番号（$n）。足す順は下の配列と同じ
   const [day, size, popularCount, pool] = [
-    today(),
+    pickupSeed(),
     PICKUP_SIZE,
     PICKUP_POPULAR,
     PICKUP_POPULAR_POOL,
@@ -497,7 +504,7 @@ async function playlist(where: string, params: unknown[], first: Paged): Promise
      )
      select * from (select * from popular union all select * from rest) r
      order by r.published_on desc, r.id`,
-    [...params, today(), PICKUP_SIZE, PICKUP_POPULAR, PICKUP_POPULAR_POOL],
+    [...params, pickupSeed(), PICKUP_SIZE, PICKUP_POPULAR, PICKUP_POPULAR_POOL],
   );
   return { songs: rows.map(toItem), total: first.total, pickup: true };
 }

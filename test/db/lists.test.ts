@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   dailyMix,
   findProducer,
@@ -93,6 +93,34 @@ describe('playlistOfDay（一覧で流す曲）', () => {
     expect(ids((await playlistOfDay('05-05')).songs)).toEqual(
       ids((await playlistOfDay('05-05')).songs),
     );
+  });
+
+  describe('配備の ID があるとき（本番）', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllEnvs();
+    });
+
+    const pickOn = async (date: string) => {
+      vi.setSystemTime(new Date(date));
+      return ids((await playlistOfDay('05-05')).songs);
+    };
+
+    it('日付が変わっても同じ100曲を選ぶ（一覧の画面と再生用の画面は、同じ配備の中で別の日に作られうる）', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_a');
+      expect(await pickOn('2026-11-19T12:00:00+09:00')).toEqual(
+        await pickOn('2026-11-25T12:00:00+09:00'),
+      );
+    });
+
+    it('配備が替われば選び直す', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_a');
+      const first = await pickOn('2026-11-19T12:00:00+09:00');
+      vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_b');
+      expect(await pickOn('2026-11-19T12:00:00+09:00')).not.toEqual(first);
+    });
   });
 
   it('100曲までの一覧は、全曲をそのまま流す', async () => {
