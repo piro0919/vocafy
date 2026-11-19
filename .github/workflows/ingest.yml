@@ -36,8 +36,9 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    # VocaDB が止まっているときは、聞き直しで最大 15 分ほど待つ（scripts/lib/vocadb.ts）
-    timeout-minutes: 30
+    # VocaDB が止まっているときは、聞き直しで最大 15 分ほど待つ（scripts/lib/vocadb.ts）。
+    # Renovate のマージの直後なら、配備を呼ぶ前に最大 31 分待つ（下の deploy）
+    timeout-minutes: 65
     steps:
       - uses: actions/checkout@v7
 
@@ -56,6 +57,17 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
-      - run: curl -fsS -X POST "$HOOK" > /dev/null
+      - name: deploy
+        # 依存の更新だけの push は本番に配備しない（scripts/vercel-ignore.sh）。その判定は Deploy Hook の配備にも掛かり、
+        # 先頭のコミットから 30 分（RECENT）たつまでは飛ばすので、Renovate のマージの直後なら、たつまで待ってから呼ぶ
+        run: |
+          git fetch --quiet --depth 1 origin main
+          author=$(git log -1 --format=%an FETCH_HEAD)
+          wait=$(($(git log -1 --format=%ct FETCH_HEAD) + 1800 + 60 - $(date +%s)))
+          if [ "$author" = "renovate[bot]" ] && [ "$wait" -gt 0 ]; then
+            echo "Renovate のマージの直後なので ${wait} 秒待つ"
+            sleep "$wait"
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null
         env:
           HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
