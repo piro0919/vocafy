@@ -40,6 +40,7 @@ function commit(author: string, agoSeconds = 0): string {
 function decide(env: Record<string, string>): number | null {
   const base: NodeJS.ProcessEnv = { ...process.env, VERCEL_ENV: 'production' };
   delete base.VERCEL_GIT_PREVIOUS_SHA;
+  delete base.VERCEL_GIT_COMMIT_REF;
   return spawnSync('sh', [SCRIPT], { cwd: repo, env: { ...base, ...env } }).status;
 }
 
@@ -73,10 +74,23 @@ describe('vercel-ignore.sh', () => {
     expect(decide({ VERCEL_GIT_PREVIOUS_SHA: prev })).toBe(BUILD);
   });
 
-  it('プレビューは作る', () => {
+  it('人のブランチのプレビューは作る', () => {
     const prev = commit(HUMAN, LONG_AGO_SECONDS);
     commit(RENOVATE);
-    expect(decide({ VERCEL_GIT_PREVIOUS_SHA: prev, VERCEL_ENV: 'preview' })).toBe(BUILD);
+    expect(
+      decide({
+        VERCEL_GIT_PREVIOUS_SHA: prev,
+        VERCEL_ENV: 'preview',
+        VERCEL_GIT_COMMIT_REF: 'feature/x',
+      }),
+    ).toBe(BUILD);
+  });
+
+  it('Renovate のブランチのプレビューは飛ばす', () => {
+    commit(RENOVATE);
+    expect(decide({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'renovate/pnpm-11.x' })).toBe(
+      SKIP,
+    );
   });
 
   it('確かめられないときは作る（前の配備が無い・見つからない・同じコミットの配備し直し）', () => {

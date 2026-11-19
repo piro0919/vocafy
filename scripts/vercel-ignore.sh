@@ -10,7 +10,19 @@
 # RECENT 秒より後の配備は作る。push で始まった配備はマージの直後に走るので飛ばし、取り込みの Deploy Hook は
 # 先頭が Renovate のマージの直後なら RECENT 秒まで待ってから呼ぶ（ingest.yml）。
 # 確かめられないとき（前の配備のコミットが無い・浅い clone で見つからない）は作る。
+#
+# Renovate の PR のプレビューも作らない（2026-11-19 に本人が決めた）。プレビューのビルドも本番と同じ DB を読む
+# （1回 約 46MB）ため。Renovate のブランチは renovate/ で始まる。PR の確かめは GitHub Actions の CI が受け持つ。
 RECENT=1800
+
+case "$VERCEL_GIT_COMMIT_REF" in
+  renovate/*)
+    if [ "$VERCEL_ENV" = "preview" ]; then
+      echo "Renovate の PR なので、プレビューは作らない"
+      exit 0
+    fi
+    ;;
+esac
 
 [ "$VERCEL_ENV" = "production" ] || exit 1
 [ -n "$VERCEL_GIT_PREVIOUS_SHA" ] || exit 1
