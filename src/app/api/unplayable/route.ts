@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { isPlayable, markUnplayable } from '@/lib/unplayable';
 import { isVideoId, type Service } from '@/lib/video-id';
 import { MINUTE_MS } from '@/lib/timing';
+import { LANGS } from '@/i18n/config';
 
 /**
  * 再生中に「流せない」と分かった動画の知らせを受ける（src/components/player/report.ts から送る）。
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
   if (playable !== false) return Response.json({ checked: true, removed: false });
 
   const producers = await markUnplayable(service, id);
-  for (const p of producers) revalidatePath(`/producers/${p}`);
+  // 住所の書き換え（next.config.ts の rewrites）の先の住所で渡す。頭に言語の無い住所では作り置きが消えない（Next.js の revalidatePath の資料。2026-11-19 まで頭に言語の無い住所で渡していた）
+  for (const p of producers) for (const lang of LANGS) revalidatePath(`/${lang}/producers/${p}`);
   return Response.json({ checked: true, removed: true });
 }

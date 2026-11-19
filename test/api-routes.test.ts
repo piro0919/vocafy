@@ -112,7 +112,10 @@ describe('/api/unplayable', () => {
     const res = await unplayable.POST(request('POST', { service: 'youtube', videoId: id }));
     expect(await res.json()).toEqual({ checked: true, removed: true });
     expect(mocks.markUnplayable).toHaveBeenCalledWith('youtube', id);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/producers/45');
+    // rewrites の先の住所（/ja/...）で渡す。頭に言語の無い住所では作り置きが消えない（Next.js の revalidatePath の資料）
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/ja/producers/45');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/en/producers/45');
+    expect(mocks.revalidatePath).not.toHaveBeenCalledWith('/producers/45');
   });
 
   it('流せるか分からないとき（窓口の混み合いなど）と流せるときは外さない', async () => {
