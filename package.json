@@ -71,7 +71,7 @@
     "lefthook": "^2.2.2",
     "prettier": "^3.10.1",
     "schema-dts": "^2.1.0",
-    "secretlint": "^13.1.0",
+    "secretlint": "^14.0.1",
     "sharp": "0.35.5",
     "squawk-cli": "2.73.0",
     "tailwindcss": "^4.3.5",
