@@ -36,7 +36,7 @@
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tanstack/react-virtual": "^3.14.26",
     "@vercel/analytics": "^2.0.1",
-    "better-auth": "1.7.25",
+    "better-auth": "1.7.26",
     "next": "16.4.6",
     "niconico-embed-player": "0.1.2",
     "pg": "^8.23.1",
