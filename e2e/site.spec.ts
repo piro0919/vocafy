@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 
 /**
- * 壊れやすい流れだけを確かめる。台帳は CI では db/fixture.sql（DECO＊27 の4曲）を使う。
+ * 壊れやすい流れだけを確かめる。台帳は CI では db/fixture.sql（DECO＊27 の10曲）を使う。
  * 手元で本物の取り込みをした DB に向けても通るよう、曲名ではなく形で見る
  */
 
@@ -60,7 +60,7 @@ test('再生を押すと、プレイヤーが画面の置き場所に出る', as
 
 test('ボカロPの画面で曲を押しても、ページはスクロールしない', async ({ page }) => {
   // 押した曲が住所（?song=）に入ったあとの描き直しで、それを共有されたリンクの曲と取り違え、
-  // その行まで勝手にスクロールしていた（2026-10-14、iPhone）。fixture は4曲で動く幅が無いので、呼んだ回数で見る
+  // その行まで勝手にスクロールしていた（2026-10-14、iPhone）。fixture は曲が少なく動く幅がほぼ無いので、呼んだ回数で見る
   await page.addInitScript(() => {
     const original = Element.prototype.scrollIntoView;
     Object.assign(window, { scrolledIntoView: 0 });

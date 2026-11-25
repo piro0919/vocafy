@@ -10,7 +10,7 @@ import { expect, test } from './fixtures';
  * 幅は、スマホ（Pixel 7 の 412px）と、md より狭い iPad の縦向き（744px）。どちらもスマホの組み立てになる
  */
 
-// 縦は、fixture の4曲でも一覧が帯の裏まで届く高さに詰める
+// 縦は、fixture の少ない曲でも一覧が帯の裏まで届く高さに詰める
 const SIZES = [
   { width: 412, height: 520 },
   { width: 744, height: 640 },
