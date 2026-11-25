@@ -4,7 +4,7 @@ import { producerNamesFor } from '@/lib/producer-names';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { findProducer } from '@/lib/catalog';
-import { canonical } from '@/lib/site';
+import { canonicalOnly, isIndexedProducer } from '@/lib/site';
 import { ProducerView } from '../../producer-view';
 import { langOf } from '@/i18n/config';
 
@@ -39,8 +39,10 @@ export async function generateMetadata({
   return {
     title: `${displayTitle(song, lang).main} - ${name}`,
     robots: { index: false, follow: true },
-    // 正規の住所だけを名乗る。hreflang は検索に載せるページ同士を結ぶもので、noindex のこの住所には書かない
-    alternates: { canonical: canonical(`/producers/${found.producer.id}`, lang).canonical },
+    // ボカロPの画面を正規の住所として指す。その画面も noindex の人（曲が少ない）なら、食い違う合図になるので指さない
+    ...(isIndexedProducer(found.producer.songCount) && {
+      alternates: canonicalOnly(`/producers/${found.producer.id}`, lang),
+    }),
   };
 }
 

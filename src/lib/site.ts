@@ -29,6 +29,13 @@ export function canonical(path: string, lang: Lang): NonNullable<Metadata['alter
 }
 
 /**
+ * 別の住所を正規の住所として指すだけのページ（前の住所・共有用の曲の住所）。hreflang は正規の住所どうしを結ぶものなので書かない
+ */
+export function canonicalOnly(path: string, lang: Lang): NonNullable<Metadata['alternates']> {
+  return { canonical: `${SITE_URL}${localize(path, lang)}` };
+}
+
+/**
  * 検索に載せるボカロPの曲数の下限。これより少ない人の画面は noindex にし、サイトマップから外す（2026-11-26）。
  * ボカロPの画面の本文は曲名・歌声・日付の並びだけで、曲の少ない画面は中身がほとんど無い。
  * 手元の DB の 744 人では、10曲未満が 169 人（23%）。14曲のイヤイヤP の本文が約420文字

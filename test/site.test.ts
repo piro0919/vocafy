@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonical, isIndexedProducer, MIN_INDEXED_SONGS } from '@/lib/site';
+import { canonical, canonicalOnly, isIndexedProducer, MIN_INDEXED_SONGS } from '@/lib/site';
 
 describe('検索に渡す住所', () => {
   it('正規の住所と一緒に、日本語・英語・既定の住所を hreflang として返す', () => {
@@ -18,6 +18,12 @@ describe('検索に渡す住所', () => {
       ja: 'https://vocafy.kkweb.io/',
       en: 'https://vocafy.kkweb.io/en',
       'x-default': 'https://vocafy.kkweb.io/',
+    });
+  });
+
+  it('別の住所を指すだけのページには hreflang を付けない', () => {
+    expect(canonicalOnly('/producers', 'en')).toEqual({
+      canonical: 'https://vocafy.kkweb.io/en/producers',
     });
   });
 
