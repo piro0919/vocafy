@@ -39,7 +39,8 @@ export async function generateMetadata({
   return {
     title: `${displayTitle(song, lang).main} - ${name}`,
     robots: { index: false, follow: true },
-    alternates: canonical(`/producers/${found.producer.id}`, lang),
+    // 正規の住所だけを名乗る。hreflang は検索に載せるページ同士を結ぶもので、noindex のこの住所には書かない
+    alternates: { canonical: canonical(`/producers/${found.producer.id}`, lang).canonical },
   };
 }
 
